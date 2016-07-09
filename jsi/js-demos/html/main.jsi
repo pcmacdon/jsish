@@ -1,0 +1,4 @@
+//Give browser 5 seconds to get page.
+jsi_invokeCmd('websrv', ['-timeout', 5000].concat(console.args));
+/* Or this to disallow override. */
+//jsi_invokeCmd('websrv', console.args.concat(['-timeout', 5000]));

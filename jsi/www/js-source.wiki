@@ -1,0 +1,39 @@
+<title>Source</title>
+
+<b>function source(val:string|array, options:object=void):void</b>
+
+The <b>source()</b> command is used to include javascript files, eg.
+
+    <pre class=verbatim>
+<b>var</b> x = 1;
+<b>source</b>(<i>'dir/foo.js'</i>);
+foo(x);
+</pre>
+
+Nesting <b>source</b> calls are supported to a default maximum depth of 100.
+
+You can also call <b>source</b> with an array of files, as in:
+
+    <nowiki><pre class=verbatim>
+<b>source</b>([<i>'foo.js'</i>,<i>'bar.js'</i>]);
+</nowiki></pre>
+
+
+We can configure and introspect various source related data the usual way:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>({<b>maxIncDepth</b>:10});
+<b>var</b> cur = <b>Info.script</b>();
+<b>var</b> dir = <b>Info.scriptDir</b>();
+</nowiki></pre>
+
+
+Source also can take an second parameter containing options,
+for which the following options are available:
+
+    <table border='1' class=optstbl>
+<tr><th>Option</th> <th>Type</th> <th>Description</th> <th>Default</th></tr>
+<tr><td>debug</td><td>INT</td><td>Debug level.</td><td> </td><tr>
+<tr><td>index</td><td>BOOL</td><td>Setup for load of jsiIndex.jsi files.</td><td> </td><tr>
+<tr><td>isMain</td><td>BOOL</td><td>Set Info.isMain() to true.</td><td> </td><tr>
+</table>

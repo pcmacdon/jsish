@@ -1,0 +1,203 @@
+<title>Home</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./download.wiki|Download]</li>
+<li>[./build.wiki|Building]</li>
+<li>[./index.wiki|Index]</li>
+<p>
+<li>[#overviw|Features]</li>
+<li>[#enhance|Enhancements]</li>
+<ul>
+<li>[#types|Type-Checking]</li>
+<li>[#system|System]</li>
+<li>[#os|OS-Support]</li>
+<ul>
+<li>[#files|Files]</li>
+<li>[#threads|Threads]</li>
+<li>[#autoload|Autoload]</li>
+</ul>
+<li>[#interp|Interp]</li>
+<li>[#info|Info]</li>
+</ul>
+<li>[#extn|Extensions]</li>
+<ul>
+<li>[#sqlite|Sqlite]</li>
+<li>[#websock|Websockets]</li>
+<li>[#mysql|MySql]</li>
+<li>[#json|Zvfs]</li>
+</ul>
+<li>[#capi|C-API]</li>
+<ul>
+<li>[#jsi_c|Amalgamation]</li>
+<li>[#jsilite|Jsi-Lite]</li>
+<li>[#dbquery|Jsi_DbQuery]</li>
+<li>[#dstring|Jsi_DString]</li>
+<li>[#cextensions|C-Extensions]</li>
+</ul>
+</ul>
+
+</div>
+
+<b>Jsi</b> is a small yet powerful <i>javascript</i> interpreter, written entirely in <b>C</b>.
+
+<h2 id=overviw>Features</h2>
+
+  *  Compatible with EcmaScript-262.
+  *  Provides extensions for Sqlite, MySql, Websockets, etc.
+  *  Simple application integration <i>(amalgamated source)</i>.
+  *  Extensive C-API for writing user extensions.
+  *  Multiple build targets: standalone <i>(using libmusl)</i> and Windows <i>(using mingw)</i>.
+  *  Integrate scripts just by zipping them to the end of the binary <i>(self-hosting file-system)</i>.
+  *  Supports introspection and self-generating documentation.
+  *  Includes a test suite, with memory debug support.
+  *  Many other enhancements: Type-checking,  C-API, Stubs, etc.
+
+<hr>
+<h2 id=enhance>Enhancements</h2>
+
+Jsi adds a number of enhancements to standard javascript.
+
+<h3 id=types>Type-Checking</h3>
+
+The addition of <b>types</b> (to function definitions) is arguably the single most important
+enhancement in Jsi.
+
+Types can be defined for
+both parameters and return values:
+
+    <nowiki><pre class=verbatim>
+function foo (a<b>:number</b>, b<b>:string</b>)<b>:number</b> {
+   return a+1;
+}
+</pre></nowiki>
+
+In addition, adding a type declaration also enforces that calls provide
+the correct number of arguments.
+
+When used in conjunction with <b>default values</b>,
+much of the pain associated with writing scalable javascript can be avoided:
+
+    <nowiki><pre class=verbatim>
+function foo (a<b>:number</b>=0, b<b>:string</b>=<i>''</i>) {
+}
+</pre></nowiki>
+
+For more details see [./types.wiki|Types].
+
+<h3 id=system>System</h3>
+
+The System methods contain the builtin toplevel commands in Jsi.
+
+For more details see [./js-system.wiki|System].
+
+<h3 id=os>OS-Support</h3>
+
+Following are some of the Operating-System enhancements Jsi provides:
+
+<h4 id=files>Files</h4>
+
+There are several <b>file-system</b> related groups of commands:
+
+  *  <b>File:</b> commands for file-system manipulation.
+  *  <b>Channel:</b> object to reads and writes individual files.
+  *  <b>Zvfs:</b> commands for zip support and self-hosting VFS.
+  *  <b>exec:</b> allows running programs with input or output.
+  *  <b>console:</b> basic stdin, stdout, and stderr functions.
+  *  <b>source:</b> to include <b>.js</b> or <b>.jsi</b> javascript source files.
+  
+For more details, see [./js-files.wiki|Files].
+
+<h4 id=threads>Threads</h4>
+
+Threads are supported in Jsi, by allowing interps to run in their own thread.
+  
+For more details, see [./js-threads.wiki|Threads].
+
+<h4 id=autoload>Autoload</h4>
+
+The purpose of autoload is to enable dynamic loading of commands upon their first invocation.
+
+For more details, see [./js-autoload.wiki|Autoload].
+<hr>
+
+<h3 id=interp>Interp</h3>
+
+Jsi executes scripts in a context called an interpreter.  This provides
+a number of configurable and runtime options.
+
+For more details, see [./js-interp.wiki|Interp].
+
+<h3 id=info>Info</h3>
+
+The <b>Info</b> commands provide Jsi with <i>introspection</i> capabilities.
+
+For more details, see [./js-info.wiki|Info].
+
+<hr>
+<h2 id=extn>Extensions</h2>
+
+<h3 id=sqlite>Sqlite</h3>
+
+Jsi comes with an Sqlite driver that by default is builtin to <b>jsish</b>.  To ensure
+standalone compatibility, it also includes the source to a version of
+Sqlite.
+
+For more details see [./js-sqlite.wiki|Sqlite].
+
+<h3 id=websock>Websockets</h3>
+
+Jsi comes with an Libwebsocket driver that by default is builtin to <b>jsish</b>.  To ensure
+standalone compatibility, it also includes the source to a version of
+Libwebsocket.
+
+For more details see [./js-websocket.wiki|Websockets].
+
+<h3 id=mysql>MySql</h3>
+
+Jsi comes with a MySql driver.  It is <b>not</b> by default builtin to <b>jsish</b>.
+But it can be added easily enough, or built into a shared library and loaded dynamically.
+
+For more details see [./js-mysql.wiki|MySql].
+
+<h3 id=json>Zvfs</h3>
+Jsi allows the creation of Zero Install database applications with seamless web access.
+Moreover, as Jsi's C-API is modelled after Tcl, it is well suited for embedded development.
+
+For more details see [./js-zvfs.wiki|Zvfs].
+
+<hr>
+
+<h2 id=capi>C-API</h2>
+
+<h3 id=jsi_c>Amalgamation</h3>
+
+Amalgamation source wraps all Jsi source files into a single file: jsi.c.
+
+For more details see [./c-amalgamation.wiki|Amalgamation].
+
+<h3 id=jsilite>Jsi-Lite</h3>
+
+Jsi-Lite lets you use a small subset of C functions from the Jsi source (typically jsi.c).
+
+For more details see [./c-jsi_lite.wiki|Jsi-Lite].
+
+<h3 id=dbquery>Jsi_DbQuery</h3>
+
+<b>Jsi_DbQuery</b> is a Jsi-Lite feature that hugely accelerates Sqlite development in C.
+
+For more details see [./c-dbquery.wiki|DbQuery].
+
+
+<h3 id=dstring>Jsi_DString</h3>
+
+String handling in C doesn't always have to be so miserable.
+
+For more details see [./c-dstring.wiki|Jsi_DString].
+
+
+<h3 id=cextensions>C-Extensions</h3>
+
+Code can not be any faster than if you write your own extensions.
+
+For more details see [./c-extensions.wiki|C-Extensions].

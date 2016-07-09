@@ -1,0 +1,142 @@
+#!/usr/bin/env jsish
+
+// Instantiates a simple web server
+
+function jsi_websrv(args,opts)
+{
+    var that = this; // Give functions access to this[].
+    var init = {
+        // Options
+        debug:0,                        // Debugging flag.
+        local:true,                     // Accept only local connections.
+        port: 8765,                     // Start search for port.
+        maxPort: 1000,                  // Max to add to above port.
+        nowait: false,                  // Caller will be calling Event.update();
+        timeout:0,                         // Timed timeout (in ms).
+        closeTimeout:5000,              // Grace time after last client closes socket before exit (in ms).
+        rootdir: null,                  // Where main.js lives.
+        url: "/main.ihtml",
+        browsers: {                     // Not used, yet.
+            unix:[ "xdg-open", "gnome-open", "firefox", "google-chrome" ],
+            win: [ "start" ],
+            mac: [ "open" ]
+        }
+    };
+
+    function dputs(str) { if (that.debug) console.log(str); }
+    
+    function DoExit()   // Notify all going down, then exit.
+    {
+        WebSend(-1, 'exit');
+        setTimeout(function () {that.done = 1; }, 1000); 
+    }
+
+    function CloseNow()
+    {
+        that.closeId = null;
+        if (that.ws.conf('connectCnt')>0)
+            return;
+        dputs("Last client has closed");
+        that.ws.conf({noUpdate:true});
+        that.done = 1;
+    }
+    
+    function CloseLast(now) // Wait around for a while for reconnect or new clients before exiting
+    {
+        if (that.closeId)
+            clearInterval(that.closeId);
+        if (that.closeTimeout>0)
+            that.closeId = setTimeout(function () { CloseNow(); }, that.closeTimeout);
+        return true;
+    }
+    
+    function WebSend (id,op,data,type)
+    {
+        if (type === undefined)
+            type = "";
+        var dat = {type: type, op:op, data:data };
+        dat = JSON.stringify(dat);
+        //dputs("SEND: "+dat);
+        that.ws.send(dat,id);
+    }
+    
+    function WebRecv(data, id)
+    {
+        var buf, buf0, buf1, buf2;
+        dputs("SERVER GOT: "+ id +": "+data);
+        var dat;
+        try {
+            dat = JSON.parse(data);
+            dputs("JSON: "+dat.toString());
+            switch (dat.op) {
+                case 'init':        WebSend(id, 'init'); break;
+                case 'process':     WebSend(id, 'process'); break;
+                case 'exit':        DoExit(); break;
+                    
+                default: dputs("unknown webmsg: "+dat.op); break;
+            }
+        } catch (e) {
+          dputs("ERROR: "+e);
+        }
+    }
+    
+    // MAIN BEGIN
+    if (typeof args !== 'object' || args.length>1)
+        throw "expected 0 or 1 args";
+    jsi_parseOpts(this, opts, init);
+    if (args.length) {
+        this.url = File.tail(args[0]);
+        this.rootdir = File.dirname(args[0]);
+    }
+    this.done = 0;
+    
+    if (!this.rootdir)
+        this.rootdir=Info.scriptDir();
+    if (this.url && this.url.length) {
+        var ufn = this.rootdir+'/'+this.url;
+        if (!File.isfile(ufn))
+            throw("file not found: "+ufn);
+    }
+    this.wsopts = {
+        port:this.port, rootdir:this.rootdir, callback:WebRecv, 
+        onCloseLast:CloseLast, debug:this.debug
+    };
+    if (this.local)
+        this.wsopts.interface = 'lo';
+        
+    
+    /* Try opening websocket on first available port. */
+    var i;
+    for (i=0; i<this.maxPort; i++) {
+        try {
+            this.ws = new WebSocket(this.wsopts);
+            break;
+        }
+        catch (e) {this.wsopts.port++;}
+    }
+    if (i>=this.maxPort) {
+        console.log("Failed to get port");
+        return;
+    }
+ 
+    this.ws.handler('.ihtml', 'jsi_wpp');
+    dputs("Listen on "+this.wsopts.port);
+    var prog = "xdg-open";
+    switch (Info.platform().os) {
+        case 'win': prog = 'start'; break;
+    }
+    // Display page in browser.
+    dputs("URL: "+this.url);
+    if (this.url && this.url.length) {
+        exec(prog + " http://127.0.0.1:"+this.wsopts.port+'/'+this.url+" &");
+    }
+    if (this.nowait) return;
+    if (this.timeout)
+        setTimeout(function () { that.done = 1; }, this.timeout);
+    while (this.done == 0 && Event.update(100) ) ;
+    delete this.ws;
+}
+
+if (Info.isMain()) {
+    jsi_invokeMain('jsi_websrv');
+}

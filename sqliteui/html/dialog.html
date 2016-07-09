@@ -1,0 +1,189 @@
+<!-- Dialogs for sqliteui -->
+
+<div id="dlg_edit_tvals" style="display:none" class="dlg">
+  <center><h3>Edit Row</h3></center>
+  <table class=dlgtbl>
+  <thead>
+  </thead>
+  <tbody>
+
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmitTVals("Update")'>Update</button></td>
+      <td><button onclick='DlgSubmitTVals("Duplicate")'>Duplicate</button></td>
+      <td><button onclick='DlgSubmitTVals("Delete")'>Delete</button></td>
+      <td><button onclick='DlgSubmitTVals("Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+<div id="dlg_add_tvals" style="display:none" class="dlg">
+  <center><h3>Add Row</h3></center>
+  <table class=dlgtbl>
+  <thead>
+  </thead>
+  <tbody>
+
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_add","Add")'>Add</button></td>
+      <td><button onclick='DlgSubmit("tool_cancel","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+
+<!-- The first step is to set the <tbody> to display: block so an overflow and height can be applied.
+ From there the rows in the <thead> need to be set to position: relative and display: block 
+ so that they’ll sit on top of the now scrollable <tbody>.
+ 
+<div id="dlg_tool_files" style="display:none" class="dlgfile">
+  <center><h3>File Browser</h3></center>
+  <table class=tlisttbl id=tblfiles onclick='ClickFList(event)' style="border:1px; height=500px">
+  <thead style="">
+          <tr id=tblfiles_th_0 style="position:relative; display:block"><th>File</th></tr>
+  </thead>
+  <tbody style="display:block; overflow:auto; height=400px; position:fixed">
+
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_files","Ok")'>Ok</button></td>
+      <td><button onclick='DlgSubmit("tool_files","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+-->
+
+<div id="dlg_tool_files" style="display:none" class="dlg">
+  <center><h3>File Selection</h3></center>
+  <table class=tlisttbl id=tblfiles onclick='ClickFList(event)' style="border:1px; height=500px">
+  <thead style="">
+          <tr id=tblfiles_th_0><th></th></tr>
+  </thead>
+  <tbody>
+
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_files","Ok")'>Ok</button></td>
+      <td><button onclick='DlgSubmit("tool_files","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+<div id="dlg_tool_import" style="display:none" class="dlg">
+  <center><h3>Import File</h3></center>
+  <table class="dlgtbl tooltbl">
+  <tbody>
+        <tr><td class=right>Conflict:</td><td>
+            <select id=parm_tool_import_conflict>
+                <option>ROLLBACK</option>
+                <option>ABORT</option>
+                <option>IGNORE</option>
+                <option>FAIL</option>
+                <option>REPLACE</option>
+            </select>
+        </td></tr>
+        <tr><td class=right>File:</td><td> <input id=parm_tool_import_file></td></tr>
+        <tr><td class=right>Table:</td><td> <input id=parm_tool_import_table></td></tr>
+        <tr><td class=right title="Input is CSV">CSV:</td>
+            <td> <input type=checkbox id=parm_tool_import_csv value=0 onclick='ToggleMe(this)'></td></tr>
+        <tr><td class=right title="Use first row of values to CREATE TABLE IF NOT EXISTS">Headers:</td>
+            <td> <input type=checkbox id=parm_tool_import_headers value=0 onclick='ToggleMe(this)'></td></tr>
+        <tr><td class=right>Separator:</td><td> <input id=parm_tool_import_sep></td></tr>
+        <tr><td class=right>Null:</td><td> <input id=parm_tool_import_null></td></tr>
+        <tr><td class=right>Limit:</td><td> <input id=parm_tool_import_limit></td></tr>
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_import","Import")'>OK</button></td>
+      <td><button onclick='DlgSubmit("tool_import","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+<div id="dlg_tool_export" style="display:none" class="dlg">
+  <center><h3 title="Dialog to export table to a file">Export To File</h3></center>
+  <table class="dlgtbl tooltbl">
+  <tbody>
+        <tr><td class=right>Mode:</td><td> 
+            <select id=parm_tool_export_mode>
+                <option title="Output is SQL suitable for use with 'Read'">insert</option>
+                <option title="Output is Comma Separated Values">csv</option>
+                <option title="Output is Tab separated values (or separator)">tab</option>
+                <option title="Output is Pipe separated values (or separator)">list</option>
+                <option title="Output is Column aligned text">column</option>
+                <option title="Output is HTML">html</option>
+            </select>
+        </td></tr>
+        <tr><td class=right>Table:</td><td> <input id=parm_tool_export_table></td></tr>
+        <tr><td class=right title="File to send output to">File:</td><td> <input id=parm_tool_export_file></td></tr>
+        <tr><td class=right title="Separator string, for some modes">Separator:</td><td> <input id=parm_tool_export_sep></td></tr>
+        <tr><td class=right title="String to substitute for null">Null:</td><td> <input id=parm_tool_export_null></td></tr>
+        <tr><td class=right title="Include column headers (for modes 'csv', 'html' etc)">Headers:</td>
+            <td> <input type=checkbox id=parm_tool_export_headers value=0 onclick='ToggleMe(this)'></td></tr>
+        <tr><td class=right title="Wrap output in BEGIN/COMMIT for faster loads (for mode 'insert')">Add BEGIN/COMMIT:</td>
+            <td><input type=checkbox id=parm_tool_export_begin value=0 onclick='ToggleMe(this)'></td></tr>
+        <tr><td class=right title="Prefix output with create table statement (for mode 'insert')">Add CREATE TABLE:</td>
+            <td> <input type=checkbox id=parm_tool_export_schema value=0 onclick='ToggleMe(this)'></td></tr>
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_export","Export")'>OK</button></td>
+      <td><button onclick='DlgSubmit("tool_export","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+
+<div id="dlg_tool_backup" style="display:none" class="dlg">
+  <center><h3>Backup DB</h3></center>
+  <table class="dlgtbl tooltbl">
+  <tbody>
+        <tr><td class=right>File:</td><td> <input id=parm_tool_backup_file></td></tr>
+        <tr><td class=right>DB:</td><td><input id=parm_tool_backup_db value=main></td></tr>
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_backup","Backup")'>OK</button></td>
+      <td><button onclick='DlgSubmit("tool_backup", "Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+
+<div id="dlg_tool_restore" style="display:none" class="dlg">
+  <center><h3>Restore DB</h3></center>
+  <table class="dlgtbl tooltbl">
+  <tbody>
+        <tr><td class=right>File:</td><td> <input id=parm_tool_restore_file></td></tr>
+        <tr><td class=right>DB:</td><td><input id=parm_tool_restore_db value=main></td></tr>
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_restore","Restore")'>OK</button></td>
+      <td><button onclick='DlgSubmit("tool_restore","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+
+
+<div id="dlg_tool_read" style="display:none" class="dlg">
+  <center><h3 title="Evaluate an SQL file">SQL File</h3></center>
+  <table class="dlgtbl tooltbl">
+  <tbody>
+        <tr><td class=right>File:</td><td> <input id=parm_tool_read_file></td></tr>
+        <tr><td class=right title="Wrap output in BEGIN/COMMIT for faster loads (for mode 'insert')">Add BEGIN/COMMIT:</td>
+            <td><input type=checkbox id=parm_tool_read_begin value=0 onclick='ToggleMe(this)'></td></tr>
+  </tbody>
+  </table>
+
+  <table class=dlgbuts><tr style="text-align:center">
+      <td><button onclick='DlgSubmit("tool_read","Read")'>OK</button></td>
+      <td><button onclick='DlgSubmit("tool_read","Cancel")'>Cancel</button></td>
+  </tr></table>
+</div>
+

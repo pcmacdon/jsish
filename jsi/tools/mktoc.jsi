@@ -1,0 +1,50 @@
+#!/usr/bin/env jsish
+// Generate documentation table of contents from headers <h1> <h2>...
+
+function jsi_mktoc(args,opts) {
+    var rc = '', lst = [], idlst = [], lev = 0, prev = 0, cur = 0, res, lev, top = 0;
+    var fname = args[0];
+    var s, fp = new Channel(fname);
+    while ((s=fp.gets()) !== undefined) {
+        s = s.trim();
+        if (!s.match(/^<h[1-9]/)) continue;
+        //s = "<h2 id=buildmysql>Building</h2>";
+        //res = s.match(/^<h([1-9]) id=([^\s>]+)/); // BUG IN REGEXP.
+        res = s.match(/^<h([1-9]) id=([_0-9a-zA-Z]+)>([^>]*)<\/h/);
+        if (!res) { console.log("ignore missing id: "+s); continue; }
+        //puts(s);
+        lev = res[1];
+        id = res[2];
+        lbl = res[3];
+        if (idlst.indexOf(id)>=0)
+            console.log("duplicate id: "+id);
+        idlst.push(id);
+        //puts(id);
+        if (!top) {
+            cur = top = lev;
+            rc += '<ul>\n';
+        } else if (lev > cur) {
+            while (lev > cur) {
+                rc += '<ul>\n';
+                cur++;
+            }
+        } else if (lev < cur){
+            while (lev < cur) {
+                //puts(lev + ' ' + cur);
+                rc += '</ul>\n';
+                cur--;
+            }
+        }
+        rc += '<li>[#'+id+'|'+lbl+']</li>\n';
+    }
+    while (cur >= top) {
+        rc += '</ul>\n';
+        cur--;
+    }
+    return rc;
+}
+
+if (Info.isMain()) {
+    puts(jsi_invokeMain('jsi_mktoc'));
+    exit(0);
+}

@@ -1,0 +1,92 @@
+#!/usr/bin/env jsish
+
+if (typeof MySql != 'function')
+    load('libjsiMySql.so');
+    
+var opts = { user:'root', password:'', database:'jsitest' };
+
+for (var i=0; i<console.args.length; i+=2) {
+    var nam = console.args[i].substr(1);
+    if (opts[nam] === undefined)
+        throw(nam + " not one of: -"+opts.keys().join(' -'));
+    opts[nam] = console.args[i+1];
+}
+
+var db = new MySql(opts);
+
+function test1() {
+    puts("\n\nTEST 1");
+    db.eval('CREATE TABLE IF NOT EXISTS test1(id INTEGER, name VARCHAR(50), last VARCHAR(50));');
+    
+    puts(db.query('SELECT * FROM test1;', {mode:'list'}));
+    puts(db.query('DESCRIBE test1;'));
+    //db.eval('INSERT INTO test1 VALUES(44,"Terry","Fox");');
+    db.query('INSERT INTO test1 VALUES(?,?,?);', {values:[44,"Barry","Box"]});
+    return 0;
+    //puts(db.query('SELECT * FROM test1;'));
+    puts(db.query('SELECT * FROM test1 WHERE id < ?;', {values:[44]}));
+    //puts(db.query('SELECT * FROM test1;').toString());
+    db.eval("UPDATE test1 SET id = id + 1 WHERE name = 'bob'; ");
+    db.conf({maxStmts:0});
+    return 0;
+}
+
+function test2() {
+    puts("\n\nTEST 2");
+    db.eval('drop table if exists test2');
+    db.eval('create table if not exists test2(id double, name varchar(50), last varchar(50));');
+    
+    var x = {a:44,b:"Barry",c:"Box"};
+    db.query('INSERT INTO test1 VALUES($x(a),$x(b),$x(c));');
+    
+    
+    var xa=24.5,xb="Barry",xc="Box";
+    db.query('INSERT INTO test2 VALUES(:xa,@xb,$xc);');
+    
+    var y = {a:4,b:"Purry",c:"Pax"};
+    db.query('INSERT INTO test2 VALUES($y(a),$y(b),$y(c));');
+    
+    var x = {a:14,b:"Burry",c:"Bax"};
+    db.query('INSERT INTO test2 VALUES($x(a),$x(b),$x(c));');
+    
+    var Z = 'c';
+    var y = ['Figgy'];
+    db.query('INSERT INTO test2 VALUES($x(a), $y(0), $x([Z]));'); 
+       
+    puts(db.query('SELECT * FROM test2;', {mode:'list'}));
+    puts(db.conf('numStmts'));
+    db.conf({maxStmts:1});
+    puts(db.conf('numStmts'));
+    db.conf({maxStmts:0});
+    puts(db.conf('numStmts'));
+
+    var A = [ {x:0, y:'a', z:'b'}, {x:1, y:'c', z:'d'}, {x:2, y:'e', z:'f'}];
+    for (var i = 0; i<A.length; i++)
+        db.query('INSERT INTO test2 VALUES($A([i].x), $A([i].y), $A([i].z));'); 
+    
+    puts("FOLLOWING SHOULD GENERATE AN ERROR");
+    try { db.query('INSERT INTO test2 VALUES(:xa,:xb,:xc);',{noNamedParams:true}); } catch(e) {puts(e);}
+}
+
+function test3() {
+    puts("\n\nTEST 3");
+    db.eval('drop table if exists test3');
+    db.eval('create table if not exists test3(dat datetime, name varchar(50), last varchar(50))');
+    
+    var x = {a:strptime('1970-01-01 00:00:00'),b:"Furry",c:"Fax"};
+    db.query('INSERT INTO test3 VALUES($x(a:datetime), $x(b), $x(c));'); 
+    var Z = 'c';
+    var y = ['Figgy'];
+    db.query('INSERT INTO test3 VALUES($x(a:datetime), $y(0:string), $x([Z]:string));'); 
+    
+    var A = [ {x:0, y:'a', z:'b'}, {x:1, y:'c', z:'d'}, {x:2, y:'e', z:'f'}];
+    for (var i = 0; i<A.length; i++)
+        db.query('INSERT INTO test3 VALUES($A([i].x:datetime), $A([i].y:string), $A([i].z:string));'); 
+    puts(db.query('SELECT * FROM test3',{mode:'list'}));
+    return;
+}
+
+test1();
+test2();
+test3();
+delete db;

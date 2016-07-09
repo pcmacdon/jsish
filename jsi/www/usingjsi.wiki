@@ -1,0 +1,169 @@
+<title>Other</title>
+
+<h2>Invocation</h2>
+
+<h3>Interactive</h3>
+Interactive mode is the easiest way to try out Jsi, eg:
+
+    <nowiki><pre class=verbatim>
+  ./jsish
+# var a = [1,2,3];
+# for (var i in a) { puts(a[i]); }
+1
+2
+3
+...
+</pre></nowiki>
+
+If running the precompiled (static) Linux executable,
+command-line editing is available via rlwrap:
+
+    <nowiki><pre class=verbatim>
+rlwrap ./jsish
+</pre></nowiki>
+
+<h3>Script Files</h3>
+
+Script files can be invoked like so:
+
+    <nowiki><pre class=verbatim>
+jsish prog.js arg1 arg2
+</pre></nowiki>
+
+To make a script directly executable under unix, the first line of a Jsi script should start with "#!", eg:
+
+    <nowiki><pre class=verbatim>
+cat > prargs <<EOF
+#!/usr/bin/env jsish
+for (var i in console.args) {
+   puts(console.args[i]);
+}
+EOF
+
+chmod a+rx prargs
+
+./prargs able baker charlie
+</pre></nowiki>
+
+
+<h3>Inline Invocation</h3>
+Although less commonly used, Javascript can be evaluated inline with <b>-e</b>, eg:
+
+    <nowiki><pre class=verbatim>
+jsish -e 'var i = 0; while (i++<10) puts(i);'
+</pre></nowiki>
+
+<hr>
+
+<h2>Options</h2>
+
+Various commands in Jsi take an options object to parametrize behaviour. For example:
+
+    <pre class=verbatim>
+var db = new Sqlite('/tmp/testsql.db',{maxStmts:1000, readonly:true});
+db.conf( {debug:1} );
+puts( db.conf() );
+</pre>
+
+In the case of object commands, a conf() method provides access to the options.
+
+This includes the all important [./js-interp.wiki|Interp.conf()] for accessing interpreter options.
+
+All of these are implemented via [./c-options.wiki|C-Options].
+
+<hr>
+
+<h2>Introspection</h2>
+
+There are several levels of introspection built-in to Jsi. The conf() method above is just one example. 
+
+Another is <b>Info.cmds()</b> which allows inspection of available commands:
+
+    <nowiki><pre class=verbatim>
+# <b>Info.cmds()</b>
+[  "Array", "Boolean", "File", "FileIO", "Function", "Interp", "Info", "JSON", "Math", "Number",
+   "Object", "RegExp", "Signal", "Sqlite", "String", "Sys", "Websocket", "Zvfs", "assert", "clearInterval",
+   "console", "decodeURI", "encodeURI", "exit", "source",
+   "isFinite", "isNaN", "load", "parseFloat", "parseInt", "puts", "quote",
+   "setInterval", "setTimeout", "format" ]
+
+# <b>info.cmds('Array.*')</b>
+[ "Array.concat", "Array.filter", "Array.forEach", "Array.indexOf", "Array.isArray", "Array.join",
+ "Array.lastIndexOf", "Array.map", "Array.pop", "Array.push", "Array.reverse", "Array.shift", 
+ "Array.sizeOf", "Array.slice", "Array.some", "Array.sort", "Array.splice", "Array.unshift" ]
+
+</pre></nowiki>
+
+Yet another is apparent upon invalid method invocation, eg:
+
+    <nowiki><pre class=verbatim>
+  # <b>info.xxx()</b>
+  error: 'info', sub-commands are: cmds data error event executable funcs interp
+  keywords named platform revisions script vars version.    (at or near "xxx")
+</pre></nowiki>
+
+<hr>
+
+<h2>Language Limitations</h2>
+
+  *  A <b>return</b> may not be used within a <b>try/catch</b>.
+
+<hr>
+<h2>Example Applications</h2>
+
+The Jsi distribution comes with several demo applications designed to
+showcase it's power and functionality:
+
+  *  [app/sqliteui.wiki|SqliteUI]: a user interface to Sqlite. 
+  *  [app/ledgerjs.wiki|LedgerJS]: an accounting program.
+  
+These are both [./zeroinstall.wiki|standalone] applications.
+
+<h2>Zero-Install</h2>
+Zero Install refers to use of a Zip archive to contain all files (scripts, web pages, images, etc)
+required by an application.  The zip archive can even be appended to the end of the executable binary.
+
+Jsi uses [./js-zvfs.wiki|Zvfs] to mount the zip archive as a file-system.
+Because Jsi provides a web server, browser content, database, and scripting environment
+it can use this to deploy a complete, standalone application.
+
+See [./sampleapps.wiki|here] for concrete working example applications.
+
+<h2>Editors</h2>
+
+<h3>Geany</h3>
+
+[http://www.geany.org|Geany] is a convenient editor to use with Jsish.
+To enable file completion in Geany:
+
+  *  Copy <i>tools/geany/filetypes.javascript</i> to <i>~/.config/geany/filedefs/</i>.
+  *  Edit <i>/usr/share/geany/filetype_extensions.conf</i>, and add "*.jsi" to Javascript. 
+  *  Keep the file <i>tools/protos.jsi</i> open in the editor so Geany knows how to complete Jsi functions.
+
+Geany can be setup to navigate
+through Jsi's gcc style scripting errors:
+
+  *  Start by editing any file ending in the suffix .jsi.
+  *  From the Geany <b>Build</b> menu, select <b>Set Build Commands</b>.
+  *  Click on the first blank label in Javascript and enter <i>Jsish</i>.
+  *  In the command section enter the pathspec to jsish, eg. <i>$HOME/bin/jsish %f</i>
+  *  Click <b>Ok</b>
+  
+Now hit <b>F8</b> to run the script. Upon errors, you should be able to navigate to the
+highlighted lines, and see warnings in the bottom pane.
+
+<hr>
+
+<h3>Vim</h3>
+Here is how to setup vim:
+
+    <nowiki><pre class=verbatim>
+:set makeprg=jsish\ %
+:copen
+</pre></nowiki>
+
+Then to run scripts just use:
+
+    <nowiki><pre class=verbatim>
+:make
+</pre></nowiki>

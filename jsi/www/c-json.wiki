@@ -1,0 +1,65 @@
+<title>C-API: JSON</title>
+
+<h2 id=descr>Description</h2>
+
+The JSON C API is provided by just two extern functions, whose use should be fairly intuitive.
+
+    <nowiki><pre class=verbatim>
+enum { JSI_JSON_STRICT=1, JSI_JSON_STRKEYS=2 }; /* flags */
+
+extern int Jsi_JSONParse(Jsi_Interp *interp, const char *js, Jsi_Value *ret, int flags);
+extern int Jsi_JSONParseFmt(Jsi_Interp *interp, Jsi_Value *ret, const char *fmt, ...);
+</pre></nowiki>
+
+The parser itself is highly efficient. It uses a single
+array of tokens for output so that for small JSON strings
+no memory is allocated during the parse.
+When memory does get allocated, it is only to increase the size of the token array.
+
+
+<h2 id=simplec>Simplifying C with JSON</h2>
+
+JSON can be enlisted to reduce C-code complexity, particularly when writing commands 
+that return objects and/or arrays.
+While the wisdom of using JSON this way may seem counter-intuitive,
+the JSON parser handles this quite efficiently.
+
+For example, suppose we want to create an object with a couple of values:
+
+    <nowiki><pre class=verbatim>
+Jsi_Obj *nobj = Jsi_ObjectNew(interp);
+Jsi_ValueMakeObject(interp, ret, nobj);
+Jsi_ObjInsertFromValue( interp, nobj, Jsi_ValueNewStringKey(interp, "file"), 
+    Jsi_ValueNewStringKey(interp, file));
+Jsi_ObjInsertFromValue( interp, nobj, Jsi_ValueNewStringKey(interp, "line"),
+   Jsi_ValueNewNumber(interp, line));
+</pre></nowiki>
+
+Using a JSON string parse, this can be simplified to:
+
+    <nowiki><pre class=verbatim>
+sprintf(buf, "{file:\"%s\", line:%d}", file, line);
+return Jsi_JSONParse(interp, buf, ret, 0);
+</pre></nowiki>
+
+The more deeply nested the structure, the greater the code simplification, eg:
+
+    <nowiki><pre class=verbatim>
+Jsi_JSONParseFmt(interp, ret, buf, "{ a: [ {x:%d, y:%d}, {x:%d, y:[%d,%d,%d]}] }",a,b,c,d,e,f);
+</pre></nowiki>
+
+Note: [./js-json.wiki#scan|permissive] mode is the default.  So there is
+no need to quote property names which in C rapidly becomes tedious:
+
+    <nowiki><pre class=verbatim>
+"{\"os\":\"%s\", \"platform\":\"%s\", \"hasThreads\":%s, \"pointerSize\":%d, "
+</pre></nowiki>
+
+Note: the above trick works only for cases where data does not contain
+special JSON characters.
+
+<h2 id=subinterps>Sub-Interps</h2>
+
+Any data sent between sub-[./js-interp.wiki|interps] will first be converted to/from JSON.
+This because all data objects are private to an interp.
+

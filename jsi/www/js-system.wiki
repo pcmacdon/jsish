@@ -1,0 +1,28 @@
+<title>System</title>
+
+<h3>Overview</h3>
+
+The System sub-methods represent the builtin toplevel commands in Jsi.
+
+These may be invoked either at the toplevel, or via System, eg:
+
+    <nowiki><pre class=verbatim>
+format(<i>'%d %d'</i>, 9, 10);
+System.format(<i>'%d %d'</i>, 9, 10);
+</pre></nowiki>
+
+These commands include both standard javascript commands such as:
+
+  *  setInterval setTimeout, and clearInterval
+  *  parseInt and parseFloat
+  *  isFinite and isNaN
+  
+As well as non-standard commands such as:
+
+  *  [./js-format.wiki|format]
+  *  [./js-exec.wiki|exec]
+  *  [./js-source.wiki|source]
+  *  strftime and strptime, ...
+
+For more details see [./reference.wiki#System|Reference].
+

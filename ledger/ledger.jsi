@@ -1,0 +1,1205 @@
+#!/usr/bin/env jsish
+
+function ledger(files,args)
+{
+
+    var that = this;    // Give function access to this[].
+    var init = {        // Options that can be overridden with parseOpts().
+        acctList:null,
+        browser:null,
+        catLower:false,  /* Lower case catagories. */
+        conns:[],
+        curDir:'~/',
+        //curTranList:null,  /* List of current trans? */
+        debug:0,
+        defaultDbFile:'~/ledgerjs.db',
+        dbfile:'',
+        fixtotals:false,
+        fixtgroups:false,
+        wsdebug:0,
+        local:true,
+        master:false,
+        maxrows:250,
+        maxPort:1000,
+        noCreate:false,
+        nogui:false,
+        port:8765,
+        undo:false,
+        dbSchemaVersion:0,
+        appSchemaVersion:3,
+        timeout:10000,                  // ms grace time after last client exits, until we exit.
+        SJO: {mode:'arrays',headers:true},
+        A1D:{mode:'arrays',headers:true},
+        tcols:"tsum,aid,tgroup",
+        gcols:"tlist,alist,cnt,tnum,tpayee,tmemo,tdate,tsched",
+
+        integrityFail:null,
+        foreignKeysFail:null,
+        status:{
+            state:'starting',
+            afields:'aid,aname,attl,atransnums,aobal,arbal,acatagory,ataxed,anum,acbal,atype,ainstname,'
+                + 'ainstaddr1,ainstaddr2,ainstcity,ainstzip,ainstphone,ainstfax,ainstemail,ainstcontact,ainstnotes',
+            aqfields:'aid,aname,attl,atransnums,'
+                + 'aobal,arbal,acatagory,ataxed,anum,acbal,(select atypename from atype where atype == atype.atype) as atype,ainstname,'
+                + 'ainstaddr1,ainstaddr2,ainstcity,ainstzip,ainstphone,ainstfax,ainstemail,ainstcontact,ainstnotes',
+            aindexes:'0',
+            tfields:'tid,tgroup,treco,tnum,tdate,tpayee,alist,tsum,truntot,tmemo,aid',
+            tqfields:'tid,tgroup,treco,tnum,tdate,tpayee,alist,'
+                + 'tsum,truntot,tmemo,aid'
+        },
+        opts: { curAcct:-1, maxrows:20 },
+        aopts: { sel:1, offset:0 }
+    };
+
+    var dputs = function(str) {if (that.debug) console.log(str);};
+    var dputs2 = function(str) {if (that.debug>1) console.log(str);};
+ 
+    // Configuration options. UNUSED
+    var Config = {
+        acolumns:         ["aname", "anum", "attl", "atransnums", "aobal", "arbal", "acatagory"], //Account columns to display
+        asortconf:        false,  //Sort configuration
+        awidths:          { aname:150, anum:50, atransnums:50 }, //Custom column widths
+        commify:          true,  //Show values with commas
+        datefmt:          "%Y-%m-%d", //Current date format
+        datefmts:         [ "%Y-%m-%d", "%y-%m-%d", "%m/%d/%Y", "%d-%B-%Y", "%d-%B-%y", "%y%m%d", "%Y%m%d", "%d %B %y"], //Date formats
+        hasmenu:          false,   //Start with menu visible// type  Choice 0 1, ,
+        hasstatus:        false,   //Start with status visible// type  Choice 0 1, ,
+        hastoolbar:       false,   //Start with toolbar visible// type  Choice 0 1, ,
+        hidecat:          false,   //Display catagories// type  Choice 0 1, ,
+        maxsplits:        10,  //Maximum splits to display for split edit// type  Int min 10, ,
+        nosched:          false,   //Ignore scheduled transactions
+        usecvs:           false,   //Use CVS// type  Choice 0 1, ,
+        usercs:           true,  //Use RCS// type  Choice 0 1, ,
+        xcolumns:         ["treco", "tnum", "tdate", "tpayee", "tgroup", "tsum", "truntot", "tmemo"], //Transaction columns to display
+        xsortconf:        { column:tdate },  //Sort configuration
+        xwidths:          { tnum:50, tdate:100, tpayee:50} //Custom column widths// 
+    };
+    
+    var catagories = [
+        "Auto:fuel", "Auto:other", "Auto:service", "Bank:fees", "Bank:interest", "Bonus", "Books", "Cash",
+        "Charity", "Childcare", "Christmas", "Clothing", "Computer", "Debts", "Dental", "Dining", "Education",
+        "Entertainment", "Gifts", "Groceries", "Grooming", "Hobbies", "Home:other", "Home:rent",
+        "Home:repair", "Hotels", "Insurance", "Job", "Loan", "Medical", "Medicare",
+        "Miscellaneous", "Music", "Restaurant", "Tax", "Telephone", "Travel",
+        "Utilities", "Vacation"
+    ];
+    
+    var db;
+    
+    function createDb(fn) // Create the database, load with schema, 
+    {
+        that.db = db = new Sqlite(fn);
+        var fixtots = that.fixtotals, schema = File.read(that.rootdir+'/schema.sql');
+        db.eval(schema);
+        if (that.undo)
+            SetupUndo(db, false);
+        RebuildTgroups();
+        /*if (!fixtots) {
+            fixtots = (db.onecolumn('SELECT count(*) FROM trans WHERE truntot == 0;')
+                == db.onecolumn('SELECT count(*) FROM trans;'));
+        }*/
+        if (db.onecolumn('SELECT count(*) FROM truntot;') == 0) {
+            db.eval('INSERT INTO truntot (tid) SELECT tid from trans;');
+            fixtots = true;
+        }
+        if (fixtots)
+            FixRunTotals(id);
+        if ((that.dbSchemaVersion=db.onecolumn('PRAGMA user_version')) == 0)
+            db.query('PRAGMA user_version='+that.appSchemaVersion);
+        CheckIntegrity(db);
+    }
+
+    function SetupUndo(db,drop) {
+        db.eval(makeUndoSql(db, 'accts', drop));
+        db.eval(makeUndoSql(db, 'trans', drop));
+    }
+    
+    function makeUndoSql(db, tname, drop) { // Return SQL for creating undo triggers for table.
+        if (drop)
+            return "DROP TRIGGER IF EXISTS " + tname + "_it;\n" +
+                "DROP TRIGGER IF EXISTS " + tname + "_ut;\n" +
+                "DROP TRIGGER IF EXISTS " + tname + "_dt;\n";
+        var lst = db.query("PRAGMA table_info('" + tname + "')");
+        var rc, rcd = '||old.rowid||', tns = 'rowid';
+       /*var db = that.db;*/
+        if (!lst) {
+            throw("BAD TABLE: "+tname);
+            return;
+        }
+        rc = "CREATE TEMP TRIGGER IF NOT EXISTS _" + tname + "_it AFTER INSERT ON main." + tname +
+        " BEGIN INSERT INTO undolog (seq,sql) VALUES(NULL,'DELETE FROM " + tname +
+        " WHERE rowid='||new.rowid); END;\n" +
+        "CREATE TEMP TRIGGER IF NOT EXISTS _" + tname + "_ut AFTER UPDATE ON main." + tname + " BEGIN" +
+        " INSERT INTO undolog (seq,sql) VALUES(NULL,'UPDATE " + tname + " SET '||";
+        
+        for (var i=0; i<lst.length; i++) {
+            var fld = lst[i];
+            tns += ',' + fld.name;
+            rc += "'" + (i?',':'') + fld.name + "='||quote(old." + fld.name + ")||";
+            rcd +=  "','||quote(old." + fld.name + ")||";
+        }
+        rc += "' WHERE rowid='||old.rowid); END;\n" +
+            "CREATE TEMP TRIGGER IF NOT EXISTS _" + tname + "_dt BEFORE DELETE ON main." + tname +" BEGIN" +
+            " INSERT INTO undolog (seq,sql) VALUES(NULL,'INSERT INTO " + tname + "(" + tns + ") " +
+            " VALUES('" + rcd + "')'); END;\n";
+        puts("RC: "+rc);
+        return rc;
+    }
+    
+
+    function CheckIntegrity(db) { // Check DB integrity and foreign key constraints.
+        that.integrityFail = true;
+        try {
+            var ok = db.onecolumn('PRAGMA integrity_check');
+            if (ok == 'ok')
+                that.integrityFail = false;
+        } catch(e) {
+            puts("FAILED INTEGRITY CHECK: "+e);
+        }
+        that.foreignKeysFail = true;
+        try {
+            that.foreignKeysInfo = db.query('PRAGMA foreign_key_check');
+            if (that.foreignKeysInfo.length<=0)
+                that.foreignKeysFail = false;
+        } catch(e) {
+            puts("FAILED FOREIGN KEY CHECK: "+e);
+        }
+        return (that.integrityFail==false && that.foreignKeysFail==false);
+    }
+    
+    function NukeTgroup(id, tgroup) // Delete a tgroup and all of its transactions.
+    {
+        var db = that.conns[id].db;
+        var tid, tlst = db.onecolumn("SELECT tlist FROM tgroup WHERE tgroup == @tgroup").split(',');
+        for (var i = 0; i<tlst.length; i++)
+        {
+            tid = tlst[i];
+            db.query("DELETE FROM truntot WHERE tid == @tid;");
+            db.query("DELETE FROM trans WHERE tid == @tid;");
+        }
+        db.query("DELETE FROM tgroup WHERE tgroup == @tgroup;");
+    }
+    
+    function InitTgroup(id, tgroup) // Make sure transaction groups are consistent.
+    {
+        return;
+        var db = that.conns[id].db;
+        var tlist, alist;
+
+        var cnt;
+        tlist = db.query("SELECT tid FROM trans WHERE tgroup == @tgroup",that.A1D);
+        if (tlist.length<1) continue;
+        if (tlist.length==1) {
+            puts("tgroup with < 2 trans");
+            return;
+        }
+        alist = [];
+        for (var j = 0; j<tlist.length; j++)
+            alist.push(db.onecolumn("SELECT aid FROM trans WHERE tid == $tlist([j]);"));
+        cnt = tlist.length;
+        tlist = tlist.join(',');
+        alist = alist.join(',');
+        db.query("UPDATE tgroup SET tlist = @tlist, alist=@alist, cnt=@cnt WHERE tgroup == @tgroup;");
+    }
+
+    function RebuildTgroups(id) // Make sure transaction groups are consistent.
+    {
+        if (!that.fixtgroups) {
+            var tcnt = db.onecolumn("SELECT count(tgroup) FROM tgroup WHERE tlist not like '%,%';");
+            if (tcnt==0)
+                return;
+        }
+        var tgroup, tlist, alist;
+
+        var cnt, tlst = db.query("SELECT distinct tgroup FROM trans;", {mode:'array1d'});
+        db.eval("BEGIN;");
+        //puts("TLST: "+tlst.toString());
+        //db.query("DELETE FROM tgroup;");
+        for (var i = 0; i<tlst.length; i++)
+        {
+            tgroup = tlst[i];
+            //puts("TGROUP: "+tgroup.toString());
+            tlist = db.query("SELECT tid FROM trans WHERE tgroup == @tgroup",{mode:'array1d'});
+            if (tlist.length<1) continue;
+            if (tlist.length==1) {
+                tlist = tlist[1];
+                db.query("DELETE FROM truntot WHERE tid == @tgroup;");
+                db.query("DELETE FROM trans WHERE tid == @tgroup;");
+                continue;
+            }
+            alist = [];
+            for (var j = 0; j<tlist.length; j++) {
+                var tli = tlist[j];
+                alist.push(db.onecolumn("SELECT aid FROM trans WHERE tid == @tli;"));
+            }
+            cnt = tlist.length;
+            tlist = tlist.join(',');
+            alist = alist.join(',');
+            db.query("UPDATE tgroup SET tlist = @tlist, alist=@alist, cnt=@cnt WHERE tgroup == @tgroup;");
+        }
+        db.eval("COMMIT;");
+        
+        return; // TODO: Clean-out transaction groups with < 2 transactions.
+        tlist = db.query("SELECT tgroup FROM tgroup WHERE tlist not like '%,%';", {mode:'array1d'});
+        for (var i = 0; i<tlist.length; i++)
+            NukeTgroup(id, tlist[i]);
+    }
+    
+    function connectReq(id, data) // Connection handshake
+    {
+        return WebSend('connectReq', {connected:true, master:that.master});
+    }
+    
+    function loadAll(id, data) // Load the accounts and transactions from current account.
+    {
+        var rc = {};
+        var db = that.conns[id].db;
+        rc.acctList = db.query('SELECT '+ that.status.aqfields+' FROM accts ORDER BY acatagory,aname', that.SJO);
+        rc.atypeList = db.query('SELECT atypename from atype', that.A1D);
+        //var tgroup = db.query('SELECT * from tgroup;', that.SJO);
+        var curacct = that.status.curAcct;
+        dputs("LOADALL: "+curacct+' '+data.toString());
+        rc.tran = [];
+        var subq = '';
+        if (data && data.browser && data.browser.indexOf('Chrome')<0)
+            subq = ' LIMIT 500';
+        if (curacct >= 0)
+            rc.tran = db.query('SELECT '+that.status.tqfields +
+                ' FROM trans NATURAL JOIN tgroup NATURAL JOIN truntot WHERE aid == @curacct'+subq, that.SJO);
+        rc.status = that.status;
+        rc.dbfile = that.dbfile;
+        rc.dbtail = File.tail(that.dbfile);
+        rc.dbdirname = File.dirname(that.dbfile);
+        rc.integrityFail = that.integrityFail;
+        rc.foreignKeysFail = that.foreignKeysFail;
+        WebSend('loadAll', rc, id);
+    }
+    
+    function loadTran(id, req)  // Return transactions for selected account.
+    {
+        var data = req.data, acct = data.acct, rc = {opts:data.opts};
+        var maxrows = data.maxrows, offset = data.offset, rwhere = '', tdate = null;
+        var db = that.conns[id].db;
+        if (that.status.curAcct !== undefined && acct !== that.status.curAcct) {
+            that.aopts.sel = data.sel;
+            AcctOpts(id, that.status.curAcct, true); // Acct changed, save old values.
+        }
+            
+        if (acct === that.status.curAcct) {
+            that.aopts.offset = offset;  // Same acct, update opts.
+            //that.aopts.maxrows = maxrows;
+            that.aopts.sel = data.sel;
+        } else {
+            AcctOpts(id, data.acct);  // Changed acct, load acct options.
+            offset = that.aopts.offset;
+            //maxrows = that.aopts.maxrows;
+        }
+        rc.aopts = that.aopts;
+        that.status.curAcct = acct;
+        if (data.reconciling)
+        {
+            rwhere = ' AND tdate <= @tdate AND treco IS NULL';
+            tdate = data.recEndDate;
+        }
+        var qstr = 'SELECT ' + that.status.tqfields
+            + ' FROM trans NATURAL JOIN tgroup  NATURAL JOIN truntot WHERE aid == @acct '+ rwhere
+            + ' ORDER BY tdate DESC, tsum LIMIT '
+            + maxrows + ' OFFSET ' + offset;
+        rc.data = db.query(qstr, that.SJO);
+        puts("DDD: "+qstr+' = '+rc.data.toString());
+        rc.payees = db.query("SELECT DISTINCT tpayee FROM trans NATURAL JOIN tgroup WHERE aid == @acct"
+            + " ORDER BY tpayee", {mode:'array1d'});
+        WebSend('loadTran',rc,id);
+    }
+
+    function fillPayee(id, t)    // Get details for payee.
+    {
+        var rc = {}, tpayee = t.tpayee, acct = req.data.acct;
+        var db = that.conns[id].db;
+        //if (acct === undefined) acct = that.status.curAcct;
+        //else that.status.curAcct = acct;
+        rc.data = db.query('SELECT ' + that.status.tqfields
+            + ' FROM tgroup NATURAL JOIN tpayee WHERE aid == @acct AND tpayee == @tpayee ORDER BY tdate DESC, tid DESC LIMIT 1', that.SJO);
+        rc.opts = req.data.opts;
+
+        rc = db.query('SELECT tsum,tid,aid FROM trans WHERE tgroup == @curgroup;');
+        WebSend("fillPayee",rc,id);
+    }
+    
+    function tranEditStart(id, t) { // Get tsums for splits.
+        dputs("EDT: "+t.toString());
+        var db = that.conns[id].db;
+        var curgroup = t.tgroup;
+        t.transEdits = db.query('SELECT tsum,tid,aid FROM trans WHERE tgroup == @curgroup;');
+        WebSend("tranEditStart",t.transEdits,id);
+    }
+    
+    function acctEditStart(id, t)
+    {
+        dputs("EDA: "+t.toString());
+        var db = that.conns[id].db;
+        var curid = t.aid;
+        t.acctEdits = db.query('SELECT * FROM accts WHERE aid== @curid;');
+        WebSend("acctEditStart",t,id);
+    }
+    
+    function lookupAcctByName(id, aname) {
+        var db = that.conns[id].db;
+        return db.onecolumn('SELECT aid FROM accts WHERE aname == @aname');
+    }
+    
+    function lookupAcct(id, aid, name) {
+        var db = that.conns[id].db;
+        return db.onecolumn('SELECT '+name+' FROM accts WHERE aid == @aid');
+    }
+    
+    function lookupTran(id, tid, name) {
+        var db = that.conns[id].db;
+        return db.onecolumn('SELECT '+name+' FROM accts WHERE tid == @tid');
+    }
+
+    function UpdateAcctTotals(id)      // Update account totals.
+    {
+        var db = that.conns[id].db;
+        db.eval("BEGIN; DROP TABLE IF EXISTS TMPacctsums;"+
+            "CREATE TEMP TABLE TMPacctsums AS SELECT aid,SUM(tsum) AS tsum FROM trans GROUP BY aid;"+
+            "UPDATE accts SET atransnums = (SELECT count(*) FROM trans t WHERE t.aid=accts.aid);"+
+            "UPDATE accts SET attl = aobal WHERE atransnums=0;"+
+            "UPDATE accts SET attl = (aobal +"+
+            "(SELECT tsum from TMPacctsums AS ta WHERE ta.aid == accts.aid)) WHERE atransnums>0;"+
+            "DROP TABLE TMPacctsums; COMMIT;");
+    }
+    
+    /* Update in account aid the running totals for transactions >= tid (or all if undefined) */
+    function UpdateRunTotals(id, aid, tid)
+    {
+        var rowid, sum, lst;
+        var db = that.conns[id].db;
+        aobal = parseFloat(aobal);
+        if (tid === undefined) {
+            sum = db.onecolumn("SELECT aobal FROM accts WHERE aid == @aid;");
+            lst = db.query("SELECT tsum,tid FROM trans NATURAL JOIN tgroup WHERE aid == @aid order by tdate, tsum DESC, tid DESC;", that.A1D);
+        } else {
+            var sdate = db.onecolumn('SELECT tdate FROM trans NATURAL JOIN tgroup WHERE tid == @tid;');
+            lst = db.query("SELECT tsum,tid FROM trans NATURAL JOIN tgroup WHERE aid == @aid and "
+                + "tdate >= @sdate order by tdate, tsum DESC;", that.A1D);
+            sum = db.onecolumn('SELECT sum(tsum) FROM trans NATURAL JOIN tgroup WHERE aid == @aid and tdate < @sdate;');
+        }
+        var rowid;
+        //if (aid == 74) dputs('SUM: '+sum+' '+JSON.stringify(lst));
+        db.query("BEGIN;");
+        for (var i = 1; i<lst.length; i++)
+        {
+            sum += lst[i][0];
+            rowid = lst[i][1];
+            //if (aid ==74) dputs('SS: '+sum.toString()+' '+lst[i][0]);
+            //db.query("UPDATE trans SET truntot = @sum WHERE tid == @rowid;");
+            db.query("UPDATE truntot SET truntot = @sum WHERE tid == @rowid;");
+        }
+        db.query("COMMIT;");
+        UpdateAcctTotals(id);
+    };
+    
+    function FixRunTotals(id)     // Update running totals for all accounts.
+    {
+        var db = that.conns[id].db;
+        var lst = db.query("SELECT aid from accts", {mode:'array1d'});
+        for (var i = 0; i<lst.length; i++) {
+            var aid = lst[i];
+            UpdateRunTotals(id, aid);
+        }
+    }
+    
+    function transDelete (id, tgroup, curids)   // Delete a transaction.
+    {
+        /* TODO: create rollback/undo */
+        var db = that.conns[id].db;
+        if (curids === undefined)
+            curids = db.query("SELECT tid,aid FROM trans WHERE tgroup == @tgroup;");
+        if (curids === undefined)
+            return;
+        for (var i = 0; i<curids.length; i++)
+            db.query("DELETE FROM truntot WHERE tid == "+curids[i].tid+";");
+        db.query("DELETE FROM trans WHERE tgroup == @tgroup;");
+        db.query("DELETE FROM tgroup WHERE tgroup == @tgroup;");
+        for (var i = 0; i<curids.length; i++)
+            UpdateRunTotals(id, curids[i].aid);
+    }
+    
+    function transDuplicate(id, tgroup)     // Duplicate a transaction.
+    {
+        var db = that.conns[id].db;
+        var curids = db.query("SELECT tid,aid FROM trans WHERE tgroup == @tgroup;");
+        db.query("INSERT INTO tgroup ("+that.gcols+") SELECT "+that.gcols+" FROM tgroup WHERE tgroup == @tgroup;");
+        var newgroup = db.lastInsert();
+        var ntlst = [], nalst = [];
+        for (var i = 0; i<curids.length; i++) {
+            var thistid = curids[i].tid;
+            db.query("INSERT INTO trans ("+that.tcols+") SELECT "+that.tcols+" FROM trans WHERE tid == @thistid;");
+            var nid = db.lastInsert();
+            db.query("UPDATE trans SET tgroup = @newgroup WHERE tid == @nid;");
+            ntlst.push(nid);
+            nalst.push(aid);
+            UpdateRunTotals(id, curids[i].aid /*, thistid */);
+        }
+        ntlst = ntlst.join(',');
+        nalst = nalst.join(',');
+        db.query("UPDATE tgroup SET tlist = @ntlst, SET alist = @nalst WHERE tgroup == @newgroup;");
+    }
+
+    function transNew(id, d) // Create a new group of transactions.
+    {
+        var rtlst = [];
+        var res = d.res;
+        var tsums = d.tsums;
+        var db = that.conns[id].db;
+        puts("RES: "+res.toString());
+        puts("TSUM: "+tsums.toString());
+        if (!res.tsched) res.tsched = null;
+        if (res.aid === null)
+            throw("missing aid");
+        if (res.tsum === null)
+            throw("missing transaction amount");
+        try {
+            res.cnt = tsums.length;
+            db.query('BEGIN;');
+            //eg. res:{ tdate:"2014-12-13", tmemo:"", tnum:"", tpayee:"", tsums:[{aid:3,tsum:2},{aid:4,tsum:5}...] }
+            with (res) {
+                var tlist = null, alist = null, truntot = 0;
+                db.query("INSERT INTO tgroup ("+that.gcols+") VALUES("+ that.gcolsq +");");
+                var tgroup = db.lastInsert();
+                puts("INSERT TT = "+tgroup);
+                puts("TSLEN "+tsums.length);
+                var ntlst = [], nalst = [];
+                for (var i = 0; i<tsums.length; i++) {
+                    var aid = tsums[i].aid;
+                    var tsum = tsums[i].tsum;
+                    var qq = "INSERT INTO trans ("+that.tcols+") VALUES("+ that.tcolsq +");";
+                    puts("INSERT "+qq+ ' G='+tgroup+ ' S='+tsum+ ' A='+aid);
+                    //var thistid = tsums[i].tid;
+                    db.query(qq);
+                    var nid = db.lastInsert();
+                    db.query("INSERT INTO truntot (tid) VALUES("+nid+");");
+                    ntlst.push(nid);
+                    nalst.push(aid);
+                    rtlst.push(tsums[i].aid);
+                }
+                ntlst = ntlst.join(',');
+                nalst = nalst.join(',');
+                db.query("UPDATE tgroup SET tlist = @ntlst, alist = @nalst WHERE tgroup == @tgroup;");
+                db.query('COMMIT;');
+            }
+        } catch(e) {
+            puts("ERR: "+e);
+            db.query('ROLLBACK;');
+            throw('ERROR: '+e);
+        }
+        for (var i in rtlst)
+            UpdateRunTotals(id, rtlst[i] /*, thistid */);
+    }
+    
+    function transUpdate(id, d)     //Update an existing group of transactions.
+    {
+        var curid = d.tid;
+        var res = d.res;
+        var tsums = d.tsums;
+        var tgroup = d.tgroup;
+        var db = that.conns[id].db;
+        dputs("CURDAT: "+tsums.length+' : '+tsums.toString());
+        
+        if (!d.splitChg) { // A simple update, no change in accounts.
+            with (res) {
+                db.query('UPDATE tgroup SET tmemo = @tmemo, tdate = @tdate, tnum = @tnum, '+
+                    'tpayee = @tpayee WHERE tgroup == @tgroup;');
+            }
+            for (var i = 0; i<tsums.length; i++) {
+                var thistid = tsums[i].tid;
+                var thissum = tsums[i].tsum;
+                dputs("TUPDATE: "+thistid+' '+thissum);
+                db.query('UPDATE trans SET tsum = @thissum WHERE tid == @thistid;');
+                UpdateRunTotals(id, tsums[i].aid ,thistid ); //TODO: could just do this on display?
+            }
+        } else { // Accts changed: add new then delete existing trans.
+            dputs("ACCTS CHANGED");
+            transNew(id, d);
+            transDelete(id, d.tgroup);
+        }
+    }
+
+    function acctReport(id, d)       // Reports for account.
+    {
+        dputs("AR: "+d.toString());
+        var db = that.conns[id].db;
+
+        var rc = true, msg = null;
+        var type = d.type, qry = '', where = '', amp='', order='';
+        if (d.accts != '') {
+            where += amp+' aid in ('+d.accts+') ';
+            amp = ' and ';
+        }
+        if (!d.catagories) {
+            where += amp;
+            if (type != 'summary')
+                where += ' 0 == (select acatagory from accts where aid==trans.aid) ';
+            else
+                where += ' 0 == acatagory ';
+            amp = ' and ';
+        }
+        if (d.reconciled) {
+            where += amp+' treco IS NOT NULL ';
+            amp = ' and ';
+        }
+        if (d.startdate != '') {
+            where += amp+' tdate >= @startdate ';
+            amp = ' and ';
+        }
+        if (d.enddate != '') {
+            where += amp+' tdate <= @enddate ';
+            //where += amp+" tdate <= '"+d.enddate+"' ";
+            amp = ' and ';
+        }
+        if (d.sortanum != '') {
+            order += ' order by tnum ';
+        }
+        if (where != '')
+            where = " WHERE "+where;
+        switch (type) {
+            case "ledger":
+                qry = "SELECT tpayee,tsum,tdate,(select aname from accts where trans.aid == aid) as aname,tmemo FROM trans NATURAL JOIN tgroup "+where+" ORDER BY aname,tdate LIMIT 2000";
+                break;
+            case "payee":
+                qry = "SELECT tpayee,sum(tsum) FROM trans NATURAL JOIN tgroup "+where+" GROUP BY tpayee ORDER BY tpayee";
+                break;
+            case "reconcile":
+                break;
+            case "trial":
+                qry = "SELECT (select aname from accts where trans.aid == aid) as aname,sum(tsum),aid FROM trans NATURAL JOIN tgroup "+where+" GROUP BY aname ORDER BY aname";
+                break;
+            case "summary":
+                qry = 'SELECT aname, aobal+attl AS total  FROM accts'+where+' ORDER BY aname';
+                break;
+            default:
+                rc = false; msg = 'unknown type: '+type;
+                break;
+        }
+        var resp = null;
+        puts("QQ: "+qry);
+        if (qry != '') {
+            try {
+                with (d) {
+                    resp = db.query(qry, that.SJO);
+                }
+            } catch (e) {
+                rc = false;
+                msg = e;
+            }
+        }
+        var subd = {status:rc, msg:msg, resp:resp, opts:d};
+        puts("RR: "+subd.toString());
+        WebSend("acctReport",subd, id);
+    }
+    
+    function tranUnreconcile(id, d)      // Remove reconcile flag from transaction.
+    {
+        var rc = true, msg = null;
+        var tid = d.tid;
+        var db = that.conns[id].db;
+        db.query('UPDATE trans SET treco = null WHERE tid == @tid;');
+        //WebSend("tranReconcile",{status:rc, msg:msg},id);
+    }
+    
+    function helpDb(id, d)      // Run sqliteui on db.
+    {
+        var rc = true, msg = null;
+        //var tid = d.tid;
+        //exec('sqliteui '+that.dbfile+' &');
+        //WebSend("tranReconcile",{status:rc, msg:msg},id);
+    }
+    
+    function recoDone(id, d)     // Add reconcile.
+    {
+        var rc = true, msg = null;
+        var tlst = d.lst.join(','), nreco, aid = d.aid, rdate = d.rdate, rmemo=d.rmemo, arbal=d.arbal;
+        var db = that.conns[id].db;
+        db.query('INSERT INTO reconcile (treco,aid,rdate,rmemo) VALUES(NULL,@aid,@rdate,@rmemo);');
+        nreco = db.lastInsert();
+        db.query('UPDATE trans SET treco = @nreco WHERE tid in ('+tlst+');');
+        db.query('UPDATE accts SET arbal = @arbal WHERE aid == @aid;');
+        //TODO: update acct recobal
+        //UpdateRunTotals(id, that.status.curAcct);
+        dputs("TM: "+d.toString());
+        WebSend("recoDone",{status:rc, msg:msg},id);
+    }
+
+    function tranMove(id, d)     // Move a transaction.
+    {
+        var rc = true, msg = null;
+        var db = that.conns[id].db;
+        if (d.aid == d.new_aid) {
+            rc = false;
+            msg = "Source==Dest";
+        } else {
+            var new_aid = d.new_aid, tid = d.id;
+            db.query('UPDATE trans SET aid = @new_aid WHERE tid == @tid;');
+            tgroup = db.onecolumn("SELECT tgroup FROM trans WHERE tid == @tid;");
+            InitTgroup(id, tgroup[0]);
+            UpdateRunTotals(id, that.opts.curAcct);
+        }
+        dputs("TM: "+d.toString());
+        WebSend("tranMove",{status:rc, msg:msg},id);
+    }
+    
+    function tranSubmit(id, d)       // Handle submit of transaction edit.
+    {
+        dputs("TS: "+d.toString());
+        var s = d.res, rc = true;
+        var curaid, msg = null;
+        var db = that.conns[id].db;
+        if (d.tag !== 'Delete') {
+            if (isNaN(strptime(s.tdate))) //TODO: validate in browser.
+                return puts('Can not parse date: '+s.tdate);
+            if (isNaN(parseFloat(s.tsum)))
+                return puts('Invalid amount value: '+s.tsum);
+        }
+       try {
+            switch (d.tag) {
+                case 'Delete':      transDelete(id, d.res.tgroup); break;
+                case 'Duplicate':   transDuplicate(id, d.tgroup); break;
+                case 'New':         transNew(id, d); break;
+                case 'Update':      transUpdate(id, d); break;
+                default:
+                    puts("WTF: tranSubmit: "+d.tag);
+                    rc = false;
+                    msg = 'unknown cmd';
+            }
+       } catch (e) {
+            msg = e;
+            puts("tranSubmit failed: "+e);
+            rc = false;
+        }
+        WebSend("tranSubmit",{status:rc, msg:msg},id);
+    }
+    
+    function acctsUpdate(id, d)     // Finish account edit.
+    {
+        var db = that.conns[id].db;
+        var res = d.res;                
+        with (res) {
+            db.query('UPDATE accts SET aname = @aname, aobal = @aobal, arbal = @arbal, '+
+                'acatagory = @acatagory, ataxed = @ataxed, anum = @anum, acbal = @acbal, '+
+                'atype = (select atype from atype where atypename = @atype), ainstname = @ainstname, ainstaddr1 = @ainstaddr1, ainstaddr2 = @ainstaddr2, '+
+                'ainstcity = @ainstcity, ainstzip = @ainstzip, ainstphone = @ainstphone, ainstfax = @ainstfax, '+
+                'ainstemail = @ainstemail, ainstcontact = @ainstcontact, ainstnotes = @ainstnotes '+
+                'WHERE aid == @aid;');
+        }
+    }
+    
+    function acctsNew(id, d) {
+        var aname = d.res.aname;
+        var db = that.conns[id].db;
+        db.query('INSERT into accts (aname,acatagory,ataxed) VALUES(@aname,0,0)');
+        var aid = d.res.aid = db.lastInsert();
+        var res = d.res;                
+        for (var i in res) {
+            var val = res[i];
+            if (i !== 'aid' && i !== 'aname' && val !== null)
+                db.query('UPDATE accts SET '+i+' = @val WHERE aid == @aid;');
+        }
+    }
+    
+    function acctsDuplicate(id, d)      // Duplicate account.
+    {
+        var aname, abase, trys = 0, done = false;
+        var db = that.conns[id].db;
+        abase = aname = d.res.aname;
+        while (trys++ < 1000 && !done) {
+            try {
+                db.query('INSERT into accts (aname) VALUES(@aname)');
+            } catch (e) {
+                aname = abase + ' ' + trys;
+            }
+        }
+        d.res.aname = aname;
+        d.res.aid = db.lastInsert();
+        return acctsUpdate(id, d);
+    }
+
+    function acctsDelete(id, aid) {      // delete account and all transactions
+        var db = that.conns[id].db;
+        var tlist = db.query("SELECT DISTINCT tgroup FROM trans WHERE aid = @aid;", {mode:'array1d'});
+        for (var i = 0; i<tlist.length; i++)
+            NukeTgroup(id, tlist[i]);
+       db.query('DELETE from accts WHERE aid == @aid');
+    }
+    
+    function acctSubmit(id, d)    //Handle submit of account edit.
+    {
+        var s = d.res, rc = true;
+        var curaid, msg = null;
+        var db = that.conns[id].db;
+        try {
+            switch (d.tag) {
+                case 'Delete':      acctsDelete(id, d.res.aid); break;
+                case 'Duplicate':   acctsDuplicate(id, d); break;
+                case 'New':         acctsNew(id, d); break;
+                case 'Update':      acctsUpdate(id, d); break;
+                default:
+                    puts("ERROR: acctSubmit: "+d.tag);
+                    rc = false;
+                    msg = 'unknown cmd';
+            }
+        } catch (e) {
+            puts("acctSubmit failed: "+e);
+            rc = false;
+            msg = e;
+        }
+        WebSend("acctSubmit", {status:rc, msg:msg}, id);
+    }
+    
+    function adminExport (id, d)     // Export account.
+    {
+        var str, rc = true, msg = '', aname = lookupAcct(id, d.aid,'aname');
+            switch (d.type) {
+                case 'QIF': str = QIF_Export(id, aname); break;
+                case 'CSV': str = CSV_Export(id, aname); break;
+                case 'SQL': str = SQL_Export(id, aname); break;
+                default: msg = 'bad type: '+d.type; rc = false;
+            }
+            if (rc)
+                File.write(d.file, str);
+        try {
+        }
+        catch (e) {
+            msg = e;
+            rc = false;
+        }
+        WebSend("adminExport", {status:rc, msg:msg}, id);
+    };
+    
+    function adminImport (id, d) {
+        var rc = true, msg = '';
+
+        WebSend("adminImport", {status:rc, msg:msg}, id);
+    };
+
+    function adminInit (id, d) {
+        puts("adminInit: "+d.toString());
+        var db = that.conns[id].db;
+        var rc = true, msg = '';
+        var aname = d.aname;
+        db.query('INSERT OR REPLACE into accts (aname) VALUES(@aname)');
+        if (d.cats && ((rc = SetupCats()) !== true))
+            msg = 'Failed to setup catagories';
+        WebSend("adminInit", {status:rc, msg:msg}, id);
+    };
+    
+    function adminLogin (id, d) {
+        puts("adminLogin: "+d.toString());
+        var rc = true, msg = '';
+        var db = that.conns[id].db;
+        var dbname = d.dbname;
+        var password = d.password;
+        var dpass = db.onecolumn('SELECT password FROM master where dbname == @dbname');
+        if (dpass === undefined) {
+            if (!d.create) {
+                rc = false;
+                msg = "Database does not exist. Check 'New' if this is a new database";
+            } else {
+                db.query('INSERT OR REPLACE into master (dbname,password) VALUES(@dbname,@password)');
+            }
+        } else if (dpass !== password) {
+            rc = false;
+            msg = "Password does not match";
+        } else {
+        }
+        
+        WebSend("adminLogin", {status:rc, msg:msg}, id);
+    };
+
+    function SetupCats(id)    // Create catagory accoutns.
+    {
+        var db = that.conns[id].db;
+        var anum = db.onecolumn('select max(anum) from accts;');
+        db.query('BEGIN;');
+        for (var i in catagories) {
+            var aname = catagories[i];
+            var acnt = db.onecolumn('select count(*) from accts where aname == @aname;');
+            if (acnt !== 0)
+                continue;
+            anum++;
+            db.query('INSERT into accts (aname, acatagory, anum) VALUES(@aname, 1, @anum);');
+        }
+        db.query('COMMIT;');
+        return true;
+    };
+    
+    function adminSetup(id, d)   // Setup
+    {
+        var db = that.conns[id].db;
+        var rc, msg = 'Setup complete';
+        if (d.cats && (rc = SetupCats(id)) !== true)
+            msg = 'Failed to setup catagories';
+        WebSend("adminSetup", {status:rc, msg:msg}, id);
+    };
+
+    function adminBackup (id, d)     // Perform backup.
+    {
+        var rc = true, msg = '';
+        var db = that.conns[id].db;
+        if (!CheckIntegrity(db)) {
+            rc = false;
+            msg = 'Integrity failure';
+        } else {
+            var fn = d.File.trim();
+            if (fn == '')
+                fn = that.dbfile+'_bak';
+            try {
+                that.db.backup(fn);
+            }
+            catch (e) {
+                msg = e;
+                rc = false;
+            }
+
+        }
+        WebSend("adminBackup", {status:rc, msg:msg}, id);
+    };
+    
+    function QIF_Export(id, aname)      // Export QIF.
+    {
+        puts("QIF EXP: "+aname);
+        var db = that.conns[id].db;
+        var data, qstr, fstr = '', aid = lookupAcctByName(id, aname);
+        if (aid == undefined)
+            return;
+        fstr += '!Type:' + lookupAcct(id, aid, 'atype') + '\n';
+        qstr = 'SELECT tlist,' + that.status.tqfields +
+             ' FROM trans NATURAL JOIN tgroup WHERE aid == @aid ORDER BY tdate, tid';
+        data = db.query(qstr, that.SJO);
+        for (var i = 1; i<data.length; i++) {
+            var alist = null, tsum = null, alist = null, str = '';
+            for (j=0; j<data[0].length; j++) {
+                var df = data[0][j], dd = data[i][j];
+                switch (df) {
+                    case 'tmemo':   if (dd != '') str += 'M'+dd+'\n'; break;
+                    case 'tpayee':  if (dd != '') str += 'P'+dd+'\n'; break;
+                    case 'tnum':    if (dd != '') str += 'N'+dd+'\n'; break;
+                    case 'treco':   if (dd != null) str += 'CR\n'; break;
+                    case 'tdate':   str += 'D'+dd+'\n'; break;
+                    case 'alist':   alist = dd; break;
+                    case 'tlist':   tlist = dd; break;
+                    case 'tsum':    tsum = dd; break;
+                    default: break;
+                }
+            }
+            var ssum, daid,
+                spl = alist.split(','),
+                spt = tlist.split(',');
+            if (spl.length < 2 || spt.length != spl.length) { throw("BAD alist"); break; }
+            if (spl.length == 2) {
+                daid = (spl[0] == aid ? spl[1] : spl[0]);
+                dname = lookupAcct(id, daid, 'aname');
+                str += 'T' + tsum +'\n';
+                str += 'L' + dname+'\n';
+            } else {
+                for (var k=0; k<spl.length; k++) {
+                    daid = spl[k];
+                    if (daid == aid) continue;
+                    dname = lookupAcct(id, daid, 'aname');
+                    ssum = lookupTran(id, spt[k], 'tsum');
+                    str += '$' + ssum+'\n';
+                    str += 'S' + dname+'\n';
+                }
+            }
+            str += '^\n';
+            fstr += str;
+        }
+        return fstr;
+    }
+    
+    function QIF_Import (id, inStr, aname)
+    {
+        var p, doinit = true; lst=[], skip = 0, inl = inStr.split('\n');
+        var db = that.conns[id].db;
+            
+        for (n=0; n<inl.length; n++) {
+            var ttim, tsums, tdest,
+                str = inl[n].trim(), ch = str.substr(0,1), rest = str.substr(1);
+            if (str === '' || str.match(/^Type/)) continue;
+            if (doinit) {
+                doinit = false;
+                p = {treco:null, tpayee:'', tnum:'', tmemo:''};
+                tsums = []; tdest = [];
+            }
+            switch (ch) {
+                case 'C':  p['treco'] = ''; break;
+                case 'P':  p['tpayee'] = rest; break;
+                case 'N':  p['tnum'] = rest; break;
+                case 'M':  p['tmemo'] = rest; break;
+                case 'T': case '$':  tsums.push(parseFloat(rest.replace(/,\$/g, ''))); break;
+                case 'S': case 'L':  tdest.push(rest); break;
+                case 'D': {
+                    ttim = strptime(rest);
+                    var dfmts = ['%D', '%d %b %Y', '%d %b %y'];
+                    for (var i = 0; i<dfmts.length && ttim == NaN; i++)
+                        ttim = strptime(rest, dfmts[i]);
+                    if (ttim == NaN) {
+                        ttim = strptime('now');
+                        dputs("Date parse failed, using today: "+str);
+                    }
+                    p['tdate'] = strftime(ttim, "%Y-%m-%d");
+                }
+                case '^':  { // Terminator.
+                    doinit = true;
+                    if (tsums.length<=0 || tsums.length != tdest.length)
+                        dputs("invalid item");
+                    else {
+                        var tsums = [];
+                        if (tsums.length == 1)
+                            tsums = {aid:tdest[0], tsum:tsums[0], aid:aname, tsum:-tsums[0]};
+                        else {
+                            var s = 0;
+                            for (var i = 0; i<tsums.length; i++) {
+                                tsums.push( {aid:tdest[i], tsum:tsums[i]} );
+                                s -= tsums[i];
+                            }
+                            tsums.push( {aid:aname, tsum:s} );
+                        }
+                    }
+                    p.tsums = tsums;
+                    lst.push(p);
+                }
+            }
+        }
+        return lst;
+    }
+    
+    function CSV_Export(id, aname)
+    {
+        puts("CSV EXP: "+aname);
+        var db = that.conns[id].db;
+        var data, qstr, fstr = '', aid = lookupAcctByName(id, aname);
+        if (aid == undefined)
+            return;
+        qstr = 'SELECT tlist,' + that.status.tqfields +
+             ' FROM trans NATURAL JOIN tgroup WHERE aid == @aid ORDER BY tdate, tid';
+        return db.query(qstr, {mode:'csv', headers:true});
+    }
+    
+    function SQL_Export(id, aname) 
+    {
+        puts("SQL EXP: "+aname);
+        var db = that.conns[id].db;
+        var data, qstr, fstr = '', aid = lookupAcctByName(id, aname);
+        if (aid == undefined)
+            return;
+        qstr = 'SELECT tlist,' + that.status.tqfields +
+             ' FROM trans NATURAL JOIN tgroup WHERE aid == @aid ORDER BY tdate, tid';
+        return db.query(qstr, {mode:'insert', headers:true});
+    }
+    
+    function AcctOpts(id, aid, save)    // Save/load options for account.
+    {
+        var aoptions;
+        var db = that.conns[id].db;
+        if (save) {
+            if (!that.aopts)
+                return;
+            aoptions = JSON.stringify(that.aopts);
+            db.query('UPDATE accts SET aoptions = @aoptions WHERE aid == @aid');
+        } else {
+            aoptions = db.onecolumn('SELECT aoptions FROM accts WHERE aid == @aid');
+            var aopts = JSON.parse(aoptions);
+            that.aopts = (aopts !== undefined ? aopts : init.aopts);
+            return that.aopts;
+        }
+    }
+    
+    function DoExit()   // Notify all going down, then exit.
+    {
+        WebSend(-1, 'exit');
+        setTimeout(function () {exit(0); }, 1000); 
+    }
+    
+    function CloseNow()
+    {
+        that.closeId = null;
+        if (that.ws.conf('connectCnt')>0)
+            return;
+        dputs("Last client has closed");
+        that.ws.conf({noUpdate:true});
+        that.done = 1;
+    }
+  
+    function WebClose(id)
+    {
+        if (conns[id].db && that.db != conns[id].db) {
+            delete conns[id];
+            conns[id].db = null;
+        }
+        puts("CLOSE: "+id);
+    }
+    
+    function WebOpen(id)
+    {
+        that.conns[id] = { db:that.db };
+        puts("Open: "+id);
+    }
+    
+    function WebCloseLast(id)
+    {
+        // Wait around for a while for refresh or new clients before exiting
+        if (that.closeId)
+            clearInterval(that.closeId);
+        that.closeId = null;
+        if (that.timeout>=0)
+            that.closeId = setTimeout(function () { CloseNow(); }, that.timeout);
+        return true;
+    }
+    
+    
+    function WebRecv(data, id) {
+        var buf, buf0, buf1, buf2;
+        puts("<<DATA: "+ id +": "+data);
+        var dat = JSON.parse(data);
+        dputs2("<<JSON: "+dat.toString());
+        switch (dat.op) {
+            case 'connectReq':  return connectReq(id, dat.data);
+            case 'loadAll':     return loadAll(id, dat.data);
+            case 'loadTran':    return loadTran(id, dat);
+            //case 'reloadAcct':  return chgAcct(id);
+            case 'reqStatus':   return WebSend('status',that.status,id);
+            case 'tranEditStart':    return tranEditStart(id, dat.data);
+            case 'tranMove':    return tranMove(id, dat.data);
+            case 'tranSubmit':  return tranSubmit(id, dat.data);
+            case 'tranUnreconcile': return tranUnreconcile(id, dat.data);
+            case 'acctReport':      return acctReport(id, dat.data);
+            case 'acctEditStart':   return acctEditStart(id, dat.data);
+            case 'acctSubmit':  return acctSubmit(id, dat.data);
+            case 'adminBackup': return adminBackup(id, dat.data);
+            case 'adminRestore':return adminRestore(id, dat.data); //TODO: unimpl.
+            case 'adminExport': return adminExport(id, dat.data);
+            case 'adminImport': return adminImport(id, dat.data);
+            case 'adminSetupCats': return adminSetupCats(id, dat.data);//TODO: unimpl.
+            case 'adminInit':   return adminInit(id, dat.data);
+            case 'adminLogin':   return adminLogin(id, dat.data);
+            case 'fillPayee':   return fillPayee(id, dat.data);
+            case 'recoDone':    return recoDone(id, dat.data);
+            case 'helpDb':     return helpDb(id, dat.data);
+           /* case 'reqAcct':
+                WebSendRaw('acctInfo', db.query('select * from accts where aid == '+dat.data) );
+                break;*/
+                
+            default: puts("unknown webmsg: "+dat.op); break;
+        }
+        //return "Thanks";
+    }
+
+    function WebSendRaw (op,data,id,type)
+    {
+        if (id === undefined) id = -1;
+        if (type === undefined) type = "";
+        data = '{"type":"'+type+'", "op":"'+op+'", "data" : '+ data +'}';
+        dputs2(">>SENDRAW: "+data);
+        that.ws.send(data,id);
+    }
+    
+    function WebSend (op,data,id,type) {
+        if (id === undefined)
+            id = -1;
+        if (type === undefined)
+            type = "";
+        var dat = {type: type, op:op, data:data };
+        dat = JSON.stringify(dat);
+        dputs2(">>SEND: "+dat);
+        that.ws.send(dat,id);
+    }
+    
+    
+    // Start of main function.
+    jsi_parseOpts(this, args, init);
+    this.done = 0;
+    this.tcolsq = '@'+this.tcols.replace(/,/g, ',@');
+    this.gcolsq = '@'+this.gcols.replace(/,/g, ',@');
+
+    if (!this.rootdir)
+        this.rootdir=File.dirname(Info.script());
+    if (files && files.length > 0)
+        this.dbfile = files[0];
+    if (this.dbfile === '' || this.dbfile === undefined)
+        this.dbfile = this.defaultDbFile;
+        
+    if (this.noCreate && !File.exists(this.dbfile)) {
+        throw("db file required");
+        return(1);
+    }
+    dputs("using db file: "+this.dbfile);
+    createDb(this.dbfile);
+    var opts = db.query('SELECT * FROM options'); //TODO: save
+    for (var i in opts) {
+        this.status[opts[i].name] = opts[i].value;
+    }
+
+    this.curDir = File.dirname(this.dbfile);
+// Load accounts and xact for current account.
+
+    this.acctList = db.query('SELECT * FROM accts');
+    if (this.acctList.length>0) {
+        if (this.opts.curAcct < 0)
+            this.opts.curAcct = this.acctList[0].aid;
+        //AcctOpts(this.opts.curAcct);
+        //this.curTranList = db.query('SELECT * FROM trans WHERE aid == '+this.opts.curAcct);
+        //dputs('CURTRAN='+this.curTranList);
+    };
+    
+    this.wsopts = {
+        port:this.port,
+        rootdir:this.rootdir,
+        defaultUrl:"/html/main.ihtml",
+        callback:WebRecv,
+        onCloseLast:WebCloseLast,
+        onClose:WebClose,
+        onOpen:WebOpen,
+        debug:this.wsdebug
+    };
+    if (this.local)
+        this.wsopts.interface = 'lo';
+    /* Open websockets on first available port. */
+    var i, err = '';
+    for (i=0; i<this.maxPort; i++) {
+        try {
+            this.ws = new WebSocket(this.wsopts);
+            break;
+        }
+        catch (e) {this.wsopts.port++; err=e;}
+    }
+    if (i>=this.maxPort)
+        throw("Failed to get port after "+i+" tries: "+err);
+
+    this.ws.handler('.ihtml', 'jsi_wpp'); // Associate .ihtml with Web Pre-Processor (for. <? ... ?> tags).
+    
+    dputs("Listen on "+this.wsopts.port);
+    
+    if (!this.nogui) { // Start browser UI.
+        if (this.browser === null) {
+            switch (Info.platform().os) {
+                case 'win': this.browser = 'start'; break;
+                default: this.browser = "xdg-open"; break;
+            }
+        }
+        exec(this.browser + " http://127.0.0.1:"+this.wsopts.port+this.wsopts.defaultUrl+" &");
+    }
+    
+    // Startup complete, now we just process events.
+    while (this.done === 0 && Event.update(100) ) ;
+    dputs("Done!");
+
+    delete this.db;
+    delete this.ws;
+    return 0;
+}
+
+if (Info.isMain()) {
+    exit(jsi_invokeMain('ledger'));
+}
+

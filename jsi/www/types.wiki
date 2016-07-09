@@ -1,0 +1,250 @@
+<title>Types</title>
+
+<div id=wikitoc>
+
+<ul>
+<li>[#overview|Introduction]</li>
+<li>[#signatures|An Example]</li>
+<li>[#availtypes|Available Types]</li>
+<li>[#mulitypes|Fuzzy-Types]</li>
+<li>[#argcounts|Argument Counts]</li>
+<li>[#defvalue|Default Values]</li>
+<li>[#checkconfig|Type Check Control]</li>
+<li>[#builtins|Builtin Commands]</li>
+<li>[#limits|Limitations]</li>
+</ul>
+
+</div>
+
+
+<h2 id=overview>Introduction</h2>
+
+In Jsi we extend javascript function definitions so that:
+
+  *  Parameters can include a <b>type</b>.
+  *  Parameters can include a <b>default value</b>.
+  *  Parameters can end in an <b>elipsis</b> "<b>...</b>", to accept extra arguments.
+  *  a <b>return type</b> can also be specified.
+
+The rules for defining argument types/defaults are as follows:
+
+  #  Either all or none of the parameters should be given types.
+  #  Once an argument defines a default value, all following parameters must as well.
+  #  Default values must be a primitive.
+  #  Once any type is specified (for parameters or return value) calls to the function are type-checked.
+
+<hr>
+<h2 id=signatures>An Example</h2>
+
+Here is a simple function definition that includes type declarations:
+
+    <nowiki><pre class=verbatim>
+function foo (a<b>:number</b>, b<b>:string</b>)<b>:number</b> {
+   return a+1;
+}
+puts(foo('a', 9));
+</pre></nowiki>
+
+Upon execution this outputs the warnings:
+
+    <nowiki><pre class=verbatim>
+/tmp/foo.js:4: <b>warning:</b> type mismatch for argument 1: "a" is not a "number"    (at or near "a")
+
+/tmp/foo.js:2: <b>warning:</b> type mismatch returned from "foo" is not a "number"    (at or near "a")
+
+</pre></nowiki>
+
+To indicate a function returns no value, we declare with <b>void</b>, eg:
+
+    <nowiki><pre class=verbatim>
+function foo (a:number)<b>:void</b> {
+   return;
+}
+</pre></nowiki>
+
+<hr>
+<h2 id=availtypes>Available Types</h2>
+
+Following are the types available for use in function signatures:
+
+    <table border='1' class=optstbl>
+<tr><th>Type</th> <th>Description</th></tr>
+<tr><td>number</td><td>A double floating point value</td><tr>
+<tr><td>boolean</td><td>A boolean value</td><tr>
+<tr><td>string</td><td>A string value</td><tr>
+<tr><td>function</td><td>A javascript function</td><tr>
+<tr><td>object</td><td>A javascript object</td><tr>
+<tr><td>array</td><td>A javascript array</td><tr>
+<tr><td>regex</td><td>A regular expression</td><tr>
+<tr><td>userobj</td><td>A userobj command, eg. from <i>new Socket()</i></td><tr>
+<tr><td>null</td><td>A javascript <i>null</i></td><tr>
+<tr><td>any</td><td>Means any value is accepted</td><tr>
+<tr><td>void</td><td>No value, or <i>undefined</i></td><tr>
+</table>
+
+The types are mostly the same as the types names returned by <b>typeof</b>.
+
+The exceptions are <b>void</b>, <b>any</b>, and <b>array</b>.
+
+<hr>
+<h2 id=mulitypes>Fuzzy-Types</h2>
+
+An argument (or return) type need not be singular;
+We can specify multiple types seperated by a pipe character <b>|</b>:
+
+    <nowiki><pre class=verbatim>
+function foo (a<b>:number</b>, b<b>:number|string|boolean</b>) {
+    var typ = (typeof b);
+    switch (typ) {
+        case "number": return b+1;
+        case "string": return b;
+        case "boolean": return -1;
+        default: throw "unhandled type: "+typ;
+    }
+}
+foo(9,'a');
+foo(9,9);
+foo(9,true);
+</pre></nowiki>
+
+Similarly, a return type can be fuzzy-typed:
+
+    <nowiki><pre class=verbatim>
+function foo (x)<b>:number|string</b> {
+    return x+x;
+}
+</pre></nowiki>
+
+Fuzzy-typing plays an important role in Jsi builtin commands, many of which do different things
+depending on the type of an argument.
+
+<hr>
+<h2 id=argcounts>Argument Counts</h2>
+
+Standard javascript does not complain when the number arguments in a function call
+do not match the function parameter list.
+
+This is also true in Jsi, except when a function adds a type definition.
+
+The presence of type declarations turns-on or enables checking that parameter counts actually
+match arguments in the call, eg:
+
+    <nowiki><pre class=verbatim>
+<b>function</b> foo (a:number, b:number):number {
+   <b>return</b> a+1;
+}
+foo(9);
+</pre></nowiki>
+
+which output the warnings:
+
+    <nowiki><pre class=verbatim>
+/tmp/ss.js:4: <b>warning:</b> incorrect arg count in function call <i>"foo()"</i>: got 1 args, but expected 2
+</pre></nowiki>
+
+The legal way to accept extra parameters is to add an ellipsis "<b>...</b>" to the function definition:
+
+    <nowiki><pre class=verbatim>
+<b>function</b> fool (a:number, b:number, <b>...</b>) {
+   <b>return</b> console.args.length;
+}
+foo(9,9,9);
+</pre></nowiki>
+
+And to accept fewer parameters use <b>default</b> values.
+
+<hr>
+<h2 id=defvalue>Default Values</h2>
+
+Default values let a function be called with a varying numbers of parameters:
+
+    <nowiki><pre class=verbatim>
+function foo (a, <b>b=1</b>) {}
+function bar (<b>a=1, b=2</b>) {}
+foo(9);
+bar();
+</pre></nowiki>
+
+A default values must be a primitive, which is one of:
+
+    <table border='1' class=optstbl>
+<tr><th>Type</th> <th>Description</th></tr>
+<tr><td>number</td><td>A double floating point value</td><tr>
+<tr><td>boolean</td><td>A boolean value</td><tr>
+<tr><td>string</td><td>A string value</td><tr>
+<tr><td>null</td><td>A javascript <i>null</i></td><tr>
+<tr><td>void</td><td>Indicates no value, or undefined</td><tr>
+</table>
+
+If an parameters is given a default value of <b>void</b>, all subsequent parameters need to be <b>void</b> as well.
+
+    <nowiki><pre class=verbatim>
+function bar (<b>a=1, b=true, c=<i>'ok'</i>, d=null, e=void, f=void</b>) {}
+</pre></nowiki>
+
+An argument may have both a default values and a type:
+
+    <nowiki><pre class=verbatim>
+function foo (<b>a:number, b:number=1</b>) {}
+function bar (<b>a:number=1, b:number=2</b>) {}
+</pre></nowiki>
+
+And, here is an example including fuzzy-types and elipsis:
+
+    <nowiki><pre class=verbatim>
+function foo (<b>a:number|string, b:number|boolean=1, ...</b>) {}
+</pre></nowiki>
+
+Obviously, when defining a function the default value should match it's type.
+
+<hr>
+<h2 id=checkconfig>Type Check Control</h2>
+
+By default, type check mismatches simply generate a warning.
+
+But the type-checking level can be change to
+any of the following:
+
+    <table border='1' class=optstbl>
+<tr><th>Type</th> <th>Description</th></tr>
+<tr><td>disable</td> <td>Disable checking</td></tr>
+<tr><td>warn</td> <td>Output warnings (the default)</td></tr>
+<tr><td>error</td> <td>Throw errors</td></tr>
+<tr><td>static</td> <td>Add parse time checking</td></tr>
+</table>
+
+For example to cause an error to be thrown, add to the source this line:
+
+    <nowiki><pre class=verbatim>
+Interp.conf(<b>{typeCheck:<i>"error"</i>}</b>);
+</pre></nowiki>
+
+To enable <b>static</b> checking, you'll want to change it at the command line:
+
+    <nowiki><pre class=verbatim>
+JSI_INTERP_OPTS=<i>'{typeCheck:"<b>static</b>"}'</i> jsish foo.js
+</pre></nowiki>
+
+
+<hr>
+<h2 id=builtin>Builtin Commands</h2>
+
+Builtin commands in Jsi also are type aware, including:
+
+  *  C-Command declarations via Jsi_CmdSpec.
+  *  C-Option declarations via Jsi_OptionSpec.
+  *  Sqlite and MySql parameter bindings.
+
+All of which <b>static</b> checking can validate.
+
+<hr>
+<h2 id=limits>Limitations</h2>
+
+Even with <b>static</b> mode, most checking is limit to runtime calls.
+There are several reasons for this:
+
+  *  Function invocations can not be checked at parse time, unless the callee has already been parsed.
+  *  Given the dynamic nature of javascript, we can't know which function gets called until runtime.
+
+The exception is non-object builtin commands, which can be checked.
+

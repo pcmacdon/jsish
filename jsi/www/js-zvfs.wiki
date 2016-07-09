@@ -1,0 +1,58 @@
+<title>Zvfs</title>
+[./reference.wiki#zvfs]
+
+Zvfs stands for Zip Virtual File System.  Jsi uses Zvfs to read and write zip archives.
+<hr>
+<h3>Writing</h3>
+
+To create a zip archive simpy use:
+<nowiki><pre class=verbatim>
+  Zvfs.create('arch.zip', file.glob('*.js'))
+</pre></nowiki>
+This creates a zip file containing all the .js files in the current directory.
+<hr>
+<h3>Reading</h3>
+Jsi can mount .zip files as local filesystem:
+
+    <nowiki><pre class=verbatim>
+var dir = Zvfs.mount('arch.zip');
+File.glob('*', dir);
+</pre></nowiki>
+
+Note: If a mount point is not given, it is generated in the pattern <i>/zvfsN</i>, where N=1,2,3,...
+<hr>
+<h3>Executing</h3>
+
+If a zip archive contains the file <b>"main.jsi"</b> at the toplevel,
+Jsi can run it, eg:
+
+    <nowiki><pre class=verbatim>
+# jsish arch.zip
+</pre></nowiki>
+
+Jsi automatically mounts the .zip file at startup, and then executes <i>main.jsi</i> and
+jsish exits upon completion.
+
+If you need to avoid exiting you can make use of [./js-events.wiki|Events].
+<hr>
+<h3>Zero-Install</h3>
+
+It is also possible to zip <b>"main.jsi</b> and other files  directly onto the end of the jsish binary itself.
+This converts jsish into a Zero-Install application.
+
+As above, <i>main.jsi</i> will be sourced automatically and jsish exits upon completion.
+
+One way to create a Zero-Install application is to use:
+
+    <nowiki><pre class=verbatim>
+make jsize
+</pre></nowiki>
+
+However, this just uses the script <b>"tools/mkjsize.js"</b> and is equivalent to:
+
+    <nowiki><pre class=verbatim>
+cp jsish jsize
+tools/mkjsize.js create jsize zipdir
+</pre></nowiki>
+
+Click [./zeroinstall.wiki|here] to learn more about Zero-Install.

@@ -1,0 +1,24 @@
+<title>Background</title>
+
+<h2 id=origin>Origin</h2>
+
+Jsi is originally based on the the quad-wheel [https://code.google.com/archive/p/quad-wheel].
+
+However, much of Jsi is modelled after Tcl and Jimtcl.
+
+<h2 id=rational>Rational</h2>
+
+1) Applications are being held hostage by their user interface, be it QT, GTK or IOS.
+Increasingly, web browsers are being used as the GUI, but this requires having internet access, 
+or at least access to an appropriate server everywhere that you want to run your program.
+While you can certainly install a LAMP server everywhere that the application needs to run,
+the complexity associated with doing this is daunting. Jsi is meant to provide most of the
+functionality of a LAMP stack, without the complexity.
+
+2) Many moderately complex applications end up requiring script support.
+Lua for example is often used in this context. However, if your using the Web already for your GUI,
+then you are already using a script language: javascript.
+Much time, energy and effort can be saved by using the same language on both ends.
+In fact, the same scripts can even be run in both the browser and the app.
+Moreover, you don't have to deal with incompatible data structures:
+JSON provides seamless data interchange. 

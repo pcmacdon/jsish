@@ -1,0 +1,16 @@
+This example demonstrates stub extensions.
+Stubs allows dynamic loading of extensions into static binaries.
+Jsi comes with stub support builtin by compiling with -DJSI_USE_STUBS.
+
+Moreover, extensions themselves can be stubbified, as we demostrate.
+The "demo" extension is loaded first. It provides a JS command "demo()",
+and 2 C functions Demo_Incr and Demo_Decr.
+
+The second extension "user" is then loaded.  It uses stub support 
+provided by "demo" to access it's C code Demo_Incr and Demo_Decr.
+
+The file demoStubs.h is generated from demo.h using tools/mkstubs.js.
+To understand this note in demo.h the comments /*STUB = 1*/ etc.
+These indicate slots in the stub table: these should never be change.
+New functions can be added, but old ones may not be changed.
+

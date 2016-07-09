@@ -1,0 +1,15 @@
+<title>Info</title>
+
+<h3>The "Info" Command</h3>
+
+The info sub-methods are used for accessing various interal attributes and information about Jsi.
+
+    <nowiki><pre class=verbatim>
+Info.vars('*');
+Info.funcs('*');
+</pre></nowiki>
+
+The documentation in [./reference.wiki|Reference] is generated entirely using <b>Info</b>
+
+For more details see [./reference.wiki#Info|Reference].
+

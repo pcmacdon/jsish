@@ -1,0 +1,113 @@
+<title>Exec</title>
+<hr>
+<h4>Description</h4>
+
+The method sys.exec(cmd?,option?) execute an operating system command and returns the result, eg.
+
+    <nowiki><pre class=verbatim>
+sys.exec('ls -l');
+sys.exec(['ls','-l','/tmp']);
+sys.exec('ls -l > /tmp/ls.txt', false);
+</pre></nowiki>
+
+A command pipeline is created with support for redirection. The input command is either an array, 
+or a string which is split on the space char. Note, this means a string can have one, and only one, 
+space between each token.
+
+A command ending in a single & is executed in the background (ie. no waiting). 
+The second boolean argument if given as false means do not error-out on non-zero result code, 
+and true means returned value is an object with data in the 'output' property.
+<hr>
+<h4>Details</h4>
+
+This command treats its arguments as the specification of one or more UNIX commands to execute as
+subprocesses. The commands take the form of a standard shell pipeline; | arguments separate commands 
+in the pipeline and cause standard output of the preceding command to be piped into standard input
+of the next command (or |& for both standard output and standard error).
+
+Under normal conditions the result of the exec command consists of the standard output produced 
+by the last command in the pipeline.
+
+If any of the commands in the pipeline exit abnormally or are killed or suspended, 
+then exec will return an error and the error message will include the pipeline’s output 
+followed by error messages describing the abnormal terminations.
+
+If any of the commands writes to its standard error file, then exec will return an error, 
+and the error message will include the pipeline’s output, followed by messages about abnormal 
+terminations (if any), followed by the standard error output.
+
+If the last character of the result or error message is a newline then that character is deleted 
+from the result or error message for consistency with normal Tcl return values.
+
+An arg may have one of the following special forms:
+<nowiki>
+<dl>
+
+<dt><b>&gt;filename</b></dt>
+<dd>The standard output of the last command in the pipeline is redirected to the file. 
+In this situation exec will normally return an empty string.
+</dd>
+
+<dt><b>&gt;&gt;filename</b></dt>
+<dd>As above, but append to the file.
+</dd>
+
+<dt><b>&gt;@fileId </b></dt>
+<dd>The standard output of the last command in the pipeline is redirected to the given (writable) 
+File object. In this situation exec will normally return an empty string.
+</dd>
+
+<dt><b>2&gt;filename</b></dt>
+<dd>The standard error of the last command in the pipeline is redirected to the file.
+</dd>
+
+<dt><b>2&gt;&gt;filename</b></dt>
+<dd>As above, but append to the file.
+
+<dt><b>2&gt;@fileId</b></dt>
+<dd>The standard error of the last command in the pipeline is redirected to the given (writable) File object.
+</dd>
+
+<dt><b>2&gt;@1</b></dt>
+<dd>The standard error of the last command in the pipeline is redirected to the same file descriptor 
+as the standard output.
+</dd>
+
+<dt><b>&gt;&filename</b></dt>
+<dd>Both the standard output and standard error of the last command in the pipeline is redirected to the file.
+</dd>
+
+<dt><b>&gt;&gt;&filename</b></dt>
+<dd>As above, but append to the file.
+</dd>
+
+<dt><b>&lt;filename</b></dt>
+<dd>The standard input of the first command in the pipeline is taken from the file.
+</dd>
+
+<dt><b>&lt;&lt;string</b></dt>
+<dd>The standard input of the first command is taken as the given immediate value.
+</dd>
+
+<dt><b>&lt;@fileId</b></dt>
+<dd>The standard input of the first command in the pipeline is taken from the given (readable) file descriptor.
+</dd>
+
+</dl>
+</nowiki>
+
+If there is no redirection of standard input, standard error or standard output, these are connected 
+to the corresponding input or output of the application.
+
+If the last arg is & then the command will be executed in background. In this case the standard output 
+from the last command in the pipeline will go to the application’s standard output unless redirected 
+in the command, and error output from all the commands in the pipeline will go to the application’s 
+standard error file. The return value of exec in this case is a list of process ids (pids) in the pipeline.
+
+Each arg becomes one word for a command, except for |, &lt;, &lt;&lt;, &gt;, and & arguments, and 
+the arguments that follow &lt;, &lt;&lt;, and &gt;.
+
+The first word in each command is taken as the command name; the directories in the PATH environment 
+variable are searched for an executable by the given name.
+
+No glob expansion or other shell-like substitutions are performed on the arguments to commands.

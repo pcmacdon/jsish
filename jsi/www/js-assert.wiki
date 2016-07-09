@@ -1,0 +1,14 @@
+<title>Assert</title>
+The assert statement takes 1 or 2 arguments: an expression and a string.
+When the expression evaluates to false, an error is thrown, eg.
+
+    <nowiki><pre class=verbatim>
+assert(m>0);
+assert(n>=0 && n<100, "passed bad n");
+</pre></nowiki>
+
+To disable assert and make it a No-Op use:
+
+    <nowiki><pre class=verbatim>
+Interp.conf({nDebug:true});
+</pre></nowiki>

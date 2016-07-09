@@ -1,0 +1,112 @@
+#!/usr/bin/env jsish
+
+// Utility for creating and managing zip files, especially when appended to a jsish executable-archive.
+
+function jsi_zip(args) {
+
+    var rc = 0, iszip = 0;
+    function usage(str) {
+        console.log(str);
+        console.log("usage: list file|truncate file|unzip File.zip ?dir?|zip File.zip dir|fuse File.zip|create ...");
+        return 1;
+    }
+
+    if (!args || args.length < 2)
+        return usage('missing args');
+
+    var zdir, fname = args[1], dolib = 0;
+    if (args[0] !== 'zip' && !File.exists(fname))
+        return usage(fname+' does not exist');
+        
+    switch (args[0]) {
+        case "truncate": // Truncate zip files off of executable.
+            zvfs.truncate(fname);
+            break;
+            
+        case "list": // List files in zip.
+            fname = File.realpath(fname);
+            if (fname === Info.executable())
+                zdir = '/zvfs';
+            else
+                zdir = Zvfs.mount(fname);
+            puts(File.glob('*', {dir:zdir,recurse:true}));
+            break;
+            
+        case "zip": // Create zip File.
+            if (argc < 3)
+                return usage("too few arguments");
+            else if (argc > 3)
+                return usage("too many arguments");
+            if (File.extension(fname) !== '.zip')
+                return usage("must give a .zip file name");
+            if (File.isfile(fname))
+                File.remove(fname);
+            iszip = 1;
+            
+        case "create": // Create standalone executable.
+            zdir = args[2];
+            if (!File.isdir(zdir))
+                return usage("must give a directory to zip");
+            var i = 0, zargs = [];
+            zargs[i++] = File.realpath(fname);
+            zargs[i++] = File.glob(zdir+'/*', {recurse:true});
+            zargs[i++] = zdir;
+            for (var n = 3; n<args.length; n++) {
+                var ldir = args[n];
+                zargs[i++] = File.glob(ldir+'/*', {prefix:ldir, recurse:true});
+                zargs[i++] = null;
+            }
+            Zvfs.create.apply({},zargs);
+            break;
+        
+        case "unzip": // Unpack files from zip archive, optionally into dest dir.
+            fname = File.realpath(fname);
+            if (fname === Info.executable())
+                zdir = '/zvfs';
+            else
+                zdir = Zvfs.mount(fname);
+            var ddir = args[2];
+            if (ddir === undefined)
+                ddir = '';
+            else if (ddir.substr(-1,1) != '/')
+                ddir += '/';
+                
+            var flist = File.glob('*', {dir:zdir,recurse:true});
+            for (var i in flist) {
+                var fn = flist[i];
+                var fdst = fn.substr(zdir.length+1);
+                var ftyp = File.type(zdir+'/'+fn);
+                if (ftyp === 'directory') continue;
+                puts(""+fn);
+                var fdir = File.dirname(ddir+fn);
+                if (fdir !== '.' && !File.isdir(fdir))
+                    File.mkdir(fdir);
+                File.write(ddir+fn, File.read(zdir+'/'+fn));
+            }
+            break;
+
+        case "fuse": // Use .zip file to produce a standalone executable.
+            if (File.isfile(fname)==false || File.extension(fname) !== '.zip')
+                return usage("must give a zip file");
+            var zdest = File.rootname(fname);
+            if (File.exists(zdest))
+                return usage('target file already exists: '+zdest);
+            var tdir = File.tempfile('DIR_XXXXXX');
+            File.remove(tdir);
+            File.mkdir(tdir);
+            jsi_zip(['unzip', Info.executable(), tdir]);
+            jsi_zip(['unzip', fname, tdir]);
+            File.copy(Info.executable(), zdest);
+            jsi_zip(['create',zdest,tdir]);
+            File.remove(tdir, true);
+            break;
+            
+        default:
+            return usage('bad arg: '+args[0]);
+    }
+    return rc;
+}
+
+if (Info.isMain()) {
+    exit(jsi_zip(console.args));
+}

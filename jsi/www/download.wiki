@@ -1,0 +1,99 @@
+<title>Download</title>
+
+<div id=wikitoc>
+
+<ul>
+<li>[#bin|Binaries]</li>
+<li>[#archive|Source Tar-balls]</li>
+<ul>
+<li>[#source|Release Tar-balls]</li>
+<li>[#zip|Fossil Tar-ball]</li>
+</ul>
+<li>[#fossil|Fossil-Clone]</li>
+<li>[#amalg|Amalgamated Source]</li>
+</ul>
+
+</div>
+
+There are several download options:
+
+  *  Binaries.
+  *  Source Archive.
+  *  Fossil Clone.
+  *  Amalgamated Source.
+
+However, only <i>Fossil Clone</i> gives you painless updates.
+
+<hr>
+
+<h2 id=bin>Binaries</h2>
+
+You can download a binary for Linux or Windows from [http://sourceforge.net/projects/jsish/files/].
+
+This is the fastest way to give <b>jsish</b> a test drive without having to build anything, but also
+the least flexible.
+
+<b>caveat</b>: Binaries have no readline support.
+But on Linux you can run with: <b>rlwrap jsish</b> to get command-line editing.
+
+
+<hr>
+
+<h2 id=source>Source Tar-balls</h2>
+
+There are 2 ways to get the full source: Release-tarballs and Fossil-tarball.
+
+<h3 id=archive>Release Tar-balls</h3>
+
+Source archives for specific release may be download from [http://sourceforge.net/projects/jsish/files/].
+
+Jsi source is actually managed via fossil (below).
+
+
+<h3 id=zip>Fossil Tar-ball</h3>
+
+Another alternative is go to 
+[http://jsish.sourceforge.net/] and login as anonymous.
+
+Click on <i>Files</i>,
+then click on the <i>xxxxxxxxxx</i> part in:
+
+    <nowiki><pre class=verbatim>
+Files of check-in [xxxxxxxxxx] in the top-level directory
+</pre></nowiki>
+
+This will let you download a zip or tar-ball archive.
+
+<hr>
+<h2 id=fossil>Fossil-Clone</h2>
+
+The Jsi source and documentation is maintained within a [http://www.fossil-scm.org|fossil] repository.
+
+Using the "fossil" command, pull down Jsi with:
+
+    <nowiki><pre class=verbatim>
+fossil clone http://jsish.sourceforge.net/cgi-bin/jsi jsi.fossil
+mkdir jsi
+cd jsi
+fossil open ../jsi.fossil
+cd jsi
+</pre></nowiki>
+
+Then follow the [./build.wiki|build directions].
+
+<hr>
+
+<h2 id=amalg>Amalgamated Source</h2>
+
+The amalgamated source <b>jsi.c</b> can be downloaded from [http://sourceforge.net/projects/jsish/files/].
+
+It is also possible to download it via Fossil:
+
+  *  Browse to [http://jsish.sourceforge.net/].
+  *  Click on <b>Files</b>.
+  *  Click on the directory <b>jsi/</b>.
+  *  Click on <b>jsi.c</b>.
+  *  Click <b>Download</b> in the menu.
+  *  Use the Browser <b>Save-Page</b> function.
+
+For more details see [./c-amalgamation.wiki|Amalgamation].

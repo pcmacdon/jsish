@@ -1,0 +1,12 @@
+<!-- Reconcile accounts -->
+<table>
+    <tr><td class=recolbl>Memo:</td><td><input id=reco_memo></td><tr/>
+    <tr><td class=recolbl>End Date:</td><td><input id=reco_closedate></td><tr/>
+    <tr><td class=recolbl>Closing Balance:</td><td><input id=reco_closebal></td><tr/>
+    <tr><td class=recolbl>Opening Balance:</td><td id=reco_openbal>0.00</td><tr/>
+    <tr><td class=recolbl>Difference: </td><td id=reco_diff>0.00</td><tr/>
+</table>
+<table class=dlgbuts><tr style="text-align:center">
+    <td><button onclick='AcctReconcileEnd(true);'>Finish</button></td>
+    <td><button onclick='AcctReconcileEnd(false);'>Cancel</button></td>
+</tr></table>

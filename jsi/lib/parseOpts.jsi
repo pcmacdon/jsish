@@ -1,0 +1,109 @@
+// Parse command line options.
+
+/*
+=!EXPECTSTART!=
+RC=1 { a:2, b:1, c:2 }
+RC=1 { a:3, b:1, c:2 }
+=!EXPECTEND!=
+*/
+
+
+/* Used for command line invocation with the --invoke/-i option, eg: 
+     jsish --invoke command -opt1 val1 -opt2 val2 ... arg1 arg2 ...
+   which invokes:
+     command([arg1,arg2,...],{opt1:val1,opt2:val2,...});*/
+function jsi_invokeMain(cmd, opts) {
+    if (!opts)
+        opts = console.args;
+    var i, c = "", n = 1, astr = '', ostr, s0;
+    for (i=0; opts && i<opts.length; i+=2) {
+        if (opts[i] === '--') {
+            i++;
+            break;
+        }
+        if (opts[i].substr(0,1) !== '-')
+            break;
+        if (opts[i+1] === undefined)
+            throw("Odd length opts: "+opts.toString());
+        ostr = opts[i].substr(1);
+        if (c != '')
+            c += ',';
+        c += "\""+ostr+"\":";
+        ostr = opts[i+1];
+        switch (ostr) {
+            case 'true':
+            case 'false':
+            case 'null':
+                c += ostr; break;
+            default:
+                if (!isNaN(ostr)) c += ostr;
+                else c += "\""+ostr+"\"";
+        }
+    }
+    for (; opts && i<opts.length; i++) {
+        if (astr != '')
+            astr += ',';
+        astr += "\""+opts[i]+"\"";
+    }
+    if (jsiIndex && jsiIndex['jsi_'+cmd] && !jsiIndex[cmd])
+        cmd = 'jsi_'+cmd;
+    //var cmds = cmd+'(['+astr+'],{'+c+'});';
+    //puts("CMD: "+cmds);
+    var func = this[cmd];
+    var nargs = JSON.parse('['+astr+']');
+    var nopts = JSON.parse('{'+c+'}');
+    return(func(nargs,nopts));
+}
+
+// A general option parser. opts is an object or an array of form: -nam1 val1 -nam2 val2
+function jsi_parseOpts (that, opts, init) {
+    for (var i in init)
+        that[i] = init[i];
+    if (!opts)
+        return;
+    var i, isarr, len, topts = {};
+    if ((isarr=(opts.length !== undefined))) {
+        // Convert array to object.
+        if (opts.length%2)
+            throw("Odd opts length: "+opts.toString());
+        for (i=0; i<opts.length; i+= 2) {
+            var dst = opts[i];
+            if (dst.substr(0,1) != '-')
+                throw("expected - before arg: "+dst);
+            dst = dst.substr(1);
+            topts[dst] = opts[i+1];
+        }
+    } else
+        for (i in opts)
+            topts[i] = opts[i];
+    i = 0;
+    for (var dst in topts) {
+        if (init && init[dst] === undefined) {
+            var ret = "unknown option: '"+dst+"' not one of:\n  ";
+            for (var i in that)
+                ret += i + ' ';
+            throw(ret);
+        }
+        if (!isarr)
+            switch (typeof that[dst]) {
+            case "object":
+            case "number":
+            case "boolean":
+                if (typeof topts[dst] != typeof that[dst])
+                    throw("type mismatch for '"+dst+"': '"+topts[dst]+"' is not a "+typeof that[dst]);
+                break;
+            }
+        that[dst] = topts[dst];
+        i++;
+    }
+    return i;
+};
+
+if (Info.isMain()) {
+    /* Self test. */
+    var that = {};
+    var rc = jsi_parseOpts(that, {a:2}, {a:0, b:1, c:2});
+    puts("RC="+rc+" "+that.toString());
+    var rc = jsi_parseOpts(that, ['-a', 3]);
+    puts("RC="+rc+" "+that.toString());
+}

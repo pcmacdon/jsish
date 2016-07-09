@@ -1,0 +1,509 @@
+#!/usr/bin/env jsish
+// The preprocessor to generate struct/enums from defs.   Outputs .h or .c files.
+// Define C-structures and enums for access from Jsi.
+
+function jsi_structpp(args,opts)
+{
+    var that = this; // Function access to this[].
+    var pdq = {
+        pre:'', out:'', init:[], types:'', sigs:'', structs:'', enums:'', vars:'',
+        siglst:[], structnames:[], varnames:[], varinits:''
+    };
+    //var popts = { hassig:true, hassiz:false, builtinhassig:true};
+
+    var dputs = function(args) {};
+    var init = { debug:0, name:null, out:null };
+    
+    if (typeof args !== 'object' || args.length>1)
+        throw "expected 0 or 1 args";
+    jsi_parseOpts(this, opts, init);
+    if (this.debug>0)
+        dputs = console.log;
+        
+    function DefType(name) {
+      pdq.types += "  { pdq_Type_SIG, \""+name+"\", \""+label+"\", 0, sizeof(name), \""+fmt+"\", "+cformat+", },\n";
+    };
+    
+    // Define an enum
+    function GenEnum(def,suffix,hex) {
+        dputs("ENUM DD:",def,'\n');
+        with (def) {
+            if (label)
+                pdq.pre += "/* "+label+" */\n";
+            pdq.pre += "typedef enum {\n";
+            //pdq.pre += "  ";
+            pdq.enums += "  { .name=\""+name+"\", .help=\""+(label?label:'')
+                +"\", .userdata=(char*)enum_items_"+name+" },\n";
+            pdq.out += "Jsi_OptionSpec enum_item_"+name+"[] = {\n";
+            for (var i in flds) {
+                var f = flds[i];
+                var nname = f.name + suffix;
+                if (hex)
+                    f.value = format('0x%x', f.value);
+                pdq.out += "  { .name=\""+nname+"\", .help=\""+(f.label?f.label:'')+"\" , .flags=0, .offset="+f.value+"},\n";
+                pdq.pre += "  "+nname+"="+f.value+",\n";
+            }
+            pdq.out += "  {0}\n};\n\n";
+            pdq.pre += "} "+name+";\n\n";
+        }
+    }
+    
+    // Define a struct
+    function GenStruct(def) {
+        var sc = '', hassig = 1, fields = [], fieldstr = '', sig, name = def.name, definit = def.init;
+        if (!def.sizcmd)
+            def.sizcmd = 0;
+        if (!def.array)
+            def.array = 0;
+        if (def.label)
+            sc += "/* "+def.label+" */\n";
+        else
+            def.label = '';
+        sc += "typedef struct "+name+" {\n";
+        pdq.structnames.push(name);
+        if (hassig) {
+            def.flds.unshift({name:'sig', init:name+"_SIG", label:"Unique signature for struct",type:'DWORD',flags:'PDQ_SIG'});
+            sig = name+"_SIG";
+        // set sig {name}
+        } else {
+            sig = 0;
+        }
+        var bsgets=[], bscnt = 0, inits = [], hasinit = 0, fcnt = 0, flags = 0, bsget = 0;
+        // pdq.out( [subst -novariables fields]
+        for (var ii in def.flds) {
+            var f = def.flds[ii];
+            if (!f)
+                continue;
+        dputs("FLD: ",f,'\n');
+            var type = f.type, fname = f.name, ofname = fname, fflags = f.flags;
+            var des = '',
+                fdescr = (f.label?f.label:'');
+            if (fdescr)
+                 des = "  /* "+fdescr+" */ ";
+            var asiz = 0, option=0, bitsiz = 0, bsiz = 0, offs;
+            var s, bn, bsizstr = '';
+            if (f.bit) {
+                offs = 0;
+                bsget = "pdq_bsget_"+name;
+                option = bscnt++;
+                bitsiz = f.bit;
+                bsgets.push([f.name,type+" "+f.name+":"+bitsiz,type]);
+                bsiz = Math.floor((f.bit+7)/8);
+                bsizstr = ':'+f.bit;
+            } else {
+                offs = "Jsi_Offset("+name+","+fname+")";
+                bsiz = "sizeof("+type+")";
+                bitsiz = "8*"+bsiz;
+            }
+            if (f.asize) {
+                bsizstr = '['+f.asize+']';
+            }
+            var sinit = 0;
+            dputs("TTT: "+type);
+            if (type.match(/^STRING[0-9]+$/)) {
+                if (f.init === undefined)
+                    sinit = "{0}";
+                else
+                    sinit = "\""+f.init+"\"";
+            } else if (f.asize) {
+                sinit = "{0}";
+            } else if (f.init !== undefined) {
+                sinit = f.init;
+            } else if (pdq.structnames.indexOf(type)>=0) {
+                sinit = "PDQ_INI_DEFN_"+type;
+            }
+           /* } else if ((type == "TIME" || type == "DATE" || type == "DATETIME") &&
+              f.init !== undefined && !f.init]) {
+                set q(-init) [clock scan q(-init) -gmt 1]
+            }*/
+            
+            //if (q(-strict)) { append fflags | PDQ_FIELD_STRICT }
+            /*if (p(-hassiz) && q(-init) == "" && fname == "__siz") {
+                set q(-init) sizeof(name)
+            }*/
+    
+           /* hasinit = (f.init !== undefined);
+            if (hasinit) {
+                sinit = f.init;
+            } else if (pdq.init[type] !== undefined) {
+                sinit = pdq.init[type];
+                hasinit = 1;
+            }*/
+           /*  else if (pdq.structs[type] !== undefined) {
+                sinit = "PDQ_INI_DEFN_"+type;
+                hasinit = 1;
+            }*/
+            inits.push(sinit);
+            fieldstr += "  {.type=JSI_OPTION_"+typ+".name=\""+fname+"\", .flags="+fflags
+                +" .size=" +bsiz+", .offset="+offs+", .data="+option },\n";
+            sc += "  "+type+" "+ofname+bsizstr+";"+des+"\n";
+        }
+        
+       /* if (hasinit) {
+            if (definit !== undefined)
+                throw("can not use struct and field init for: \"name\"");
+            def.init = inits.join(',');
+        }*/
+        definit = inits.join(',');
+        sc += "} "+name+";\n\n";
+        if (def.init !== "{0}") {
+            init="(void*)&pdq_ini_data_"+name;
+            pdq.out += "\n#define PDQ_INI_DEFN_"+name+" {"+definit+"}\n";
+            pdq.out += "static "+name+" pdq_ini_data_"+name+" = PDQ_INI_DEFN_"+name+";\n";
+            pdq.init[name] = init;
+        } else
+            definit=0;
+        pdq.pre += sc;
+        if (bsgets.length) {
+            rc = "\n/* A set/get bitfield function for the struct \"name\". */\n"
+                + "static int pdq_bsget_"+name+"(Jsi_Interp *interp, Jsi_OptionSpec *spec, void *data, Jsi_Wide *s, int isSet) \{\n"
+                + "  int rc = JSI_OK, idx = spec->offset;\n"
+                + "  const char *fname=\"\";\n"
+                + "  struct "+name+" *p = (struct "+name+" *)data;\n"
+                + "  switch (idx) \{\n";
+            for (var k in bsgets) {
+                var i = bsgets[k][0];
+                var j = bsgets[k][1];
+                var btyp = bsgets[k][2];
+                spc = "      ";
+                rr = "    if (!isSet) *s = (Jsi_Wide)db->"+i+";\n"
+                     "    else {\n"
+                     "      p->"+i+" = *s;\n"
+                     "      if (p->"+i+" != *s) {\n"
+                     "          rc = JSI_ERROR;\n"
+                     "          fname = \""+i+"\";\n"
+                     "      }\n"
+                     "    }\n"
+                     "  break;\n"
+                rc += "\n    case "+k+": {\n"+rr+"    }\n";
+            }
+            rc += "\n    default: {Jsi_LogError(\"bad index: %d\", idx); return JSI_ERROR; }\n";
+            rc += "  \}\n"
+                    + "  if (rc != JSI_OK) Jsi_LogError(\"value %lld out of range for field '%s'\",*s, fname); return JSI_ERROR; }\n"
+                + "  return rc;\n\}\n\n";
+            pdq.out += rc;
+        }
+        pdq.out += "\nstatic pdq_Field pdq_SF_"+name+"[] = {\n"+ fieldstr +"  {0}\n};\n\n";
+        pdq.structs += "  { .sig=pdq_Struct_SIG, .name=\""+name+"\", .label=\""+def.label+"\",  .flags="
+            +(def.flags?def.flags:0)+", .nfields="+fields.length+", .sf=pdq_SF_"+name
+            +", .len=sizeof("+name+"), .ssig="+sig+", .array="+def.array+", .sizcmd="
+            +def.sizcmd+", .init="+init+", .bsget="+bsget+" },\n";
+    
+    }
+    
+    // Define variables
+    function GenVars(def) {
+        var sc = '', fldini = '', hassig = 1, fields = [], sig, name = def.name, definit = def.init;
+        if (!def.sizcmd)
+            def.sizcmd = 0;
+        if (!def.array)
+            def.array = 0;
+        if (def.label)
+            sc += "/* "+def.label+" */\n";
+        else
+            def.label = '';
+        pdq.varnames.push(name);
+        var fcnt = 0;
+        for (var ii in def.flds) {
+            var f = def.flds[ii];
+            if (!f)
+                continue;
+            dputs("FLD: ",f,'\n');
+            var fieldstr = '', type = f.type, fname = f.name, ofname = fname, fflags = 0;
+            var des = '',
+                fdescr = (f.label?f.label:'');
+            if (fdescr)
+                 des = "  /* "+fdescr+" */ ";
+            dputs("TTT: "+type);
+            fieldstr = type+" " + fname;
+            if (f.asize) {
+                fieldstr += "[" + f.asize + "]";
+                fldini += '  for (i=0; i<'+f.asize+'; i++)\n';
+                fldini += "    PDQ_DEFINE(d,"+type+","+fname+"+"+i+",NULL);\n"; //??
+            } else {
+                fldini += "  PDQ_DEFINE(d,"+type+","+fname+",\""+fdescr+"\");\n";
+            }
+            pdq.pre += 'extern '+fieldstr+";\n";
+            pdq.out += fieldstr+";\n";
+        }
+        pdq.out += 'static int pdq_varsinit_'+this.name+'_'+def.name+'(Jsi_Interp *interp) {  int i = 0; i=i;\n'
+            +"  pdq_VecBase *d = Pdq_Init(interp);\n"+ fldini+'  return JSI_OK;\n}\n\n';
+        pdq.varinits += '  if (JSI_OK != pdq_varsinit_'+this.name+'_'+def.name+'(interp)) return JSI_ERROR;\n';
+    }
+
+    function PdqFinalize () {
+        var name = this.name;
+        pdq.out = pdq.pre + "\n#ifdef _PDQSTATIC_C_\n"
+        + pdq.out
+        + "static pdq_Type pdq_SFT_"+name+"\[\] = {\n"
+        + pdq.types
+        + "  { 0 }\n};\n\nstatic pdq_Struct pdq_SFL_"+name+"\[\] = {\n"
+        + pdq.structs 
+        + "  { 0 }\n};\n\nstatic pdq_Enum pdq_SFE_"+name+"\[\] = {\n"
+        + pdq.enums 
+        + "  { 0 }\n};\n\n"
+        + "static pdq_static pdq_statics_"+name+" = { pdq_static_SIG, \""+name+"\", pdq_SFL_"+name
+        +", pdq_SFE_"+name+", pdq_SFT_"+name+"};\n\n"
+        + 'static int pdq_varsinit_'+name+'(Jsi_Interp *interp) {\n'
+        + pdq.varinits+'  return JSI_OK;\n}\n\n'
+        + "static int pdq_init_"+name+"(Jsi_Interp *interp) {\n"
+        + "  if (!Pdq_Init(interp)) return JSI_ERROR;\n"
+        + "  if (JSI_OK !=  Pdq_Register(interp,&pdq_statics_"+name+")) return JSI_ERROR;\n"
+        + "  if (JSI_OK != pdq_varsinit_"+name+"(interp)) return JSI_ERROR;\n"
+        + "  return JSI_OK;}\n\n"
+        + "\n#endif\n";
+        if (that.out)
+            file.write(that.out, pdq.out);
+        else
+            puts(pdq.out);
+    }
+    
+    function EnumFromStr(str) {
+        dputs("DO: "+str);
+        var top = -1;
+        var flds = [];
+        var ina = str.match(/([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*\{([^\}]+)\}/);
+        if (!ina)
+            throw("bad def: " + str);
+        var x = ina[3];
+        var def = {name:ina[2], type:ina[1]};
+        var vli;
+        var l = x.trim().split('\n');
+        //puts(l);
+        var lastv = -1;
+        for (var i in l) {
+            //var res = {};
+            var s, label = '', v = l[i].trim();
+            dputs("VV: "+v);
+            if (flds.length == 0 && v.substr(0,2) === '//') {;
+                label = v.substr(2).trim();
+                if (!def.label)
+                    def.label = label;
+                else
+                    throw("multiline label not allowed: "+v);
+                dputs("LL");
+                continue;
+            }
+            vli = v.indexOf('//');
+            var reslabel;
+            if (vli>0) {
+                reslabel = v.substr(vli+2);
+                v = v.substr(0,vli).trim();
+            }
+            if (v === '') continue;
+            vv = v.split(',');
+            if (vv.length>1 && vli>0 && vv[1].trim() !== '')
+                throw("commented item must be on single line: "+v);
+            var vcnt = 0;
+            for (var j in vv) {
+                vcnt++;
+                var vt = vv[j].trim();
+                var nval;
+                if (vt === '') continue;
+                flds[++top] = {};
+                if (vcnt == vv.length && reslabel)
+                    flds[top].label = reslabel;
+                if (vt.indexOf('=')<=0) {
+                    flds[top].name = vt;
+                    lastv = nval = lastv+1;
+                } else {
+                    s = vt.match(/^\s*([a-zA-Z0-9_]+)\s*=\s*([^\s]+)\s*$/);
+                    dputs('SS: ',s,"\n");
+                    if (s === null || s.length != 3)
+                        throw("invalid: "+vt);
+                    flds[top].name = s[1];
+                    lastv = nval = s[2];
+                }
+                if (def.type === "Sig") {
+                    var n = nval;
+                    nval = (((((((n>>14)&0xfc)|(n>>22)&0x3)^(((n>>7)&0xfe)|((n>>15)&1))^n^0xaa)&0xff)<<24)|n);
+                    pdq.siglst.push(flds[top].name);
+                }
+                flds[top].value = nval;
+                //dputs(res);
+                //flds.push(res);
+                //dputs(flds);
+            }
+        }
+        dputs("AAAA: "+top+" ", flds,"\n");
+        def.flds = flds;
+        return def;
+    };
+
+    function GenItems(items)
+    {
+        for (var i in items.enums) {
+            dputs("IV:", items.enums[i],'\n');
+            GenEnum(items.enums[i],'',0);
+        }
+        for (var i in items.sigs) {
+            dputs("IV:", items.sigs[i],'\n');
+            GenEnum(items.sigs[i],'_SIG',1);
+        }
+        for (var i in items.structs) {
+            dputs("IV:", items.structs[i],'\n');
+            GenStruct(items.structs[i]);
+        }
+        for (var i in items.vars) {
+            dputs("IV:", items.vars[i],'\n');
+            GenVars(items.vars[i]);
+        }
+        return;
+    };
+     
+    function StructFromStr(str) {
+        dputs("DO: "+str);
+        var flds = [];
+        var ina = str.match(/([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*\{([^\}]+)\}/);
+        if (!ina)
+            throw("bad def: " + str);
+        var x = ina[3];
+        var label, def = {name:ina[2], type:ina[1]};
+        var l = x.trim().split('\n');
+        //dputs(l);
+        for (var i in l) {
+            var res = {label:'', bit:0, asize:0, flags:0};
+            var v = l[i].trim();
+            dputs("VV: "+v);
+            if (v === '') continue;
+            if (flds.length == 0 && v.substr(0,2) === '//') {
+                label = v.substr(2).trim();
+                if (!def.label)
+                    def.label = label;
+                else
+                    throw("multiline label not allowed: "+v);
+                dputs("LL");
+                continue;
+            }
+            var s = v.match(/^\s*(\S+)\s+([^;]+)\s*;\s*(.*)$/);
+            dputs('SS: <', v,'>\n');
+            if (s === null || s.length < 2)
+                throw('invalid field: "'+v+'"');
+            res.type = s[1];
+            var namval = s[2].trim();
+            label = s[3];
+            if (label !== "") {
+                if (label.substr(0,2) !== '//')
+                    throw('label does not start with //: '+label);
+                label = label.substr(2).trim();
+            }
+            res.label = label.trim();
+            var nam = namval; val = null, nn;
+            if (nam.indexOf('=')>=0)
+            {
+                nn = nam.split('=');
+                if (nn.length != 2)
+                    throw('expected nam=val: '+nam);
+                nam = nn[0];
+                val = nn[1];
+            }
+            nam = nam.trim();
+            if (nam.indexOf(':')>=0)
+            {
+                nn = nam.split(':');
+                res.bit = parseInt(nn[1]);
+                nam = nn[0].trim();
+                res.flags = 'PDQ_BITFIELD';
+            } else if ((n = nam.indexOf('[')) && nam.substr(-1) == ']') {
+                res.asize = nam.substr(n+1, nam.length-n-2);
+                nam = nam.substr(0,n);
+            }
+            res.name = nam;
+            if (val!==null)
+                res.init = val.trim();
+            dputs(res);
+            flds.push(res);
+        }
+        def.flds = flds;
+        return def;
+    }
+    
+    function VarsFromStr(str) {
+        dputs("DO: "+str);
+        var flds = [];
+        var ina = str.match(/([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*\{([^\}]+)\}/);
+        if (!ina)
+            throw("bad def: " + str);
+        var x = ina[3];
+        var label, def = {name:ina[2], type:ina[1]};
+        var l = x.trim().split('\n');
+        //dputs(l);
+        for (var i in l) {
+            var res = {label:'', asize:0};
+            var v = l[i].trim();
+            dputs("VV: "+v);
+            if (v === '') continue;
+            if (flds.length == 0 && v.substr(0,2) === '//') {
+                label = v.substr(2).trim();
+                if (!def.label)
+                    def.label = label;
+                else
+                    throw("multiline label not allowed: "+v);
+                dputs("LL");
+                continue;
+            }
+            var s = v.match(/^\s*(\S+)\s+([^;]+)\s*;\s*(.*)$/);
+            dputs('SS: <', v,'>\n');
+            if (s === null || s.length < 2)
+                throw('invalid var: "'+v+'"');
+            res.type = s[1];
+            var namval = s[2].trim();
+            label = s[3];
+            if (label !== "") {
+                if (label.substr(0,2) !== '//')
+                    throw('label does not start with //: '+label);
+                label = label.substr(2).trim();
+            }
+            res.label = label.trim();
+            var nam = namval; val = null, nn;
+            nam = nam.trim();
+            if ((n = nam.indexOf('[')) && nam.substr(-1) == ']') {
+                res.asize = nam.substr(n+1, nam.length-n-2);
+                nam = nam.substr(0,n);
+            }
+            res.name = nam;
+            if (val!==null)
+                res.init = val.trim();
+            dputs(res);
+            flds.push(res);
+        }
+        def.flds = flds;
+        return def;
+    }
+
+    /* BEGIN MAIN */
+    var fname = args[0];
+    inp = file.read(fname);
+    if (!this.name)
+        if (this.out)
+            this.name = file.rootname(file.tail(this.out));
+        else
+            this.name = 'main';
+    var ina = inp.match(/([a-zA-Z0-9_]+\s+\S+\s*\{[^\}]+\})/g);
+    var defs = {structs:[], enums:[], types:[], sigs:[], vars:[]};
+    dputs("IIIIII-------------------------", ina, '\n');
+    for (var i in ina) {
+        dputs("XXXX", ina[i]);
+        var in1 = ina[i].match(/([a-zA-Z0-9_]+)\s+/);
+        dputs(in1);
+        if (!in1)
+            throw("unknown input: "+inp[i]);
+        var nam = in1[1];
+        switch (nam) {
+            case 'Struct':  defs.structs.push(StructFromStr(ina[i])); break;
+            case 'Sig':     defs.sigs.push(EnumFromStr(ina[i]));break;
+            case 'Enum':    defs.enums.push(EnumFromStr(ina[i])); break;
+            case 'Vars':    defs.vars.push(VarsFromStr(ina[i])); break;
+            default: throw("unknown defn: "+nam);
+        }
+    }
+    //return 99;
+    dputs('DEFS:',defs,'\n');
+    GenItems(defs);
+    PdqFinalize();
+    return '';
+}
+
+if (info.isMain()) {
+    jsi_invokeMain('jsi_structpp');
+}

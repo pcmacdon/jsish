@@ -1,0 +1,48 @@
+<body onload='onload()'>
+<!-- <div id="bgimages" class="shadow">
+  <img id=bg1 class='opaque' src="Twilight_Frost_by_Phil_Jackson.jpg" width=100% height=100% />
+</div> -->
+
+<div id=frame_main>
+    <div id=bannav style='display:block'>
+        <div id=banner><div id=banin></div></div>
+    <table id=bansub class=tblnospc>
+        <tr> 
+        <td>
+            <table id=trans_nav class=tblnospc><tr>
+                <td><button onclick='TNavCmd("start")' id=tnav_page_start title='First page of data'>&lt;&lt;</button></td>
+                <td><button onclick='TNavCmd("up")' id=tnav_page_up title='Previous page of data'>&lt;</button></td>
+                <td><button onclick='TNavCmd("down")' id=tnav_page_down title='Next page of data'>&gt;</button></td>
+                <td><button onclick='TNavCmd("end")' id=tnav_page_end title='Last page of data'>&gt;&gt;</button></td>
+                <td><button onclick='TNavCmd("add")' id=tnav_row_add title='Add a new transaction to the current account'>+</button></td>
+                <td><button onclick='TNavCmd("del")' id=tnav_row_del title='Delete selected transaction'>-</button></td>
+                </tr></table>
+        </td>
+        <td>
+        <div id=nav style='display:none'>
+            <div id=subnav class=shaped></div>
+        </div>
+        </td>
+        </tr>
+    </table>
+    </div>
+    <div id=banreco style='display:none'>Reconciling Account:</div>
+    <div id=banrep style='display:none' onclick='ToggleVis("rep_sub")'>Reports:</div>
+    <div id=report_div style='display:none'>
+        <? include('reports.html'); ?>
+    </div>
+    <table id=main_sub>
+        <tr>
+            <td valign=top id=reco_div style='display:none'>
+                <? include('reconcile.html'); ?>
+            </td>
+            <td valign=top id=accts_div style='display:block'></td>
+            <td valign=top>
+                <div id=trans_div></div>
+            </td>
+        </tr>
+    </table>
+</div>
+<? include('dialog.html'); ?>
+<? include('about.html'); ?>
+</body>

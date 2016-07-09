@@ -1,0 +1,230 @@
+<title>Build</title>
+
+<div id=wikitoc>
+
+<ul>
+<li>[#build|Amalgamation]</li>
+<li>[#buildlinux|Linux]</li>
+<ul>
+<li>[#buildopts|Build Options]</li>
+</ul>
+<li>[#windows|Windows]</li>
+<li>[#staticbuild|Standalone]</li>
+</ul>
+<li>[#basicextn|Extensions]</li>
+<ul>
+<li>[#basicextn|A Basic Extension]</li>
+<li>[#multiobj|Multi-method Extension]</li>
+</ul>
+<li>[#help|Getting Help]</li>
+
+</div>
+
+Once you have the source, there are several ways to build it.
+
+<h3 id=build>Amalgamation</h3>
+
+Amalgamated source is the easiest way to incorporate Jsi into an application, in 3 easy steps:
+
+  #  [./download.wiki#source|Download]
+  #  Copy "jsi.c" into your source directory.
+  #  Then <b>#include</b> it into your source file:
+
+
+Here is a simple example of embedded script execution:
+
+    <nowiki><pre class=verbatim>
+#include <i>"jsi.c"</i>
+
+int main(int argc, char *argv[])
+{
+    <b>Jsi_Interp</b> *interp = <b>Jsi_InterpNew</b>(NULL, argc, argv, 0);
+    <b>Jsi_EvalString</b>(interp, <i>"for (var i=1; i<=3; i++)  puts('TEST: '+i);"</i>, 0);
+    <i>//...</i>
+}
+</pre></nowiki>
+
+For more details, see [./usingjsi.wiki|Using Jsi], [./c-jsilite.wiki|Jsi-Lite] or [./c-sqlite.wiki|DBQuery].
+
+<h3 id=buildlinux>Linux</h3>
+
+<h4 id=buildopts>Build Options</h4>
+
+The build is controlled by <b>make</b>.  Predefined targets can be displayed with:
+
+    <nowiki><pre class=verbatim>
+make help
+</pre></nowiki>
+
+These are just frontends to the following <b>make</b> command-line options:
+
+    <nowiki>
+<table border='1' class='optstbl' ><tr><th>Option</th><th>Description</th></tr>
+<tr ><td >EXTSRC=name</td><td >Root name of a .c file to build in as a user extension</td></tr>
+<tr ><td >EXTNAME=name</td><td >User extension name for above (if different)</td></tr>
+<tr ><td >NOSQLITE=1</td><td >Exclude sqlite support</td></tr>
+<tr ><td >NOWEBSOCK=1</td><td >Exclude websockets</td></tr>
+<tr ><td >USEMUSL=1</td><td >Static, zero dependency build with Musl-libc</td></tr>
+<tr ><td >USEMINIZ=1</td><td >Use the miniz compression extension, instead of builtin -lz</td></tr>
+<tr ><td >WIN=1</td><td >Cross-compile to Windows binary</td></tr>
+<tr ><td >ZIPDIR=name</td><td >Directory to zip to end of binary <b>jsiz</b> (default dir is <b>zdir</b>)</td></tr>
+</table>
+</nowiki>
+
+In order to build jsish on Linux, a few packages need to be installed.
+On Ubuntu you will need:
+
+    <nowiki><pre class=verbatim>
+sudo apt-get install build-essential bison cmake libreadline-dev
+</pre></nowiki>
+
+Then just type <b>make</b> (in the jsi directory).
+
+
+For example, the following builds without WebSockets :
+
+    <nowiki><pre class=verbatim>
+make NOWEBSOCK=1
+</pre></nowiki>
+
+<h3 id=windows>Windows</h3>
+
+Jsi can be cross compiled from Linux to Windows,  First install the Mingw32 package on Linux:
+
+    <nowiki><pre class=verbatim>
+sudo apt-get install gcc-mingw32
+</pre></nowiki>
+
+Then build using:
+
+    <nowiki><pre class=verbatim>
+make mkwin
+</pre></nowiki>
+
+<b>Note:</b> you must run make twice, as it will initially fail.
+
+Note that some features (eg. signals) are currently disabled in the Windows build. 
+There are also minor differences in some file-system access functions.
+
+<h3 id=staticbuild>Standalone</h3>
+
+The <b>standalone</b> build produces a static binary that contains no external library references.
+This is useful when you need a standalone executable with no external dependancies.
+
+To create a static image, Jsi uses the Musl library.
+
+The first step is to download [http://www.musl-libc.org|Musl] and unpack it.
+Then change to the musl dir and:
+
+    <nowiki><pre class=verbatim>
+ ./configure --prefix=$HOME/usr && make install
+</pre></nowiki>
+
+Ensure that <i>~/usr/bin</i> is in your path with export PATH=$PATH:$HOME/usr/bin. 
+Then back in the jsi dir do the following:
+
+    <nowiki><pre class=verbatim>
+echo '#define __P(x) x' > ~/usr/include/sys/cdefs.h
+echo '#include <miniz/zlib.h>' >  ~/usr/include/zlib.h
+cp -pr miniz ~/usr/include/
+</pre></nowiki>
+
+A static jsish can be built with:
+
+    <nowiki><pre class=verbatim>
+make mkmusl
+</pre></nowiki>
+
+The resulting executable will require no system libraries.
+
+<b>Note:</b> you must run make twice, as it will initially fail.
+
+<hr>
+<h2 id=basicextn>Extensions</h2>
+
+<h3 id=basicextn>A Basic Extension</h3>
+
+The following steps detail a simple way to add your own code to Jsi.  Code is placed in the <i>user</i> directory,
+and <b>make</b> invoked with the <i>EXTSRC=name</i> argument. The named code gets linked into the Jsi build.
+Example
+
+The sample extension user/demo.c included with the Jsi distribution. 
+It simply creates a new javascript method demo() that echo's its arguments.
+
+    <nowiki><pre class=verbatim>
+#include "jsi.h"
+
+Jsi_CmdProcDecl(DemoCmd) {
+    int i, n = Jsi_ValueGetLength(interp, args);
+    printf("demo called with %d args\n", n);
+    for (i=0; i<n; i++) {
+        Jsi_Value *v = Jsi_ValueArrayIndex(interp, args, i);
+        char *cp = Jsi_ValueToString(interp, v);
+        printf("Arg %d = '%s'\n", i, cp);
+    }
+    return JSI_OK;
+}
+
+int Jsi_Initdemo(Jsi_Interp *interp) {
+    puts("LOADED DEMO");
+    Jsi_CommandCreate(interp, "demo", DemoCmd, NULL);
+    return JSI_OK;
+}
+</pre></nowiki>
+
+To build this into the application:
+<nowiki><pre class=verbatim>
+  make EXTSRC=demo
+</pre></nowiki>
+
+
+<h3 id=multiobj>Multi-method Extension</h3>
+
+Sometimes in javascript it is desirable to create a new object with a number of related methods, 
+rather than just single commands. This is achieved by registering a table of methods.
+
+The sample extension user/demos.c comes included with the 
+Jsi distribution does this:
+
+    <nowiki><pre class=verbatim>
+#include "jsi.h"
+
+Jsi_CmdProcDecl(DemoCmd) {
+    int i, n = Jsi_ValueGetLength(interp, args);
+    printf("demo called with %d args\n", n);
+    for (i=0; i<n; i++) {
+        Jsi_Value *v = Jsi_ValueArrayIndex(interp, args, i);
+        const char *cp = Jsi_ValueToString(interp, v);
+        printf("Arg %d = '%s'\n", i, cp);
+    }
+    return JSI_OK;
+}
+
+Jsi_CmdSpec demoCmds[] = {
+  { "foo", DemoCmd, 0, -1, "...", .help="foo command" },
+  { "bar", DemoCmd, 1, -1, "...", .help="bar command" },
+  { NULL, .help="Demo commands" }
+};
+
+int Jsi_Initdemos(Jsi_Interp *interp) {
+    Jsi_CmdSpecsCreate(interp, "demos",   demoCmds,   NULL, JSI_CMDSPEC_NOTOBJ);
+    return JSI_OK;
+}
+</pre></nowiki>
+To build this into the application:
+
+    <nowiki><pre class=verbatim>
+make EXTSRC=demos
+</pre></nowiki>
+
+This named code gets linked into the Jsi build. At startup it simply creates new javascript methods 
+demos.foo() and demos.bar().
+
+<hr>
+<h2 id=help>Getting Help</h2>
+
+Got a problem?  Click on <b>Ticket</b> above and open a ticket.  If all else fails, you can try email at:
+<br>
+<img src=email.png >
+
+<hr>

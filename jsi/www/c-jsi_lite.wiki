@@ -1,0 +1,131 @@
+<title>Jsi-Lite</title>
+
+
+<div id=wikitoc>
+
+<ul>
+<li>[#code|Demo Code]</li>
+<li>[#dstring|DString]</li>
+<li>[#hash|Jsi_Hash]</li>
+<li>[#tree|Jsi_Tree]</li>
+<li>[#list|Jsi_List]</li>
+<li>[#dbquery|Jsi_DbQuery]</li>
+<li>[#optspec|Jsi_OptionSpec]</li>
+</ul>
+
+</div>
+
+A subset of the C functions for use without the script engine.
+This is made use of as follows:
+
+    <nowiki><pre class=verbatim>
+#define JSI_LITE_ONLY
+#include "jsi.c"
+//Your code goes here.
+</pre></nowiki>
+
+<h2 id=code>Demo Code</h2>
+
+Following is some demo code:
+
+  *  a minimal demo of Jsi-Lite: [../c-demos/litedemo.c].
+  *  a demo of Jsi_List: [../c-demos/listdemo.c].
+  *  a more comprehensive database demo: [../c-demos/dbdemo.c].
+  
+<hr>
+<h2 id=dstring>Jsi_DString</h2>
+
+DString is a dynamic strings implementation where
+heap memory allocation is avoid, until a string grows beyond 200 characters.
+
+DString is documented [./c-dstring.wiki|here].
+
+<hr>
+
+<h2 id=hash>Jsi_Hash</h2>
+This pages describes how to use Jsi_Hash.
+Search for Jsi_Hash in [../jsi.h#Jsi_Hash|jsi.h] for details.
+
+Hash provides simple hash table functionality.
+
+    <nowiki><pre class=verbatim>
+int isNew;
+<b>Jsi_Hash</b> *tbl = <b>Jsi_HashNew</b>(interp, <b>JSI_KEYS_STRING</b>, NULL);
+hPtr = <b>Jsi_HashEntryNew</b>(tbl, <i>"foo"</i>, &isNew);
+<b>Jsi_HashEntrySet</b>(hPtr, 99);
+<b>Jsi_HashSet</b>(tbl, <i>"bar"</i>, 100);
+<b>Jsi_HashSearch</b> search;
+for (hPtr = <b>Jsi_HashEntryFirst</b>(tbl, &search);
+    hPtr != NULL; hPtr = <b>Jsi_HashEntryNext</b>(&search)) {
+    key = <b>Jsi_HashKeyGet</b>(hPtr);
+    int n = <b>Jsi_HashValueGet</b>(hPtr);
+}
+</pre></nowiki>
+
+There are plenty of examples Hash usage in the Jsi source code.
+
+<hr>
+
+<h2 id=tree>Jsi_Tree</h2>
+
+The underlying data structure fo objects in JSI is a tree Red-Black trees with invariant node
+pointers: nodes are allocated using a single malloc, including space for the key.
+This introduces a problem in that varying string keys can not be copied between nodes,
+which is required when rebalancing the tree. Although tree supports swapping node positions
+instead of keys, objects instead use a key of type STRINGPTR, a combination Hash table and and Tree,
+which is fairly efficient because objects often share keys.
+
+<hr>
+
+<h2 id=list>Jsi_List</h2>
+
+Jsi_List implements a double linked list with optional mutex.
+
+Here is a simple example:
+
+    <nowiki><pre class=verbatim>
+Jsi_List *list = Jsi_ListNew(NULL);
+Jsi_ListEntry *l = Jsi_ListEntryNew("there");
+Jsi_ListInsert(list, l, NULL);
+Jsi_ListPushFrontNew(list, "hello");
+Jsi_ListPushBackNew(list,  "fine");
+Jsi_ListPushBackNew(list,  "world");
+</pre></nowiki>
+
+Functions include:
+
+     <table border='1' class=optstbl>
+<tr><th>Type</th> <th>Description</th></tr>
+<tr><td>Jsi_ListAttr</td><td>Return attributes of list</td><tr>
+<tr><td>Jsi_ListClear</td><td>Remove and delete all elements</td><tr>
+<tr><td>Jsi_ListDelete</td><td>Delete a list</td><tr>
+<tr><td>Jsi_ListEntryNew</td><td>Create a list entry (outside of list)</td><tr>
+<tr><td>Jsi_ListEntryDelete</td><td>Create a list entry (outside of list)</td><tr>
+<tr><td>Jsi_ListEntryGetValue</td><td>Get a list entries value</td><tr>
+<tr><td>Jsi_ListEntryNext</td><td>Return next entry in list</td><tr>
+<tr><td>Jsi_ListEntryPrev</td><td>Return previous entry in list</td><tr>
+<tr><td>Jsi_ListEntrySetValue</td><td>Get a list entries value</td><tr>
+<tr><td>Jsi_ListGetBack</td><td>Peak at back of list</td><tr>
+<tr><td>Jsi_ListGetFront</td><td>Peak at start of list</td><tr>
+<tr><td>Jsi_ListInsert</td><td>Insert a list entry into list</td><tr>
+<tr><td>Jsi_ListLock</td><td>Lock list mutex</td><tr>
+<tr><td>Jsi_ListNew</td><td>Create a list</td><tr>
+<tr><td>Jsi_ListPopBack</td><td>Remove list entry from end of list</td><tr>
+<tr><td>Jsi_ListPopFront</td><td>Remove list entry from start of list</td><tr>
+<tr><td>Jsi_ListPushBack</td><td>Add list entry to end of list</td><tr>
+<tr><td>Jsi_ListPushFront</td><td>Add list entry to start of list</td><tr>
+<tr><td>Jsi_ListPushBackNew</td><td>Create list entry with value at end of list</td><tr>
+<tr><td>Jsi_ListPushFrontNew</td><td>Create list entry with value at start of list</td><tr>
+<tr><td>Jsi_ListRemove</td><td>Remove a specific list entry from list</td><tr>
+<tr><td>Jsi_ListSize</td><td>Returns count of elements in list</td><tr>
+</table>
+
+<hr>
+
+<h2 id=dbquery>Jsi_DbQuery</h2>
+
+  *  [./c-sqlite.wiki|Jsi_DbQuery]: Sqlite database abstraction.
+
+<h2 id=optspec>Jsi_OptionSpec</h2>
+
+  *  [./c-options.wiki|Jsi_OptionSpec] : Struct specification descriptors.

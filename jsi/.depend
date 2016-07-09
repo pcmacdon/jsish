@@ -1,0 +1,75 @@
+jsiLexer.o: jsiLexer.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiFunc.o: jsiFunc.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiValue.o: jsiValue.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiRegexp.o: jsiRegexp.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiPstate.o: jsiPstate.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiInterp.o: jsiInterp.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiUtils.o: jsiUtils.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiProto.o: jsiProto.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiFilesys.o: jsiFilesys.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiChar.o: jsiChar.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiString.o: jsiString.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiBool.o: jsiBool.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiNumber.o: jsiNumber.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiArray.o: jsiArray.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiLoad.o: jsiLoad.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiHash.o: jsiHash.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiOptions.o: jsiOptions.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiStubs.o: jsiStubs.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h jsiStubs.h
+jsiFormat.o: jsiFormat.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h jsiUtf8.h
+jsiExec.o: jsiExec.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiJSON.o: jsiJSON.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h jsmn.h
+jsiTclUtil.o: jsiTclUtil.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h jsiUtf8.h
+jsiCmds.o: jsiCmds.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiFileCmds.o: jsiFileCmds.c jsiInt.h jsi.h jsiPstate.h parser.h \
+ jsiCode.h jsiLexer.h
+jsiObj.o: jsiObj.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiSignal.o: jsiSignal.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiTree.o: jsiTree.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiMD5.o: jsiMD5.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiDString.o: jsiDString.c jsi.h
+jsiMath.o: jsiMath.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsmn.o: jsmn.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h jsiLexer.h \
+ jsmn.h
+jsiZvfs.o: jsiZvfs.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiUtf8.o: jsiUtf8.c jsiUtf8.h jsiInt.h jsi.h jsiPstate.h parser.h \
+ jsiCode.h jsiLexer.h
+jsiUserObj.o: jsiUserObj.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+jsiSocket.o: jsiSocket.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h
+parser.o: parser.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h jsiCode.c
+jsiWebsocket.o: jsiWebsocket.c jsi.h
+jsiSqlite.o: jsiSqlite.c jsi.h
+jsiEval.o: jsiEval.c jsiInt.h jsi.h jsiPstate.h parser.h jsiCode.h \
+ jsiLexer.h

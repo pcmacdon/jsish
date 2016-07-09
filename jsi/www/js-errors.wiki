@@ -1,0 +1,56 @@
+<title>Errors</title>
+
+<h4>Try/Catch</h4>
+
+Upon error in a <b>try</b>, <b>catch</b> is passed a string rather than an object, eg.
+
+    <nowiki><pre class=verbatim>
+<b>try</b> { badcall(); } <b>catch</b>(e) { <b>puts</b>(<i>"Note e is a string: "</i>+e); }
+</pre></nowiki>
+
+<h4>Error Diagnostics</h4>
+
+Jsi does not generate tracebacks upon error.  Instead it provides gcc style warnings that
+contain the file and line number.
+For example:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> x = 1;
+<b>foo</b>(x)
+</pre></nowiki>
+
+This results in the following diagnostic:
+
+    <nowiki><pre class=verbatim>
+/home/user/myjsi/foo.js:2: error: <i>'foo'</i>, sub-commands are: <b>Array Boolean Date File 
+   Function Interp JSON Math Number Object RegExp Sqlite String Websocket alert 
+   assert clearInterval console decodeURI encodeURI exit file format include info
+   isFinite isNaN load parseFloat parseInt puts quote setInterval setTimeout signal
+   sys util zvfs</b>.
+</pre></nowiki>
+
+The file and line number is reported, as well as an enumeration of known commands 
+in the given scope. 
+This allows errors to be [./editors.wiki|parsable by IDE's]. 
+
+
+<h4>Method Introspection</h4>
+
+Upon error, an objects sub-methods are enumerated, if possible:
+
+    <nowiki><pre class=verbatim>
+# <b>info</b>.xx()
+error: <i>'info'</i>, sub-commands are: <b>cmds data error events executable funcs
+    named platform revisions script vars version</b>.    (at or near string <i>"xx"</i>)
+</pre></nowiki>
+
+<h4>Displayed Arguments</h4>
+
+And arguments to builtin methods part of the diagnostic:
+
+    <nowiki><pre class=verbatim>
+# <b>format()</b>
+error: missing args, expected <i>"format(format?,arg,arg?)"</i>
+</pre></nowiki>
+
+

@@ -1,0 +1,124 @@
+<title>C-API: Extension</title>
+
+Jsi can be extended in several ways.
+<h4>Embedding C</h4>
+
+    <nowiki><pre class=verbatim>
+make USERSRC=demo
+</pre></nowiki>
+
+<h4>Dynamic Extensions</h4>
+
+If libjsi.so is being used on your system, you can load shared libraries into Jsi using the load() command. 
+Or they can be statically compiled in. Basically, all that is required is defining a C function
+ Jsi_InitXXXX to handle the initialization on load.
+ 
+Following is a brief but complete shared library example for Linux.
+Given the file user/demo.c:
+
+    <nowiki><pre class=verbatim>
+#include "jsi.h"
+
+JSI_EXTENSION_INI
+
+Jsi_CmdProcDecl(DemoCmd) {
+    int i, n = Jsi_ValueGetLength(interp, args);
+    printf("demo called with %d args\n", n);
+    for (i=0; i<n; i++) {
+        char *cp = Jsi_ValueArrayIndexToStr(interp, args, i);
+        printf("Arg %d = '%s'\n", i, cp);
+    }
+    return JSI_OK;
+}
+
+int Jsi_Initdemo(Jsi_Interp *interp) {
+    puts("LOADED DEMO");
+#ifdef JSI_USE_STUBS
+  if (Jsi_StubsInit(interp, JSI_STUBS_STRICT) != JSI_OK)
+        return JSI_ERROR;
+#endif
+    Jsi_CommandCreate(interp, "demo", DemoCmd, NULL);
+    return JSI_OK;
+}
+</pre></nowiki>
+
+We compile and load it thus:
+
+    <nowiki><pre class=verbatim>
+cc -g -Wall -DJSI_USE_STUBS -I. -shared -fpic user/demo.c -o user/demo.so
+./jsish
+load('user/demo.so');
+</pre></nowiki>
+
+<h4>Static API Access</h4>
+
+Usually an extension would want to access the Jsi API to create commands, etc.
+Here is the sample dyn.c extension included with the distribution:
+
+    <nowiki><pre class=verbatim>
+#include "jsi.h"
+
+Jsi_CmdProcDecl(DynCmd) {
+   puts("dyn called");
+   return JSI_OK;
+}
+
+int Jsi_Initdyn(Jsi_Interp *interp) {
+  puts("LOADED DYN");
+  Jsi_CommandCreate(interp, "dyn", DynCmd, NULL);
+  return JSI_OK;
+}
+</pre></nowiki>
+To build this into the application, just type "make dyn".
+
+<h4>Dynamic API Access</h4>
+
+To load the above dynamically requires using, a shared library version of Jsi (jsish),
+and the -ljsi option be added to the link line. Essentially, this requires installing
+the shared version of Jsi onto your system.
+Builtins
+
+JSI comes with the following builtin extensions.
+
+  #  <b>Sqlite</b>  A small database engine
+  #  <b>WebSockets</b>  Direct communication with web browsers
+  #  <b>Zvfs</b>    A Zip virtual file system
+
+Although JSI can be compiled without these extensions, they generally come already compiled-in so
+that web application development is ready to go
+
+    <nowiki><pre class=verbatim>
+$ time ./jsish tests/prime.js 
+Have native helper: false
+1999 2999 4999 8999
+
+real    0m0.384s
+user    0m0.376s
+sys 0m0.004s
+
+$ make prime.so
+cc -g -Wall -I. -shared -fpic user/prime.c -o prime.so
+$ time ./jsish tests/prime.js 
+Have native helper: true
+1999 2999 4999 8999
+
+real    0m0.169s
+user    0m0.164s
+sys 0m0.004s
+</pre></nowiki>
+
+<h2>Command Specs</h2>
+Search for Jsi_CmdSpec in [../jsi.h#Jsi_CmdSpec|jsi.h] for details.
+
+Commands are typically defined en-mass, eg.
+
+    <nowiki><pre class=verbatim>
+static <b>Jsi_CmdSpec</b> dateCmds[] = {
+    { "now",    DateNowCmd,     NULL,   0,  1, "?flags?",  .help="Return current time in ms since unix epoch (1970)" },
+    { "format", DateFormatCmd,  NULL,  1,  3, "num,?format,flags?",  .help="Format time" },
+    { "parse",  DateParseCmd,   NULL,   1,  2, "string,?flags?",  .help="Parse time string and return time in ms since 1970" },
+    { NULL,     NULL,  }
+};
+
+<b>Jsi_SetupCmdSpecs</b>(interp, "Date",   dateCmds,  NULL, <b>JSI_CMDSPEC_NOTOBJ</b>);
+</pre></nowiki>

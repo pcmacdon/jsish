@@ -1,0 +1,52 @@
+<title>Autoload</title>
+
+<h2 id=overview>Overview</h2>
+
+The purpose of autoload is to enable dynamic loading of commands upon their first invocation.
+We implement this by setting the object <i>jsiIndex</i> with a string script value to evaluate.
+For example, given this file <i>myfunc.js</i>:
+
+    <nowiki><pre class=verbatim>
+puts("LOADING");
+function double(n) { return n*2; };
+function half(n)   { return n/2; };
+</pre></nowiki>
+
+then the following evaluates correctly:
+
+    <nowiki><pre class=verbatim>
+var jsiIndex = {
+  double : 'include("myfunc.js");',
+  half   : 'include("myfunc.js");'
+};
+//...
+double(4);
+half(4);
+</pre></nowiki>
+
+<h2>Multiple jsiIndex's</h2>
+
+If <i>jsiIndex</i> is set in more than one place, we would want to be a bit more careful
+not to overwrite a previous definition.  Here is one way to achieve this:
+
+    <nowiki><pre class=verbatim>
+if (!jsiIndex) { var jsiIndex = {}; };
+jsiIndex.myfunc = 'include("myfunc.js");';
+
+// and in another file ...
+
+if (!jsiIndex) { var jsiIndex = {}; };
+jsiIndex.yourfunc = 'include("myfunc.js");';
+</pre></nowiki>
+
+
+<h2>Object Methods</h2>
+
+The jsiIndex works only for simple commands.  Loading of object methods can be setup as follows:
+
+    <nowiki><pre class=verbatim>
+var jsipp = {
+    dir : info.scriptdir(),
+    parse : function(arg) { include(file.join(jsipp.dir,"jsipp.js")); return jsipp.parse(arg); }
+};
+</pre></nowiki>

@@ -1,0 +1,225 @@
+<title>Interp</title>
+<div id=wikitoc>
+
+<ul>
+<li>[#interp|Interps]</li>
+<ul>
+<li>[#subinterp|Sub-interps]</li>
+<li>[#safe|Safe Interps]</li>
+<li>[#threads|Threads]</li>
+<li>[#events|Events]</li>
+<li>[#evalcall|Eval/Call/Send]</li>
+<li>[#alias|Aliases]</li>
+<li>[#options|Options]</li>
+<li>[#interpdata|Inter-Interp Data]</li>
+<li>[#envvars|Environment]</li>
+<li>[#compat|Backward Compatibility]</li>
+</ul>
+<li>[#refs|References]</li>
+</ul>
+
+
+
+</div>
+
+<h2 id=interp>Interps</h2>
+An Interp encapsulates the run-time state of the javascript interpreter.
+This can be used to configure and/or query options eg.
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf()</b>;
+</pre></nowiki>
+
+<h3 id=subinterp>Sub-interps</h3>
+
+A sub-interp can be created a separate, protected environment to run scripts, eg.
+
+    <nowiki><pre class=verbatim>
+var interp1 = <b>new Interp()</b>;
+interp1.eval(<i>'puts("HI");'</i>);
+<b>delete</b> interp1;
+</pre></nowiki>
+
+Variables and functions created in a sub-interp are discarded upon the deletion of the interp.
+
+<h3 id=safe>Safe Interps</h3>
+
+Sub-interps may be created with the isSafe option.  One use for this
+is restricting access to the file system:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> interp1 = <b>new Interp</b>({isSafe:true, safeWriteDirs:['/tmp']});
+</pre></nowiki>
+
+<h3 id=threads>Threads</h3>
+
+To create a threaded interp is as simple as:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> interp1 = <b>new Interp</b>({subthread:true, scriptFile:<i>'mythrd.js'</i>});
+</pre></nowiki>
+
+If a script file or string option is not given, the thread will sit waiting for events.
+
+<h3 id=events>Events</h3>
+
+Events in javascript are traditionally create by the standard setTimeout()/setInterval() methods. 
+
+To explicitly process events we call <b>Event.update()</b>.
+
+See [./js-events.wiki|events] for more details.
+
+<h3 id=evalcall>Eval/Call/Send</h3>
+
+There are 3 basic ways to invoke code in a sub-interp. The first which just uses eval() 
+is the least efficient as it involves parsing overhead prior to evaluation. 
+If a second async argument true is given to a threaded interp, the execution proceeds
+in the background. Otherwise, a value is returned.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> cnt=0, i = <b>new Interp</b>({subthread:true});
+<b>while</b> (cnt<10) {
+  <b>puts</b>(<i>"Main-loop"</i>);
+  <b>if</b> (cnt++%2)
+      i.eval(<i>"puts('Hello from main!!!!!!!!!!!!!!!!!!!!!!!!');"</i>);
+  <b>Event.update</b>(100);
+}
+</pre></nowiki>
+
+The second method uses call() to invoke already defined methods in the interp. 
+This is much more efficient as no parsing is involved. It also takes an async argument.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> cmd = <i>"
+    function recv2(s) { puts('recv2: '+s.toString()); return {x:8, y:9}; };
+    thrd = Info.interp().thread;
+    puts(thrd);
+    puts('Child starting: '+(thrd?'true':'false'));
+    while (thrd) {
+        Event.update(1000);
+        puts('Child-loop');
+    };
+"</i>;
+
+<b>var</b> cnt=0, i = <b>new Interp</b>({subthread:true, scriptStr:cmd});
+
+<b>Sys.sleep</b>(1000);
+<b>var</b> obj = {AA:1,BB:2};
+<b>var</b> aobj = [obj];
+<b>var</b> ret;
+<b>while</b> (cnt<10) {
+  <b>Event.update</b>(100);
+  <b>puts</b>(<i>"Main-loop"</i>);
+  <b>if</b> (((cnt++)%3)==0)
+      i.eval(<i>"puts('Hello from main!!!!!!!!!!!!!!!!!!!!!!!!');"</i>);
+  ret = i.call(<i>'recv2'</i>,aobj);
+  <b>puts</b>(ret);
+}
+</pre></nowiki>
+
+The last way involves using send() to pass messages to the recvCmd option to the interp. 
+This function, which simply receives an array of all outstanding messages, is always asyncronous. 
+It is also the most efficient since messages can be batched up.
+
+    <nowiki><pre class=verbatim>
+var cmd = <i>"
+    function recv(s) { puts('recv: '+s.toString()); };
+    thrd = Info.interp().thread;
+    puts(thrd);
+    puts('Child starting: '+(thrd?'true':'false'));
+    while (thrd) {
+        Event.update(500);
+        puts('Child-loop');
+        Interp.send({abc:1});
+    };
+"</i>;
+
+<b>function</b> myrecv(s) { <b>puts</b>(<i>'>>>>>>>>>>MYRECV: '</i>+s.toString()); };
+<b>Interp.conf</b>({recvCmd:'myrecv'});
+
+<b>var</b> cnt=0, i = new Interp</b>({subthread:true, scriptStr:cmd, recvCmd:'recv'});
+
+<b>Sys.sleep</b>(1000);
+<b>var</b> obj = {AA:1,BB:2};
+<b>var</b> aobj = [obj];
+<b>while</b> (cnt<10) {
+  <b>Event.update</b>(100);
+  <b>puts</b>("Main-loop");
+  i.send(obj);
+  //i.send(aobj,'recv2');
+} 
+</pre></nowiki>
+
+<h3 id=alias>Aliases</h3>
+
+The alias method allows defining commands in a sub-interp that end up getting invoked in the parent. 
+The definition can also add arguments the are to be prepended to the called method. 
+Aliases can later be redefined as null to delete them.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> i = new Interp</b>(); <b>function</b> myAlias(interp,name,arg1,arg2) {
+   <b>puts</b>(<i>'myAlias: interp name arg1 '</i>+arg2);
+}
+<b>function</b> myAlias2(arg1,arg2) {
+   <b>puts</b>(<i>'myAlias2: arg1 '</i>+arg2);
+}
+i.alias(<i>'foo'</i>, myAlias, [i, <i>'foo'</i>]); i.alias(<i>'bar'</i>, myAlias2,null);
+<b>puts</b>(i.alias()); puts(i.alias(<i>'foo'</i>)); puts(i.alias(<i>'foo'</i>, myAlias));
+i.eval(<i>'bar(1,2)'</i>);
+i.eval(<i>'var bb = {x:1};'</i>); i.alias(<i>'bb.fig'</i>, myAlias, [i, <i>'bb.fig'</i>]); i.eval(<i>'bb.fig(1)'</i>);
+i.alias(<i>'bb.fig'</i>, myAlias, [i, <i>'bb.FIG'</i>]); i.eval(<i>'bb.fig(1)'</i>);
+<b>puts</b>(i.alias()); i.alias(<i>'bb.fig'</i>, null, null); puts(i.alias());
+<b>try</b> { i.eval('bb.fig(1)'); } <b>catch</b>(e) { puts</b>(<i>"CAUGHT ERROR: "</i>+e); }; puts(<i>"OK"</i>);
+</pre></nowiki>
+
+<h3 id=options>Options</h3>
+
+Options can be set for the current interpreters options as in:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>({strict:false});
+<b>Interp.conf</b>();
+
+    { args:[  ], debug:0, indexFile:null, isSafe:false, lockTimeout:-1, maxDepth:1000, 
+      maxIncDepth:50, maxInterpDepth:10, maxOpCnt:0, maxUserObjs:0, strict:false, 
+      onExit:null, privKeys:true, rcvCmd:null, scriptFile:null, scriptStr:null, 
+      subthread:false, doUnlock:true }
+</pre></nowiki>
+
+<h3 id=interpdata>Inter-Interp Data</h3>
+
+Data objects may not be shared between interps. 
+The mechanism used to enforce this is to convert all data sent between interps to and from JSON.
+Allowances should be made for such overhead.
+
+<h3 id=envvars>Environment</h3>
+
+The environment variable <b>JSI_INTERP_OPTS</b> can be used for running scripts
+with certain Interp options set:
+
+    <nowiki><pre class=verbatim>
+<b>JSI_INTERP_OPTS</b>="{memDebug:1, maxOpCnt:1000000}" jsish myscript.js
+</pre></nowiki>
+
+In the case of <b>memDebug</b>, it is vital that no Value memory be allocated before
+hand, otherwise detection of memory leaks will not be accurate.
+So this is the only way we can set this particular option.
+
+<h3 id=compat>Backward Compatibility</h3>
+
+The <b>compat</b> option is provided to support backward compatibility with code written
+which uses options available in future releases of Jsi. Running such code with an older 
+Jsi can cause script parse errors due to unknown options. We can prevent this by adding to the script:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>({compat:<b>true</b>}); 
+</pre></nowiki>
+ 
+This provides an alternative to adding conditionals with <b>Info.version()</b>.
+
+The application may still not work correctly, but at least parsing won't fail.
+<hr>
+
+<h2 id=refs>References</h2>
+
+For more details see the [./reference.wiki#Interp|Interp Reference] and [./reference.wiki#Event|Event Reference].

@@ -1,0 +1,16 @@
+14-05-XX: Release 1.0.2
+ - Migrate documentation into fossil
+ - Move libwebsocket/sqlite3/miniz dirs out of source tree.
+ 
+14-05-19: Release 1.0.1
+ - Sqlite enhancements: nocache and mapundef
+ - Sqlite: add modes array/array1.
+ - Sqlite: Add execOpts to Sqlite constructor option.
+ - To option parse, add null resets to defaults.
+ - Fix bugs in suboptions parsing.
+ - Rework DString to support static init with {}
+ - Add --nozvfs option to main.c
+ - Fix daylight savings off by 1 hour.
+
+14-04-20: Release 1.0.0
+ - Initial release

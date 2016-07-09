@@ -1,0 +1,46 @@
+<html>
+<?include('head1.html');?>
+<body onload='DoInit()' >
+<?
+  function hdrs(s) {echo('<hr>\n<h2>'+s+'</h2>\n');};
+  hdrs('Main');
+?>
+Welcome to the Jsi sample web application.
+<p />
+What are some reasons for using Jsi:
+<ul>
+<?
+  var xx = ['Simplicity','Independance','Speed'];
+  for (var i in xx)
+    echo('<li>'+xx[i]+'</li>');
+?>
+</ul>
+
+<?
+  include('sub1.html');
+  var secns = [4, 5, 6];
+  for (var i in secns) {
+      var secn = secns[i];
+      include('subN.html');
+  }
+?>
+
+<script>
+function DoInit() {
+    var pcol, url, u = document.URL;
+    if (u.substring(0, 5) == "https") {
+        pcol = "wss://";
+        u = u.substr(8);
+    } else {
+        pcol = "ws://";
+        if (u.substring(0, 4) == "http")
+            u = u.substr(7);
+    }
+    u = u.split('/');
+    url = pcol + u[0];
+    ws = new WebSocket(url, "jsi-protocol");
+}
+
+</script>
+</body>
+</html>

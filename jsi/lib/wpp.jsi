@@ -1,0 +1,138 @@
+#!/usr/bin/env jsish
+// jsi_wpp preprocesses html, evaluating the javascript in between  <? ?> tags (like php).
+// Evaluation occurs within a subinterp. Two commands are added: include(file,...) and echo(str).
+
+function jsi_wpp(files, opts)
+{
+    var that = this;    // Give functions access to this[].
+    var init = {
+        rc:'', files:[], chpos:0, curdir:'', data:'', errs:'',
+        incsMax:1000, noCatch:true, delInterp:true,
+        starttag:'<?', endtag:'?>', interp:null, interpOpts:{}
+    };
+    
+    function echo(s)    // Echo a string to output.
+    {
+        that.rc += s;
+    }
+    
+    function error(s)   // Format an error with file/line number.
+    {
+        var fn = that.files[that.files.length-1];
+        var line = that.data.split('\n').length;
+        return 'Error at '+fn+':'+line+': '+ s;
+    }
+ 
+    function include()  // Include and evaluate files, recusively.
+    { 
+        var ai, fn, args = [], slen = that.starttag.length, elen = that.starttag.length;
+        var odata = that.data;
+        if (arguments.length == 1 && arguments[0] != undefined && typeof arguments[0] == 'object')
+            args = arguments[0];
+        else
+            for (var i in arguments)
+                args.push(arguments[i]);
+        that.data = '';
+        for (ai=0; ai<args.length; ai++) {
+            if (that.files.length > that.incsMax)
+                throw error("recursive include");
+            fn = args[ai];
+            if (that.files.length) {
+                var pfn = that.files[that.files.length-1];
+                fn = File.join(File.dirname(pfn), fn);
+            } else {
+                fn = File.realpath(fn);
+            }
+            if (!File.exists(fn)) {
+                that.data = odata;
+                throw error("file not found: "+fn);
+            }
+            // Break up on tag boundaries.
+            var x = File.read(fn);
+            var s = [], e = [];
+            var n=0;
+            while (1) {
+                n = x.indexOf(that.starttag, n);
+                if (n<0) break;
+                s.push(n);
+                n++;
+            }
+            if (s.length<=0) {
+                return echo(x);
+            }
+            that.files.push(fn);
+            n = 0;
+            while (1) {
+                n = x.indexOf(that.endtag, n);
+                if (n<0) break;
+                e.push(n);
+                n++;
+            }
+            if (s.length != e.length)
+                throw error('tags not balanced');
+            var pre;
+            for (var i in s) {
+                if (s[i]>e[i])
+                    throw error('begin/end out of order');
+            }
+            // Now do the work: collect data/evaluate code.
+            n = 0;
+            var data = '';
+            for (var i in s) {
+                pre = x.substr(n,s[i]-n);
+                echo(pre);
+                data += pre;
+                that.chpos = n = e[i]+elen;
+                var code = x.substr(s[i]+slen, e[i]-s[i]-elen);
+                that.data = data;
+                try {
+                    that.interp.eval(code);
+                } catch(e) {
+                    throw error('while evaling code:'+code+'\n'+e);
+                }
+                data += '<?'+code+'?>';
+                that.data = data;
+            }
+            var l = s.length-1;
+            if (e[e.length-1] < x.length-1) {
+                pre = x.substr(e[i]+elen);
+                echo(pre);
+            }
+            that.files.pop();
+        }
+        that.data = odata;
+    }
+   
+    // Start of main function.
+    jsi_parseOpts(this, opts, init);
+    var oint = this.interp;
+    if (!this.interp)
+        this.interp = new Interp(this.interpOpts);
+    if (!this.interp.alias('echo'))
+        this.interp.alias('echo', echo, null);
+    if (!this.interp.alias('include'))
+        this.interp.alias('include', include, null);
+        
+    if (this.noCatch)
+        include(files);
+    else {
+        try {
+            include(files);
+        } catch(e) {
+            this.rc = "<h1 style='color:red'>JSI ERROR</h1><pre>";
+                this.rc += e;
+            this.rc += '\n\n'+this.errs+"</pre>";
+        }
+    }
+    if (this.delInterp) {
+        delete this.interp;
+        this.interp = null;
+    }
+    return this.rc;
+};
+  
+
+if (Info.isMain()) {
+    puts(jsi_invokeMain('jsi_wpp'));
+}
+

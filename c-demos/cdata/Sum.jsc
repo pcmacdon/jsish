@@ -1,0 +1,6 @@
+ext Sum = {
+    function add(n1:number, n2:number=1):number {
+        n1+=n2;
+        RETURN(n1);
+    }
+};

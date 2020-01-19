@@ -1,26 +1,13 @@
-# Readme
+**Jsi** is a small, embeddable javascript interpreter.
 
-## http://jsish.org
+    wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
+    unzip jsi.zip && cd jsi && make
 
-Jsi is a javascript interpreter with:
+    jsish -u tests          # Run builtin tests.
+    jsish -W index.html     # View html in browser.
+    jsish -S mysqlite.db    # Sqlite web GUI.
+    
+    jsish -c -jsc "function add(n1:number, n2:number=1):number { n1+=n2; \nRETURN(n1);\n }" Sum 
+    jsish -e 'require("Sum".0); return Sum.add(9,3);'   # Simple extension.
 
-+ Tight C integration with extensive C-API.
-+ Extensions for Filesystem, OS, WebSocket, Sqlite, MySql, etc.
-+ Integrated debugging (command-line or optional GUI-web).
-+ Web framework, with example applications.
-+ Sub-interpreters and introspection (modelled after Tcl).
-+ Easy embedding within C applications.
-
-Jsi implements an extended Ecmascript with functions supporting types and default values:
-
-> __function foo (a:number, b:string=''):number {}__
-
-These functions can also be preprocessed to javascript, ie. for use in Web Browsers.
-
-
-## Building Jsi
-
-To build:
-
-    ./configure
-    make
+Website: [https://jsish.org/](https://jsish.org/)

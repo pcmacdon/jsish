@@ -37,7 +37,9 @@ MAKECONF=make.conf
 
 ifneq ($(JSI_CONFIG_DEFINED),1)
 unconfigured:
-	@echo "ERROR!!!!!!!!!  NEED TO RUN: ./configure"
+	./configure
+	$(MAKE)
+#	@echo "ERROR!!!!!!!!!  NEED TO RUN: ./configure"
 endif
 
 # Detect when config file changed in incompatible way.

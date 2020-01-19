@@ -1,8 +1,0 @@
-<!-- User interface for ledger -->
-<!DOCTYPE html>
-<html>
-<?
-    include('head.html');
-    include('body.html');
-?>
-</html>

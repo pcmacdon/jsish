@@ -1,1 +1,0 @@
-source('ledger.jsi', {isMain:true});

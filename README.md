@@ -14,15 +14,15 @@
 
 | NAME                      | DESCRIPTION                    | NAME                      | DESCRIPTION                    |
 |---------------------------|--------------------------------|---------------------------|--------------------------------|
-| [Builtins](Builtins.md)   | The built-in commands          | [Reference](Reference.md) | Built-in commands (generated)  |
-| [C-API](C-API.md)         | The C API                      | [Interp](Interp.md)       | The Interp API                 |
-| [CData](CData.md)         | Using C structs in Jsi         | [Logging](Logging.md)     | Logging support                |
-| [Coding](Coding.md)       | Developing with Jsi            | [Misc](Misc.md)           | Various topics                 |
-| [DBQuery](DBQuery.md)     | Sqlite database queries from C | [MySql](MySql.md)         | MySql database API             |
-| [Debug](Debug.md)         | Debugging in Jsi               | [Web](Web.md)             | Web and WebSocket support      |
-| [Demos](Demos.md)         | Demo applications              | [Sqlite](Sqlite.md)       | Sqlite database API            |
-| [Deploy](Deploy.md)       | Deploying Jsi apps             | [Testing](Testing.md)     | Testing facility for scripts   |
-| [Download](Download.md)   | Downloading and building       | [Types](Types.md)         | Function parameter types       |
+| [Builtins](https://jsish.org/doc/Builtins.md)   | The built-in commands          | [Reference](https://jsish.org/doc/Reference.md) | Built-in commands (generated)  |
+| [C-API](https://jsish.org/doc/C-API.md)         | The C API                      | [Interp](https://jsish.org/doc/Interp.md)       | The Interp API                 |
+| [CData](https://jsish.org/doc/CData.md)         | Using C structs in Jsi         | [Logging](https://jsish.org/doc/Logging.md)     | Logging support                |
+| [Coding](https://jsish.org/doc/Coding.md)       | Developing with Jsi            | [Misc](https://jsish.org/doc/Misc.md)           | Various topics                 |
+| [DBQuery](https://jsish.org/doc/DBQuery.md)     | Sqlite database queries from C | [MySql](https://jsish.org/doc/MySql.md)         | MySql database API             |
+| [Debug](https://jsish.org/doc/Debug.md)         | Debugging in Jsi               | [Web](https://jsish.org/doc/Web.md)             | Web and WebSocket support      |
+| [Demos](https://jsish.org/doc/Demos.md)         | Demo applications              | [Sqlite](https://jsish.org/doc/Sqlite.md)       | Sqlite database API            |
+| [Deploy](https://jsish.org/doc/Deploy.md)       | Deploying Jsi apps             | [Testing](https://jsish.org/doc/Testing.md)     | Testing facility for scripts   |
+| [Download](https://jsish.org/doc/Download.md)   | Downloading and building       | [Types](https://jsish.org/doc/Types.md)         | Function parameter types       |
 
 ### Notes
 

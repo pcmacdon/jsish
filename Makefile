@@ -353,7 +353,7 @@ src/jsiParser.c: src/jsiParser.y
 	-lemon src/jsiParser.y
 
 # Create the single amalgamation file jsi.c
-src/jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
+src/jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE)
 	cat src/jsi.h > $@
 	echo "#ifndef JSI_IN_AMALGAMATION" >> $@
 	echo "#define JSI_IN_AMALGAMATION" >> $@

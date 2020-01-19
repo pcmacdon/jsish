@@ -2,9 +2,9 @@
 #ifndef __JSI_H__
 #define __JSI_H__
 
-#define JSI_VERSION_MAJOR   2
-#define JSI_VERSION_MINOR   8
-#define JSI_VERSION_RELEASE 55
+#define JSI_VERSION_MAJOR   3
+#define JSI_VERSION_MINOR   0
+#define JSI_VERSION_RELEASE 0
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 

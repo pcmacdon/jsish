@@ -9,7 +9,7 @@ DEPS=$(CSTRFN) $(JSIDIR)/jsi.c $(JSIDIR)/jsi.h Makefile
 
 all: shared
 
-shared: Bee.so Car.so Baker.so Bag.so Tiny.so Vimy.so VarTest.so
+shared: Bee.so Car.so Baker.so Bag.so Tiny.so Vimy.so VarTest.so Sum.so
 
 static: Bee Car Baker
 
@@ -55,6 +55,9 @@ Car.so: Car.c $(DEPS)
 
 Carsh: Car
 	jsish -z zvfs Car
+
+Sum.so: Sum.c $(DEPS)
+	$(CC) `$(CCGET) $@`
 
 Baker: Baker.c $(DEPS)
 	$(CC) `$(CCGET) $@`

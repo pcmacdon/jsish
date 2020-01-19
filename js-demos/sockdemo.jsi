@@ -1,0 +1,89 @@
+#!/usr/bin/env jsish
+require('Jsish');
+require('WebSocket', '2');
+
+function sockdemo(args:array|string=void, conf:object=void) {
+
+    var self = {
+        done:false,
+        cnt:0,
+        s:null,
+        exitEv:null
+    };
+    var options = { // Demo of Jsi sockets.
+        client  :false,         // Run in client mode.  Default is server mode.
+        count   :10,            // Number of times client sends a string.
+        debug   :0,             // Debug mode for Socket.
+        port    :9000,          // Port number.
+        udp     :false          // Use udp.
+    };
+      
+    parseOpts(self, options, conf);
+
+    function ClientSend() {
+        puts("SEND: "+self.cnt);
+        self.s.send(-1, 'Hello from client: '+self.cnt);
+        if (self.cnt++ > self.count) {
+            puts("DONE");
+            self.done = true;
+            exit(0);
+        }
+    }
+    
+    function onRecv(s:userobj, id:number, str:string) {
+        puts("onRecv: "+str);
+        LogTrace("CONF: "+self.s.idconf().toString());
+        if (!self.client && !self.udp)
+            self.s.send(id, 'Server recv #'+id+' '+self.cnt++);
+    }
+    
+    function onOpen(s:userobj, info:object) {
+        LogDebug("onOpen");
+        if (self.exitEv) {
+            puts("CLEARING");
+            clearInterval(self.exitEv);
+        }
+        self.exitEv = null;
+    }
+    
+    function onClose(s:userobj|null, id:number) {
+        LogDebug("onClose: "+id);
+        self.exitEv = setTimeout(function () { LogDebug("Server timeout"); self.done=true;}, 10000);
+    }
+
+
+    function onCloseLast(s:userobj|null) {
+        self.done = true;
+        if (!s) return;
+        puts('Stats', s.idconf());
+    }
+    
+    function main() {
+        var opts = {
+            onOpen  :onOpen,
+            onClose :onClose,
+            onCloseLast :onCloseLast,
+            onRecv  :onRecv,
+            port    :self.port,
+            client  :self.client,
+            udp     :self.udp,
+            debug   :self.debug
+        };
+        
+        self.s = new Socket(opts);
+        if (self.client)
+            setInterval(ClientSend, 1000);
+        else if (!self.port)
+            puts("listening on port:", self.s.conf('port'));
+        
+        while (!self.done)
+            update(10);
+    }
+    
+    main();
+}
+
+provide(sockdemo);
+
+if (isMain())
+    runModule(sockdemo);

@@ -1,0 +1,19 @@
+<title>Ledger</title>
+
+<h4>Ledger: Basic Home Accounting</h4>
+
+Ledger is a home accounting program 
+implemented entirely in javascript with Jsi.
+It uses a web GUI and stores your data in a local in sqlite database.
+
+<h4>Getting Ledger</h4>
+
+Download the source for Jsi and run it using: <b>../Ledger/main.jsi</b>
+
+Or do a "make ledger.zip" and run it from the zip file using: <b>jsish ledger.zip</b>
+
+Alternatively you can download ledger.zip from [http://jsish.org/downloads|here],
+but this version may not be up to date. 
+
+
+

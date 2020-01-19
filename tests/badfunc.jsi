@@ -1,0 +1,31 @@
+#!/usr/local/bin/jsish -u %s
+
+var x = {a:1, b:2};
+x.big = function() {};
+x.bad = function() {};
+x.ugly = function() {};
+try {
+    x.xx();
+} catch(e) {
+;   e;
+}
+
+try {
+    File.xx();
+} catch(e2) {
+;   e2;
+}
+
+;Info.funcs(x);
+;Info.data(x);
+;Info.data();
+
+/*
+=!EXPECTSTART!=
+e ==> 'xx', functions are: bad big ugly.
+e2 ==> 'xx' sub-commands are: atime chdir chmod copy dirname executable exists extension glob isdir isfile isrelative join link lstat mkdir mknod mtime owned pwd read readable readlink realpath remove rename rootname size stat tail tempfile truncate type writable write.
+Info.funcs(x) ==> [ "bad", "big", "ugly" ]
+Info.data(x) ==> [ "a", "b" ]
+Info.data() ==> [ "x" ]
+=!EXPECTEND!=
+*/

@@ -1,0 +1,70 @@
+#!/usr/local/bin/jsish -u %s
+
+var x, xx, y, K;
+;x = 1;
+;xx = 2;
+;y = 2;
+;y++;
+
+;Info.vars('x');
+;Info.vars(/x/);
+;Info.vars();
+
+function X(a) {var jj=1, kk; return jj++;};
+function XX(a) {};
+function Y(a) {};
+
+;Info.funcs('X').argList;
+;Info.funcs(/X/);
+;Info.funcs();
+
+;K = {};
+;K.f = function(z) {
+;   'F';
+};
+;K.g = function(z) {
+;   'G';
+};
+;K.f(1);
+;Info.funcs(K.f).argList;
+;Info.funcs(K);
+
+;File.tail(Info.script());
+;File.tail(Info.script(XX));
+var fn = File.tail(Info.script(/.*/)[0]);
+;fn;
+
+;Info.cmds(/^loa./);
+;Info.cmds('String.concat');
+
+X.prototype.P = function(M) { return M; };
+X.prototype.Q = function(M) { return M; };
+;[X.prototype.P, X.prototype.Q];
+;Info.funcs(X.prototype);
+
+/*
+=!EXPECTSTART!=
+x = 1 ==> 1
+xx = 2 ==> 2
+y = 2 ==> 2
+y++ ==> 2
+Info.vars('x') ==> { type:"number" }
+Info.vars(/x/) ==> [ "xx", "x" ]
+Info.vars() ==> [ "xx", "x", "y", "K" ]
+Info.funcs('X').argList ==> [ "a" ]
+Info.funcs(/X/) ==> [ "XX", "X" ]
+Info.funcs() ==> [ "XX", "X", "Y" ]
+K = {} ==> {}
+K.f(1) ==> 'F'
+undefined
+Info.funcs(K.f).argList ==> [ "z" ]
+Info.funcs(K) ==> [ "f", "g" ]
+File.tail(Info.script()) ==> info.jsi
+File.tail(Info.script(XX)) ==> info.jsi
+fn ==> info.jsi
+Info.cmds(/^loa./) ==> [ "load" ]
+Info.cmds('String.concat') ==> { args:"str:string, ...", flags:0, help:"Append one or more strings", maxArgs:-1, minArgs:0, name:"String.concat", retType:"string", type:"command" }
+[X.prototype.P, X.prototype.Q] ==> [ "function (M) {...}", "function (M) {...}" ]
+Info.funcs(X.prototype) ==> [ "P", "Q" ]
+=!EXPECTEND!=
+*/

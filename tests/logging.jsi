@@ -1,0 +1,85 @@
+#!/usr/local/bin/jsish -u %s
+
+log("Starting");
+function test(msg, debug) {
+    var logDebug = (debug?log.bind(null, 'DEBUG: '):noOp);
+    logDebug("testing 1, 2, 3: "+msg);
+}
+test('call1', false);
+test('call2', true);
+
+;Interp.conf({noStderr:true});
+
+function foo() {
+;   log('hello worm');
+;   console.puts('hello cat');
+;   console.log('hello bird');
+;   console.log('hello dog');
+;   console.printf('hello %s', 'snail');
+;   console.puts('MANKY:', 'hello', 'slug');
+}
+
+foo();
+;Interp.conf({logOpts:{before:true}});
+foo();
+;Interp.conf({logOpts:{file:false}});
+foo();
+;Interp.conf({logOpts:{func:false}});
+foo();
+puts('done');
+
+/*
+=!EXPECTSTART!=
+"Starting", logging.jsi:3, 
+"DEBUG:  testing 1, 2, 3: call2", logging.jsi:6, test()
+Interp.conf({noStderr:true}) ==> undefined
+log('hello worm') ==> "hello worm", logging.jsi:14, foo()
+undefined
+console.puts('hello cat') ==> hello cat
+undefined
+console.log('hello bird') ==> "hello bird", logging.jsi:16, foo()
+undefined
+console.log('hello dog') ==> "hello dog", logging.jsi:17, foo()
+undefined
+console.printf('hello %s', 'snail') ==> hello snailundefined
+console.puts('MANKY:', 'hello', 'slug') ==> MANKY: hello slug
+undefined
+Interp.conf({logOpts:{before:true}}) ==> undefined
+log('hello worm') ==> logging.jsi:14:  "hello worm", foo()
+undefined
+console.puts('hello cat') ==> hello cat
+undefined
+console.log('hello bird') ==> logging.jsi:16:  "hello bird", foo()
+undefined
+console.log('hello dog') ==> logging.jsi:17:  "hello dog", foo()
+undefined
+console.printf('hello %s', 'snail') ==> hello snailundefined
+console.puts('MANKY:', 'hello', 'slug') ==> MANKY: hello slug
+undefined
+Interp.conf({logOpts:{file:false}}) ==> undefined
+log('hello worm') ==> hello worm, foo()
+undefined
+console.puts('hello cat') ==> hello cat
+undefined
+console.log('hello bird') ==> hello bird, foo()
+undefined
+console.log('hello dog') ==> hello dog, foo()
+undefined
+console.printf('hello %s', 'snail') ==> hello snailundefined
+console.puts('MANKY:', 'hello', 'slug') ==> MANKY: hello slug
+undefined
+Interp.conf({logOpts:{func:false}}) ==> undefined
+log('hello worm') ==> hello worm
+undefined
+console.puts('hello cat') ==> hello cat
+undefined
+console.log('hello bird') ==> hello bird
+undefined
+console.log('hello dog') ==> hello dog
+undefined
+console.printf('hello %s', 'snail') ==> hello snailundefined
+console.puts('MANKY:', 'hello', 'slug') ==> MANKY: hello slug
+undefined
+done
+=!EXPECTEND!=
+*/

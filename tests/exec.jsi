@@ -1,0 +1,38 @@
+#!/usr/local/bin/jsish -u %s
+if (Info.platform().os === 'win') {
+    var x = exec('dir /b');
+    throw("This script 'exec.jsi' is not designed for windows");
+}
+
+;exec('ls -d /tmp');
+;exec('ls -d /tmp',{trim:true});
+;exec('gobbledeygook', {noError:true});
+;exec('gobbledeygook', {retCode:true});
+;exec('gobbledeygook 2>&1', {retAll:true});
+;exec('grep -q bakker', {input:'able\nbaker\ncharlie\n'});
+;exec('grep -q baker', 'able\nbaker\ncharlie\n');
+;exec('ls /tmp', {retCode:true});
+;exec('sleep 1&');
+;exec('sleep 1', {bg:true});
+
+/*
+=!EXPECTSTART!=
+exec('ls -d /tmp') ==> /tmp
+
+exec('ls -d /tmp',{trim:true}) ==> /tmp
+exec('gobbledeygook', {noError:true}) ==> 
+exec('gobbledeygook', {retCode:true}) ==> 127
+exec('gobbledeygook 2>&1', {retAll:true}) ==> { code:127, data:"sh: 1: gobbledeygook: not found\n", status:0 }
+exec('grep -q bakker', {input:'able
+baker
+charlie
+'}) ==> 1
+exec('grep -q baker', 'able
+baker
+charlie
+') ==> 0
+exec('ls /tmp', {retCode:true}) ==> 0
+exec('sleep 1&') ==> 0
+exec('sleep 1', {bg:true}) ==> 0
+=!EXPECTEND!=
+*/

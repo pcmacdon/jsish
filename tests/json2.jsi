@@ -1,0 +1,42 @@
+#!/usr/local/bin/jsish -u %s
+
+var x = '{"type":"", "label":"editTran", "data" : [6,2961]}';
+var x2 = '{"type":"", "label":"editTran", data : [6,2961]}';
+;JSON.check(x,false);
+;JSON.check(x);
+;JSON.check(x2,false);
+;JSON.check(x2);
+;JSON.parse(x, false);
+;JSON.parse(x);
+
+;JSON.parse(x2, false);
+try {
+;   JSON.parse(x2);
+} catch(e) {
+;   e;
+}
+var dat = { able:1, baker:undefined };
+;JSON.stringify(dat);
+
+x = JSON.parse('["ABC",1]');
+;x.toString();
+
+JSON.parse('{ "Columns": [ 1, 2], "A" : 1 }');
+x = JSON.parse('{ "Columns": [ 1, 2, {"ABC":1, "B":[2,3]}, 2], "A" : 1 }');
+;x.toString();
+
+/*
+=!EXPECTSTART!=
+JSON.check(x,false) ==> true
+JSON.check(x) ==> true
+JSON.check(x2,false) ==> true
+JSON.check(x2) ==> false
+JSON.parse(x, false) ==> { data:[ 6, 2961 ], label:"editTran", type:"" }
+JSON.parse(x) ==> { data:[ 6, 2961 ], label:"editTran", type:"" }
+JSON.parse(x2, false) ==> { data:[ 6, 2961 ], label:"editTran", type:"" }
+JSON.parse(x2) ==> e ==> JSON parse error (unexpected char in strict mode) at offset 32 "data : [6,2961]}"
+JSON.stringify(dat) ==> { "able":1 }
+x.toString() ==> [ "ABC", 1 ]
+x.toString() ==> { A:1, Columns:[ 1, 2, { ABC:1, B:[ 2, 3 ] }, 2 ] }
+=!EXPECTEND!=
+*/

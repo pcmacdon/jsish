@@ -1,0 +1,14 @@
+#!/usr/local/bin/jsish --U %s
+
+// A map indexed by struct.
+;CStruct('Bee', 'int s:4; int r:3; int t=8;');
+;CStruct('Bkey', 'int a; int b;');
+
+var bkey, tree3  = new CData('Bee{@Bkey}');
+;bkey={a:1,b:2};
+;tree3.set(bkey, 't', 2);
+;tree3.get(bkey, 't');
+;bkey.a++;
+;tree3.set(bkey, 't', 2);
+;tree3.names();
+;tree3.conf();

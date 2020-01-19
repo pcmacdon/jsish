@@ -1,0 +1,47 @@
+#!/usr/local/bin/jsish -u %s
+
+var PREDEFINE = 'at global';
+
+function haha(...) {
+    return {
+        getpredefine: function() { return PREDEFINE; },
+        setpredefine: function(a) { PREDEFINE = a; },
+        eval: function(n) { eval(n); }
+    };
+};
+
+var a = haha();
+
+;a.getpredefine();
+a.setpredefine('predefine must be in global');
+;a.getpredefine();
+a.eval("PREDEFINE = 'predefine in global after eval';");
+;a.getpredefine();
+a.eval("var PREDEFINE = 'predefine now in local';");
+;a.getpredefine();
+;'global predefine: ' + PREDEFINE;
+
+function hehe(n:string=void)
+{
+    if (n) eval(n);
+;   PREDEFINE;
+};
+
+hehe();
+hehe("var PREDEFINE = 100;");
+hehe();
+
+
+/*
+=!EXPECTSTART!=
+a.getpredefine() ==> at global
+a.getpredefine() ==> predefine must be in global
+a.getpredefine() ==> predefine in global after eval
+a.getpredefine() ==> predefine in global after eval
+'global predefine: ' + PREDEFINE ==> global predefine: predefine in global after eval
+PREDEFINE ==> predefine in global after eval
+PREDEFINE ==> 100
+PREDEFINE ==> predefine in global after eval
+=!EXPECTEND!=
+*/
+

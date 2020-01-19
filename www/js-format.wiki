@@ -1,0 +1,30 @@
+<title>Format</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+</ul>
+</div>
+
+The sprintf command adds <i>printf</i> like functionality to javascript, eg.
+    
+    <nowiki><pre class=verbatim>
+<b>var</b> s, me = <i>'Me'</i>, cnt = 9;
+s = <b>format</b>(<i>'Help %s = %d!'</i>, me, cnt);
+</pre></nowiki>
+
+This sometimes more convenient than the traditional:
+
+    <nowiki><pre class=verbatim>
+s = <i>'Help '</i> + me + <i>' = '</i> + cnt + <i>'!'</i>;
+</pre></nowiki>
+
+which ends up dealing with a lot of quotes and plus signs.
+Format also simplifies aligned output:
+
+    <nowiki><pre class=verbatim>
+s = <b>format</b>(<i>'Help %-20s = %d!'</i>, me, cnt);
+</pre></nowiki>
+

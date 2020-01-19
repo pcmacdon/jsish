@@ -1,0 +1,497 @@
+<title>MySql</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#options|new MySql()]</li>
+<li>[#eval|eval()]</li>
+<li>[#onecolumn|oncolumn()]</li>
+<li>[#query|query()]</li>
+<ul>
+<li>[#queryopts|Query Options]</li>
+<li>[#outputs|Outputs]</li>
+<ul>
+<li>[#json|JSON]</li>
+<li>[#callback|Callback Function]</li>
+</ul>
+<li>[#inputs|Inputs]</li>
+<ul>
+<li>[#bindparam|Bindings]</li>
+<li>[#namedparam|Named-Binds]</li>
+<li>[#paramtypes|Types]</li>
+</ul>
+</ul>
+<li>[#misc|Miscellaneous]</li>
+<ul>
+<li>[#userfunc|User Functions]</li>
+<li>[#timestamp|Timestamps]</li>
+<li>[#caching|Caching]</li>
+<li>[#mysqldifs|Differences From Sqlite]</li>
+<li>[#buildmysql|Building]</li>
+</ul>
+</ul>
+</div>
+
+The MySql driver provides three basic commands for executing sql:
+
+  *  <b>eval()</b> for running simple sql requiring no input/output.
+  *  <b>onecolumn()</b> like eval, but returns a single value (first column of first row).
+  *  <b>query()</b> for complex, parameterized queries.
+
+
+<h2 id=options>new MySql()</h2>
+
+A simple session might look like:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> db = <b>new MySql</b>({user:<i>'root'</i>, password:<i>''</i>, database:<i>'jsitest'</i>});
+db.eval(<i>'CREATE TABLE players(name VARCHAR(50),age INTEGER);'</i>);
+db.query(<i>'INSERT INTO players VALUES(?,?);'</i>, {values:[<i>"Barry"</i>,44]});
+<b>var</b> age = db.onecolumn(<i>'SELECT age FROM players WHERE name = "Barry";'</i>);
+</pre></nowiki>
+
+A more complete example is [../js-demos/mysql.jsi?mimetype=application/javascript|mysql.jsi].
+
+
+
+Options passed in the object argument to <b>new MySql()</b>, may specify any of the following:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Option</th> <th>Type</th> <th>Description</th> <th>Default</th></tr>
+<tr><td>bindWarn</td><td>BOOL</td><td>Treat failed variable binds as a warning.</td><td>false </td><tr>
+<tr><td>database</td><td>STRKEY</td><td>Database to use.</td><td> </td><tr>
+<tr><td>debug</td><td>CUSTOM</td><td>Enable debug trace for various operations.</td><td> </td><tr>
+<tr><td>enableMulti</td><td>BOOL</td><td>Enable muilti-statements for eval().</td><td> </td><tr>
+<tr><td>queryOpts</td><td>CUSTOM</td><td>Default options for exec.</td><td> </td><tr>
+<tr><td>forceInt</td><td>BOOL</td><td>Bind float as int if possible.</td><td>true</td><tr>
+<tr><td>host</td><td>STRING</td><td>IP address or host name for mysqld (default is 127.0.0.1).</td><td> </td><tr>
+<tr><td>maxStmts</td><td>INT</td><td>Max cache size for compiled statements.</td><td> </td><tr>
+<tr><td>name</td><td>DSTRING</td><td>Name for this db handle.</td><td> </td><tr>
+<tr><td>password</td><td>STRKEY</td><td>Database password..</td><td> </td><tr>
+<tr><td>port</td><td>INT</td><td>IP port for mysqld.</td><td> </td><tr>
+<tr><td>reconnect</td><td>BOOL</td><td>Reconnect.</td><td> </td><tr>
+<tr><td>sslKey</td><td>STRING</td><td>SSL key.</td><td> </td><tr>
+<tr><td>sslCert</td><td>STRING</td><td>SSL Cert.</td><td> </td><tr>
+<tr><td>sslCA</td><td>STRING</td><td>SSL CA.</td><td> </td><tr>
+<tr><td>sslCAPath</td><td>STRING</td><td>SSL CA path.</td><td> </td><tr>
+<tr><td>sslCipher</td><td>STRING</td><td>SSL Cipher.</td><td> </td><tr>
+<tr><td>user</td><td>STRKEY</td><td>Database user name. Default is current user-name..</td><td> </td><tr>
+</table>
+
+Some of these options can later be changed
+using the <b>conf()</b> method, eg.
+
+    <nowiki><pre class=verbatim>
+<b>db.conf</b>({maxStmts:100});
+</pre></nowiki>
+
+Refer to the [./reference.wiki#MySql|Reference]</li> for details.
+
+<hr>
+<h2 id=eval>eval()</h2>
+
+The <b>eval()</b> method is used to execute simple Sql.
+It takes no options, and returns no values. 
+
+It can also be used to execute multiple semicolon-separated statements:
+
+    <nowiki><pre class=verbatim>
+<b>db.conf</b>({enableMulti:true});
+<b>db.exec</b>(<i>'CREATE TABLE foo(a,b);'</i>+
+<i>'INSERT INTO foo VALUES(1,2);'</i>+
+<i>'INSERT INTO foo VALUES("X","Y")'</i>);
+</pre></nowiki>
+
+This makes it useful for bulk loading.
+
+<hr>
+<h2 id=onecolumn>oncolumn()</h2>
+
+<b>onecolumn()</b> provides no inputs or outputs.  It simply returns the first column
+of the first row.  The mode and other options are ignored.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> maxid = <b>db.oncolumn</b>(<i>'SELECT max(id) FROM foo'</i>);
+</pre></nowiki>
+
+<hr>
+<h2 id=query>query()</h2>
+
+The  workhorse method is <b>query()</b> which:
+
+  *  compiles SQL into a compiled code, and caches it.
+  *  binds parameters.
+  *  executes the query.
+  *  returns the results.
+
+Here is an example:
+
+    <nowiki><pre class=verbatim>
+db.query(<i>'INSERT INTO players VALUES(?,?);'</i>, {values:[<i>"Barry"</i>,44]});
+</pre></nowiki>
+
+<h3 id=queryopts>Query Options</h3>
+
+Query options can be controlled either of two ways.  Per query, as in:
+
+    <nowiki><pre class=verbatim>
+db.query(<i>'SELECT * FROM test1'</i>, {mode:'json'}); 
+</pre></nowiki>
+
+or we can change the defaults (for the connection) like so:
+
+    <nowiki><pre class=verbatim>
+db.conf({<b>queryOpts</b>:{mode:<i>'json'</i>}});
+db.query(<i>'SELECT * FROM test1'</i>); 
+db.query(<i>'SELECT * FROM test2'</i>); 
+</pre></nowiki>
+
+Here is a list of the available <b>query()</b> options:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Option</th> <th>Type</th> <th>Description</th> <th>Default</th></tr>
+<tr><td>callback</td><td>FUNC</td><td>Function to call with each row result.</td><td> </td><tr>
+<tr><td>headers</td><td>BOOL</td><td>First row returned contains column labels.</td><td> </td><tr>
+<tr><td>limit</td><td>INT</td><td>Maximum number of returned values.</td><td> </td><tr>
+<tr><td>mapundef</td><td>BOOL</td><td>In variable binds, map an 'undefined' var to null.</td><td> </td><tr>
+<tr><td>maxString</td><td>INT</td><td>If not using prefetch, the maximum string value size (0=8K).</td><td> </td><tr>
+<tr><td>mode</td><td>CUSTOM</td><td>Set output mode of returned data.</td><td> </td><tr>
+<tr><td>nocache</td><td>BOOL</td><td>Query is not to be cached.</td><td> </td><tr>
+<tr><td>noNamedParams</td><td>BOOL</td><td>Disable translating sql to support named params.</td><td> </td><tr>
+<tr><td>nullvalue</td><td>STRKEY</td><td>Null string output (for non-json mode).</td><td> </td><tr>
+<tr><td>paramVar</td><td>ARRAY</td><td>Array var to use for parameters.</td><td> </td><tr>
+<tr><td>prefetch</td><td>BOOL</td><td>Let client library cache entire results.</td><td> </td><tr>
+<tr><td>separator</td><td>STRKEY</td><td>Separator string (for csv and text mode).</td><td> </td><tr>
+<tr><td>table</td><td>STRKEY</td><td>Table name for mode=insert.</td><td> </td><tr>
+<tr><td>typeCheck</td><td>CUSTOM</td><td>Type check mode.</td><td>error </td><tr>
+<tr><td>values</td><td>ARRAY</td><td>Values for ? bind parameters.</td><td> </td><tr>
+<tr><td>varName</td><td>STRBUF</td><td>String name of array var for ? bind parameters.</td><td> </td><tr>
+<tr><td>width</td><td>CUSTOM</td><td>In column mode, set column widths.</td><td> </td><tr>
+</table>
+
+<hr>
+<h3 id=outputs>Outputs</h3>
+
+The returned value from a query is determined by the chosen output <b>mode</b>.
+
+The default mode (rows) just returns an array of objects, which looks like this:
+
+    <nowiki><pre class=verbatim>
+[ { a:1, b:2 }, { a:"X", b:"Y" } ]
+</pre></nowiki>
+
+The choices for <b>mode</b> are a superset of those available in the sqlite3 command-line tool, namely:
+
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr ><th  >Mode</th><th  >Description</th><th  >Purpose</th></tr>
+<tr ><td >array1d</td><td >Flat array of values</td><td>script</td></tr>
+<tr ><td >arrays</td><td >An array of row-arrays</td><td>script</td></tr>
+<tr ><td >column</td><td >Column aligned text<b></b></td><td>text</td></tr>
+<tr ><td >csv</td><td >Comma (or separator) separated values<b></b></td><td>export</td></tr>
+<tr ><td >html</td><td >Html table rows<b></b></td><td>browser</td></tr>
+<tr ><td >insert</td><td >Sql insert statements<b></b></td><td>export</td></tr>
+<tr ><td >json</td><td >JSON string as an array of objects</td><td>browser</td></tr>
+<tr ><td >json2</td><td >JSON string with names/values in separate arrays</td><td>browser</td></tr>
+<tr ><td >line</td><td >One value per line in name=value form<b></b></td><td>export</td></tr>
+<tr ><td >list</td><td >The default sqlite3 output<b></b></td><td>text</td></tr>
+<tr ><td >none</td><td >No output</td><td></td></tr>
+<tr ><td >rows</td><td >An array of row-objects (the default)</td><td>script</td></tr>
+<tr ><td >tabs</td><td >Tab separator delineated values<b></b></td><td>script</td></tr>
+</table></nowiki>
+
+
+We can change the output <b>mode</b> for a <i>query()</i> using:
+
+    <nowiki><pre class=verbatim>
+<b>db.query</b>(<i>'SELECT * FROM foo'</i>, {mode:<i>'list'</i>});
+</pre></nowiki>
+
+to return:
+
+    <nowiki><pre class=verbatim>
+1|2|X
+Y|3|Z
+</pre></nowiki>
+
+Note: output for some modes is affected by the <b>headers</b> and <b>separator</b> options.
+
+<hr>
+
+<h4 id=json>JSON</h4>
+
+The json modes are useful
+when data is destined to be sent to a web browser, eg. via [./js-websocket.wiki|websockets]. 
+
+    <nowiki><pre class=verbatim>
+<b>db.exec</b>(<i>'DROP TABLE IF EXISTS foo; CREATE TABLE foo(a,b);'</i>);
+<b>var</b> n = 0, x = 99;
+<b>while</b> (n++ < 3) {
+    <b>db.query</b>(<i>'INSERT INTO foo VALUES(@x,@n)'</i>);
+    x -= 4;
+}
+x=<b>db.query</b>(<i>'SELECT * FROM foo'</i>,{mode:<i>'json'</i>});
+</pre></nowiki>
+
+Which produces:
+
+    <nowiki><pre class=verbatim>
+[ {"a":99, "b":1}, {"a":95, "b":2}, {"a":91, "b":3} ]
+</pre></nowiki>
+
+Where large amounts of data are involved, the <b>headers</b> option can be used to reduce size:
+
+    <nowiki><pre class=verbatim>
+<b>db.query</b>(<i>'SELECT * FROM foo'</i>,{mode:<i>'json'</i>, headers:true});
+</pre></nowiki>
+
+to output:
+
+    <nowiki><pre class=verbatim>
+[ ["a", "b"], [99, 1], [95, 2], [91, 3] ]
+</pre></nowiki>
+
+The <b>"json2"</b> mode is used to split headers and values out
+into separate members:
+
+    <nowiki><pre class=verbatim>
+<b>db.query</b>(<i>'SELECT * FROM foo'</i>,{mode:<i>'json2'</i>});
+</pre></nowiki>
+
+Which produces:
+
+    <nowiki><pre class=verbatim>
+{ "names": [ "a", "b" ], "values": [ [99, 1 ], [95, 2 ], [91, 3 ] ] }
+</pre></nowiki>
+
+<hr>
+<h4 id=callback>Callback Function</h4>
+
+Normally, query() will execute an entire query before returning the result.
+There are two ways to change this:
+
+  *  set the <b>callback</b> option, or
+  *  give a function as the second argument.
+  
+Either way invokes the callback with
+each row result: 
+
+    <nowiki><pre class=verbatim>
+<b>function</b> myfunc(n) { <b>puts</b>(<i>"a="</i> + n.a + <i>", b="</i> + n.b); }
+<b>db.query</b>(<i>'SELECT * FROM foo'</i>,myfunc);
+</pre></nowiki>
+
+If the callback function returns false, evaluation terminates immediately. 
+
+    <nowiki><pre class=verbatim>
+<b>db.query</b>(<i>'SELECT * FROM foo'</i>, <b>function</b> (n) {
+    <b>puts</b>(<i>"a="</i> + n.a + <i>", b="</i> + n.b);
+    <b>if</b> (a>1) <b>return</b> false;
+  });
+</pre></nowiki>
+
+<hr>
+
+<h3 id=inputs>Inputs</h3>
+
+Sql inputs can be easily formatted using strings:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> a=1, b='big';
+<b>db.query</b>(<i>'INSERT INTO foo VALUES('</i>+a+<i>','</i>+b+<i>')'</i>);
+</pre></nowiki>
+
+However this raises issues of security and predictability.
+Fortunately variable binding is easy.
+
+<h4 id=bindparam>Bindings</h4>
+
+MySql variable binding uses <b>"?"</b> placeholders to refer to array elements., eg:
+
+    <nowiki><pre class=verbatim>
+<b>db.query</b>(<i>'INSERT INTO foo VALUES(?,?)'</i>, {values:[11,12]});
+
+<b>var</b> vals = [9,10];
+<b>db.query</b>(<i>'INSERT INTO foo VALUES(?,?)'</i>, {values:vals});
+</pre></nowiki>
+
+This approach, for a small number of parameters, is more than adequate.
+
+<h4 id=namedparam>Named-Binds</h4>
+
+Jsi enhances MySql's standard variable binding with <b>named</b> binding.
+This is modelled after Sqlite named
+binding, and works by extracting
+named variables from the query, translating them internally into standard "<b>?</b>" form.
+
+A named-bind begin with one of the characters: <b>:</b>,  <b>@</b>, and <b>$</b>.
+For example:
+ 
+    <nowiki><pre class=verbatim>
+<b>var</b> x1=24.5, x2=<i>"Barry"</i>, x3=<i>"Box"</i>;
+db.query(<i>'INSERT INTO test2 VALUES( :x1, @x2, $x3 );'</i>);
+</pre></nowiki>
+
+As in Sqlite, the <b>$</b> bind may append round-brackets <b>()</b> to refer to compound variables.
+
+This example binds to objects members:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> y = {a:4, b:<i>"Perry"</i>, c:<i>"Pack"</i>};
+db.query(<i>'INSERT INTO test2 VALUES( $y(a), $y(b), $y(c) );'</i>);
+</pre></nowiki>
+
+And this one to arrays:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> Z = <i>2</i>;
+<b>var</b> y = [9, <i>'Figgy'</i>, <i>'Fall'</i>];
+db.query(<i>'INSERT INTO test2 VALUES( $y(0), $y(1), $y([Z]) );'</i>); 
+</pre></nowiki>
+
+Or more usefully:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> y = [
+    {a:4, b:<i>"Perry"</i>, c:<i>"Pack"</i>},
+    {a:9, b:<i>'Figgy'</i>, c:<i>'Fall'</i>}
+];
+for (var i=0; i<y.length; i++)
+    db.query(<i>'INSERT INTO test2 VALUES($y([i].a), $y([i].b), $y([i].c);'</i>); 
+</pre></nowiki>
+
+The contents of the round-brackets can contain multiple levels of dereference (but not expressions).
+
+Here are a few sample bindings, and their associated variables:
+
+    <table border='1' class='cmdstbl' ><tr ><th  align='center'>Binding</th><th  align='center'>Variable </th><th  align='center'>Comment </th></tr>
+<tr ><td>:X</td><td >X</td><td></td></tr>
+<tr ><td>@X</td><td >X</td><td></td></tr>
+<tr ><td>$X</td><td >X</td><td></td></tr>
+<tr ><td>$X(a)</td><td >X.a</td><td>Implicit object member</td></tr>
+<tr ><td>$X(9)</td><td >X&lsqb;9]</td><td>Implicit array (leading digits)</td></tr>
+<tr ><td>$X(&lsqb;a])</td><td >X&lsqb;a]</td><td>Explicit array</td></tr>
+<tr ><td>$X(a.b)</td><td >X.a.b</td><td>Compound object</td></tr>
+<tr ><td>$X(&lsqb;a].b)</td><td >X&lsqb;a].b</td><td>Compound array + object, etc</td></tr>
+</table>
+
+
+
+<hr>
+<h4 id=paramtypes>Types</h4>
+
+A  type specifier may also be included in a <b>$X(Y)</b> binding, as in:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> y = {a:4, b:"Purry", c:"Pax"};
+db.query(<i>'INSERT INTO test2 VALUES( $y(a:integer), $y(b:string), $y(c:string) );'</i>);
+</pre></nowiki>
+
+The type is the part after the colon "<b>:</b>", and just before the close round-brace. 
+
+By default, a type is used to convert data sent to MySql to the correct type.
+
+Type specifiers are supported for all variants of <b>$X(Y)</b> binding, such as:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> Z = <i>0</i>;
+<b>var</b> x = [<i>'Figgy'</i>];
+<b>var</b> y = {c:<i>'Fall'</i>};
+db.query(<i>'INSERT INTO test3 VALUES( $x(0:string), $y(c:string), $x([Z]:string) );'</i>); 
+</pre></nowiki>
+
+The supported type names are:
+
+    <table border='1' class='cmdstbl' ><tr ><th  align='center'>Type</th><th  align='center'>Description </th></tr>
+<tr ><td>bool</td><td >A tiny/bit value</td></tr>
+<tr ><td>double</td><td >A double value</td></tr>
+<tr ><td>integer</td><td >A 64 bit wide integer</td></tr>
+<tr ><td>string</td><td >A string</td></tr>
+<tr ><td>blob</td><td >A blob</td></tr>
+<tr ><td>date</td><td >A date value</td></tr>
+<tr ><td>datetime</td><td >A date+time value</td></tr>
+<tr ><td>time</td><td >A time value</td></tr>
+<tr ><td>timestamp</td><td >A unix timestamp</td></tr>
+</table>
+
+We can also change the type-checking behaviour via the <b>typeCheck</b> query option:
+
+For example, we can instead cause an error to be kicked an error with:
+
+    <nowiki><pre class=verbatim>
+var x = [ <i>'bad'</i> ];
+db.query(<i>'UPDATE test SET n = $x(0:number) );'</i>, {typeCheck:'error'}); 
+</pre></nowiki>
+
+The valid typeCheck modes are:
+
+    <table border='1' class='cmdstbl' ><tr ><th  align='center'>Value</th><th  align='center'>Description </th></tr>
+<tr ><td>convert</td><td >Coerce value to the requested type (the default)</td></tr>
+<tr ><td>warn</td><td >Generate a warning</td></tr>
+<tr ><td>error</td><td >Generate an error</td></tr>
+<tr ><td>disable</td><td >Ignore type specifiers</td></tr>
+</table>
+
+
+<hr>
+<h2 id=misc>Miscellaneous</h3>
+
+<h3 id=userfunc>User Functions</h3>
+
+SQL functions can be defined in javascript using <b>func()</b>:
+
+    <nowiki><pre class=verbatim>
+<b>db.func</b>(<i>'bar'</i>,<b>function</b>(n) { <b>return</b> n+'.000'; });
+<b>puts</b>(<b>db.onecolumn</b>(<i>'SELECT bar(a) FROM foo WHERE b == 2;'</i>));
+</pre></nowiki>
+
+<hr>
+<h3 id=timestamp>Timestamps</h3>
+
+Javascript time functions use the unix epoch to store the number of milliseconds
+since Jan 1, 1970 UTC.
+
+MySql stores dates/time in an internal format with one of the following types:
+
+    <table border='1' class='cmdstbl' ><tr ><th  align='center'>Value</th><th  align='center'>Description </th></tr>
+<tr ><td>TIMESTAMP</td><td >A unix date/timestamp</td></tr>
+<tr ><td>DATETIME</td><td >A date and time</td></tr>
+<tr ><td>DATE</td><td >A date</td></tr>
+<tr ><td>TIME</td><td >a time</td></tr>
+</table>
+
+
+<hr>
+<h3 id=caching>Caching</h3>
+
+In the interest of efficiency, compiled queries are cached on a per connection basis.
+The size of the cache is controlled by the <b>maxStmts</b> option.
+
+You can also disable caching for individual querys with <b>nocache</b>.
+
+
+<hr>
+<h3 id=mysqldifs>Differences From Sqlite</h3>
+
+Differences include a greater dependance on types, and requiring a user, password and database.
+
+<hr>
+<h3 id=buildmysql>Building</h3>
+
+The MySql driver does not (by default) come builtin to Jsi.
+
+However, once you [./download.wiki|download the source] you can build it in with:
+
+    <nowiki><pre class=verbatim>
+make mysql
+</pre></nowiki>
+
+Alternatively, the shared library can be built (for unix) with:
+
+    <nowiki><pre class=verbatim>
+make libmysql
+</pre></nowiki>
+

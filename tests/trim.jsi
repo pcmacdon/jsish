@@ -1,0 +1,34 @@
+#!/usr/local/bin/jsish -u %s
+
+var A, B, a, b, c, d;
+;A = ' a b c ';
+;A.trim();
+;B = ',.a b c,.';
+;B.trim(',.');
+;B.trimLeft(',.');
+;B.trimRight(',.');
+
+;a = 'a,b,c';
+;b = a.split(',');
+;c = b.join(',');
+
+;d = '{ a: 1, b : [ 9, \'dog\', 11 ] }';
+;eval('var e = '+d+';');
+;e.a;
+
+/*
+=!EXPECTSTART!=
+A = ' a b c ' ==>  a b c 
+A.trim() ==> a b c
+B = ',.a b c,.' ==> ,.a b c,.
+B.trim(',.') ==> a b c
+B.trimLeft(',.') ==> a b c,.
+B.trimRight(',.') ==> ,.a b c
+a = 'a,b,c' ==> a,b,c
+b = a.split(',') ==> [ "a", "b", "c" ]
+c = b.join(',') ==> a,b,c
+d = '{ a: 1, b : [ 9, 'dog', 11 ] }' ==> { a: 1, b : [ 9, 'dog', 11 ] }
+eval('var e = '+d+';') ==> undefined
+e.a ==> 1
+=!EXPECTEND!=
+*/

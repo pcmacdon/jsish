@@ -1,0 +1,25 @@
+<title>Threads</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+</ul>
+</div>
+
+Threads are supported in Jsi, 
+by creating an <b>Interp</b>
+with the option <b>{subthread:true}</b>.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> interp1 = <b>new Interp</b>({subthread:true});
+</pre></nowiki>
+
+Within an Interp, there can be only a one thread.
+
+Threads can be used in conjunction with [./js-events.wiki|Events] to multitask a single Jsi program.
+
+
+For more details, see [./js-interp.wiki#threads|Interp].
+

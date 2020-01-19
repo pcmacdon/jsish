@@ -1,0 +1,127 @@
+#!/usr/bin/env jsish
+// Generate documentation table of contents from headers <h1> <h2>...
+
+function jsi_mktoc(args:array, conf:object) {
+
+    var options = {// Generate documentation table of contents from headers <h1> <h2>...
+        debug:true,         // Enable debugging
+        numberHdrs:false,   // Add section numbers to headers
+        update:false        // Update file in place.
+    };
+    var self = {
+    };
+    parseOpts(self, options, conf);
+    
+    function mk1toc(fname:string) {
+        var rc = '', lst = [], idlst = [], lev = 0, prev = 0, cur = 0, res, lev, top = 0;
+        var id, lbl, intoc = false, sawtoc = false, line = 0, tpre = '', tpost = '', oldtoc = '';
+        var errs = 0, s, s0, fp = new Channel(fname);
+        while ((s0=fp.gets()) !== undefined) {
+            s = s0.trim();
+            line++;
+            if (!intoc) {
+                if (s === '<div id=wikitoc>') {
+                    if (sawtoc) throw('multiple wikitoc');
+                    sawtoc = true;
+                    intoc = line;
+                    continue;
+                }
+            } else {
+                if (s === '</div>') {
+                    intoc = false;
+                    continue;
+                }
+                oldtoc += s0+'\n';
+                continue;
+            }
+            if (sawtoc)
+                tpost += s0+'\n';
+            else
+                tpre += s0+'\n';
+                
+            if (!s.match(/^<h[1-9]/)) continue;
+            //s = "<h2 id=buildmysql>Building</h2>";
+            //res = s.match(/^<h([1-9]) id=([^\s>]+)/); // TODO: BUG IN REGEXP (MUSL?)??.
+            res = s.match(/^<h([1-9]) id=([_0-9a-zA-Z]+)>([^>]*)<\/h/);
+            if (!res) { console.log("missing id in heading: "+s); errs++; continue; }
+            //puts(s);
+            lev = res[1];
+            id = res[2];
+            lbl = res[3];
+            if (idlst.indexOf(id)>=0) {
+                errs++;
+                console.log("duplicate id: "+id);
+            }
+            idlst.push(id);
+            //puts(id);
+            if (!top) {
+                cur = top = lev;
+                rc += '<ul>\n';
+            } else if (lev > cur) {
+                while (lev > cur) {
+                    rc += '<ul>\n';
+                    cur++;
+                }
+            } else if (lev < cur){
+                while (lev < cur) {
+                    //puts(lev + ' ' + cur);
+                    rc += '</ul>\n';
+                    cur--;
+                }
+            }
+            rc += '<li>[#'+id+'|'+lbl+']</li>\n';
+        }
+        if (!sawtoc) {
+            errs++;
+            console.log('missing toc');
+        }
+        while (cur >= top) {
+            rc += '</ul>\n';
+            cur--;
+        }
+        if (self.update) {
+            if (errs) {
+                console.log('can not update due to error: '+fname);
+                return;
+            }
+            
+            var idxtoc = '<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+';
+            rc = idxtoc + rc;
+            if (oldtoc === rc) {
+                //if (self.debug)
+                    console.log("nothing to do");
+                return;
+            }
+            var ndat = tpre + '<div id=wikitoc>\n' + rc + '</div>\n' + tpost;
+            var fn = 'tmp/'+fname;
+            File.write(fn, ndat);
+           // puts('NEW='+rc);
+           // puts('OLD='+oldtoc);
+        }
+        return rc;
+    }
+    
+    var fname = args[0];
+    if (!File.isdir(fname))
+        return mk1toc(fname);
+    var fdir = File.join(fname,'/tmp');
+    if (!File.isdir(fdir))
+        File.mkdir(fdir);
+    for (var i of File.glob(fname+'/*.wiki').sort()) {
+        var ft = File.tail(i);
+        if (ft === 'reference.wiki' || ft === 'index.wiki'  || ft === 'home.wiki') continue;
+        puts(i);
+        var x = mk1toc(i);
+       // break;
+    }
+
+}
+
+if (isMain())
+    Jsi_Main('jsi_mktoc');
+

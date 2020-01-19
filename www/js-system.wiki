@@ -1,0 +1,110 @@
+<title>System</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#overview|Overview]</li>
+<li>[#puts|log, console.log, puts]</li>
+<li>[#debug|Debugging]</li>
+</ul>
+</div>
+
+<h3 id=overview>Overview</h3>
+
+The <b>System</b> object contains all the builtin toplevel commands in Jsi
+and are also exported as globals:
+
+    <nowiki><pre class=verbatim>
+<b>puts</b>(<i>'hi'</i>);
+System.<b>puts</b>(<i>'hi'</i>);
+</pre></nowiki>
+
+The commands in <b>System</b> include standard javascript commands such as:
+
+  *  <b>setInterval</b>, <b>setTimeout</b>, and <b>clearInterval</b>
+  *  <b>parseInt</b> and <b>parseFloat</b>
+  *  <b>isFinite</b> and <b>isNaN</b>
+  
+and non-standard commands such as:
+
+  *  [./js-format.wiki|format]
+  *  [./js-exec.wiki|exec]
+  *  [./js-modules.wiki#source|source]
+  *  strftime and strptime, ...
+
+For a complete list of <b>System</b> commands, see [./reference.wiki#System|Reference].
+
+<h3 id=puts>log, console.log, puts</h3>
+
+The <b>puts()</b> command quotes each of its arguments out to stdout.  
+
+    <nowiki><pre class=verbatim>
+<b>puts('caught error'</b>
+caught error
+</pre></nowiki>
+
+The <b>log()/console.log</b> commands quotes each of its arguments out to stdout/stderr, and include
+the file and line number.  
+
+    <nowiki><pre class=verbatim>
+<b>log('caught error'</b>
+"caught error" --> assert.js:16
+</pre></nowiki>
+
+
+If you are debugging a program and need to find where a puts is coming from, try adding to the top
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>({tracePuts:true});
+</pre></nowiki>
+
+The same can be done from the command-line as in [../tests/assert.jsi?mimetype=application/javascript]:
+
+    <nowiki><pre class=verbatim>
+<b>jsish --I tracePuts tests/assert.js</b>
+"caught error" --> assert.js:16
+"K" --> assert.js:24
+"caught error2" --> assert.js:28
+"this assert failed" --> assert.js:31
+"assert also failed" --> assert.js:34
+"done" --> assert.js:36
+</pre></nowiki>
+
+See [./js-logging.wiki|Logging] for more detail.
+
+There are various other options for controlling the output format for <b>puts</b>/<b>log</b>:
+
+    <nowiki><pre class=verbatim>
+<b>jsish --I tracePuts --T file,before,time tests/assert.js</b>
+21:04:44.669 assert.js:16 "caught error"
+21:04:44.669 assert.js:24 "K"
+21:04:44.669 assert.js:28 "caught error2"
+21:04:44.669 assert.js:31 "this assert failed"
+21:04:44.669 assert.js:34 "assert also failed"
+21:04:44.669 assert.js:36 "done"
+</pre></nowiki>
+
+<h3 id=debug>Debugging</h3>
+
+    <nowiki><pre class=verbatim>
+<b>function</b> foo(db) {
+  <b>var</b> debug = (db?log:noOp);
+  debug(<i>"Here is my debug message"</i>);
+  //...
+}
+
+<b>puts</b>("NODEBUG");
+foo(0);
+<b>puts</b>("DEBUG");
+foo(1);
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+NODEBUG
+DEBUG
+"Here is my debug message" --> logtest.jsi:3
+</pre></nowiki>
+

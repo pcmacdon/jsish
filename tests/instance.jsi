@@ -1,0 +1,18 @@
+#!/usr/local/bin/jsish -u %s
+
+function f() {};
+function j() {};
+var x;
+;x = new f();
+;x instanceof f;
+;x instanceof j;
+;x instanceof Object;
+
+/*
+=!EXPECTSTART!=
+x = new f() ==> {}
+x instanceof f ==> true
+x instanceof j ==> false
+x instanceof Object ==> true
+=!EXPECTEND!=
+*/

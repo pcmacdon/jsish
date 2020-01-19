@@ -1,0 +1,235 @@
+<title>CData</title>
+
+<div id=wikitoc>
+<ul>
+<li>[#structs|Enums/Structs]</li>
+<li>[#commands|Commands]</li>
+<ul>
+<li>[#params|Parameters]</li>
+<li>[#return|Returned Value]</li>
+</ul>
+<li>[#vars|Vars]</li>
+<li>[#misc|Miscellaneous]</li>
+<ul>
+<li>[#sigs|Signatures]</li>
+</ul>
+</ul>
+</div>
+
+[./reference.wiki#CData|Cdata] is the Jsi interface used
+to generate C-API code for:
+
+  *  Struct and enum definitions
+  *  C-extensions using structs for state and options 
+  *  Struct map/array variables
+
+This is different from, but related to, [./js-cdata.wiki|JS Cdata]
+
+Definitions in <b>.jsc</b>
+files are preprocessed with <b>jsish -c</b>.  The resulting <b>.h</b> output file contains
+compile-ready code.
+
+<hr>
+<h3 id=structs>Enums/Structs</h3>
+
+Structs and enums are defined in <b>jsc</b> as follows:
+
+    <nowiki><pre class=verbatim>
+<b>enum</b> BeeType = {
+    Drone,
+    Worker,
+    Queen
+};
+
+<b>struct</b> Bee = {
+    int max;
+    int buzzCnt;
+    int stingCnt;
+    int pollinateCnt;
+    BeeType type;
+    STRING32 flower;
+};
+</pre></nowiki>
+
+The available [./c-options.wiki#opttypes|struct field types] are: 
+
+    <nowiki><pre class=verbatim>
+<i>bool int8_t int16_t int32_t int64_t uint8_t uint16_t
+uint32_t uint64_t float double ldouble Jsi_Strbuf time_w time_d time_t size_t 
+intptr_t uintptr_t Jsi_Number int uint long ulong short ushort Jsi_Value* 
+Jsi_DString Jsi_Value* Jsi_Value* Jsi_Value* Jsi_Value* Jsi_Value* Jsi_Value* Jsi_Value* 
+Jsi_Strkey "const char*" </i>
+</pre></nowiki>
+
+Also supported are <b>char</b> arrays and <b>STRING2</b>, <b>STRING4</b>, ...:
+<i>jsi.h</i> has <b>STRING</b>n typedefs for powers of 2 up to 64k.
+
+All other types will be ignored or, like <b>void *</b>, are used for custom types.
+
+<hr>
+<h3 id=commands>Commands</h3>
+There are two types of extension-commands in Jsi:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Name</th> <th>Description</th></tr>
+<tr><td>Object</td><td>Object commands with constructors eg. <i>new RegExp(/abc/)</i></td></tr>
+<tr><td>Non-object</td><td>Non-object commands, eg. <i>Interp.conf()</i></td></tr>
+</table>
+
+Here is an excerpt from the example [../c-demos/cdata/Bee.jsc?mimetype=application/javascript|c-demos/cdata/Bee.jsc]:
+
+    <nowiki><pre class=verbatim>
+vars MyVars = {
+    Bee Bee_Data;
+};
+
+
+<b>extension</b> Bee = { <i>// Extension to create Bee commands.</i>
+
+    <b>function</b> conf(options:object|string=void):any { <i>// Function to configure Bee options</i>
+        <i>/* C code. */</i>
+    }
+
+    <b>function</b> buzz(n1:number):number { <i>// Buzz</i>
+        <i>/* C-code. */</i>
+        Bee_Data.buzzCnt += n1;
+        Jsi_Number n = Bee_Data.buzzCnt;
+        <b>RETURN</b>(n);
+    }
+
+    <b>function</b> sting(victim:string, times:number):string { <i>// Sting</i>
+        <i>/* C-code. */</i>
+        char buf[BUFSIZ];
+        Bee_Data.stingCnt += times;
+        snprintf(buf, sizeof(buf), "stung %s %g times", victim, times);
+        <b>RETURN</b>(buf); //:string
+    }
+
+    <b>function</b> pollinate(flower:string='daisy', times:number=1):void { <i>// Pollinate</i>
+        <i>/* C-code. */</i>
+        Bee_Data.pollinateCnt += times;
+        Jsi_Stzcpy(Bee_Data.flower, flower);
+        <b>RETURN</b>(); //:undefined
+    }
+    
+};
+</pre></nowiki>
+
+Note how [./functions.wiki#types|function types] are employed to simplify the interface.
+Next we generate it with:
+
+    <nowiki><pre class=verbatim>
+jsish -c -outFile Bee.h Bee.jsc
+</pre></nowiki>
+
+To compile as a standalone we can use:
+
+    <nowiki><pre class=verbatim>
+gcc -o Bee -I../.. -x c Bee.h -lpthread -ldl -lm -lz -DCDATA_MAIN
+./Bee
+</pre></nowiki>
+
+Or compile as a shared library using:
+
+    <nowiki><pre class=verbatim>
+gcc -o Bee.so -I../.. -x c Bee.h -fPIC -shared -lpthread -ldl -lm -lz -DCDATA_MAIN=1 -DCDATA_SHARED=1
+</pre></nowiki>
+
+And run it like so:
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b>
+require('Bee');
+Bee.pollinate();
+Bee.sting('dog', 2);
+Bee.conf({type:'Worker', buzzCnt:3});
+Cdata.get('Bee_Data');
+</pre></nowiki>
+
+Other examples in c-demos/cdata are:
+
+  *  [../c-demos/cdata/Car.jsc?mimetype=application/javascript|Car.jsc]: An object command.
+  *  [../c-demos/cdata/Baker.jsc?mimetype=application/javascript|Baker.jsc]: A private var command.
+  *  [../c-demos/cdata/cdatatest.jsi?mimetype=application/javascript|cdatatest.jsi]: A test script for Bee, Baker and Car.
+
+<h4 id=params>Parameters</h4>
+
+Parameters are unloaded into function-local vars based on their type (singular).
+[./functions.wiki#mulitypes|Type Unions] are currently unsupported and simply ignored. 
+
+Several function names are treated specially:
+
+  *  <b>conf</b>: is the configuration command.
+  *  a function with the same name as the object will be treated as an Object-Command.
+  *  a function with a trailing <b>options:object</b> supports per-command options (see [../c-demos/cdata/Baker.jsc?mimetype=application/javascript|Baker.jsc]).
+  
+Also if you define a <b>var</b> with the same name, but ending with <b>_Data</b> (eg. Bee_Data above)
+you can access the state via <b>Cdata.get()</b> etc (non-object commands only).
+
+<h4 id=return>Returned Value</h4>
+
+To return a function values, the <b>RETURN()</b> statement is used on a line by itself.
+The function return type determines what actually gets returned.  As with parameters, this must not be a
+<b>Type Union</b>.
+
+
+<hr>
+<h3 id=vars>Vars</h3>
+
+The example in [../c-demos/cdata/demo0.jsc?mimetype=application/javascript|c-demos/cdata/demo0.jsc]
+defines two struct <b>Foo</b> and <b>Bar</b>.
+
+    <nowiki><pre class=verbatim>
+vars MyVars = {
+    Bar     bar;        <i>// Struct Bar.</i>
+    Foo     foo;        <i>// Struct Foo.</i>
+    
+    Foo     foos[10];   <i>// Array of Foo structs.</i>
+    Foo     foos2[FooSize];<i>// Array of Foo structs with enum size.</i>
+    Bar     barss[10];  <i>// Array of Bar.</i>
+
+    Bar     bars{};     <i>// Map-Tree with string-key.</i>
+    Bar     BN{0};      <i>// Map-Tree with integer-key.</i>
+    Bar     Bs{@Fidx};   <i>// Map-Tree with struct-key.</i>
+    
+    Bar     Bs2{#};     <i>// Map-Hash with string-key
+    Bar     BN2{#0};    <i>// Map-Hash with integer key.</i>  
+    Bar     Bs2a{#@Fidx};<i>// Map-Hash with struct-key.</i>
+};
+</pre></nowiki>
+
+Three different types of var-structs are declared:
+
+  *  Simple structs
+  *  Fixed size arrays of structs, denoted by square brackets.
+  *  Maps of structs, denoted by curley braces.
+
+For maps:
+
+  *  The map type defaults <b>tree</b>, but can be over-ridden to <b>hash</b> {#}.
+  *  The key type defaults to <b>string</b>, but can be over-ridden as <b>integer</b> {0} or <b>struct</b> {@Name}.
+
+A map can readily store large quantities of data, while arrays are useful for database queries.
+
+Examples in c-demos/cdata using vars are:
+
+  *  [../c-demos/cdata/demo1.jsc?mimetype=text/plain|demo1.jsc]: A second set of definitions.
+  *  [../c-demos/cdata/demo2.jsc?mimetype=text/plain|demo2.jsc]: A third set of definitions.
+  *  [../c-demos/cdata/demo.c?mimetype=text/plain|demo.c]: Compile all three definitions into one program.
+  *  [../c-demos/cdata/demotest.jsi?mimetype=text/plain|demotest.jsi]: A test script for demo.c.
+
+<hr>
+<h3 id=misc>Miscellaneous</h3>
+
+<h4 id=sigs>Signatures</h4>
+
+If the first field of a struct has the name <b>sig</b>, it will be treated as a signature.
+This is a special integer value used to identify the struct.  If not given a value,
+it will be a crc32 value calculated against the struct definition string without its field names and comments.
+
+Signatures play a special role in data sent over the network.
+
+<h4 id=jsc>Jsc Definitions</h4>
+
+Each definition in a <b>.jsc</b> file ends with a single close curley brace + semicolon at the start of line.
+

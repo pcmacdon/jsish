@@ -1,0 +1,155 @@
+<title>Extension</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#builtins|Built-Ins]</li>
+<li>[#static|Static Extension]</li>
+<li>[#dyn|Dynamic Extensions]</li>
+<li>[#modules|Modules]</li>
+<li>[#dynapi|libjsi.so]</li>
+<ul>
+<li>[#stubs|Stubs]</li>
+</ul>
+<li>[#spec|Command Specs]</li>
+<li>[#opts|Option Specs]</li>
+<li>[#glue|Glue Language]</li>
+</ul>
+</div>
+
+C-extensions can either be statically compiled in, or dynamically
+loaded as shared libraries using the [./c-modules.wiki#load|load] command. 
+
+<h2 id=builtins>Built-Ins</h2>
+
+Jsi comes standard with a number of extensions:
+
+  *  <b>Zvfs</b>    A Zip virtual file system
+  *  <b>WebSockets</b>  Web Browser sockets
+  *  <b>Sqlite</b>  Standalone database
+  *  <b>MySql</b>  Client/Server database
+
+All but <b>MySql</b> are by default statically compiled-in.
+To build-in it in use:
+
+    <nowiki><pre class=verbatim>
+make mysql
+</pre></nowiki>
+
+<hr>
+
+<h2 id=static>Static Extension</h2>
+
+<b>jsish</b> can be made to compile in an extension without modifying source, as in the following example:
+
+    <nowiki><pre class=verbatim>
+cp c-demos/<b>dyn.c</b> .
+make EXTNAME=<b>dyn</b>
+</pre></nowiki>
+
+This builds in the demo [../c-demos/dyn.c|dyn.c].
+
+Similarly, a standalone using [./c-jsi_lite.wiki|Jsi_Lite] might use:
+
+    <nowiki><pre class=verbatim>
+cd c-demos/
+cc -g cmd.c dyn.c -o cmds -lz -lm -ldl -lpthread <b>-DJSI_USER_EXTENSION=Jsi_Initdyn</b> -I..
+</pre></nowiki>
+
+Other static approaches require editing the Makefile and/or source files.
+
+<h2 id=dyn>Dynamic Extensions</h2>
+
+A dynamic extension requires a C entry function
+to handle load-time initialization:
+
+     <nowiki><pre class=verbatim>
+int <b>Jsi_InitFoo</b>(<b>Jsi_Interp</b> *interp) {
+    <i>// Do initialization</i>
+    return <b>JSI_OK</b>
+}
+</pre></nowiki>
+
+This is compiled with:
+
+    <nowiki><pre class=verbatim>
+cc -g -Wall -DJSI_USE_STUBS -I. -shared -fpic foo.c -o libfoo.so
+</pre></nowiki>
+
+and loaded with:
+
+    <nowiki><pre class=verbatim>
+load('foo.so');
+</pre></nowiki>
+
+For an example see [../c-demos/dyn.c].
+
+
+<h2 id=modules>Modules</h2>
+
+A shared library can be loaded on-demand using [./js-modules.wiki|Modules].
+In particular see [./js-modules.wiki#modgen|Module Generation].
+
+<h2 id=dynapi>libjsi.so</h2>
+
+Jsi can be built as the shared library <b>libjsi.so</b> (<b>libjsi.dll</b> on Windows),
+for linking into applications with <b>-ljsi</b>.
+
+This will require installation into your Operating System,
+and so is primarily of interest to system integrators.
+
+On Linux this goes something like:
+
+    <nowiki><pre class=verbatim>
+make shared
+make jsishs
+sudo cp jsishs /usr/local/bin/jsish
+sudo cp libjsi.so /usr/local/lib/
+sudo cp jsi.h /usr/local/include/
+sudo ldconfig -v
+</pre></nowiki>
+
+<h3 id=stubs>Stubs</h3>
+
+If using the shared library <b>libjsi.so</b>, and backward compatibility is of
+concern, it may be desirable to use <b>stubs</b> support.
+
+For an simple stubs example see [../c-demos/prime.c].
+
+For a complex, multi-level example see the [../../../../dir?ci=tip&name=jsi/c-demos/stubs|stubs directory].
+
+<h2 id=spec>Command Specs</h2>
+
+Although we can define extension commands one at a time, this can clutter
+the toplevel namespace.
+
+Alternatively, we can define command-objects, eg.
+
+    <nowiki><pre class=verbatim>
+Cmd.add(1,2,3);
+Cmd.diff(17,9);
+</pre></nowiki>
+
+For an example see [../c-demos/cmds.c] and the Jsi source.
+
+<h2 id=opts>Option Specs</h2>
+
+Jsi provides an easy way for C extension commands parse an option object.
+
+For more details see [./c-options.wiki] and the Jsi source.
+
+
+<h2 id=glue>Glue Language</h2>
+
+Jsi is designed for use as a glue language in a number of ways:
+
+  *  Writing <b>C</b> extensions.
+  *  Using C-API facilities such as Jsi_DString, Jsi_Hash, etc.
+  
+  
+  
+  
+

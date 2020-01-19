@@ -1,0 +1,57 @@
+<title>HTMLPP</title>
+
+<b>htmlpp</b> is a server-side web preprocessor that uses escapes <b>&lt;?</b> and <b>?&gt;</b> to delimit
+inline code (ie. like PHP).
+
+Unlike PHP, <b>htmlpp</b> simply uses [../reference.wiki|Javascript].
+
+To this, 2 commands are added:
+
+  *  <b>include(file,...)</b>:  inserts the contents of a file inline,
+  *  <b>echo(str)</b>: outputs a string inline.
+
+Here is a simple example document <b>"main.ihtml"</b>:
+
+<nowiki><pre class=verbatim>
+    <!DOCTYPE html>
+    <html>
+    <?
+        echo("&lt;h1>Main Page&lt;/h1>\n");
+        var files = ['head.html', 'body.html'];
+        for (var i in files)
+            include(files[i]);
+    ?>
+    </html>
+</pre></nowiki>
+
+Evaluation is applied recursively to any included files.
+
+<b>htmlpp</b> can be invoked directly by calling the [../js-autoload.wiki|autoload]
+function <b>jsi_htmlpp(files,opts)</b>.
+However,
+<b>htmlpp</b> is generally invoked indirect (eg. as in [./websrv.wiki|websrv])
+by association of the file extension <b>.ihtml</b> and the parser
+within [../js-websocket.wiki|libwebsockets]. eg.
+
+<nowiki><pre class=verbatim>
+    this.ws = new Websocket(this.wsopts);
+    this.ws.handler('.ihtml', 'jsi_htmlpp');
+</pre></nowiki>
+
+Evaluation is applied recursively to included files, even 
+when <b>include</b>'ed files do not end with <b>.ihtml</b>.
+
+<b>htmlpp</b> is used by the demo applications [./ledger.wiki|ledger]
+and [./sqliteui.wiki|sqliteui].
+
+
+<h4>Implementation Details</h4>
+
+<b>htmlpp</b> itself is implemented in javascript.  It works by taking escaped sections of code,
+evaluating it in a [../js-interp.wiki#subinterp|sub-interp], and inserting the resulting output inline. 
+
+You can find the source for <b>htmlpp</b> in the <b>jsi/lib</b> subdirectory.
+But for convenience, here is a link to the [fa5257c13bcbc8bd|htmlpp source] from Jsish 1.0.6.
+
+
+

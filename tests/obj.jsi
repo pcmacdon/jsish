@@ -1,0 +1,21 @@
+#!/usr/local/bin/jsish -u %s
+
+var o, O;
+;O = { x: 1, y: 2, f : function(n) { return n+1; } };
+;o = Object.create(O);
+
+;o.x;
+;o.f(1);
+;Object.keys(o);
+;o.keys();
+
+/*
+=!EXPECTSTART!=
+O = { x: 1, y: 2, f : function(n) { return n+1; } } ==> { f:"function (n) {...}", x:1, y:2 }
+o = Object.create(O) ==> {}
+o.x ==> 1
+o.f(1) ==> 2
+Object.keys(o) ==> [ "f", "x", "y" ]
+o.keys() ==> [ "f", "x", "y" ]
+=!EXPECTEND!=
+*/

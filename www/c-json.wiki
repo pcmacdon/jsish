@@ -1,0 +1,106 @@
+<title>C-API: JSON</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#high|High-Level]</li>
+<ul>
+<li>[#parse|Jsi_JSONParse]</li>
+<li>[#simplec|Jsi_JSONParseFmt]</li>
+</ul>
+<li>[#lowlevel|Low-Level]</li>
+<li>[#subinterps|Sub-Interps]</li>
+</ul>
+</div>
+
+Jsi implements a non-validating JSON parser.  That is, will accept JSON that
+is not strictly compliant. 
+
+<h2 id=high>High-Level</h2>
+
+<h3 id=parse>Jsi_JSONParse</h3>
+
+The main function for parsing JSON to generate a <b>Jsi_Value</b> is:
+
+    <nowiki><pre class=verbatim>
+Jsi_RC <b>Jsi_JSONParse</b>(Jsi_Interp *interp, const char *js, Jsi_Value **ret, int flags); 
+</pre></nowiki>
+
+If the bit <b>flags</b> field does not contain <b>JSI_JSON_STRICT</b>, the parser will accept
+non-standard, unquoted property names, as in:
+
+    <nowiki><pre class=verbatim>
+{file:"FF", line:NN}
+</pre></nowiki>
+
+<h3 id=simplec>Jsi_JSONParseFmt</h3>
+
+This function is used primarily to reduce C-code.
+
+    <nowiki><pre class=verbatim>
+Jsi_RC <b>Jsi_JSONParseFmt</b>(Jsi_Interp *interp, Jsi_Value **ret, const char *fmt, ...);
+</pre></nowiki>
+
+
+Consider a simple example where we wish to return a javascript object:
+
+    <nowiki><pre class=verbatim>
+{file:"File", line:1}
+</pre></nowiki>
+
+In <b>C</b> we would write something like:
+
+    <nowiki><pre class=verbatim>
+Jsi_Obj *nobj;
+Jsi_ValueMakeObject(interp, ret, nobj = Jsi_ObjectNew(interp));
+Jsi_ObjInsertFromValue( interp, nobj, Jsi_ValueNewStringKey(interp, "file"), 
+    Jsi_ValueNewStringKey(interp, file));
+Jsi_ObjInsertFromValue( interp, nobj, Jsi_ValueNewStringKey(interp, "line"),
+   Jsi_ValueNewNumber(interp, line));
+</pre></nowiki>
+
+Alternatively, this can be simplified to:
+
+    <nowiki><pre class=verbatim>
+return Jsi_JSONParse(interp, ret, "{file:\"%s\", line:%d}", file, line);
+</pre></nowiki>
+
+The more deeply nested the object, the more code is simplified, eg:
+
+    <nowiki><pre class=verbatim>
+Jsi_JSONParseFmt(interp, ret, "{ a: [ {x:%d, y:%d}, {x:%d, y:[%d,%d,%d]}] }",a,b,c,d,e,f);
+</pre></nowiki>
+
+Due to the efficiency nature of low-level parsing, this adds very little extra overhead.
+
+This approach can save a lot of code, particularly when writing commands 
+that return nested objects and/or arrays.
+.
+
+Note: [./js-json.wiki#scan|permissive] mode is the default.  So there is
+no need to quote property names which in C rapidly becomes tedious:
+
+    <nowiki><pre class=verbatim>
+"{\"os\":\"%s\", \"platform\":\"%s\", \"hasThreads\":%s, \"pointerSize\":%d, "
+</pre></nowiki>
+
+Note: the above works only for cases where data does not contain
+special JSON characters.
+
+<h2 id=lowlevel>Low-Level</h2>
+
+For the low level,
+parses JSON into an array of tokens in a highly stack efficient manner.
+It uses a single
+array of tokens for output so that for limited size JSON strings,
+no memory gets allocated during the parse.
+When memory does get allocated, it is only to resize the token array.
+
+<h2 id=subinterps>Sub-Interps</h2>
+
+Any data sent between sub-[./js-interp.wiki|interps] will first be converted to/from JSON.
+This because all data objects are private to an interp.
+

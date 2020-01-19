@@ -1,0 +1,39 @@
+#!/usr/local/bin/jsish
+Interp.conf({asserts:true});
+
+assert.sameValue = function(x, y, ...) { assert(x==y); };
+assert.notSameValue = function(x, y, ...) { assert(x!=y); };
+assert.throws = function(x, y, ...) { throw('throws: '+y); };
+assert.compareArray = function(x, y, ...) { };
+function $ERROR(str) { puts('ERROR: >>'+str); }
+
+var skip = null;
+var arg = console.args;
+if (arg.length>1) {
+  try {
+  puts(arg[0]);
+  source(arg[0]);
+  } catch(e) {
+  }
+  return;
+}
+if (arg.length>0)
+  skip = arg[0];
+
+var lst = File.glob('*.js', {recurse:true, dir:'test'});
+//puts(lst);
+for (var i of lst) {
+   if (skip) {
+     if ('test/'+i === skip) 
+        skip = null;
+    else
+        continue;
+   }
+
+   try {
+      puts(i);
+      source('test/'+i);
+   } catch(e) {
+     puts(e);
+   }
+}

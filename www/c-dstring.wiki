@@ -1,0 +1,278 @@
+<title>C-API: DStrings</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#overview|Overview]</li>
+<li>[#dsfuncs|Function Summary]</li>
+<li>[#ds_details|Functions Details]</li>
+<ul>
+<li>[#dsf_append|Jsi_DSAppend]</li>
+<li>[#dsf_appendlen|Jsi_DSAppendLen]</li>
+<li>[#dsf_free|Jsi_DSFree]</li>
+<li>[#dsf_freedup|Jsi_DSFreeDup]</li>
+<li>[#dsf_init|Jsi_DSInit]</li>
+<li>[#dsf_length|Jsi_DSLength]</li>
+<li>[#dsf_printf|Jsi_DSPrintf]</li>
+<li>[#dsf_set|Jsi_DSSet]</li>
+<li>[#dsf_setlen|Jsi_DSSetLength]</li>
+<li>[#dsf_value|Jsi_DSValue]</li>
+<li>[#dsf_var|JSI_DSTRING_VAR]</li>
+</ul>
+<li>[#dslarge|Large String Buffers]</li>
+<li>[#ds_cpp|Compared With C++]</li>
+<li>[#ds_safe|Safety]</li>
+</ul>
+</div>
+
+<h3 id=overview>Overview</h3>
+A DString is a string-struct that avoids
+malloc except for longer strings:
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_DString</b> d = {<i>"Here is your score "</i>};
+puts(<b>Jsi_DSPrintf</b>(&d, <i>"%s: -> %d/%d"</i>, user, n, m));
+<b>Jsi_DSFree</b>(&d);
+</pre></nowiki>
+
+The strings above are short so the do not use malloc.
+
+If a string exceeds 200 characters a malloc will be used, 
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_DString</b> d = {};
+<b>Jsi_DSPrintf</b>(&d , <i>"%0300d"</i>, 1); <i>// Malloc</i>
+<b>Jsi_DSSetLength</b>(&d, 0);
+<b>Jsi_DSPrintf</b>(&d , <i>"%0300d"</i>, 1); <i>// No-malloc</i>
+<b>Jsi_DSFree</b>(&d);
+<b>Jsi_DSPrintf</b>(&d , <i>"%0300d"</i>, 1); <i>// Malloc</i>
+<b>Jsi_DSFree</b>(&d);
+</pre></nowiki>
+
+Space is discared with <i>Jsi_DSFree</i>, and can be reused with <i>Jsi_DSSetLength</i>:
+ 
+You can also use Jsi_DSInit():
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_DString</b> d;
+<b>Jsi_DSInit</b>(&d);
+<b>Jsi_DSAppend</b>(&d, <i>"Some stuff"</i>, NULL);
+<b>Jsi_DSAppendLen</b>(&d, <i>"!"</i>, 1);
+<b>Jsi_DSFree</b>(&d);
+</pre></nowiki>
+
+<h3 id=dsfuncs>Function Summary</h3>
+
+Here are the function signatures:
+
+    <nowiki><pre class=verbatim>
+char*   <b>Jsi_DSAppend</b>(Jsi_DString *dsPtr, const char *str, ...);
+char*   <b>Jsi_DSAppendLen</b>(Jsi_DString *dsPtr, const char *bytes, int length); 
+void    <b>Jsi_DSFree</b>(Jsi_DString *dsPtr);
+char*   <b>Jsi_DSFreeDup</b>(Jsi_DString *dsPtr); 
+void    <b>Jsi_DSInit</b>(Jsi_DString *dsPtr); 
+uint     <b>Jsi_DSLength</b>(Jsi_DString *dsPtr);
+char*   <b>Jsi_DSPrintf</b>(Jsi_DString *dsPtr, const char *fmt, ...);
+char*   <b>Jsi_DSSet</b>(Jsi_DString *dsPtr, const char *str); 
+uint     <b>Jsi_DSSetLength</b>(Jsi_DString *dsPtr, uint length);
+char*   <b>Jsi_DSValue</b>(Jsi_DString *dsPtr);
+#define <b>JSI_DSTRING_VAR</b>(varPtr,size) //...
+</pre></nowiki>
+
+and the details:
+
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr ><th  >Name</th><th  >Description</th></tr>
+<tr ><td >Jsi_DSAppend</td><td >Append one or more string arguments (plus NULL sentinal).</td></tr>
+<tr ><td >Jsi_DSAppendLen</td><td >Append a string of given length (or -1 for strlen).</td></tr>
+<tr ><td >Jsi_DSFree</td><td >Release allocated memory and sets variable back to re-initialized/empty.</td></tr>
+<tr ><td >Jsi_DSFreeDup</td><td >Return malloced string, then calls Jsi_DSFree.</td></tr>
+<tr ><td >Jsi_DSInit</td><td >Initialize the variable, ignoring current data therein.</td></tr>
+<tr ><td >Jsi_DSLength</td><td >Return the length.</td></tr>
+<tr ><td >Jsi_DSPrintf</td><td >Format output and append to DString. Returns string from the current printf.</td></tr>
+<tr ><td >Jsi_DSSet</td><td >Same as Jsi_DSSetLength(dsPtr,0) plus Jsi_AppendLen.</td></tr>
+<tr ><td >Jsi_DSSetLength</td><td>If &lt; current length truncates string. Else sets min allocated space. Return allocated size.</td></tr>
+<tr ><td >Jsi_DSValue</td><td >Return string value.</td></tr>
+<tr ><td >JSI_DSTRING_VAR</td><td >Macro that declares a large DString on the stack.</td></tr>
+</table></nowiki>
+
+<hr>
+<br>
+<hr>
+
+<h3 id=ds_details>Functions Details</h3>
+
+The following contains detailed descriptions of the DString functions.
+
+<hr>
+<h4 id=dsf_append>Jsi_DSAppend</h4>
+<i>char*   Jsi_DSAppend(Jsi_DString *dsPtr, const char *str, ...)</i>
+
+  Calls <b>Jsi_DSAppendLen</b> for each string value argument, passing in <b>-1</b> for the length.
+  Each string is assumed to be null terminated and the final argument must be a <b>NULL</b>.
+
+  <b>RETURNS:</b> The string starting at the first appended character.
+
+<hr>
+<h4 id=dsf_appendlen>Jsi_DSAppendLen</h4>
+<i>char*   Jsi_DSAppendLen(Jsi_DString *dsPtr, const char *bytes, int length)</i>
+
+  Append length bytes to the DString. If length is &lt; 0,
+  the value of <b>strlen</b> is used.  If required, the DString is realloced to
+  be large enough to contain bytes, plus an extra null byte that is added to the end.
+ 
+  <b>RETURNS:</b> The string starting at the first appended character.
+
+<hr>
+<h4 id=dsf_free>Jsi_DSFree</h4>
+<i>void    Jsi_DSFree(Jsi_DString *dsPtr)</i>
+
+  Frees any allocated space and sets the DString back to empty such that it is safe to exit the scope.
+  Or the DString may be reused (also see <b>Jsi_DSSetLength</b>). 
+
+<hr>
+<h4 id=dsf_freedup>Jsi_DSFreeDup</h4>
+<i>char*   Jsi_DSFreeDup(Jsi_DString *dsPtr)</i>
+
+  Returns the malloced string value and resets the DString in the same way as </b>Jsi_DSFree</b>.
+  This just avoids the user having to do an extra malloc/free if the DString was already malloced.
+  It is then the responsibility of the caller to free the returned value.
+
+  <b>RETURNS:</b> The string that was contained in the DString.
+
+<hr>
+<h4 id=dsf_init>Jsi_DSInit</h4>
+<i>void    Jsi_DSInit(Jsi_DString *dsPtr)</i>
+
+  Initialize a DString.
+
+<hr>
+<h4 id=dsf_length>Jsi_DSLength</h4>
+<i>uint     Jsi_DSLength(Jsi_DString *dsPtr)</i>
+
+  <b>RETURNS:</b>The string length dsPtr->len.
+
+<hr>
+<h4 id=dsf_printf>Jsi_DSPrintf</h4>
+<i>char*   Jsi_DSPrintf(Jsi_DString *dsPtr, const char *fmt, ...)</i>
+
+  Perform <b>printf</b> style string formatting as directed by the <b>fmt</b> string.
+  Under the covers, this utilizes <b>vsnprintf</b>.
+
+  <b>RETURNS:</b> The string starting at the first appended character.
+
+<hr>
+<h4 id=dsf_set>Jsi_DSSet</h4>
+<i>char*   Jsi_DSSet(Jsi_DString *dsPtr, const char *str)</i> 
+
+  Same as calling <i>Jsi_DSSetLength(dsPtr,0)</i> followed by <i>Jsi_DSAppendLen(dsPtr,str)</i>.
+  Sets the DString to str without freeing any allocated space.
+  But note that it is <b>not</b> safe to exit the scope without first calling <b>Jsi_DSFree</b>.
+
+<hr>
+<h4 id=dsf_setlen>Jsi_DSSetLength</h4>
+<i>uint    Jsi_DSSetLength(Jsi_DString *dsPtr, uint length)</i>
+
+  Depending on dsPtr->len, truncates a string or sets the minimum allocated space.
+  
+  *  If <b>length</b> is &lt; 0, does nothing and just returns the current size allocation.
+  *  if <b>length</b> is &lt; current length, the string is truncated.
+  *  Otherwise, enforces the allocated space is at least <b>length</b>.
+  
+  <b>Note:</b> Does not set dsPtr->len unless truncating.
+  Also an extra byte is always added to the allocation,
+  but this is not reported in the allocated length.
+
+  <b>RETURNS:</b> The currently allocated size. ie. the size of the maximum string that
+  will fit without a call to realloc.
+
+<hr>
+<h4 id=dsf_value>Jsi_DSValue</h4>
+<i>char*   Jsi_DSValue(Jsi_DString *dsPtr)</i>
+
+  Gets the current string value.
+  
+  <b>RETURNS:</b> The string dsPtr->str.
+
+<hr>
+<h4 id=dsf_var>JSI_DSTRING_VAR</h4>
+<i>#define JSI_DSTRING_VAR(varPtr,size) //...</i>
+
+  Declares a DString struct and pointer in the current stack frame.  See the next section on <b>Large Strings</b>.
+
+<hr>
+
+<h3 id=dslarge>Large String Buffers</h3>
+
+When working with larger strings, we may want to preallocate a large
+string in order to avoid repeated calls to realloc() as the string grows.
+The normal approach might be something like:
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_DString</b> dStr;
+<b>Jsi_DSInit</b>(&dStr);
+<b>Jsi_DSSetLength</b>(&dStr, 50000);
+</pre></nowiki>
+
+Another alternative is to use the <b>JSI_DSTRING_VAR</b> macro, which avoids using malloc entirely.
+JSI_DSTRING_VAR efficiently declares a Jsi_DString* pointing to an enlarged static DString upon the stack: eg:
+
+    <nowiki><pre class=verbatim>
+<b>JSI_DSTRING_VAR</b>(dsPtr, 50000);
+<b>Jsi_DSPrintf</b>(dsPtr, <i>"%04999d"</i>, 1); <i>// No malloc.</i>
+</pre></nowiki>
+
+<h3 id=ds_cpp>Compared With C++</h3>
+
+Consider C++ <b>stringstream</b>, which provides convenient dynamic string support with type safety.
+
+    <nowiki><pre class=verbatim>
+<b>std::stringstream</b> str;
+str << <i>"ABC "</i> << 123;
+<b>puts</b>(str.str().c_str());
+</pre></nowiki>
+
+The tradeoffs of <b>stringstream</b> are:
+
+  *  Implicit memory allocation.
+  *  Implicit code execution.
+  *  Hard to inspect in gdb.
+  *  Awkward to obtain the <B>C</B> string value.
+  *  Not available in plain <b>C</b>-code.
+
+DString provides familiar printf style formatting:
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_DString</b> dstr = {};
+<b>puts(Jsi_DSPrintf</b>(&dstr, "ABC %d", 123));
+</pre></nowiki>
+
+Printf style modifiers are simpler than
+<i>stringstream</i>:
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_DSPrintf</b>(&dstr, <i>"%02d%-3d%04d"</i>, v1, v2, v3);
+str << std::setfill('0') << std::setw(2) << v1 
+    << std::setfill(' ') << std::setw(3) << std::left  << v2
+    << std::setfill('0') << std::setw(4) << std::right << v3;
+</pre></nowiki>
+
+<h3 id=ds_safe>Safety</h3>
+
+The gcc compiler makes DString usage quite safe.
+
+  *  It generates warnings for Jsi_DSPrintf argument mismatches.
+  *  It warns when Jsi_DSAppend is missing NULL terminator.
+
+There however are some gotchas to be aware of:
+
+  *  DStrings greater than 200 bytes can not be assigned to one another.
+  *  Failing to call Jsi_DSFree can leak memory.
+  *  A DString has a maximum (compile time limit) of a 100 Meg.
+
+
+

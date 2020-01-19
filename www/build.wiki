@@ -1,0 +1,236 @@
+<title>Build</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#builds|Building Jsi]</li>
+<ul>
+<li>[#buildlinux|Linux]</li>
+<li>[#deb|Debian]</li>
+<li>[#freebsd|FreeBSD]</li>
+<li>[#windows|Windows]</li>
+<li>[#standalone|Standalone]</li>
+<li>[#amalgamation|Amalgamation]</li>
+</ul>
+<li>[#extensions|Extensions]</li>
+<ul>
+<li>[#basicextn|A Basic Extension]</li>
+<li>[#multiobj|Multi-method Extension]</li>
+</ul>
+<li>[#cpp|C++ Support]</li>
+<li>[#help|Getting Help]</li>
+</ul>
+</div>
+
+Jsi is written in C, but compiles as either native C, or native C++ (without use of <b>extern C</b>).
+
+<h2 id=builds>Building Jsi</h2>
+
+Building Jsi on Ubuntu requires a few packages:
+
+    <nowiki><pre class=verbatim>
+sudo apt-get install build-essential bison libreadline-dev libsqlite3-dev libwebsockets-dev libncurses-dev cmake libmysqlclient-dev
+</pre></nowiki>
+
+Some of these (eg. <b>cmake</b>) are only required for specific configurations.
+
+<h3 id=buildlinux>Linux</h3>
+
+To build the Linux target there are are two steps:
+
+    <nowiki><pre class=verbatim>
+./configure
+</pre></nowiki>
+
+Do not be surprised to see comiler output from [../tools/configure.js|./configure]: it compiles the stripped down shell <b>jsimin</b>.
+
+Next, run <b>make</b> to build the actual <b>jsish</b> executable.
+
+    <nowiki><pre class=verbatim>
+make
+</pre></nowiki>
+
+If you want, you can see other available options using:
+
+    <nowiki><pre class=verbatim>
+./configure --help
+</pre></nowiki>
+
+Note the directory <b>Configs/</b>, which contains a number of predefined configurations
+which can be copied to <b>make.conf</b>
+
+Lastly, if you want you can run the test suite with:
+
+    <nowiki><pre class=verbatim>
+make test
+</pre></nowiki>
+
+<h3 id=deb>Debian</h3>
+
+If you are on a debian system, you can build then install as a package:
+
+    <nowiki><pre class=verbatim>
+cd tools
+./makedep.sh
+sudo dpkg -i jsish-*
+</pre></nowiki>
+
+<h3 id=freebsd>FreeBSD</h3>
+
+On FreeBSD use "gmake" instead of "make" and:
+
+    <nowiki><pre class=verbatim>
+pkg install fetch gmake bison
+</pre></nowiki>
+
+<h3 id=windows>Windows</h3>
+
+Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
+
+    <nowiki><pre class=verbatim>
+sudo apt-get install gcc-mingw-w64
+</pre></nowiki>
+
+The [https://sqlite.org/download.html|sqlite] and 
+[https://libwebsockets.org/|libwebsockets] source needs to be downloaded and unpacked in <b>../sqlite</b>
+and <b>../websockets</b>.
+
+Then configure using:
+
+    <nowiki><pre class=verbatim>
+./configure --config=win
+</pre></nowiki>
+
+Note that certain features (eg. signals) are disabled in the Windows build. 
+There are also differences in some of the file-system access functions.
+
+<h3 id=standalone>Standalone</h3>
+
+The <b>standalone</b> build produces a static binary that contains no external library references.
+This is useful when you need a standalone executable with no external dependancies.
+
+To create a static image, Jsi uses the Musl library.
+
+The first step is to download [http://www.musl-libc.org|Musl] and unpack it.
+Then change to the <b>musl</b> dir and run configure/make, eg:
+
+    <nowiki><pre class=verbatim>
+ ./configure --prefix=$HOME/usr && make install
+</pre></nowiki>
+
+Ensure that <i>~/usr/bin</i> is in your path with export PATH=$PATH:$HOME/usr/bin. 
+Then back in the <b>jsi</b> dir do the following:
+
+    <nowiki><pre class=verbatim>
+echo '#define __P(x) x' > ~/usr/include/sys/cdefs.h
+echo '#include <miniz/zlib.h>' >  ~/usr/include/zlib.h
+cp -pr miniz ~/usr/include/
+</pre></nowiki>
+
+The sqlite and libwebsockets source needs to be downloaded and unpacked in <b>../sqlite</b>
+and <b>../websockets</b>.
+
+The static jsish can then be built with:
+
+    <nowiki><pre class=verbatim>
+./configure --config=musl
+make
+</pre></nowiki>
+
+
+<hr>
+
+<h3 id=amalgamation>Amalgamation</h3>
+
+Amalgamated source is the easiest way to incorporate Jsi into an existing application:
+Here is a simple example:
+
+    <nowiki><pre class=verbatim>
+#include <i>"jsi.c"</i>
+
+int main(int argc, char *argv[])
+{
+    <b>Jsi_Interp</b> *interp = <b>Jsi_InterpNew</b>(NULL);
+    <b>Jsi_EvalString</b>(interp, <i>"for (var i=1; i<=3; i++)  puts('TEST: '+i);"</i>, 0);
+    <b>Jsi_EvalFile</b>(interp, <i>argv[1]</i>, 0);
+    <i>//...</i>
+}
+</pre></nowiki>
+
+which we compile with:
+
+    <nowiki><pre class=verbatim>
+gcc  myfile.c -lm -lz -ldl -lpthreads
+</pre></nowiki>
+
+
+Another alternative that simplifies debugging Jsi is
+using [../jsiOne.c] (then linking against <b>jsiOne.a</b>).
+
+For more details, see [./usingjsi.wiki|Using Jsi], [./c-jsilite.wiki|Jsi-Lite] or [./c-sqlite.wiki|DBQuery].
+
+<hr>
+<h2 id=extensions>Extensions</h2>
+
+<h3 id=basicextn>A Basic Extension</h3>
+
+
+The source for a basic extension is shown in [../c-demos/demo1.c],
+which creates a new javascript method demo() that simply echo's its arguments.
+
+We can build this into a jsish shell with:
+
+    <nowiki><pre class=verbatim>
+gcc -o demo1 -g -I.. -DJSI_USER_EXTENSION=Jsi_Initdemo1 demo1.c ../jsish.c ../main.c -lm -lz -ldl -lpthreads
+</pre></nowiki>
+
+and run with:
+
+    <nowiki><pre class=verbatim_out>
+<b>./demo1</b>
+<i>LOADED DEMO
+# demo(1,2,3)
+demo called with 3 args
+Arg 0 = '1'
+Arg 1 = '2'
+Arg 2 = '3'
+undefined</i>
+</pre></nowiki>
+
+Alternatively, we can just call <b>Jsi_Initdemo1(interp)</b> from our own [#amalgamation|amalgamation].
+
+<h3 id=multiobj>Multi-method Extension</h3>
+
+It is often more useful to create multiple related commands within a single object.
+
+The source in [../c-demos/demo2.c] does exactly this, which again we build it with:
+
+    <nowiki><pre class=verbatim>
+gcc -o demo2 -g -I.. -DJSI_USER_EXTENSION=Jsi_Initdemo2 demo2.c ../jsish.c ../main.c -lm -lz -ldl -lpthreads
+</pre></nowiki>
+
+Now we have several new javascript methods 
+
+  *  <b>demos.foo()</b>
+  *  <b>demos.bar()</b>
+
+<hr>
+<h2 id=cpp>C++ Support</h2>
+
+The Jsi source code is both valid C and valid C++.  This means it will build with: <b>"make CC=g++"</b>
+
+<hr>
+<h2 id=help>Getting Help</h2>
+
+Having problems?  
+
+  *  Click on <b>Ticket</b> above and open a ticket.
+  *  If that fails, you can try email:
+<br>
+<img src=email.png >
+
+<hr>

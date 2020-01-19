@@ -1,0 +1,295 @@
+#! /usr/bin/env jsish
+
+require('Jsish');
+
+function UnitTest(fileargs:array, conf:object=void):number {
+
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    var options = { // Run script(s) as unit-tests; return code is the number of failed tests.
+        args        :'',        // Argument string to call script with
+        context     :99,         // Number of context lines for DIFF (>3 forces dir diff).
+        echo        :false,     // Run with puts/assert output showing file:line number.
+        evalFile    :'',        // File to source in subinterp before test.
+        exec        :false,     // Use exec instead of running test in a sub-interp.
+        expectFile  :null,      // File to use for expected output.
+        failMax     :0,         // Quit after this many failed tests.
+        inFile      :null,      // File to use for stdin input.
+        noproto     :false,     // Disable OOP keyword support: prototype, constructor, etc
+        silent      :false,     // Run quietly, showing only failures.
+        time        :false,     // Show timing for all tests.
+        times       :false,     // Show timing for each tests.
+        update      :false,     // In-place update/create of EXPECT* from a run of test file(s).
+        verbose     :false      // Echo values of inputs, outputs, and args.
+    };
+    var self = {
+        cnt:0,
+        isdir:false,
+        nodiff:false,
+        fails:0,
+        flst:[],
+        outfile:'/tmp/utest.txt',
+        startTime:0,
+        version:1.0
+    };
+    
+    parseOpts(self, options, conf);
+    
+    function testFmt(cmd:string, lineno:number) {
+        var ecp;
+        cmd = cmd.map(['\\','\\\\']);
+        if (cmd.substr(0,2) !== '//')        
+            ecp = format("printf(\"#%d: %%S ==> \",\"%s\"),times(true),puts(%s),times(false);\n", lineno, cmd, cmd);
+        else {
+            ecp = cmd.substr(2).trim();
+            ecp = format("printf(\"#%d: %%s ==>\", %s); try { times(true); %s; puts('\nFAIL!\n'); } "
+                + "catch(err) { puts('\nPASS!: err =',err); times(false); }\n", lineno, JSON.stringify(ecp), ecp);
+        }
+        LogTrace(ecp);
+        return ecp;
+    }
+    
+    function runOne(fn:string) {
+        var fail = 0;
+        if (!fn)
+            throw("Script file required");
+        if (!fn || !File.exists(fn))
+            throw("File not found: "+fn);
+        var ext = File.extension(fn);
+        if (ext != '.jsi' && ext != '.js')
+            throw(fn+": Test module file extension "+ext+" not one of: .js .jsi: "+fn);
+        var scr = File.read(fn);
+        var pat = "=!EXPECTSTART!=\n(.*)=!EXPECTEND!=";
+        var sm = scr.match(pat);
+        var expect = null;
+        if (sm)
+            expect = sm[1];
+
+        var ipat = "=!INPUTSTART!=\n(.*)=!INPUTEND!=";
+        var ism = scr.match(ipat);
+            
+        var apat = "=!ARGSTART!=\n(.*)\n=!ARGEND!=";
+        var asm = scr.match(apat);
+
+        if (self.args === '' && asm)
+            self.args = asm[1];
+        var tcmd = Info.executable() + ' -Iasserts true';
+        var ut = 1;
+        var sint = null;
+        var siargs = {asserts:true};
+
+        if (self.times)
+            siargs.debugOpts = {testFmtCallback:'testFmt'};
+        if (self.echo)
+            ut += 2;
+        if (ut) {
+            tcmd += ' -IunitTest ' + ut;
+            siargs.unitTest = ut;
+        }
+        tcmd += ' '+fn+' '+self.args;
+
+        if (expect === null && self.expectFile)
+            expect = File.read(self.expectFile);
+
+        var input = '';
+        if (self.inFile)
+            input = File.read(self.inFile);
+        if (input === '' && ism)
+            input = ism[1];
+        if (input !== '') {
+            siargs.stdinStr = input;
+            tcmd += ' 2>&1 > '+self.outfile;
+        }
+        debugger;
+        //printf("ISM: <%s>", tcmd);
+        if (!self.silent)
+            printf('Test '+fn+' ');
+       if (self.times)
+            puts("");
+         var eopts = {};
+        if (input!=='')
+            eopts.input = input;
+        var res = null;
+        fail = false;
+        var emsg = "ERROR: ";
+        var etime, stime = strptime();
+        try {
+            if (!self.exec) {
+                siargs.stdoutStr = '';
+                //siargs.scriptFile = fn;
+                siargs.args = self.args.split(' ');
+                if (self.noproto)
+                    siargs.subOpts = {noproto:true};
+                sint = new Interp(siargs);
+                sint.conf({scriptFile:fn});
+                if (self.evalFile !== '')
+                    sint.source(self.evalFile);
+                sint.source(fn);
+                res = sint.conf('stdoutStr');
+            } else {
+                emsg = "EXEC ERROR: ";
+                res = exec(tcmd, eopts);
+            }
+        } catch(e) {
+            puts(emsg+(e?e:'failed'));
+            fail = true;
+        }
+        if (sint)
+            delete sint;
+        //puts('\nRES: ' +res);
+        if (input !== '' && self.exec) {
+            res = File.read(self.outfile);
+            //res = res.substr(0, res.length-1);
+        }
+        if (self.echo) {
+            puts('\n'+res);
+            return 0;
+        }
+        if (self.times) {
+            puts(res);
+            return 0;
+        }
+        if (self.verbose) {
+            puts('\nCMD: '+tcmd);
+            if (input !== '')
+                puts('INPUT: <'+input+'>');
+            puts('OUTPUT: <'+res+'>');
+            if (expect !== null)
+                puts('EXPECT: <'+expect+'>');
+        }
+        if (fail) {
+            puts("\r[FAIL] "+fn);
+            return fail;
+        }
+        if (res === null || res === undefined)
+            return 1;
+        
+        LogTrace(res);
+        if (self.update) {
+            var fdat = File.read(fn);
+            if (res.indexOf('*/')>=0) throw("output contains comment terminator");
+            if (!sm) {
+                fdat += "\n/*\n=!EXPECTSTART!=\n"+res+"=!EXPECTEND!=\n*/\n";
+                puts('\rCreated '+fn);
+            } else {
+                var s1 = fdat.indexOf("=!EXPECTSTART!=");
+                var s2 = fdat.indexOf("=!EXPECTEND!=");
+                var ndat = fdat.substr(0, s1)+"=!EXPECTSTART!=\n"+res+fdat.substr(s2);
+                if (ndat !== fdat)
+                    puts('\rUpdated '+fn);
+                else {
+                    puts('\rUnchanged '+fn);
+                    return 0;
+                }
+                fdat = ndat;
+            }
+            File.write(fn, fdat);
+            return 0;
+        }
+        if (!fail)
+            fail = (expect===null?false:(res !== expect));
+        if (!fail) {
+            if (!self.silent) {
+                var estr = '';
+                if (self.time)
+                    estr = ' \t ('+(strptime()-stime)+' ms)';
+                
+                puts("\r[PASS] "+fn+estr);
+            }
+        } else {
+            //puts('R:', res);
+            //puts('E:'+expect);
+            puts("\r[FAIL] "+fn);
+            if (expect && res) {
+                var rlst = res.split('\n');
+                var elst = expect.split('\n');
+                var elen = elst.length, rlen = rlst.length;
+                var slen = (rlen<elen?rlen:elen);
+                for (var i = 0; i<slen; i++)
+                    if (rlst[i] !== elst[i]) break;
+                if (rlen != elen && (rlst[i] === undefined || elst[i] === undefined)) {
+                    if (rlen<elen)
+                        printf("Output short: expected %d got %d\n",elen,rlen);
+                    else
+                        printf("Output long: expected %d got %d\n",elen,rlen);
+                } else if (i<slen) {
+                    printf("at line %d of output:\n\toutput:\t<%s>\n\texpect:\t<%s>\n", i+1, rlst[i], elst[i]);
+                }
+                if (self.context>0 && (!self.nodiff || self.context>3)) {
+                    puts('====================DIFFSTART');
+                    for (var j = i-self.context; j<i+self.context; j++) {
+                        if (j<0 || j>=rlst.length) continue;
+                        if (j!==i) { puts('',rlst[j]); continue; }
+                        puts('-'+elst[i]);
+                        puts('+'+rlst[i]);
+                    }
+                    puts('====================DIFFEND');
+                }
+            } else {
+                puts("Error output:"+ res);
+            }
+            fail = 1;
+        }
+        return fail;
+    }
+    
+    function main() {
+        LogTrace('Starting');
+        self.startTime = strptime();
+        if (self.exec) {
+            if (self.evalFile !== '')
+                throw "'evalFile' not available with 'exec'";
+            if (self.times)
+                throw "'times' not available with 'exec'";
+        }
+        if (self.times)
+            self.verbose = true;
+        if (!self.rootdir)
+            self.rootdir=Info.scriptDir();
+        if (self.echo && self.verbose)
+            throw('can not use both verbose and echo');
+        if (fileargs.length === 1) {
+            fileargs = fileargs[0];
+            if (!File.isdir(fileargs)) {
+                self.flst = [fileargs];
+                self.nodiff = true;
+            } else {
+                self.isdir = true;
+                var nlst = File.glob(fileargs+'/*').sort();
+                self.flst = [];
+                for (var nn of nlst) {
+                    switch (File.extension(nn)) {
+                        case '.jsi':
+                        case '.js':
+                            self.flst.push(nn);
+                            break;
+                    }
+                }
+            }
+            //puts(self.flst);
+        } else if (fileargs.length) {
+            self.flst = fileargs;
+            self.nodiff = true;
+        }
+        //puts(self.flst);
+        for (var i of self.flst) {
+            self.cnt++;
+            self.fails += runOne(i);
+            if (self.failMax && self.fails>=self.failMax)
+                break;
+        }
+
+        LogTrace('Done');
+        Info.interp();
+        if (!self.silent && self.cnt>1)
+            printf("%d FAIL, %d PASS: runtime %u ms\n", self.fails, self.cnt-self.fails, (strptime()-self.startTime));
+        return self.fails;
+    }
+    
+    return main();
+}
+
+provide(UnitTest, 1);
+
+
+if (isMain())
+    exit(runModule(UnitTest));

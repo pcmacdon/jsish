@@ -1,0 +1,98 @@
+<title>Events</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#sched|Schedule]</li>
+<li>[#update|Update]</li>
+<li>[#info|Info]</li>
+</ul>
+</div>
+
+<h2 id=sched>Schedule</h2>
+<b>
+function setTimeout(callback:function, millisecs:number):number<br>
+function setInterval(callback:function, millisecs:number):number<br>
+function clearInterval(id:number):void
+</b>
+
+Events are scheduled using <b>setTimeout/setInterval/clearInterval</b>, just as in ecmascript.
+
+One difference is that we need to explicitly call <b>update()</b> so that events will be serviced:
+ 
+    <nowiki><pre class=verbatim>
+<b>function</b> foo() {
+    <b>puts</b>(<i>"FOO:"</i>);
+}
+<b>setInterval</b>(foo, 1000);
+<b>update</b>(-1);
+</pre></nowiki>
+
+The call to <b>update(-1)</b> causes <b>foo</b> to be called once a second.
+
+<hr>
+
+<h2 id=update>Update</h2>
+
+<b>function update(options:number|object=void):number</b>
+
+<b>update</b> processes scheduled events.
+
+  *  With no arguments, <b>update</b> will process all events in the queue then return.
+  *  If a number argument is given, it is treated as the <b>minTime</b> option below.
+  *  If an object argument is given, it may contain any of the following options:
+
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr><th >Option</th><th >Description</th></tr>
+<tr><td>maxEvents</td><td>Maximum number of events to process</td></tr>
+<tr><td>maxPasses</td><td>Maximum passes through event queue</td></tr>
+<tr><td>minTime</td><td>Minimum milliseconds before returning, or -1 to loop forever (Default is 0)</td></tr>
+<tr><td>sleep</td><td>Sleep time between event checks in milliseconds (Default is 1)</td></tr>
+</table></nowiki>
+
+Events are processed until one of <b>minTime</b>, <b>maxEvents</b>, or <b>maxPasses</b> is exceeded. 
+
+The returned value is the number of events processed.
+
+For more details see [./reference.wiki#Event|Reference]
+
+<hr>
+
+<h2 id=info>Info</h2>
+
+<b>Info.event = function (id:number=void):array|object</b>
+
+In Jsi we can use <i>Info.event()</i> to query queued events:
+ 
+    <nowiki><pre class=verbatim>
+<b>function</b> foo() {
+    <b>puts</b>(<i>"FOO: "</i> + i++);
+    <b>if</b> (i>=3) <b>exit</b>(0);
+}
+<b>var</b> i=0, id = <b>setInterval</b>(foo,1000);
+<b>var</b> evs = <b>Info.event</b>();
+<b>for</b> (var i <b>in</b> evs) {
+  <b>puts</b>(<i>'EV('</i> + i + <i>'): '</i> + <b>Info.event</b>(evs[i]).<b>toString</b>());
+}
+<b>update</b>();
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+EV(0): { builtin:false, count:0, initial:1000, once:false, type:"timer", when:1000 }
+FOO: 0
+FOO: 1
+FOO: 2
+</pre></nowiki>
+
+
+This returns value is:
+
+  *  With no arg, the list of ids for queued events. 
+  *  With one arg, the information for the given event id.
+
+For more details see [./js-info.wiki|Info]
+  
+

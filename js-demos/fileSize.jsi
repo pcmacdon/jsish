@@ -1,0 +1,39 @@
+#!/usr/bin/env jsish
+function fileSize(fargs:array|string=void, conf:object=void) {
+
+    var options = { // Count bytes in files
+        Debug       :false, // LogDebug output
+        max         :10     // Max number of files
+    };
+    var self = {
+        cnt:0
+    };
+    
+    function getLength(fargs:array|string) {
+        if (typeof fargs === 'string')
+            fargs = [fargs];
+        LogDebug("Len", fargs);
+        for (var i in fargs) {
+            if (i>=self.max) break;
+            if (self.Debug)
+                puts('Count: '+fargs[i]);
+            self.cnt += File.size(fargs[i]);
+        }
+        return self.cnt;
+    }
+
+    parseOpts(self, options, conf);
+
+    LogTest("Starting");
+    
+    if (fargs)
+        return getLength(fargs);
+        
+    self.getLength = getLength; // Return object-command
+    return self;
+}
+
+provide(fileSize);
+
+if (isMain()) 
+    runModule(fileSize);

@@ -1,0 +1,16 @@
+#!/usr/local/bin/jsish -u %s
+
+try {
+    eval("throw('abc');");
+} catch(e) {
+    puts(e);
+} finally {
+    puts("finally");
+}
+
+/*
+=!EXPECTSTART!=
+abc
+finally
+=!EXPECTEND!=
+*/

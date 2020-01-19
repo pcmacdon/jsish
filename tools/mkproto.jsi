@@ -1,0 +1,67 @@
+#!/usr/bin/env jsish
+// Generate function prototypes for Jsi builtin cmds.
+
+function jsi_mkproto() {
+
+    function DumpArgs(ci:object) {
+        var argStr = ci.args;
+        if (argStr === undefined)
+            return '';
+        return argStr;
+    }
+
+    function DumpRet(ci:object) {
+        var argStr = ci.retType;
+        if (argStr === undefined)
+            return '';
+        return ':'+argStr;
+    }
+
+    function DumpCmd(cinf:object) {
+        return "var "+cinf.name+" = function("+DumpArgs(tinf)+")"+DumpRet(tinf)+" {};\n";
+    }
+
+    function DumpObj(tinf:object) {
+        var hasconf, ro = '', rv = '', ci, cnam = tinf.name, cmds;
+        var re1 = new RegExp('^'+cnam+'.[_a-zA-Z0-9]+$');
+        cmds = Info.cmds(re1);
+        rv += "var "+tinf.name+" = function(cmd,args) {};\n";
+        if (!cmds)
+            return rv;
+        for (var cmd of cmds) {
+            var nam = cmd.split('.')[0];
+            if (nam == cnam)
+                continue;
+            ci = Info.cmds(cnam+'.'+nam);
+            rv += tinf.name+".prototype."+nam+" = function("+DumpArgs(ci)+")"+DumpRet(ci)+" {};\n";
+            if (ci.flags && ci.flags&0x8)
+                rv += DumpObj(ci);
+        }
+        return rv;
+    }
+    
+    //*************** BEGIN MAIN **************
+    var rv = '', tinf, lst = Info.cmds();
+    var vv = Info.version(true);
+    var ver = vv.major+'.'+vv.minor+'.'+vv.release;
+
+    for (var i of lst) {
+        tinf = Info.cmds(i);
+        switch (tinf.type) {
+        case 'object':
+            rv += DumpObj(tinf);
+            break;
+        case 'command':
+            rv += DumpCmd(tinf);
+            break;
+        default:
+            throw("bad id");
+            continue;
+        }
+    }
+    return '//JSI Command Prototypes: version '+ver+'\nthrow("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");\n\n' + rv;
+}
+
+if (Info.isMain()) {
+    puts(jsi_mkproto());
+}

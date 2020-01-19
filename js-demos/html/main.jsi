@@ -1,0 +1,4 @@
+//Give browser 5 seconds to get page.
+Jsi_Main('Websrv', ['-timeout', 5000].concat(console.args));
+/* Or perhaps this, to disallow override. */
+//Jsi_Main('websrv', console.args.concat(['-timeout', 5000]));

@@ -1,0 +1,55 @@
+<title>Index</title>
+<table><tr><td valign=top>
+
+
+<h4 style='text-align:center'>General</h4>
+
+  *  <a href=archive.wiki>Archive</a>
+  *  <a href=background.wiki>Background</a>
+  *  <a href=build.wiki>Build</a>
+  *  <a href=debug.wiki>Debugging</a>
+  *  <a href=download.wiki>Download</a>
+  *  <a href=functions.wiki>Functions</a>
+  *  <a href=home.wiki>Home</a>
+  *  <a href=language.wiki>Language</a>
+  *  <a href=license.wiki>License</a>
+  *  <a href=markdown.wiki>Markdown</a>
+  *  <a href=packages.wiki>Packages</a>
+  *  <a href=problem.wiki>Problems</a>
+  *  <a href=profiler.wiki>Profiler</a>
+  *  <a href=reference.wiki>Reference</a>
+  *  <a href=testing.wiki>Testing</a>
+  *  <a href=usingjsi.wiki>Using jsish</a>
+  *  <a href=web.wiki>Web</a>
+</td><td valign=top>
+
+<h4 style='text-align:center'>Javascript</h4>
+  *  <a href=js-cdata.wiki>CData</a>
+  *  <a href=js-errors.wiki>Errors</a>
+  *  <a href=js-events.wiki>Events</a>
+  *  <a href=js-filesystem.wiki>Files</a>
+  *  <a href=js-format.wiki>Format</a>
+  *  <a href=js-info.wiki>Info</a>
+  *  <a href=js-interp.wiki>Interp</a>
+  *  <a href=js-json.wiki>JSON</a>
+  *  <a href=js-logging.wiki>Logging</a>
+  *  <a href=js-modules.wiki>Modules</a>
+  *  <a href=js-mysql.wiki>MySql</a>
+  *  <a href=js-signal.wiki>Signal</a>
+  *  <a href=js-socket.wiki>Socket</a>
+  *  <a href=js-sqlite.wiki>Sqlite</a>
+  *  <a href=js-system.wiki>System</a>
+  *  <a href=js-threads.wiki>Threads</a>
+  *  <a href=js-websocket.wiki>WebSocket</a>
+  *  <a href=js-zvfs.wiki>Zvfs</a>
+</td><td valign=top>
+
+<h4 style='text-align:center'>C-API</h4>
+  *  <a href=c-cdata.wiki>CData</a>
+  *  <a href=c-dbquery.wiki>Db Query</a>
+  *  <a href=c-dstring.wiki> DStrings</a>
+  *  <a href=c-extensions.wiki>Extension</a>
+  *  <a href=c-jsi_lite.wiki>Jsi-Lite</a>
+  *  <a href=c-json.wiki> JSON</a>
+  *  <a href=c-options.wiki> Options</a>
+</td></tr></table>

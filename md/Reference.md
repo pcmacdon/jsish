@@ -1,0 +1,1798 @@
+<title>Reference</title>
+<p>
+<div id="sectmenu" data-opts="closed:false"></div><B>JSI REFERENCE</B>: <a href="#System">System</a> contains global methods
+<a name="Array"></a>
+
+<hr>
+
+
+<h1>Array</h1>
+
+<font color=red>Synopsis:new Array(...):array
+
+</font><p>Provide access to array objects.
+
+
+<h2>Methods for "Array"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Array</td><td>new Array(...):array </td><td>jsi_Array constructor.</td></tr>
+<tr><td>concat</td><td>concat(...):array </td><td>Return array with args appended.</td></tr>
+<tr><td>every</td><td>every(callback:function) </td><td>Returns true if every value in array satisfies the test.</td></tr>
+<tr><td>fill</td><td>fill(value:any, start:number=0, end:number=-1):array </td><td>Fill an array with values.</td></tr>
+<tr><td>filter</td><td>filter(callback:function, this:object=void):array </td><td>Return a filtered array.</td></tr>
+<tr><td>find</td><td>find(callback:function) </td><td>Returns the value of the first element in the array that satisfies the test.</td></tr>
+<tr><td>findIndex</td><td>findIndex(callback:function) </td><td>Returns the index of the first element in the array that satisfies the test.</td></tr>
+<tr><td>flat</td><td>flat(depth:number=1):array </td><td>Flatten an arra.</td></tr>
+<tr><td>forEach</td><td>forEach(callback:function, this:object=void):void </td><td>Invoke function with each item in object.</td></tr>
+<tr><td>includes</td><td>includes(val:any) </td><td>Returns true if array contains value.</td></tr>
+<tr><td>indexOf</td><td>indexOf(str:any, startIdx:number=0):number </td><td>Return index of first occurrance in array.</td></tr>
+<tr><td>isArray</td><td>isArray():boolean </td><td>True if val array.</td></tr>
+<tr><td>join</td><td>join(sep:string=''):string </td><td>Return elements joined by char.</td></tr>
+<tr><td>lastIndexOf</td><td>lastIndexOf(val:any, start:number=0):number </td><td>Return index of last occurence in array.</td></tr>
+<tr><td>map</td><td>map(callback:function, this:object=void):array </td><td>Creates a new array with the results of calling a provided function on every element in this array.</td></tr>
+<tr><td>pop</td><td>pop() </td><td>Remove and return last element of array.</td></tr>
+<tr><td>push</td><td>push(val:any, ...):number </td><td>Push one or more elements onto array and return size.</td></tr>
+<tr><td>reduce</td><td>reduce(callback:function, initial:any) </td><td>Return a reduced array.</td></tr>
+<tr><td>reduceRight</td><td>reduceRight(callback:function, initial:any) </td><td>Return a reduced array.</td></tr>
+<tr><td>reverse</td><td>reverse():array </td><td>Reverse order of all elements in an array.</td></tr>
+<tr><td>shift</td><td>shift() </td><td>Remove first element and shift downwards.</td></tr>
+<tr><td>sizeOf</td><td>sizeOf():number </td><td>Return size of array.</td></tr>
+<tr><td>slice</td><td>slice(start:number, end:number=void):array </td><td>Return sub-array.</td></tr>
+<tr><td>some</td><td>some(callback:function, this:object=void):boolean </td><td>Return true if function returns true some element.</td></tr>
+<tr><td>sort</td><td>sort(<a href='#Array.sortOptions'>options</a>:function|object=void):array </td><td>Sort an array.</td></tr>
+<tr><td>splice</td><td>splice(start:number, howmany:number=void, ...):array </td><td>Change the content of an array, adding new elements while removing old elements.</td></tr>
+<tr><td>unshift</td><td>unshift(...):number </td><td>Add new elements to start of array and return size.</td></tr>
+</table>
+
+
+<a name="Array.sortOptions"></a>
+<a name="Array.confOptions"></a>
+<h2>Options for "Array.sort"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Mode to sort by. (one of: <b>default</b>, <b>desc</b>, <b>dict</b>, <b>nocase</b>)</td><td><i></i></td></tr>
+<tr><td>compare</td><td><i>FUNC</i></td><td>Function to do comparison. @function(val1,val2)</td><td><i></i></td></tr>
+<tr><td>unique</td><td><i>BOOL</i></td><td>Eliminate duplicate items.</td><td><i></i></td></tr>
+</table>
+<a name="Arrayend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Boolean"></a>
+
+<hr>
+
+
+<h1>Boolean</h1>
+
+<font color=red>Synopsis:new Boolean(bool:boolean=false):boolean
+
+</font><p>A Boolean object.
+
+
+<h2>Methods for "Boolean"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Boolean</td><td>new Boolean(bool:boolean=false):boolean </td><td>Boolean constructor.</td></tr>
+</table>
+<a name="Booleanend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="CData"></a>
+
+<hr>
+
+
+<h1>CData</h1>
+
+<font color=red>Synopsis:new CData(options:string&verbar;object=void, inits:object=undefined):userobj
+
+</font><p>
+<h2>Methods for "CData"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>CData</td><td>new CData(<a href='#new CDataOptions'>options</a>:string|object=void, inits:object=undefined):userobj </td><td>Create a new struct or map/array of structs.The 2nd arg is used for function option parsing and will report errors at the callers file:line</td></tr>
+<tr><td>conf</td><td>conf(<a href='#CData.confOptions'>options</a>:object|string=void) </td><td>Configure options for c-data.</td></tr>
+<tr><td>get</td><td>get(key:string|number|object=null, field:string=void) </td><td>Get struct/map/array value.</td></tr>
+<tr><td>incr</td><td>incr(key:string|number|object|null, field:object|string, value:number=1):number </td><td>Increment a numeric field: returns the new value.</td></tr>
+<tr><td>info</td><td>info():object </td><td>Return info for data.</td></tr>
+<tr><td>names</td><td>names():array </td><td>Return keys for map.</td></tr>
+<tr><td>set</td><td>set(key:string|number|object|null, field:object|string, value:any=void) </td><td>Set a struct/map/array value.</td></tr>
+<tr><td>unset</td><td>unset(key:string|number|object) </td><td>Remove entry from map/array.</td></tr>
+</table>
+
+
+<a name="new CDataOptions"></a>
+<a name="CData.confOptions"></a>
+<h2>Options for "new CData"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>arrSize</td><td><i>UINT</i></td><td>If an array, its size in elements.</td><td><i>initOnly</i></td></tr>
+<tr><td>flags</td><td><i>UINT</i></td><td>Flags.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Description of data.</td><td><i>initOnly</i></td></tr>
+<tr><td>keyName</td><td><i>STRKEY</i></td><td>Key struct, for key struct maps.</td><td><i>initOnly</i></td></tr>
+<tr><td>keyType</td><td><i>STRKEY</i></td><td>Key id. (one of: <b>string</b>, <b>strkey</b>, <b>number</b>)</td><td><i>initOnly</i></td></tr>
+<tr><td>mapType</td><td><i>STRKEY</i></td><td>If a map, its type. (one of: <b>none</b>, <b>hash</b>, <b>tree</b>, <b>list</b>)</td><td><i>initOnly</i></td></tr>
+<tr><td>maxSize</td><td><i>UINT</i></td><td>Limit the array size or number of keys in a map.</td><td><i></i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name (eg. of var assigned to on create).</td><td><i>initOnly</i></td></tr>
+<tr><td>noAuto</td><td><i>BOOL</i></td><td>Disable auto-create of map keys in set/incr.</td><td><i></i></td></tr>
+<tr><td>structName</td><td><i>STRKEY</i></td><td>Struct used for storing data.</td><td><i>initOnly|required</i></td></tr>
+<tr><td>user</td><td><i>INT64</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>varParam</td><td><i>STRKEY</i></td><td>Param for maps/array vars.</td><td><i>initOnly</i></td></tr>
+</table>
+<a name="CDataend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="CEnum"></a>
+
+<hr>
+
+
+<h1>CEnum</h1>
+
+<font color=red>Synopsis:CEnum.method(...)
+
+</font><p>Enum commands. Note: Enum() is a shortcut for Enum.add().
+
+
+<h2>Methods for "CEnum"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>add</td><td>add(<a href='#CEnum.addOptions'>options</a>:object|string, fields:array|string) </td><td>Create a new enum: value of items same as in fieldconf.</td></tr>
+<tr><td>conf</td><td>conf(enum:string, <a href='#CEnum.confOptions'>options</a>:object|string=void) </td><td>Configure options for enum.</td></tr>
+<tr><td>fieldconf</td><td>fieldconf(enum:string, field:string, <a href='#CEnum.fieldconfOptions'>options</a>:object|string=void) </td><td>Configure options for fields.</td></tr>
+<tr><td>find</td><td>find(enum:string, intValue:number):string </td><td>Find item with given value in enum.</td></tr>
+<tr><td>get</td><td>get(enum:string):object </td><td>Return enum definition.</td></tr>
+<tr><td>names</td><td>names(enum:string=void):array </td><td>Return name list of all enums, or items within one enum.</td></tr>
+<tr><td>remove</td><td>remove(enum:string) </td><td>Remove an enum.</td></tr>
+<tr><td>value</td><td>value(enum:string, item:string):number </td><td>Return value for given enum item.</td></tr>
+</table>
+
+
+<a name="CEnum.addOptions"></a>
+<a name="CEnum.confOptions"></a>
+<h2>Options for "CEnum.add"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for enum.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Description of enum.</td><td><i>initOnly</i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of enum.</td><td><i>initOnly</i></td></tr>
+<tr><td>idx</td><td><i>UINT</i></td><td>Number of items in enum.</td><td><i>readOnly</i></td></tr>
+</table>
+
+
+<a name="CEnum.confOptions"></a>
+<a name="CEnum.confOptions"></a>
+<h2>Options for "CEnum.conf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for enum.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Description of enum.</td><td><i>initOnly</i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of enum.</td><td><i>initOnly</i></td></tr>
+<tr><td>idx</td><td><i>UINT</i></td><td>Number of items in enum.</td><td><i>readOnly</i></td></tr>
+</table>
+
+
+<a name="CEnum.fieldconfOptions"></a>
+<a name="CEnum.confOptions"></a>
+<h2>Options for "CEnum.fieldconf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for item.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Desciption of item.</td><td><i>initOnly</i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of item.</td><td><i>initOnly</i></td></tr>
+<tr><td>value</td><td><i>INT64</i></td><td>Value for item.</td><td><i>initOnly</i></td></tr>
+<tr><td>idx</td><td><i>UINT</i></td><td>Index of item in enum.</td><td><i>readOnly</i></td></tr>
+</table>
+<a name="CEnumend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="CStruct"></a>
+
+<hr>
+
+
+<h1>CStruct</h1>
+
+<font color=red>Synopsis:CStruct.method(...)
+
+</font><p>Struct commands. Note: Struct() is a shortcut for Struct.add().
+
+
+<h2>Methods for "CStruct"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>add</td><td>add(<a href='#CStruct.addOptions'>options</a>:object|string, fields:array|string) </td><td>Create a struct: field values same as in fieldconf.</td></tr>
+<tr><td>conf</td><td>conf(struct:string, <a href='#CStruct.confOptions'>options</a>:object|string=void) </td><td>Configure options for struct.</td></tr>
+<tr><td>fieldconf</td><td>fieldconf(struct:string, field:string, <a href='#CStruct.fieldconfOptions'>options</a>:object|string=void) </td><td>Configure options for fields.</td></tr>
+<tr><td>get</td><td>get(struct, options:object=void):object </td><td>Return the struct definition.</td></tr>
+<tr><td>names</td><td>names(struct:string=void):array </td><td>Return name list of all structs, or fields for one struct.</td></tr>
+<tr><td>remove</td><td>remove(name:string) </td><td>Remove a struct.</td></tr>
+<tr><td>schema</td><td>schema():string </td><td>Return database schema for struct.</td></tr>
+</table>
+
+
+<a name="CStruct.addOptions"></a>
+<a name="CStruct.confOptions"></a>
+<h2>Options for "CStruct.add"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>crc</td><td><i>UINT32</i></td><td>Crc for struct.</td><td><i>initOnly</i></td></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for struct.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Struct description.</td><td><i>initOnly</i></td></tr>
+<tr><td>idx</td><td><i>UINT32</i></td><td>Number of fields in struct.</td><td><i>readOnly</i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of struct.</td><td><i>initOnly|required</i></td></tr>
+<tr><td>size</td><td><i>UINT</i></td><td>Size of struct in bytes.</td><td><i>readOnly</i></td></tr>
+<tr><td>ssig</td><td><i>UINT32</i></td><td>Signature for struct.</td><td><i>initOnly</i></td></tr>
+<tr><td>value</td><td><i>INT64</i></td><td>Reference count.</td><td><i>readOnly</i></td></tr>
+</table>
+
+
+<a name="CStruct.confOptions"></a>
+<a name="CStruct.confOptions"></a>
+<h2>Options for "CStruct.conf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>crc</td><td><i>UINT32</i></td><td>Crc for struct.</td><td><i>initOnly</i></td></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for struct.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Struct description.</td><td><i>initOnly</i></td></tr>
+<tr><td>idx</td><td><i>UINT32</i></td><td>Number of fields in struct.</td><td><i>readOnly</i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of struct.</td><td><i>initOnly|required</i></td></tr>
+<tr><td>size</td><td><i>UINT</i></td><td>Size of struct in bytes.</td><td><i>readOnly</i></td></tr>
+<tr><td>ssig</td><td><i>UINT32</i></td><td>Signature for struct.</td><td><i>initOnly</i></td></tr>
+<tr><td>value</td><td><i>INT64</i></td><td>Reference count.</td><td><i>readOnly</i></td></tr>
+</table>
+
+
+<a name="CStruct.fieldconfOptions"></a>
+<a name="CStruct.confOptions"></a>
+<h2>Options for "CStruct.fieldconf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>arrSize</td><td><i>UINT</i></td><td>Size of field if an array.</td><td><i>initOnly</i></td></tr>
+<tr><td>bits</td><td><i>UINT32</i></td><td>Size of bitfield.</td><td><i>initOnly</i></td></tr>
+<tr><td>boffset</td><td><i>UINT32</i></td><td>Bit offset of field within struct.</td><td><i>readOnly</i></td></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for field.</td><td><i>initOnly</i></td></tr>
+<tr><td>idx</td><td><i>UINT32</i></td><td>Index of field in struct.</td><td><i>readOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Field description.</td><td><i>initOnly</i></td></tr>
+<tr><td>info</td><td><i>STRKEY</i></td><td>Info for field.</td><td><i>initOnly</i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of field.</td><td><i>initOnly|required</i></td></tr>
+<tr><td>offset</td><td><i>UINT</i></td><td>Offset of field within struct.</td><td><i>readOnly</i></td></tr>
+<tr><td>size</td><td><i>UINT</i></td><td>Size of field in struct.</td><td><i>readOnly</i></td></tr>
+<tr><td>type</td><td><i>CUSTOM</i></td><td>Type of field.</td><td><i>initOnly|required</i></td></tr>
+<tr><td>init</td><td><i>CUSTOM</i></td><td>Initial value for field.</td><td><i>initOnly</i></td></tr>
+</table>
+<a name="CStructend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="CType"></a>
+
+<hr>
+
+
+<h1>CType</h1>
+
+<font color=red>Synopsis:CType.method(...)
+
+</font><p>Type commands. Note: Type() is a shortcut for Type.conf().
+
+
+<h2>Methods for "CType"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>conf</td><td>conf(typ:string, <a href='#CType.confOptions'>options</a>:object|string=void) </td><td>Configure options for type.</td></tr>
+<tr><td>names</td><td>names(ctype=false):array </td><td>Return type names.</td></tr>
+</table>
+
+
+<a name="CType.confOptions"></a>
+<a name="CType.confOptions"></a>
+<h2>Options for "CType.conf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>idName</td><td><i>STRKEY</i></td><td>The id name: usually upcased cName.</td><td><i>initOnly</i></td></tr>
+<tr><td>cName</td><td><i>STRKEY</i></td><td>C type name.</td><td><i>initOnly</i></td></tr>
+<tr><td>help</td><td><i>STRKEY</i></td><td>Description of id.</td><td><i>initOnly</i></td></tr>
+<tr><td>fmt</td><td><i>STRKEY</i></td><td>Printf format for id.</td><td><i>initOnly</i></td></tr>
+<tr><td>xfmt</td><td><i>STRKEY</i></td><td>Hex printf format for id.</td><td><i>initOnly</i></td></tr>
+<tr><td>flags</td><td><i>INT64</i></td><td>Flags for id.</td><td><i>initOnly</i></td></tr>
+<tr><td>size</td><td><i>INT</i></td><td>Size for id.</td><td><i>initOnly</i></td></tr>
+<tr><td>user</td><td><i>INT64</i></td><td>User data.</td><td><i></i></td></tr>
+</table>
+<a name="CTypeend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Channel"></a>
+
+<hr>
+
+
+<h1>Channel</h1>
+
+<font color=red>Synopsis:new Channel(file:string, mode:string='r'):userobj
+
+</font><p>Commands for accessing Channel objects for file IO.
+
+
+<h2>Methods for "Channel"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Channel</td><td>new Channel(file:string, mode:string='r'):userobj </td><td>A file input/output object. The mode string is r or w and an optional +.</td></tr>
+<tr><td>close</td><td>close():boolean </td><td>Close the file.</td></tr>
+<tr><td>eof</td><td>eof():boolean </td><td>Return true if read to end-of-file.</td></tr>
+<tr><td>filename</td><td>filename():string </td><td>Get file name.</td></tr>
+<tr><td>flush</td><td>flush():number </td><td>Flush file output.</td></tr>
+<tr><td>gets</td><td>gets():string|void </td><td>Get one line of input.</td></tr>
+<tr><td>lstat</td><td>lstat():object </td><td>Return status for file.</td></tr>
+<tr><td>mode</td><td>mode():string </td><td>Get file mode used with open.</td></tr>
+<tr><td>open</td><td>open(file:string, mode:string='r'):boolean </td><td>Open the file (after close).</td></tr>
+<tr><td>puts</td><td>puts(str):boolean </td><td>Write one line of output.</td></tr>
+<tr><td>read</td><td>read(size:number=-1):string|void </td><td>Read some or all of file.</td></tr>
+<tr><td>seek</td><td>seek(pos:number, whence:string):number </td><td>Seek to position. Return 0 if ok.</td></tr>
+<tr><td>stat</td><td>stat():object </td><td>Return status for file.</td></tr>
+<tr><td>tell</td><td>tell():number </td><td>Return current position.</td></tr>
+<tr><td>truncate</td><td>truncate(pos:number):number </td><td>Truncate file.</td></tr>
+<tr><td>write</td><td>write(data):number </td><td>Write data to file.</td></tr>
+</table>
+<a name="Channelend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Debugger"></a>
+
+<hr>
+
+
+<h1>Debugger</h1>
+
+<font color=red>Synopsis:Debugger.method(...)
+
+</font><p>Debugger breakpoint management.
+
+
+<h2>Methods for "Debugger"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>add</td><td>add(val:string|number, temp:boolean=false):number </td><td>Add a breakpoint for line, file:line or func.</td></tr>
+<tr><td>enable</td><td>enable(id:number, on:boolean):void </td><td>Enable/disable breakpoint.</td></tr>
+<tr><td>info</td><td>info(id:number=void):array|object </td><td>Return info about one breakpoint, or list of bp numbers.</td></tr>
+<tr><td>remove</td><td>remove(id:number):void </td><td>Remove breakpoint.</td></tr>
+</table>
+<a name="Debuggerend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Event"></a>
+
+<hr>
+
+
+<h1>Event</h1>
+
+<font color=red>Synopsis:Event.method(...)
+
+</font><p>Event management.
+
+
+<h2>Methods for "Event"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>clearInterval</td><td>clearInterval(id:number):void </td><td>Delete an event (created with setInterval/setTimeout).</td></tr>
+<tr><td>info</td><td>info(id:number):object </td><td>Return info for the given event id.</td></tr>
+<tr><td>names</td><td>names():array </td><td>Return list event ids (created with setTimeout/setInterval).</td></tr>
+<tr><td>setInterval</td><td>setInterval(callback:function, millisecs:number):number </td><td>Setup recurring function to run every given millisecs.</td></tr>
+<tr><td>setTimeout</td><td>setTimeout(callback:function, millisecs:number):number </td><td>Setup function to run after given millisecs.</td></tr>
+<tr><td>update</td><td>update(<a href='#Event.updateOptions'>options</a>:number|object=void):number </td><td>Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1.
+The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.</td></tr>
+</table>
+
+
+<a name="Event.updateOptions"></a>
+<a name="Event.confOptions"></a>
+<h2>Options for "Event.update"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>maxEvents</td><td><i>INT</i></td><td>Maximum number of events to process (or -1 for all).</td><td><i></i></td></tr>
+<tr><td>maxPasses</td><td><i>INT</i></td><td>Maximum passes through event queue.</td><td><i></i></td></tr>
+<tr><td>minTime</td><td><i>INT</i></td><td>Minimum milliseconds before returning, or -1 to loop forever (default is 0).</td><td><i></i></td></tr>
+<tr><td>sleep</td><td><i>INT</i></td><td>Time to sleep time (in milliseconds) between event checks. Default is 1.</td><td><i></i></td></tr>
+</table>
+<a name="Eventend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="File"></a>
+
+<hr>
+
+
+<h1>File</h1>
+
+<font color=red>Synopsis:File.method(...)
+
+</font><p>Commands for accessing the filesystem.
+
+
+<h2>Methods for "File"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>atime</td><td>atime(file:string):number </td><td>Return file Jsi_Access time.</td></tr>
+<tr><td>chdir</td><td>chdir(file:string) </td><td>Change current directory.</td></tr>
+<tr><td>chmod</td><td>chmod(file:string, mode:number) </td><td>Set file permissions.</td></tr>
+<tr><td>copy</td><td>copy(src:string, dest:string, force:boolean=false) </td><td>Copy a file to destination. Directories are not handled.
+The third argument if given is a boolean force value which if true allows overwrite of an existing file. </td></tr>
+<tr><td>dirname</td><td>dirname(file:string):string </td><td>Return directory path.</td></tr>
+<tr><td>executable</td><td>executable(file:string):boolean </td><td>Return true if file is executable.</td></tr>
+<tr><td>exists</td><td>exists(file:string):boolean </td><td>Return true if file exists.</td></tr>
+<tr><td>extension</td><td>extension(file:string):string </td><td>Return file extension.</td></tr>
+<tr><td>glob</td><td>glob(pattern:regexp|string|null='*', <a href='#File.globOptions'>options</a>:function|object|null=void):array </td><td>Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory.
+The first argument can be a pattern (either a glob or regexp) of the files to return.
+When the second argument is a function, it is called with each path, and filter on false.
+Otherwise second argument must be a set of options.</td></tr>
+<tr><td>isdir</td><td>isdir(file:string):boolean </td><td>Return true if file is a directory.</td></tr>
+<tr><td>isfile</td><td>isfile(file:string):boolean </td><td>Return true if file is a normal file.</td></tr>
+<tr><td>isrelative</td><td>isrelative(file:string):boolean </td><td>Return true if file path is relative.</td></tr>
+<tr><td>join</td><td>join(path:string, path:string):string </td><td>Join two file realpaths, or just second if an absolute path.</td></tr>
+<tr><td>link</td><td>link(src:string, dest:string, ishard:boolean=false) </td><td>Link a file. The second argument is the destination file to be created. If a third bool argument is true, a hard link is created.</td></tr>
+<tr><td>lstat</td><td>lstat(file:string):object </td><td>Return status info for file.</td></tr>
+<tr><td>mkdir</td><td>mkdir(file:string,force:boolean=false) </td><td>Create a directory: force creates subdirs.</td></tr>
+<tr><td>mknod</td><td>mknod(file:string, mode:number, dev:number) </td><td>Create unix device file using mknod.</td></tr>
+<tr><td>mtime</td><td>mtime(file:string):number </td><td>Return file modified time.</td></tr>
+<tr><td>owned</td><td>owned(file:string):boolean </td><td>Return true if file is owned by user.</td></tr>
+<tr><td>pwd</td><td>pwd():string </td><td>Return current directory.</td></tr>
+<tr><td>read</td><td>read(file:string, mode:string='rb'):string </td><td>Read a file.</td></tr>
+<tr><td>readable</td><td>readable(file:string):boolean </td><td>Return true if file is readable.</td></tr>
+<tr><td>readlink</td><td>readlink(file:string):string </td><td>Read file link destination.</td></tr>
+<tr><td>realpath</td><td>realpath(file:string):string </td><td>Return absolute file name minus .., ./ etc.</td></tr>
+<tr><td>remove</td><td>remove(file:string, force:boolean=false) </td><td>Delete a file or direcotry.</td></tr>
+<tr><td>rename</td><td>rename(src:string, dest:string, force:boolean=false) </td><td>Rename a file, with possible overwrite.</td></tr>
+<tr><td>rootname</td><td>rootname(file:string):string </td><td>Return file name minus extension.</td></tr>
+<tr><td>size</td><td>size(file:string):number </td><td>Return size for file.</td></tr>
+<tr><td>stat</td><td>stat(file:string):object </td><td>Return status info for file.</td></tr>
+<tr><td>tail</td><td>tail(file:string):string </td><td>Return file name minus dirname.</td></tr>
+<tr><td>tempfile</td><td>tempfile(file:string) </td><td>Create a temp file.</td></tr>
+<tr><td>truncate</td><td>truncate(file:string, size:number) </td><td>Truncate file.</td></tr>
+<tr><td>type</td><td>type(file:string):string </td><td>Return type of file.</td></tr>
+<tr><td>writable</td><td>writable(file:string):boolean </td><td>Return true if file is writable.</td></tr>
+<tr><td>write</td><td>write(file:string, str:string, mode:string='wb+'):number </td><td>Write a file.</td></tr>
+</table>
+
+
+<a name="File.globOptions"></a>
+<a name="File.confOptions"></a>
+<h2>Options for "File.glob"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>dir</td><td><i>STRING</i></td><td>The start directory: this path will not be prepended to results.</td><td><i></i></td></tr>
+<tr><td>maxDepth</td><td><i>INT</i></td><td>Maximum directory depth to recurse into.</td><td><i></i></td></tr>
+<tr><td>maxDiscard</td><td><i>INT</i></td><td>Maximum number of items to discard before giving up.</td><td><i></i></td></tr>
+<tr><td>dirFilter</td><td><i>FUNC</i></td><td>Filter function for directories, returning false to discard. @function(dir:string)</td><td><i></i></td></tr>
+<tr><td>filter</td><td><i>FUNC</i></td><td>Filter function to call with each file, returning false to discard. @function(file:string)</td><td><i></i></td></tr>
+<tr><td>limit</td><td><i>INT</i></td><td>The maximum number of results to return/count: -1 is unlimited (Interp.maxArrayList).</td><td><i></i></td></tr>
+<tr><td>noTypes</td><td><i>STRKEY</i></td><td>Filter files to exclude these "types".</td><td><i></i></td></tr>
+<tr><td>prefix</td><td><i>STRKEY</i></td><td>String prefix to prepend to each file in result list.</td><td><i></i></td></tr>
+<tr><td>recurse</td><td><i>BOOL</i></td><td>Recurse into sub-directories.</td><td><i></i></td></tr>
+<tr><td>retCount</td><td><i>BOOL</i></td><td>Return only the count of matches.</td><td><i></i></td></tr>
+<tr><td>tails</td><td><i>BOOL</i></td><td>Returned only tail of path.</td><td><i></i></td></tr>
+<tr><td>types</td><td><i>STRKEY</i></td><td>Filter files to include type: one or more of chars 'fdlpsbc' for file, directory, link, etc.</td><td><i></i></td></tr>
+</table>
+<a name="Fileend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Function"></a>
+
+<hr>
+
+
+<h1>Function</h1>
+
+<font color=red>Synopsis:new Function():function
+
+</font><p>Commands for accessing functions.
+
+
+<h2>Methods for "Function"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Function</td><td>new Function():function </td><td>Function constructor (unimplemented).</td></tr>
+<tr><td>apply</td><td>apply(thisArg:null|object|function, args:array=void) </td><td>Call function passing args array.</td></tr>
+<tr><td>bind</td><td>bind(thisArg:object|function=null,arg,...) </td><td>Return function that calls bound function prepended with thisArg+arguments.</td></tr>
+<tr><td>call</td><td>call(thisArg:null|object|function, arg1, ...) </td><td>Call function with args.</td></tr>
+</table>
+<a name="Functionend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Info"></a>
+
+<hr>
+
+
+<h1>Info</h1>
+
+<font color=red>Synopsis:Info.method(...)
+
+</font><p>Commands for inspecting internal state information in JSI.
+
+
+<h2>Methods for "Info"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>argv0</td><td>argv0():string|void </td><td>Return initial start script file name.</td></tr>
+<tr><td>cmds</td><td>cmds(val:string|regexp='*', <a href='#Info.cmdsOptions'>options</a>:object=void):array|object </td><td>Return details or list of matching commands.</td></tr>
+<tr><td>completions</td><td>completions(str:string, start:number=0, end:number=void):array </td><td>Return command completions on portion of string from start to end.</td></tr>
+<tr><td>data</td><td>data(val:string|regexp|object=void):array|object </td><td>Return list of matching data (non-functions). Like info.vars(), but does not return function values.</td></tr>
+<tr><td>error</td><td>error():object </td><td>Return file and line number of error (used inside catch).</td></tr>
+<tr><td>event</td><td>event(id:number=void):array|object </td><td>List events or info for 1 event (setTimeout/setInterval). With no args, returns list of all outstanding events.  With one arg, returns infofor the given event id.</td></tr>
+<tr><td>execZip</td><td>execZip():string|void </td><td>If executing a .zip file, return file name.</td></tr>
+<tr><td>executable</td><td>executable():string </td><td>Return name of executable.</td></tr>
+<tr><td>files</td><td>files():array </td><td>Return list of all sourced files.</td></tr>
+<tr><td>funcs</td><td>funcs(string|regexp|object=void):array|object </td><td>Return details or list of matching functions.</td></tr>
+<tr><td>interp</td><td>interp(interp:userobj=void):object </td><td>Return info on given or current interp.</td></tr>
+<tr><td>isMain</td><td>isMain():boolean </td><td>Return true if current script was the main script invoked from command-line.</td></tr>
+<tr><td>keywords</td><td>keywords(isSql=false, name:string=void):boolean|array </td><td>Return/lookup reserved keyword.</td></tr>
+<tr><td>level</td><td>level(level:number=void):number|array|object </td><td>Return current level or details of a call-stack frame. With no arg, returns the number of the current stack frame level.
+Otherwise returns details on the specified level.
+The topmost level is 1, and 0 is the current level, and a negative level translates as relative to the current level.</td></tr>
+<tr><td>lookup</td><td>lookup(name:string) </td><td>Given string name, lookup and return value, eg: function.</td></tr>
+<tr><td>methods</td><td>methods(val:string|regexp):array|object </td><td>Return functions and commands.</td></tr>
+<tr><td>named</td><td>named(name:string=void):array|userobj </td><td>Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object.</td></tr>
+<tr><td>options</td><td>options(ctype:boolean=false):array </td><td>Return Option type name, or with true the C type.</td></tr>
+<tr><td>package</td><td>package(pkgName:string):object|null </td><td>Return info about provided package if exists, else null.</td></tr>
+<tr><td>platform</td><td>platform():object </td><td>N/A. Returns general platform information for JSI.</td></tr>
+<tr><td>script</td><td>script(func:function|regexp=void):string|array|void </td><td>Get current script file name, or file containing function.</td></tr>
+<tr><td>scriptDir</td><td>scriptDir():string|void </td><td>Get directory of current script.</td></tr>
+<tr><td>vars</td><td>vars(val:string|regexp|object=void):array|object </td><td>Return details or list of matching variables. Returns all values, data or function.</td></tr>
+<tr><td>version</td><td>version(full:boolean=false):number|object </td><td>JSI version: returns object when full=true.</td></tr>
+</table>
+
+
+<a name="Info.cmdsOptions"></a>
+<a name="Info.confOptions"></a>
+<h2>Options for "Info.cmds"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>full</td><td><i>BOOL</i></td><td>Return full path.</td><td><i></i></td></tr>
+<tr><td>constructor</td><td><i>BOOL</i></td><td>Do not exclude constructor.</td><td><i></i></td></tr>
+</table>
+<a name="Infoend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Interp"></a>
+
+<hr>
+
+
+<h1>Interp</h1>
+
+<font color=red>Synopsis:new Interp(options:object=void):userobj
+
+</font><p>Commands for accessing interps.
+
+
+<h2>Methods for "Interp"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Interp</td><td>new Interp(<a href='#new InterpOptions'>options</a>:object=void):userobj </td><td>Create a new interp.</td></tr>
+<tr><td>alias</td><td>alias(name:string=void, func:function|null=void, args:array|null=void, async=false) </td><td>Set/get global alias bindings for command in an interp. With 0 args, returns list of all aliases in interp.
+With 1 arg returns func for given alias name.
+With 2 args where arg2 == null, returns args for given alias name .
+With 3 args, create/update an alias for func and args. 
+Delete an alias by creating it with null for both func and args.</td></tr>
+<tr><td>call</td><td>call(funcName:string, args:array, wait:boolean=false) </td><td>Call named function in subinterp. Invoke function in sub-interp with arguments.
+Since interps are not allowed to share objects, data is automatically cleansed by encoding/decoding to/from JSON if required.
+Unless an 'async' parameter is true call is acyncronous.
+Otherwise waits until the sub-interp is idle, to make call and return result.</td></tr>
+<tr><td>conf</td><td>conf(<a href='#Interp.confOptions'>options</a>:string|object=void) </td><td>Configure option(s).</td></tr>
+<tr><td>eval</td><td>eval(js:string, async:boolean=false) </td><td>Interpret script within sub-interp. When the 'async' option is used on a threaded interp, the script is queued as an Event.</td></tr>
+<tr><td>info</td><td>info():object </td><td>Returns internal statistics about interp.</td></tr>
+<tr><td>source</td><td>source(file:string, async:boolean=false) </td><td>Interpret file within sub-interp. When the 'async' option is used on a threaded interp, the script is queued as an Event.</td></tr>
+<tr><td>uplevel</td><td>uplevel(js:string, level:number=0) </td><td>Interpret code at the given stack level. The level argument is as returned by Info.level().  Not supported with threads.</td></tr>
+<tr><td>value</td><td>value(var:string, level:number=0) </td><td>Lookup value of variable at stack level.</td></tr>
+</table>
+
+
+<a name="new InterpOptions"></a>
+<a name="Interp.confOptions"></a>
+<h2>Options for "new Interp"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>args</td><td><i>ARRAY</i></td><td>The console.arguments for interp.</td><td><i>initOnly</i></td></tr>
+<tr><td>asserts</td><td><i>BOOL</i></td><td>Enable assert.</td><td><i></i></td></tr>
+<tr><td>assertMode</td><td><i>STRKEY</i></td><td>Action upon assert failure. (one of: <b>throw</b>, <b>log</b>, <b>puts</b>)</td><td><i></i></td></tr>
+<tr><td>autoFiles</td><td><i>ARRAY</i></td><td>File(s) to source for loading Jsi_Auto to handle unknown commands.</td><td><i></i></td></tr>
+<tr><td>busyCallback</td><td><i>CUSTOM</i></td><td>Command in parent interp (or noOp) to periodically call.</td><td><i></i></td></tr>
+<tr><td>busyInterval</td><td><i>INT</i></td><td>Call busyCallback command after this many op-code evals (100000).</td><td><i></i></td></tr>
+<tr><td>confFile</td><td><i>STRKEY</i></td><td>Config file of options in non-strict JSON form.</td><td><i>initOnly</i></td></tr>
+<tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
+<tr><td>debugOpts</td><td><i><a href='#debugOptsOptions'>options</a></i></td><td>Options for debugging.</td><td><i></i></td></tr>
+<tr><td>interactive</td><td><i>BOOL</i></td><td>Force interactive mode. ie. ignore no_interactive flag.</td><td><i>initOnly</i></td></tr>
+<tr><td>hasOpenSSL</td><td><i>BOOL</i></td><td>Is SSL available in WebSocket.</td><td><i>initOnly</i></td></tr>
+<tr><td>historyFile</td><td><i>STRKEY</i></td><td>In interactive mode, file to use for history (~/.jsish_history).</td><td><i>initOnly</i></td></tr>
+<tr><td>isSafe</td><td><i>BOOL</i></td><td>Is this a safe interp (ie. with limited or no file access).</td><td><i>initOnly</i></td></tr>
+<tr><td>jsppChars</td><td><i>STRKEY</i></td><td>Line preprocessor when sourcing files. Line starts with first char, and either ends with it, or matches string.</td><td><i></i></td></tr>
+<tr><td>jsppCallback</td><td><i>FUNC</i></td><td>Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number).</td><td><i></i></td></tr>
+<tr><td>lockTimeout</td><td><i>INT</i></td><td>Thread time-out for mutex lock acquires (milliseconds).</td><td><i></i></td></tr>
+<tr><td>logOpts</td><td><i><a href='#logOptsOptions'>options</a></i></td><td>Options for log output to add file/line/time.</td><td><i></i></td></tr>
+<tr><td>maxDepth</td><td><i>INT</i></td><td>Depth limit of recursive function calls (1000).</td><td><i></i></td></tr>
+<tr><td>maxArrayList</td><td><i>INT</i></td><td>Maximum array convertable to list (100000).</td><td><i></i></td></tr>
+<tr><td>maxIncDepth</td><td><i>INT</i></td><td>Maximum allowed source/require nesting depth (50).</td><td><i></i></td></tr>
+<tr><td>maxInterpDepth</td><td><i>INT</i></td><td>Maximum nested subinterp create depth (10).</td><td><i></i></td></tr>
+<tr><td>maxUserObjs</td><td><i>INT</i></td><td>Maximum number of 'new' object calls, eg. File, RegExp, etc.</td><td><i></i></td></tr>
+<tr><td>maxOpCnt</td><td><i>INT</i></td><td>Execution limit for op-code evaluation.</td><td><i>initOnly</i></td></tr>
+<tr><td>memDebug</td><td><i>INT</i></td><td>Memory debugging level: 1=summary, 2=detail.</td><td><i></i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Optional text name for this interp.</td><td><i></i></td></tr>
+<tr><td>noAutoLoad</td><td><i>BOOL</i></td><td>Disable autoload.</td><td><i></i></td></tr>
+<tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of Interp.conf to change options after create.</td><td><i>initOnly</i></td></tr>
+<tr><td>noInput</td><td><i>BOOL</i></td><td>Disable use of console.input().</td><td><i></i></td></tr>
+<tr><td>noLoad</td><td><i>BOOL</i></td><td>Disable load of shared libs.</td><td><i></i></td></tr>
+<tr><td>noNetwork</td><td><i>BOOL</i></td><td>Disable new Socket/WebSocket, or load of builtin MySql.</td><td><i></i></td></tr>
+<tr><td>noStderr</td><td><i>BOOL</i></td><td>Make puts, log, assert, etc use stdout.</td><td><i></i></td></tr>
+<tr><td>noSubInterps</td><td><i>BOOL</i></td><td>Disallow sub-interp creation.</td><td><i></i></td></tr>
+<tr><td>onComplete</td><td><i>FUNC</i></td><td>Function to return commands completions for interactive mode.  Default uses Info.completions . @function(prefix:string, start:number, end:number)</td><td><i></i></td></tr>
+<tr><td>onEval</td><td><i>FUNC</i></td><td>Function to get control for interactive evals. @function(cmd:string)</td><td><i></i></td></tr>
+<tr><td>onExit</td><td><i>FUNC</i></td><td>Command to call in parent on exit, returns true to continue. @function()</td><td><i>initOnly</i></td></tr>
+<tr><td>pkgDirs</td><td><i>ARRAY</i></td><td>list of library directories for require() to search.</td><td><i></i></td></tr>
+<tr><td>profile</td><td><i>BOOL</i></td><td>On exit generate profile of function calls.</td><td><i></i></td></tr>
+<tr><td>retValue</td><td><i>VALUE</i></td><td>Return value from last eval.</td><td><i>readOnly</i></td></tr>
+<tr><td>safeMode</td><td><i>STRKEY</i></td><td>In safe mode source() support for pwd and script-dir . (one of: <b>none</b>, <b>read</b>, <b>write</b>, <b>writeRead</b>, <b>lockdown</b>)</td><td><i>initOnly</i></td></tr>
+<tr><td>safeReadDirs</td><td><i>ARRAY</i></td><td>In safe mode, files/dirs to allow reads to.</td><td><i>initOnly</i></td></tr>
+<tr><td>safeWriteDirs</td><td><i>ARRAY</i></td><td>In safe mode, files/dirs to allow writes to.</td><td><i>initOnly</i></td></tr>
+<tr><td>safeExecPattern</td><td><i>STRKEY</i></td><td>In safe mode, regexp pattern allow exec of commands.</td><td><i>initOnly</i></td></tr>
+<tr><td>scriptStr</td><td><i>STRKEY</i></td><td>Interp init script string.</td><td><i>initOnly</i></td></tr>
+<tr><td>scriptFile</td><td><i>STRING</i></td><td>Interp init script file.</td><td><i></i></td></tr>
+<tr><td>stdinStr</td><td><i>STRING</i></td><td>String to use as stdin for console.input().</td><td><i></i></td></tr>
+<tr><td>stdoutStr</td><td><i>STRING</i></td><td>String to collect stdout for puts().</td><td><i></i></td></tr>
+<tr><td>strict</td><td><i>BOOL</i></td><td>Globally enable strict: same as 'use strict' in main program.</td><td><i></i></td></tr>
+<tr><td>subOpts</td><td><i><a href='#subOptsOptions'>options</a></i></td><td>Infrequently used sub-options.</td><td><i></i></td></tr>
+<tr><td>subthread</td><td><i>BOOL</i></td><td>Create a threaded Interp.</td><td><i>initOnly</i></td></tr>
+<tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
+<tr><td>traceOp</td><td><i>INT</i></td><td>Set debugging level for OPCODE execution.</td><td><i></i></td></tr>
+<tr><td>tracePuts</td><td><i>BOOL</i></td><td>Trace puts by making it use logOpts.</td><td><i></i></td></tr>
+<tr><td>typeCheck</td><td><i>ARRAY</i></td><td>Type-check control options. (zero or more of: <b>parse</b>, <b>run</b>, <b>all</b>, <b>error</b>, <b>strict</b>, <b>noundef</b>, <b>nowith</b>, <b>funcsig</b>)</td><td><i></i></td></tr>
+<tr><td>typeWarnMax</td><td><i>INT</i></td><td>Type checking is silently disabled after this many warnings (50).</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>unitTest</td><td><i>UINT</i></td><td>Unit test control bits: 1=subst, 2=Puts with file:line prefix.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="debugOptsOptions"></a>
+<h2>Options for "debugOpts"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>debugCallback</td><td><i>CUSTOM</i></td><td>Command in parent interp for handling debugging.</td><td><i></i></td></tr>
+<tr><td>doContinue</td><td><i>BOOL</i></td><td>Continue execution until breakpoint.</td><td><i></i></td></tr>
+<tr><td>forceBreak</td><td><i>BOOL</i></td><td>Force debugger to break.</td><td><i></i></td></tr>
+<tr><td>includeOnce</td><td><i>BOOL</i></td><td>Source the file only if not already sourced.</td><td><i></i></td></tr>
+<tr><td>includeTrace</td><td><i>BOOL</i></td><td>Trace includes.</td><td><i></i></td></tr>
+<tr><td>minLevel</td><td><i>INT</i></td><td>Disable eval callback for level higher than this.</td><td><i></i></td></tr>
+<tr><td>msgCallback</td><td><i>CUSTOM</i></td><td>Comand in parent interp to handle Jsi_LogError/Jsi_LogWarn,...</td><td><i></i></td></tr>
+<tr><td>pkgTrace</td><td><i>BOOL</i></td><td>Trace package loads.</td><td><i></i></td></tr>
+<tr><td>putsCallback</td><td><i>CUSTOM</i></td><td>Comand in parent interp to handle puts output.</td><td><i></i></td></tr>
+<tr><td>traceCallback</td><td><i>CUSTOM</i></td><td>Comand in parent interp to handle traceCall.</td><td><i></i></td></tr>
+<tr><td>testFmtCallback</td><td><i>CUSTOM</i></td><td>Comand in parent interp to format unittest string.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="logOptsOptions"></a>
+<h2>Options for "logOpts"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>Test</td><td><i>BOOL</i></td><td>Enable LogTest messages.</td><td><i></i></td></tr>
+<tr><td>Debug</td><td><i>BOOL</i></td><td>Enable LogDebug messages.</td><td><i></i></td></tr>
+<tr><td>Trace</td><td><i>BOOL</i></td><td>Enable LogTrace messages.</td><td><i></i></td></tr>
+<tr><td>Info</td><td><i>BOOL</i></td><td>Enable LogInfo messages.</td><td><i></i></td></tr>
+<tr><td>Warn</td><td><i>BOOL</i></td><td>Enable LogWarn messages.</td><td><i></i></td></tr>
+<tr><td>Error</td><td><i>BOOL</i></td><td>Enable LogError messages.</td><td><i></i></td></tr>
+<tr><td>time</td><td><i>BOOL</i></td><td>Prefix with time.</td><td><i></i></td></tr>
+<tr><td>date</td><td><i>BOOL</i></td><td>Prefix with date.</td><td><i></i></td></tr>
+<tr><td>file</td><td><i>BOOL</i></td><td>Ouptut contains file:line.</td><td><i></i></td></tr>
+<tr><td>func</td><td><i>BOOL</i></td><td>Output function.</td><td><i></i></td></tr>
+<tr><td>full</td><td><i>BOOL</i></td><td>Show full file path.</td><td><i></i></td></tr>
+<tr><td>ftail</td><td><i>BOOL</i></td><td>Show tail of file only, even in LogWarn, etc.</td><td><i></i></td></tr>
+<tr><td>before</td><td><i>BOOL</i></td><td>Output file:line before message string.</td><td><i></i></td></tr>
+<tr><td>isUTC</td><td><i>BOOL</i></td><td>Time is to be UTC.</td><td><i></i></td></tr>
+<tr><td>timeFmt</td><td><i>STRKEY</i></td><td>A format string to use with strftime.</td><td><i></i></td></tr>
+<tr><td>chan</td><td><i>USEROBJ</i></td><td>Channel to send output to.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="subOptsOptions"></a>
+<h2>Options for "subOpts"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>blacklist</td><td><i>STRKEY</i></td><td>Comma separated modules to disable loading for.</td><td><i>initOnly</i></td></tr>
+<tr><td>compat</td><td><i>BOOL</i></td><td>Ignore unknown options via JSI_OPTS_IGNORE_EXTRA in option parser.</td><td><i></i></td></tr>
+<tr><td>dblPrec</td><td><i>INT</i></td><td>Format precision of double where 0=max, -1=max-1, ... (max-1).</td><td><i></i></td></tr>
+<tr><td>istty</td><td><i>BOOL</i></td><td>Indicates interp is in interactive mode.</td><td><i>readOnly</i></td></tr>
+<tr><td>logColNums</td><td><i>BOOL</i></td><td>Display column numbers in error messages.</td><td><i></i></td></tr>
+<tr><td>logAllowDups</td><td><i>BOOL</i></td><td>Log should not filter out duplicate messages.</td><td><i></i></td></tr>
+<tr><td>mutexUnlock</td><td><i>BOOL</i></td><td>Unlock own mutex when evaling in other interps (true).</td><td><i>initOnly</i></td></tr>
+<tr><td>noproto</td><td><i>BOOL</i></td><td>Disable support of the OOP symbols:  __proto__, prototype, constructor, etc.</td><td><i></i></td></tr>
+<tr><td>noFuncString</td><td><i>BOOL</i></td><td>Disable viewing code body for functions.</td><td><i>initOnly</i></td></tr>
+<tr><td>noRegex</td><td><i>BOOL</i></td><td>Disable viewing code for functions.</td><td><i>initOnly</i></td></tr>
+<tr><td>noReadline</td><td><i>BOOL</i></td><td>In interactive mode disable use of readline.</td><td><i></i></td></tr>
+<tr><td>outUndef</td><td><i>BOOL</i></td><td>In interactive mode output result values that are undefined.</td><td><i></i></td></tr>
+<tr><td>prompt</td><td><i>STRKEY</i></td><td>Prompt for interactive mode ('$ ').</td><td><i></i></td></tr>
+<tr><td>prompt2</td><td><i>STRKEY</i></td><td>Prompt for interactive mode line continue ('> ').</td><td><i></i></td></tr>
+</table>
+<a name="Interpend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="JSON"></a>
+
+<hr>
+
+
+<h1>JSON</h1>
+
+<font color=red>Synopsis:JSON.method(...)
+
+</font><p>Commands for handling JSON data.
+
+
+<h2>Methods for "JSON"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>check</td><td>check(str:string, strict:boolean=true):boolean </td><td>Return true if str is JSON.</td></tr>
+<tr><td>parse</td><td>parse(str:string, strict:boolean=true) </td><td>Parse JSON and return js.</td></tr>
+<tr><td>stringify</td><td>stringify(value:any,  strict:boolean=true):string </td><td>Return JSON from a js object.</td></tr>
+</table>
+<a name="JSONend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Math"></a>
+
+<hr>
+
+
+<h1>Math</h1>
+
+<font color=red>Synopsis:Math.method(...)
+
+</font><p>Commands performing math operations on numbers.
+
+
+<h2>Methods for "Math"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>abs</td><td>abs(num:number):number </td><td>Returns the absolute value of x.</td></tr>
+<tr><td>acos</td><td>acos(num:number):number </td><td>Returns the arccosine of x, in radians.</td></tr>
+<tr><td>asin</td><td>asin(num:number):number </td><td>Returns the arcsine of x, in radians.</td></tr>
+<tr><td>atan</td><td>atan(num:number):number </td><td>Returns the arctangent of x as a numeric value between -PI/2 and PI/2 radians.</td></tr>
+<tr><td>atan2</td><td>atan2(x:number, y:number):number </td><td>Returns the arctangent of the quotient of its arguments.</td></tr>
+<tr><td>ceil</td><td>ceil(num:number):number </td><td>Returns x, rounded upwards to the nearest integer.</td></tr>
+<tr><td>cos</td><td>cos(num:number):number </td><td>Returns the cosine of x (x is in radians).</td></tr>
+<tr><td>exp</td><td>exp(num:number):number </td><td>Returns the value of Ex.</td></tr>
+<tr><td>floor</td><td>floor(num:number):number </td><td>Returns x, rounded downwards to the nearest integer.</td></tr>
+<tr><td>log</td><td>log(num:number):number </td><td>Returns the natural logarithm (base E) of x.</td></tr>
+<tr><td>max</td><td>max(x:number, y:number, ...):number </td><td>Returns the number with the highest value.</td></tr>
+<tr><td>min</td><td>min(x:number, y:number, ...):number </td><td>Returns the number with the lowest value.</td></tr>
+<tr><td>pow</td><td>pow(x:number, y:number):number </td><td>Returns the value of x to the power of y.</td></tr>
+<tr><td>random</td><td>random():number </td><td>Returns a random number between 0 and 1.</td></tr>
+<tr><td>round</td><td>round(num:number):number </td><td>Rounds x to the nearest integer.</td></tr>
+<tr><td>sin</td><td>sin(num:number):number </td><td>Returns the sine of x (x is in radians).</td></tr>
+<tr><td>sqrt</td><td>sqrt(num:number):number </td><td>Returns the square root of x.</td></tr>
+<tr><td>srand</td><td>srand(seed:number):number </td><td>Set random seed.</td></tr>
+<tr><td>tan</td><td>tan(num:number):number </td><td>Returns the tangent of an angle.</td></tr>
+</table>
+<a name="Mathend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="MySql"></a>
+
+<hr>
+
+
+<h1>MySql</h1>
+
+<font color=red>Synopsis:new MySql(options:object=void):userobj
+
+</font><p>Commands for accessing mysql databases.
+
+
+<h2>Methods for "MySql"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>MySql</td><td>new MySql(<a href='#new MySqlOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to a MySql database:.</td></tr>
+<tr><td>affectedRows</td><td>affectedRows():number </td><td>Return affected rows.</td></tr>
+<tr><td>complete</td><td>complete(sql:string):boolean </td><td>Return true if sql is complete.</td></tr>
+<tr><td>conf</td><td>conf(<a href='#MySql.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
+<tr><td>errorNo</td><td>errorNo():number </td><td>Return error code returned by most recent call to mysql3_exec().</td></tr>
+<tr><td>errorState</td><td>errorState():string </td><td>Return the mysql error state str.</td></tr>
+<tr><td>eval</td><td>eval(sql:string):number </td><td>Run sql commands without input/output.</td></tr>
+<tr><td>exists</td><td>exists(sql:string):boolean </td><td>Execute sql, and return true if there is at least one result value.</td></tr>
+<tr><td>info</td><td>info():object </td><td>Return info about last query.</td></tr>
+<tr><td>lastQuery</td><td>lastQuery():string </td><td>Return info string about most recently executed statement.</td></tr>
+<tr><td>lastRowid</td><td>lastRowid():number </td><td>Return rowid of last insert.</td></tr>
+<tr><td>onecolumn</td><td>onecolumn(sql:string) </td><td>Execute sql, and return a single value.</td></tr>
+<tr><td>ping</td><td>ping(noError:boolean=false):number </td><td>Ping connection.</td></tr>
+<tr><td>query</td><td>query(sql:string, <a href='#MySql.queryOptions'>options</a>:function|string|array|object=void) </td><td>Run sql query with input and/or outputs..</td></tr>
+<tr><td>reconnect</td><td>reconnect():void </td><td>Reconnect with current settings.</td></tr>
+<tr><td>reset</td><td>reset():number </td><td>Reset connection.</td></tr>
+</table>
+
+
+<a name="new MySqlOptions"></a>
+<a name="MySql.confOptions"></a>
+<h2>Options for "new MySql"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>bindWarn</td><td><i>BOOL</i></td><td>Treat failed variable binds as a warning.</td><td><i>initOnly</i></td></tr>
+<tr><td>database</td><td><i>STRKEY</i></td><td>Database to use.</td><td><i>initOnly</i></td></tr>
+<tr><td>debug</td><td><i>ARRAY</i></td><td>Enable debug trace for various operations. (zero or more of: <b>eval</b>, <b>delete</b>, <b>prepare</b>, <b>step</b>)</td><td><i></i></td></tr>
+<tr><td>enableMulti</td><td><i>BOOL</i></td><td>Accept muiltiple semi-colon separated statements in eval().</td><td><i>initOnly</i></td></tr>
+<tr><td>errorCnt</td><td><i>INT</i></td><td>Count of errors.</td><td><i>readOnly</i></td></tr>
+<tr><td>queryOpts</td><td><i><a href='#queryOptsOptions'>options</a></i></td><td>Default options for exec.</td><td><i></i></td></tr>
+<tr><td>forceInt</td><td><i>BOOL</i></td><td>Bind float as int if possible.</td><td><i></i></td></tr>
+<tr><td>host</td><td><i>STRING</i></td><td>IP address or host name for mysqld (default is 127.0.0.1).</td><td><i></i></td></tr>
+<tr><td>maxStmts</td><td><i>INT</i></td><td>Max cache size for compiled statements.</td><td><i></i></td></tr>
+<tr><td>name</td><td><i>DSTRING</i></td><td>Name for this db handle.</td><td><i></i></td></tr>
+<tr><td>numStmts</td><td><i>INT</i></td><td>Current size of compiled statement cache.</td><td><i>readOnly</i></td></tr>
+<tr><td>password</td><td><i>STRKEY</i></td><td>Database password..</td><td><i>initOnly</i></td></tr>
+<tr><td>port</td><td><i>INT</i></td><td>IP port for mysqld.</td><td><i>initOnly</i></td></tr>
+<tr><td>reconnect</td><td><i>BOOL</i></td><td>Reconnect.</td><td><i></i></td></tr>
+<tr><td>sslKey</td><td><i>STRING</i></td><td>SSL key.</td><td><i></i></td></tr>
+<tr><td>sslCert</td><td><i>STRING</i></td><td>SSL Cert.</td><td><i></i></td></tr>
+<tr><td>sslCA</td><td><i>STRING</i></td><td>SSL CA.</td><td><i></i></td></tr>
+<tr><td>sslCAPath</td><td><i>STRING</i></td><td>SSL CA path.</td><td><i></i></td></tr>
+<tr><td>sslCipher</td><td><i>STRING</i></td><td>SSL Cipher.</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data..</td><td><i></i></td></tr>
+<tr><td>user</td><td><i>STRKEY</i></td><td>Database user name. Default is current user-name..</td><td><i>initOnly</i></td></tr>
+<tr><td>version</td><td><i>DOUBLE</i></td><td>Mysql version number.</td><td><i>readOnly</i></td></tr>
+</table>
+
+
+<a name="queryOptsOptions"></a>
+<h2>Options for "queryOpts"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function to call with each row result. @function(values:object)</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>BOOL</i></td><td>First row returned contains column labels.</td><td><i></i></td></tr>
+<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of returned values.</td><td><i></i></td></tr>
+<tr><td>mapundef</td><td><i>BOOL</i></td><td>In variable binds, map an 'undefined' var to null.</td><td><i></i></td></tr>
+<tr><td>maxString</td><td><i>INT</i></td><td>If not using prefetch, the maximum string value size (0=8K).</td><td><i></i></td></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
+<tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
+<tr><td>noNamedParams</td><td><i>BOOL</i></td><td>Disable translating sql to support named params.</td><td><i></i></td></tr>
+<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non-json mode).</td><td><i></i></td></tr>
+<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
+<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>paramVar</td><td><i>ARRAY</i></td><td>Array var to use for parameters.</td><td><i></i></td></tr>
+<tr><td>prefetch</td><td><i>BOOL</i></td><td>Let client library cache entire results.</td><td><i></i></td></tr>
+<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
+<tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
+<tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (error). (one of: <b>convert</b>, <b>error</b>, <b>warn</b>, <b>disable</b>)</td><td><i></i></td></tr>
+<tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
+<tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="MySql.queryOptions"></a>
+<a name="MySql.confOptions"></a>
+<h2>Options for "MySql.query"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function to call with each row result. @function(values:object)</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>BOOL</i></td><td>First row returned contains column labels.</td><td><i></i></td></tr>
+<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of returned values.</td><td><i></i></td></tr>
+<tr><td>mapundef</td><td><i>BOOL</i></td><td>In variable binds, map an 'undefined' var to null.</td><td><i></i></td></tr>
+<tr><td>maxString</td><td><i>INT</i></td><td>If not using prefetch, the maximum string value size (0=8K).</td><td><i></i></td></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
+<tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
+<tr><td>noNamedParams</td><td><i>BOOL</i></td><td>Disable translating sql to support named params.</td><td><i></i></td></tr>
+<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non-json mode).</td><td><i></i></td></tr>
+<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
+<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>paramVar</td><td><i>ARRAY</i></td><td>Array var to use for parameters.</td><td><i></i></td></tr>
+<tr><td>prefetch</td><td><i>BOOL</i></td><td>Let client library cache entire results.</td><td><i></i></td></tr>
+<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
+<tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
+<tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (error). (one of: <b>convert</b>, <b>error</b>, <b>warn</b>, <b>disable</b>)</td><td><i></i></td></tr>
+<tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
+<tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
+</table>
+<a name="MySqlend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Number"></a>
+
+<hr>
+
+
+<h1>Number</h1>
+
+<font color=red>Synopsis:new Number(num:string=0):number
+
+</font><p>Commands for accessing number objects.
+
+
+<h2>Methods for "Number"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Number</td><td>new Number(num:string=0):number </td><td>Number constructor.</td></tr>
+<tr><td>isFinite</td><td>isFinite():boolean </td><td>Return true if is finite.</td></tr>
+<tr><td>isInteger</td><td>isInteger():boolean </td><td>Return true if is an integer.</td></tr>
+<tr><td>isNaN</td><td>isNaN():boolean </td><td>Return true if is NaN.</td></tr>
+<tr><td>isSafeInteger</td><td>isSafeInteger():boolean </td><td>Return true if is a safe integer.</td></tr>
+<tr><td>toExponential</td><td>toExponential(num:number):string </td><td>Converts a number into an exponential notation.</td></tr>
+<tr><td>toFixed</td><td>toFixed(num:number=0):string </td><td>Formats a number with x numbers of digits after the decimal point.</td></tr>
+<tr><td>toPrecision</td><td>toPrecision(num:number):string </td><td>Formats a number to x length.</td></tr>
+<tr><td>toString</td><td>toString(radix:number=10):string </td><td>Convert to string.</td></tr>
+</table>
+<a name="Numberend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Object"></a>
+
+<hr>
+
+
+<h1>Object</h1>
+
+<font color=red>Synopsis:new Object(val:object&verbar;function|null=void):object
+
+</font><p>Commands for accessing Objects.
+
+
+<h2>Methods for "Object"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Object</td><td>new Object(val:object|function|null=void):object </td><td>Object constructor.</td></tr>
+<tr><td>create</td><td>create(proto:null|object, properties:object=void):object </td><td>Create a new object with prototype object and properties.</td></tr>
+<tr><td>getPrototypeOf</td><td>getPrototypeOf(name:object|function):function|object </td><td>Return prototype of an object.</td></tr>
+<tr><td>hasOwnProperty</td><td>hasOwnProperty(name:string):boolean </td><td>Returns a true if object has the specified property.</td></tr>
+<tr><td>is</td><td>is(value1, value2):boolean </td><td>Tests if two values are equal.</td></tr>
+<tr><td>isPrototypeOf</td><td>isPrototypeOf(name):boolean </td><td>Tests for an object in another object's prototype chain.</td></tr>
+<tr><td>keys</td><td>keys(obj:object|function=void):array </td><td>Return the keys of an object or array.</td></tr>
+<tr><td>merge</td><td>merge(obj:object|function):object </td><td>Return new object containing merged values.</td></tr>
+<tr><td>propertyIsEnumerable</td><td>propertyIsEnumerable(name):boolean </td><td>Determine if a property is enumerable.</td></tr>
+<tr><td>setPrototypeOf</td><td>setPrototypeOf(name:object, value:object) </td><td>Set prototype of an object.</td></tr>
+<tr><td>toLocaleString</td><td>toLocaleString(quote:boolean=false):string </td><td>Convert to string.</td></tr>
+<tr><td>toString</td><td>toString(quote:boolean=false):string </td><td>Convert to string.</td></tr>
+<tr><td>valueOf</td><td>valueOf() </td><td>Returns primitive value.</td></tr>
+</table>
+<a name="Objectend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="RegExp"></a>
+
+<hr>
+
+
+<h1>RegExp</h1>
+
+<font color=red>Synopsis:new RegExp(val:regexp&verbar;string, flags:string):regexp
+
+</font><p>Commands for managing reqular expression objects.
+
+
+<h2>Methods for "RegExp"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>RegExp</td><td>new RegExp(val:regexp|string, flags:string):regexp </td><td>Create a regexp object.</td></tr>
+<tr><td>exec</td><td>exec(val:string):array|object|null </td><td>return matching string. Perform regexp match checking.  Returns the array of matches.With the global flag g, sets lastIndex and returns next match.</td></tr>
+<tr><td>test</td><td>test(val:string):boolean </td><td>test if a string matches.</td></tr>
+</table>
+<a name="RegExpend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Signal"></a>
+
+<hr>
+
+
+<h1>Signal</h1>
+
+<font color=red>Synopsis:Signal.method(...)
+
+</font><p>Commands for handling unix signals.
+
+
+<h2>Methods for "Signal"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>alarm</td><td>alarm(secs):number </td><td>Setup alarm in seconds.</td></tr>
+<tr><td>callback</td><td>callback(func:function, sig:number|string):number </td><td>Setup callback handler for signal.</td></tr>
+<tr><td>handle</td><td>handle(sig:number|string=void, ...) </td><td>Set named signals to handle action.</td></tr>
+<tr><td>ignore</td><td>ignore(sig:number|string=void, ...) </td><td>Set named signals to ignore action.</td></tr>
+<tr><td>kill</td><td>kill(pid:number, sig:number|string='SIGTERM'):void </td><td>Send signal to process id.</td></tr>
+<tr><td>names</td><td>names():array </td><td>Return names of all signals.</td></tr>
+<tr><td>reset</td><td>reset(sig:number|string=void, ...):array </td><td>Set named signals to default action.</td></tr>
+</table>
+<a name="Signalend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Socket"></a>
+
+<hr>
+
+
+<h1>Socket</h1>
+
+<font color=red>Synopsis:new Socket(options:object=void):userobj
+
+</font><p>Commands for managing Socket server/client connections.
+
+
+<h2>Methods for "Socket"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Socket</td><td>new Socket(<a href='#new SocketOptions'>options</a>:object=void):userobj </td><td>Create socket server/client object.Create a socket server or client object.</td></tr>
+<tr><td>close</td><td>close():void </td><td>Close socket(s).</td></tr>
+<tr><td>conf</td><td>conf(<a href='#Socket.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
+<tr><td>idconf</td><td>idconf(id:number=void, <a href='#Socket.idconfOptions'>options</a>:string|object=void) </td><td>Configure options for a connection id, or return list of ids.</td></tr>
+<tr><td>names</td><td>names():array </td><td>Return list of active ids on server.</td></tr>
+<tr><td>recv</td><td>recv(id:number=void):string </td><td>Recieve data.</td></tr>
+<tr><td>send</td><td>send(id:number, data:string, <a href='#Socket.sendOptions'>options</a>:object=void):void </td><td>Send a socket message to id. Send a message to a (or all if -1) connection.</td></tr>
+<tr><td>update</td><td>update():void </td><td>Service events for just this socket.</td></tr>
+</table>
+
+
+<a name="new SocketOptions"></a>
+<a name="Socket.confOptions"></a>
+<h2>Options for "new Socket"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>address</td><td><i>STRING</i></td><td>Client destination address (127.0.0.0).</td><td><i>initOnly</i></td></tr>
+<tr><td>broadcast</td><td><i>BOOL</i></td><td>Enable broadcast.</td><td><i>initOnly</i></td></tr>
+<tr><td>client</td><td><i>BOOL</i></td><td>Enable client mode.</td><td><i>initOnly</i></td></tr>
+<tr><td>connectCnt</td><td><i>INT</i></td><td>Counter for number of active connections.</td><td><i>readOnly</i></td></tr>
+<tr><td>createLast</td><td><i>TIME_T</i></td><td>Time of last create.</td><td><i>readOnly</i></td></tr>
+<tr><td>debug</td><td><i>INT</i></td><td>Debugging level.</td><td><i></i></td></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all socket Send/Recv messages.</td><td><i></i></td></tr>
+<tr><td>interface</td><td><i>STRING</i></td><td>Interface for server to listen on, eg. 'eth0' or 'lo'.</td><td><i>initOnly</i></td></tr>
+<tr><td>keepalive</td><td><i>BOOL</i></td><td>Enable keepalive.</td><td><i>initOnly</i></td></tr>
+<tr><td>maxConnects</td><td><i>INT</i></td><td>In server mode, max number of client connections accepted.</td><td><i></i></td></tr>
+<tr><td>mcastAddMember</td><td><i>STRING</i></td><td>Multicast add membership: address/interface ('127.0.0.1/0.0.0.0').</td><td><i>initOnly</i></td></tr>
+<tr><td>mcastInterface</td><td><i>STRING</i></td><td>Multicast interface address.</td><td><i>initOnly</i></td></tr>
+<tr><td>mcastNoLoop</td><td><i>BOOL</i></td><td>Multicast loopback disable.</td><td><i>initOnly</i></td></tr>
+<tr><td>mcastTtl</td><td><i>INT</i></td><td>Multicast TTL.</td><td><i>initOnly</i></td></tr>
+<tr><td>noAsync</td><td><i>BOOL</i></td><td>Send is not async.</td><td><i>initOnly</i></td></tr>
+<tr><td>noUpdate</td><td><i>BOOL</i></td><td>Stop processing update events (eg. to exit).</td><td><i></i></td></tr>
+<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when connection closes. @function(s:userobj|null, id:number)</td><td><i></i></td></tr>
+<tr><td>onCloseLast</td><td><i>FUNC</i></td><td>Function to call when last connection closes. On object delete arg is null. @function(s:userobj|null)</td><td><i></i></td></tr>
+<tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of Socket.conf to change options after create.</td><td><i>initOnly</i></td></tr>
+<tr><td>onOpen</td><td><i>FUNC</i></td><td>Function to call when connection opens. @function(s:userobj, info:object)</td><td><i></i></td></tr>
+<tr><td>onRecv</td><td><i>FUNC</i></td><td>Function to call with recieved data. @function(s:userobj, id:number, data:string)</td><td><i></i></td></tr>
+<tr><td>port</td><td><i>INT</i></td><td>Port for client dest or server listen.</td><td><i>initOnly</i></td></tr>
+<tr><td>quiet</td><td><i>BOOL</i></td><td>Suppress info messages.</td><td><i>initOnly</i></td></tr>
+<tr><td>recvTimeout</td><td><i>UINT64</i></td><td>Timeout for receive, in microseconds.</td><td><i>initOnly</i></td></tr>
+<tr><td>sendTimeout</td><td><i>UINT64</i></td><td>Timeout for send, in microseconds.</td><td><i>initOnly</i></td></tr>
+<tr><td>srcAddress</td><td><i>STRING</i></td><td>Client source address.</td><td><i>initOnly</i></td></tr>
+<tr><td>srcPort</td><td><i>INT</i></td><td>Client source port.</td><td><i>initOnly</i></td></tr>
+<tr><td>startTime</td><td><i>TIME_T</i></td><td>Time of start.</td><td><i>readOnly</i></td></tr>
+<tr><td>stats</td><td><i><a href='#statsOptions'>options</a></i></td><td>Statistical data.</td><td><i>readOnly</i></td></tr>
+<tr><td>timeout</td><td><i>NUMBER</i></td><td>Timeout value in seconds (0.5).</td><td><i>initOnly</i></td></tr>
+<tr><td>tos</td><td><i>INT8</i></td><td>Type-Of-Service value.</td><td><i>initOnly</i></td></tr>
+<tr><td>ttl</td><td><i>INT</i></td><td>Time-To-Live value.</td><td><i>initOnly</i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>udp</td><td><i>BOOL</i></td><td>Protocol is udp.</td><td><i>initOnly</i></td></tr>
+</table>
+
+
+<a name="statsOptions"></a>
+<h2>Options for "stats"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all socket Send/Recv messages.</td><td><i></i></td></tr>
+<tr><td>eventCnt</td><td><i>INT</i></td><td>Number of events of any type.</td><td><i></i></td></tr>
+<tr><td>eventLast</td><td><i>TIME_T</i></td><td>Time of last event of any type.</td><td><i></i></td></tr>
+<tr><td>recvAddr</td><td><i>CUSTOM</i></td><td>Incoming port and address.</td><td><i></i></td></tr>
+<tr><td>recvCnt</td><td><i>INT</i></td><td>Number of recieves.</td><td><i></i></td></tr>
+<tr><td>recvLast</td><td><i>TIME_T</i></td><td>Time of last recv.</td><td><i></i></td></tr>
+<tr><td>sentCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i></i></td></tr>
+<tr><td>sentLast</td><td><i>TIME_T</i></td><td>Time of last send.</td><td><i></i></td></tr>
+<tr><td>sentErrCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i></i></td></tr>
+<tr><td>sentErrLast</td><td><i>TIME_T</i></td><td>Time of last sendErr.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Socket.idconfOptions"></a>
+<a name="Socket.confOptions"></a>
+<h2>Options for "Socket.idconf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all socket Send/Recv messages.</td><td><i></i></td></tr>
+<tr><td>eventCnt</td><td><i>INT</i></td><td>Number of events of any type.</td><td><i></i></td></tr>
+<tr><td>eventLast</td><td><i>TIME_T</i></td><td>Time of last event of any type.</td><td><i></i></td></tr>
+<tr><td>recvAddr</td><td><i>CUSTOM</i></td><td>Incoming port and address.</td><td><i></i></td></tr>
+<tr><td>recvCnt</td><td><i>INT</i></td><td>Number of recieves.</td><td><i></i></td></tr>
+<tr><td>recvLast</td><td><i>TIME_T</i></td><td>Time of last recv.</td><td><i></i></td></tr>
+<tr><td>sentCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i></i></td></tr>
+<tr><td>sentLast</td><td><i>TIME_T</i></td><td>Time of last send.</td><td><i></i></td></tr>
+<tr><td>sentErrCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i></i></td></tr>
+<tr><td>sentErrLast</td><td><i>TIME_T</i></td><td>Time of last sendErr.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Socket.sendOptions"></a>
+<a name="Socket.confOptions"></a>
+<h2>Options for "Socket.send"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>noAsync</td><td><i>BOOL</i></td><td>Send is not async.</td><td><i></i></td></tr>
+</table>
+<a name="Socketend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Sqlite"></a>
+
+<hr>
+
+
+<h1>Sqlite</h1>
+
+<font color=red>Synopsis:new Sqlite(file:null&verbar;string=void, options:object=void):userobj
+
+</font><p>Commands for accessing sqlite databases.
+
+
+<h2>Methods for "Sqlite"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>Sqlite</td><td>new Sqlite(file:null|string=void, <a href='#new SqliteOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to the named file or :memory:.</td></tr>
+<tr><td>backup</td><td>backup(file:string, dbname:string='main'):void </td><td>Backup db to file. Open or create a database file named FILENAME.
+Transfer the content of local database DATABASE (default: 'main') into the FILENAME database.</td></tr>
+<tr><td>collate</td><td>collate(name:string, callback:function):void </td><td>Create new SQL collation command.</td></tr>
+<tr><td>complete</td><td>complete(sql:string):boolean </td><td>Return true if sql is complete.</td></tr>
+<tr><td>conf</td><td>conf(<a href='#Sqlite.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
+<tr><td>eval</td><td>eval(sql:string):number </td><td>Run sql commands without input/output. Supports multiple semicolon seperated commands.
+Variable binding is NOT performed, results are discarded, and  returns sqlite3_changes()</td></tr>
+<tr><td>exists</td><td>exists(sql:string):boolean </td><td>Execute sql, and return true if there is at least one result value.</td></tr>
+<tr><td>filename</td><td>filename(name:string='main'):string </td><td>Return filename for named or all attached databases.</td></tr>
+<tr><td>func</td><td>func(name:string, callback:function, numArgs:number=void):void </td><td>Register a new function with database.</td></tr>
+<tr><td>import</td><td>import(table:string, file:string, <a href='#Sqlite.importOptions'>options</a>:object=void):number </td><td>Import data from file into table . Import data from a file into table. SqlOptions include the 'separator' to use, which defaults to commas for csv, or tabs otherwise.
+If a column contains a null string, or the value of 'nullvalue', a null is inserted for the column.
+A 'conflict' is one of the sqlite conflict algorithms:    rollback, abort, fail, ignore, replace
+On success, return the number of lines processed, not necessarily same as 'changeCnt' due to the conflict algorithm selected. </td></tr>
+<tr><td>interrupt</td><td>interrupt():void </td><td>Interrupt in progress statement.</td></tr>
+<tr><td>onecolumn</td><td>onecolumn(sql:string) </td><td>Execute sql, and return a single value.</td></tr>
+<tr><td>query</td><td>query(sql:string, <a href='#Sqlite.queryOptions'>options</a>:function|string|array|object=void) </td><td>Evaluate an sql query with bindings. Return values in formatted as JSON, HTML, etc. , optionally calling function with a result object</td></tr>
+<tr><td>restore</td><td>restore(file:string, dbname:string):void </td><td>Restore db from file (default db is 'main').    db.restore(FILENAME, ?,DATABASE? ) 
+Open a database file named FILENAME.  Transfer the content of FILENAME into the local database DATABASE (default: 'main').</td></tr>
+<tr><td>transaction</td><td>transaction(callback:function, type:string=void):void </td><td>Call function inside db tranasaction. Type is: 'deferred', 'exclusive', 'immediate'. Start a new transaction (if we are not already in the midst of a transaction) and execute the JS function FUNC.
+After FUNC completes, either commit the transaction or roll it back if FUNC throws an exception.
+Or if no new transation was started, do nothing. pass the exception on up the stack.</td></tr>
+</table>
+
+
+<a name="new SqliteOptions"></a>
+<a name="Sqlite.confOptions"></a>
+<h2>Options for "new Sqlite"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>bindWarn</td><td><i>BOOL</i></td><td>Treat failed variable binds as a warning.</td><td><i>initOnly</i></td></tr>
+<tr><td>changeCnt</td><td><i>INT</i></td><td>The number of rows modified, inserted, or deleted by last command.</td><td><i></i></td></tr>
+<tr><td>changeCntAll</td><td><i>INT</i></td><td>Total number of rows modified, inserted, or deleted since db opened.</td><td><i></i></td></tr>
+<tr><td>debug</td><td><i>ARRAY</i></td><td>Enable debug trace for various operations. (zero or more of: <b>eval</b>, <b>delete</b>, <b>prepare</b>, <b>step</b>)</td><td><i></i></td></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>Output query/eval string to log.</td><td><i></i></td></tr>
+<tr><td>errCnt</td><td><i>INT</i></td><td>Count of errors in script callbacks.</td><td><i>readOnly</i></td></tr>
+<tr><td>errorCode</td><td><i>INT</i></td><td>Numeric error code returned by the most recent call to sqlite3_exec.</td><td><i></i></td></tr>
+<tr><td>forceInt</td><td><i>BOOL</i></td><td>Bind float as int if possible.</td><td><i></i></td></tr>
+<tr><td>noJsonConv</td><td><i>BOOL</i></td><td>Do not JSON auto-convert array and object in CHARJSON columns.</td><td><i></i></td></tr>
+<tr><td>lastInsertId</td><td><i>UINT64</i></td><td>The rowid of last insert.</td><td><i></i></td></tr>
+<tr><td>load</td><td><i>BOOL</i></td><td>Extensions can be loaded.</td><td><i></i></td></tr>
+<tr><td>mutex</td><td><i>STRKEY</i></td><td>Mutex type to use. (one of: <b>default</b>, <b>none</b>, <b>full</b>)</td><td><i>initOnly</i></td></tr>
+<tr><td>name</td><td><i>DSTRING</i></td><td>The dbname to use instead of 'main'.</td><td><i>initOnly</i></td></tr>
+<tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of Sqlite.conf to change options after create.</td><td><i>initOnly</i></td></tr>
+<tr><td>noCreate</td><td><i>BOOL</i></td><td>Database is must already exist (false).</td><td><i>initOnly</i></td></tr>
+<tr><td>onAuth</td><td><i>FUNC</i></td><td>Function to call for auth. @function(db:userobj, code:string, descr1:string, decr2:string, dbname:string, trigname:string)</td><td><i></i></td></tr>
+<tr><td>onBusy</td><td><i>FUNC</i></td><td>Function to call when busy. @function(db:userobj, tries:number)</td><td><i></i></td></tr>
+<tr><td>onCommit</td><td><i>FUNC</i></td><td>Function to call on commit. @function(db:userobj)</td><td><i></i></td></tr>
+<tr><td>onNeedCollate</td><td><i>FUNC</i></td><td>Function to call for collation. @function(db:userobj, name:string)</td><td><i></i></td></tr>
+<tr><td>onProfile</td><td><i>FUNC</i></td><td>Function to call for profile. @function(db:userobj, sql:string, time:number)</td><td><i></i></td></tr>
+<tr><td>onProgress</td><td><i>FUNC</i></td><td>Function to call for progress: progressSteps must be >0. @function(db:userobj)</td><td><i></i></td></tr>
+<tr><td>onRollback</td><td><i>FUNC</i></td><td>Function to call for rollback. @function(db:userobj)</td><td><i></i></td></tr>
+<tr><td>onTrace</td><td><i>FUNC</i></td><td>Function to call for trace. @function(db:userobj, sql:string)</td><td><i></i></td></tr>
+<tr><td>onUpdate</td><td><i>FUNC</i></td><td>Function to call for update. @function(db:userobj, op:string, dbname:string, table:string, rowid:number)</td><td><i></i></td></tr>
+<tr><td>onWalHook</td><td><i>FUNC</i></td><td>Function to call for WAL. @function(db:userobj, dbname:string, entry:number)</td><td><i></i></td></tr>
+<tr><td>progressSteps</td><td><i>UINT</i></td><td>Number of steps between calling onProgress: 0 is disabled.</td><td><i></i></td></tr>
+<tr><td>queryOpts</td><td><i><a href='#queryOptsOptions'>options</a></i></td><td>Default options for to use with query().</td><td><i></i></td></tr>
+<tr><td>readonly</td><td><i>BOOL</i></td><td>Database opened in readonly mode.</td><td><i>initOnly</i></td></tr>
+<tr><td>sortCnt</td><td><i>INT</i></td><td>Number of sorts in most recent operation.</td><td><i>readOnly</i></td></tr>
+<tr><td>stepCnt</td><td><i>INT</i></td><td>Number of steps in most recent operation.</td><td><i>readOnly</i></td></tr>
+<tr><td>stmtCacheCnt</td><td><i>INT</i></td><td>Current size of compiled statement cache.</td><td><i>readOnly</i></td></tr>
+<tr><td>stmtCacheMax</td><td><i>INT</i></td><td>Max cache size for compiled statements.</td><td><i></i></td></tr>
+<tr><td>timeout</td><td><i>INT</i></td><td>Amount of time to wait when file is locked, in ms.</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>version</td><td><i>OBJ</i></td><td>Sqlite version info.</td><td><i></i></td></tr>
+<tr><td>timeout</td><td><i>INT</i></td><td>Amount of time to wait when file is locked, in ms.</td><td><i></i></td></tr>
+<tr><td>vfs</td><td><i>STRING</i></td><td>VFS to use.</td><td><i>initOnly</i></td></tr>
+</table>
+
+
+<a name="queryOptsOptions"></a>
+<h2>Options for "queryOpts"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function to call with each row result. @function(values:object)</td><td><i></i></td></tr>
+<tr><td>cdata</td><td><i>STRKEY</i></td><td>Name of Cdata array object to use.</td><td><i></i></td></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>Output query string to log.</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>BOOL</i></td><td>First row returned contains column labels.</td><td><i></i></td></tr>
+<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of returned values.</td><td><i></i></td></tr>
+<tr><td>mapundef</td><td><i>BOOL</i></td><td>In variable bind, map an 'undefined' var to null.</td><td><i></i></td></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
+<tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
+<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non js/json mode).</td><td><i></i></td></tr>
+<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
+<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>retChanged</td><td><i>BOOL</i></td><td>Query returns value of sqlite3_changed().</td><td><i></i></td></tr>
+<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
+<tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (warn). (one of: <b>convert</b>, <b>warn</b>, <b>error</b>, <b>disable</b>)</td><td><i></i></td></tr>
+<tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
+<tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
+<tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Sqlite.importOptions"></a>
+<a name="Sqlite.confOptions"></a>
+<h2>Options for "Sqlite.import"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>headers</td><td><i>BOOL</i></td><td>First row contains column labels.</td><td><i></i></td></tr>
+<tr><td>csv</td><td><i>BOOL</i></td><td>Treat input values as CSV.</td><td><i></i></td></tr>
+<tr><td>conflict</td><td><i>STRKEY</i></td><td>Set conflict resolution. (one of: <b>ROLLBACK</b>, <b>ABORT</b>, <b>FAIL</b>, <b>IGNORE</b>, <b>REPLACE</b>)</td><td><i></i></td></tr>
+<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of lines to load.</td><td><i></i></td></tr>
+<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string.</td><td><i></i></td></tr>
+<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string; default is comma if csv, else tabs.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Sqlite.queryOptions"></a>
+<a name="Sqlite.confOptions"></a>
+<h2>Options for "Sqlite.query"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function to call with each row result. @function(values:object)</td><td><i></i></td></tr>
+<tr><td>cdata</td><td><i>STRKEY</i></td><td>Name of Cdata array object to use.</td><td><i></i></td></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>Output query string to log.</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>BOOL</i></td><td>First row returned contains column labels.</td><td><i></i></td></tr>
+<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of returned values.</td><td><i></i></td></tr>
+<tr><td>mapundef</td><td><i>BOOL</i></td><td>In variable bind, map an 'undefined' var to null.</td><td><i></i></td></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
+<tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
+<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non js/json mode).</td><td><i></i></td></tr>
+<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
+<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>retChanged</td><td><i>BOOL</i></td><td>Query returns value of sqlite3_changed().</td><td><i></i></td></tr>
+<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
+<tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (warn). (one of: <b>convert</b>, <b>warn</b>, <b>error</b>, <b>disable</b>)</td><td><i></i></td></tr>
+<tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
+<tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
+<tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
+</table>
+<a name="Sqliteend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="String"></a>
+
+<hr>
+
+
+<h1>String</h1>
+
+<font color=red>Synopsis:new String(str):string
+
+</font><p>Commands for accessing string objects..
+
+
+<h2>Methods for "String"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>String</td><td>new String(str):string </td><td>String constructor.</td></tr>
+<tr><td>charAt</td><td>charAt(index:number):string </td><td>Return char at index.</td></tr>
+<tr><td>charCodeAt</td><td>charCodeAt(index:number):number </td><td>Return char code at index.</td></tr>
+<tr><td>concat</td><td>concat(str:string, ...):string </td><td>Append one or more strings.</td></tr>
+<tr><td>fromCharCode</td><td>fromCharCode(...):string </td><td>Return string for char codes.</td></tr>
+<tr><td>indexOf</td><td>indexOf(str:string, start:number):number </td><td>Return index of char.</td></tr>
+<tr><td>lastIndexOf</td><td>lastIndexOf(str:string, start:number):number </td><td>Return index of last char.</td></tr>
+<tr><td>map</td><td>map(strMap:array, nocase:boolean=false):string </td><td>Replaces characters in string based on the key-value pairs in strMap.</td></tr>
+<tr><td>match</td><td>match(pattern:regexp|string):array|null </td><td>Return array of matches.</td></tr>
+<tr><td>repeat</td><td>repeat(count:number):string </td><td>Return count copies of string.</td></tr>
+<tr><td>replace</td><td>replace(pattern:regexp|string, replace:string|function):string </td><td>Regex/string replacement. If the replace argument is a function, it is called with match,p1,p2,...,offset,string.  If called function is known to have 1 argument, it is called with just the match.</td></tr>
+<tr><td>search</td><td>search(pattern:regexp|string):number </td><td>Return index of first char matching pattern.</td></tr>
+<tr><td>slice</td><td>slice(start:number, end:number):string </td><td>Return section of string.</td></tr>
+<tr><td>split</td><td>split(char:string|null=void):array </td><td>Split on char and return Array. When char is omitted splits on bytes.  When char==null splits on whitespace and removes empty elements.</td></tr>
+<tr><td>substr</td><td>substr(start:number, length:number):string </td><td>Return substring.</td></tr>
+<tr><td>substring</td><td>substring(start:number, end:number):string </td><td>Return substring.</td></tr>
+<tr><td>toLocaleLowerCase</td><td>toLocaleLowerCase():string </td><td>Lower case.</td></tr>
+<tr><td>toLocaleUpperCase</td><td>toLocaleUpperCase():string </td><td>Upper case.</td></tr>
+<tr><td>toLowerCase</td><td>toLowerCase():string </td><td>Return lower cased string.</td></tr>
+<tr><td>toTitle</td><td>toTitle(chars:string):string </td><td>Make first char upper case.</td></tr>
+<tr><td>toUpperCase</td><td>toUpperCase():string </td><td>Return upper cased string.</td></tr>
+<tr><td>trim</td><td>trim(chars:string):string </td><td>Trim chars.</td></tr>
+<tr><td>trimLeft</td><td>trimLeft(chars:string):string </td><td>Trim chars from left.</td></tr>
+<tr><td>trimRight</td><td>trimRight(chars:string):string </td><td>Trim chars from right.</td></tr>
+</table>
+<a name="Stringend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="System"></a>
+
+<hr>
+
+
+<h1>System</h1>
+
+<font color=red>Synopsis:System.method(...)
+
+</font><p>Builtin system commands. All methods are exported as global.
+
+
+<h2>Methods for "System"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#System.assertOptions'>options</a>:object=void):void </td><td>Throw or output msg if expr is false. Assert does nothing by default, but can be enabled with "use assert" or setting Interp.asserts.</td></tr>
+<tr><td>clearInterval</td><td>clearInterval(id:number):void </td><td>Delete event id returned from setInterval/setTimeout/info.events().</td></tr>
+<tr><td>decodeURI</td><td>decodeURI(val:string):string </td><td>Decode an HTTP URL.</td></tr>
+<tr><td>encodeURI</td><td>encodeURI(val:string):string </td><td>Encode an HTTP URL.</td></tr>
+<tr><td>exec</td><td>exec(val:string, <a href='#System.execOptions'>options</a>:string|object=void) </td><td>Execute an OS command. If the command ends with '&', set the 'bg' option to true.
+The second argument can be a string, which is the same as setting the 'inputStr' option.
+By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used</td></tr>
+<tr><td>exit</td><td>exit(code:number=0):void </td><td>Exit the current interpreter.</td></tr>
+<tr><td>format</td><td>format(format:string, ...):string </td><td>Printf style formatting: adds %q and %S.</td></tr>
+<tr><td>isFinite</td><td>isFinite(val):boolean </td><td>Return true if is a finite number.</td></tr>
+<tr><td>isMain</td><td>isMain():boolean </td><td>Return true if current script was the main script invoked from command-line.</td></tr>
+<tr><td>isNaN</td><td>isNaN(val):boolean </td><td>Return true if not a number.</td></tr>
+<tr><td>load</td><td>load(shlib:string):void </td><td>Load a shared executable and invoke its _Init call.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Same as puts, but includes file:line.</td></tr>
+<tr><td>matchObj</td><td>matchObj(obj:object, match:string=void, partial=false, noerror=false):string|boolean </td><td>Object field names/types matching. Single arg generates string.</td></tr>
+<tr><td>noOp</td><td>noOp() </td><td>A No-Op. A zero overhead command call that is useful for debugging.</td></tr>
+<tr><td>parseFloat</td><td>parseFloat(val):number </td><td>Convert string to a double.</td></tr>
+<tr><td>parseInt</td><td>parseInt(val:any, base:number=10):number </td><td>Convert string to an integer.</td></tr>
+<tr><td>parseOpts</td><td>parseOpts(self:object|userobj, options:object, conf:object|null|undefined) </td><td>Parse options.</td></tr>
+<tr><td>printf</td><td>printf(format:string, ...):void </td><td>Formatted output to stdout.</td></tr>
+<tr><td>provide</td><td>provide(name:string|function=void, version:number|string=1.0, opts:object|function=void):void </td><td>Provide a package for use with require. Default is the file tail-rootname.</td></tr>
+<tr><td>puts</td><td>puts(val, ...):void </td><td>Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.</td></tr>
+<tr><td>quote</td><td>quote(val:string):string </td><td>Return quoted string.</td></tr>
+<tr><td>require</td><td>require(name:string=void, version:number|string=1, <a href='#System.requireOptions'>options</a>:object=void):number|array|object </td><td>Load/query packages. With no arguments, returns the list of all loaded packages.
+With one argument, loads the package (if necessary) and returns its version.
+With two arguments, returns object containing: version, loadFile, func.
+A third argument sets options for package or module.
+Note an error is thrown if requested version is greater than actual version.</td></tr>
+<tr><td>runModule</td><td>runModule(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke named module. If name is empty, uses file basename. If isMain and no args givine parses console.args.</td></tr>
+<tr><td>setInterval</td><td>setInterval(callback:function, ms:number):number </td><td>Setup recurring function to run every given millisecs.</td></tr>
+<tr><td>setTimeout</td><td>setTimeout(callback:function, ms:number):number </td><td>Setup function to run after given millisecs.</td></tr>
+<tr><td>sleep</td><td>sleep(secs:number=1.0):void </td><td>sleep for N milliseconds, minimum .001.</td></tr>
+<tr><td>source</td><td>source(val:string|array, <a href='#System.sourceOptions'>options</a>:object=void):void </td><td>Load and evaluate source files: trailing '/' appends PARENTDIR.jsi.</td></tr>
+<tr><td>strftime</td><td>strftime(num:number=null, <a href='#System.strftimeOptions'>options</a>:string|object=void):string </td><td>Format numeric time (in ms) to a string. Null or no value will use current time.</td></tr>
+<tr><td>strptime</td><td>strptime(val:string=void, <a href='#System.strptimeOptions'>options</a>:string|object=void):number </td><td>Parse time from string and return ms time since 1970-01-01 in UTC, or NaN.</td></tr>
+<tr><td>times</td><td>times(callback:function|boolean, count:number=1):number </td><td>Call function count times and return execution time in microseconds.</td></tr>
+<tr><td>unload</td><td>unload(shlib:string):void </td><td>Unload a shared executable and invoke its _Done call.</td></tr>
+<tr><td>update</td><td>update(<a href='#System.updateOptions'>options</a>:number|object=void):number </td><td>Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1.
+The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.</td></tr>
+</table>
+
+
+<a name="System.assertOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.assert"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Action when assertion fails. Default from Interp.assertMode. (one of: <b>throw</b>, <b>log</b>, <b>puts</b>)</td><td><i></i></td></tr>
+<tr><td>noStderr</td><td><i>BOOL</i></td><td>Logged msg to stdout. Default from Interp.noStderr.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="System.execOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.exec"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>bg</td><td><i>BOOL</i></td><td>Run command in background using system() and return OS code.</td><td><i></i></td></tr>
+<tr><td>chdir</td><td><i>STRING</i></td><td>Change to directory.</td><td><i></i></td></tr>
+<tr><td>inputStr</td><td><i>STRING</i></td><td>Use string as input and return OS code.</td><td><i></i></td></tr>
+<tr><td>noError</td><td><i>BOOL</i></td><td>Suppress all OS errors.</td><td><i></i></td></tr>
+<tr><td>noRedir</td><td><i>BOOL</i></td><td>Disable redirect and shell escapes in command.</td><td><i></i></td></tr>
+<tr><td>noShell</td><td><i>BOOL</i></td><td>Do not use native popen which invokes via /bin/sh.</td><td><i></i></td></tr>
+<tr><td>trim</td><td><i>BOOL</i></td><td>Trim trailing whitespace from output.</td><td><i></i></td></tr>
+<tr><td>retAll</td><td><i>BOOL</i></td><td>Return the OS return code and data as an object.</td><td><i></i></td></tr>
+<tr><td>retCode</td><td><i>BOOL</i></td><td>Return only the OS return code.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="System.requireOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.require"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>Debug</td><td><i>BOOL</i></td><td>Enable LogDebug messages for module.</td><td><i></i></td></tr>
+<tr><td>Test</td><td><i>BOOL</i></td><td>Enable LogTest messages for module.</td><td><i></i></td></tr>
+<tr><td>Trace</td><td><i>BOOL</i></td><td>Enable LogTrace messages for module.</td><td><i></i></td></tr>
+<tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
+<tr><td>profile</td><td><i>BOOL</i></td><td>On exit generate profile of function calls.</td><td><i></i></td></tr>
+<tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
+</table>
+
+
+<a name="System.sourceOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.source"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>autoIndex</td><td><i>BOOL</i></td><td>Look for and load Jsi_Auto.jsi auto-index file.</td><td><i></i></td></tr>
+<tr><td>exists</td><td><i>BOOL</i></td><td>Source file only if exists.</td><td><i></i></td></tr>
+<tr><td>global</td><td><i>BOOL</i></td><td>File is to be sourced in global frame rather than local.</td><td><i></i></td></tr>
+<tr><td>isMain</td><td><i>BOOL</i></td><td>Coerce to true the value of Info.isMain().</td><td><i></i></td></tr>
+<tr><td>level</td><td><i>UINT</i></td><td>Frame to source file in.</td><td><i></i></td></tr>
+<tr><td>noError</td><td><i>BOOL</i></td><td>Ignore errors in sourced file.</td><td><i></i></td></tr>
+<tr><td>once</td><td><i>BOOL</i></td><td>Source file only if not already sourced (Default: Interp.debugOpts.includeOnce).</td><td><i></i></td></tr>
+<tr><td>trace</td><td><i>BOOL</i></td><td>Trace include statements (Default: Interp.debugOpts.includeTrace).</td><td><i></i></td></tr>
+</table>
+
+
+<a name="System.strftimeOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.strftime"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>secs</td><td><i>BOOL</i></td><td>Time is seconds (out for parse, in for format).</td><td><i></i></td></tr>
+<tr><td>fmt</td><td><i>STRKEY</i></td><td>Format string for time.</td><td><i></i></td></tr>
+<tr><td>iso</td><td><i>BOOL</i></td><td>ISO fmt plus milliseconds ie: %FT%T.%f.</td><td><i></i></td></tr>
+<tr><td>utc</td><td><i>BOOL</i></td><td>Time is utc (in for parse, out for format).</td><td><i></i></td></tr>
+</table>
+
+
+<a name="System.strptimeOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.strptime"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>secs</td><td><i>BOOL</i></td><td>Time is seconds (out for parse, in for format).</td><td><i></i></td></tr>
+<tr><td>fmt</td><td><i>STRKEY</i></td><td>Format string for time.</td><td><i></i></td></tr>
+<tr><td>iso</td><td><i>BOOL</i></td><td>ISO fmt plus milliseconds ie: %FT%T.%f.</td><td><i></i></td></tr>
+<tr><td>utc</td><td><i>BOOL</i></td><td>Time is utc (in for parse, out for format).</td><td><i></i></td></tr>
+</table>
+
+
+<a name="System.updateOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.update"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>maxEvents</td><td><i>INT</i></td><td>Maximum number of events to process (or -1 for all).</td><td><i></i></td></tr>
+<tr><td>maxPasses</td><td><i>INT</i></td><td>Maximum passes through event queue.</td><td><i></i></td></tr>
+<tr><td>minTime</td><td><i>INT</i></td><td>Minimum milliseconds before returning, or -1 to loop forever (default is 0).</td><td><i></i></td></tr>
+<tr><td>sleep</td><td><i>INT</i></td><td>Time to sleep time (in milliseconds) between event checks. Default is 1.</td><td><i></i></td></tr>
+</table>
+<a name="Systemend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Util"></a>
+
+<hr>
+
+
+<h1>Util</h1>
+
+<font color=red>Synopsis:Util.method(...)
+
+</font><p>Utilities commands.
+
+
+<h2>Methods for "Util"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>argArray</td><td>argArray(arg:any|undefined):array|null </td><td>Coerces non-null to an array, if necessary.</td></tr>
+<tr><td>base64</td><td>base64(val:string, decode:boolean=false):string </td><td>Base64 encode/decode a string.</td></tr>
+<tr><td>complete</td><td>complete(val:string):boolean </td><td>Return true if string is complete command with balanced braces, etc.</td></tr>
+<tr><td>crc32</td><td>crc32(val:string, crcSeed=0):number </td><td>Calculate 32-bit CRC.</td></tr>
+<tr><td>decrypt</td><td>decrypt(val:string, key:string):string </td><td>Decrypt data using BTEA encryption. Keys that are not 16 bytes use the MD5 hash of the key.</td></tr>
+<tr><td>encrypt</td><td>encrypt(val:string, key:string):string </td><td>Encrypt data using BTEA encryption. Keys that are not 16 bytes use the MD5 hash of the key.</td></tr>
+<tr><td>fromCharCode</td><td>fromCharCode(code:number):string </td><td>Return char with given character code.</td></tr>
+<tr><td>getenv</td><td>getenv(name:string=void):string|object|void </td><td>Get one or all environment.</td></tr>
+<tr><td>getpid</td><td>getpid(parent:boolean=false):number </td><td>Get process/parent id.</td></tr>
+<tr><td>getuser</td><td>getuser():object </td><td>Get userid info.</td></tr>
+<tr><td>hash</td><td>hash(val:string, <a href='#Util.hashOptions'>options</a>|object=void):string </td><td>Return hash (default SHA256) of string/file.</td></tr>
+<tr><td>hexStr</td><td>hexStr(val:string, decode:boolean=false):string </td><td>Hex encode/decode a string.</td></tr>
+<tr><td>setenv</td><td>setenv(name:string, value:string=void) </td><td>Set/get an environment var.</td></tr>
+<tr><td>sqlValues</td><td>sqlValues(name:string, var:object=void) </td><td>Get object values for SQL.</td></tr>
+<tr><td>times</td><td>times(callback:function|boolean, count:number=1):number </td><td>Call function count times and return execution time in microseconds.</td></tr>
+<tr><td>verConvert</td><td>verConvert(ver:string|number, zeroTrim:number=0):number|string|null </td><td>Convert a version to/from a string/number, or return null if not a version. For string output zeroTrim says how many trailing .0 to trim (0-2).</td></tr>
+</table>
+
+
+<a name="Util.hashOptions"></a>
+<a name="Util.confOptions"></a>
+<h2>Options for "Util.hash"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>file</td><td><i>STRING</i></td><td>Read data from file and append to str.</td><td><i></i></td></tr>
+<tr><td>hashcash</td><td><i>UINT</i></td><td>Search for a hash with this many leading zero bits by appending :nonce (Proof-Of-Work).</td><td><i></i></td></tr>
+<tr><td>noHex</td><td><i>BOOL</i></td><td>Return binary digest, without conversion to hex chars.</td><td><i></i></td></tr>
+<tr><td>type</td><td><i>STRKEY</i></td><td>Type of hash. (one of: <b>sha256</b>, <b>sha1</b>, <b>md5</b>, <b>sha3_224</b>, <b>sha3_384</b>, <b>sha3_512</b>, <b>sha3_256</b>)</td><td><i></i></td></tr>
+</table>
+<a name="Utilend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Vfs"></a>
+
+<hr>
+
+
+<h1>Vfs</h1>
+
+<font color=red>Synopsis:Vfs.method(...)
+
+</font><p>Commands for creating in memory readonly Virtual file-systems.
+
+
+<h2>Methods for "Vfs"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>conf</td><td>conf(mount:string, string|<a href='#Vfs.confOptions'>options</a>:object|string=void) </td><td>Configure mount.</td></tr>
+<tr><td>exec</td><td>exec(cmd:string) </td><td>Safe mode exec for VFS support cmds eg. fossil info/ls/cat.</td></tr>
+<tr><td>fileconf</td><td>fileconf(mount:string, path:string, <a href='#Vfs.fileconfOptions'>options</a>:string|object=void) </td><td>Configure file info which is same info as in fileList.</td></tr>
+<tr><td>list</td><td>list():array </td><td>Return list of all vfs mounts.</td></tr>
+<tr><td>mount</td><td>mount(type:string, file:string, param:object=void):string </td><td>Mount fossil file as given VFS type name, returning the mount point: frontend for vmount.</td></tr>
+<tr><td>type</td><td>type(type:string=void, <a href='#Vfs.typeOptions'>options</a>:object|null=void) </td><td>Set/get/delete VFS type name.</td></tr>
+<tr><td>unmount</td><td>unmount(mount:string):void </td><td>Unmount a VFS.</td></tr>
+<tr><td>vmount</td><td>vmount(<a href='#Vfs.vmountOptions'>options</a>:object=void):string </td><td>Create and mount a VFS, returning the mount point.</td></tr>
+</table>
+
+
+<a name="Vfs.confOptions"></a>
+<a name="Vfs.confOptions"></a>
+<h2>Options for "Vfs.conf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function implementing VFS. @function(op:string, mount:string, arg:string|object|null)</td><td><i></i></td></tr>
+<tr><td>extra</td><td><i>OBJ</i></td><td>Extra info, typically used by predefined VFS type.</td><td><i></i></td></tr>
+<tr><td>noAddDirs</td><td><i>BOOL</i></td><td>Disable auto-adding of directories; needed by File.glob.</td><td><i></i></td></tr>
+<tr><td>file</td><td><i>STRING</i></td><td>Fossil file to mount.</td><td><i></i></td></tr>
+<tr><td>fileList</td><td><i>ARRAY</i></td><td>List of files in the VFS (from listFunc).</td><td><i></i></td></tr>
+<tr><td>info</td><td><i>OBJ</i></td><td>Info for VFS that is stored upon init.</td><td><i></i></td></tr>
+<tr><td>mount</td><td><i>STRING</i></td><td>Mount point for the VFS.</td><td><i></i></td></tr>
+<tr><td>noPatches</td><td><i>BOOL</i></td><td>Ignore patchlevel updates: accepts only X.Y releases.</td><td><i></i></td></tr>
+<tr><td>param</td><td><i>OBJ</i></td><td>Optional 3rd argument passed to mount.</td><td><i></i></td></tr>
+<tr><td>type</td><td><i>STRKEY</i></td><td>Type for predefined VFS.</td><td><i></i></td></tr>
+<tr><td>user</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>version</td><td><i>STRKEY</i></td><td>Version to mount.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Vfs.execOptions"></a>
+<a name="Vfs.confOptions"></a>
+<h2>Options for "Vfs.exec"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>data</td><td><i>STRING</i></td><td>Data for file.</td><td><i></i></td></tr>
+<tr><td>file</td><td><i>STRKEY</i></td><td>File pathname.</td><td><i>required</i></td></tr>
+<tr><td>perms</td><td><i>UINT32</i></td><td>Permissions for file.</td><td><i></i></td></tr>
+<tr><td>size</td><td><i>SSIZE_T</i></td><td>Size of file.</td><td><i></i></td></tr>
+<tr><td>timestamp</td><td><i>TIME_T</i></td><td>Timestamp of file.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Vfs.fileconfOptions"></a>
+<a name="Vfs.confOptions"></a>
+<h2>Options for "Vfs.fileconf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>data</td><td><i>STRING</i></td><td>Data for file.</td><td><i></i></td></tr>
+<tr><td>file</td><td><i>STRKEY</i></td><td>File pathname.</td><td><i>required</i></td></tr>
+<tr><td>perms</td><td><i>UINT32</i></td><td>Permissions for file.</td><td><i></i></td></tr>
+<tr><td>size</td><td><i>SSIZE_T</i></td><td>Size of file.</td><td><i></i></td></tr>
+<tr><td>timestamp</td><td><i>TIME_T</i></td><td>Timestamp of file.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Vfs.typeOptions"></a>
+<a name="Vfs.confOptions"></a>
+<h2>Options for "Vfs.type"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function implementing VFS. @function(op:string, mount:string, arg:string|object|null)</td><td><i>required</i></td></tr>
+<tr><td>extra</td><td><i>OBJ</i></td><td>Extra info, typically used by predefined VFS type.</td><td><i></i></td></tr>
+<tr><td>noAddDirs</td><td><i>BOOL</i></td><td>Disable auto-adding of directories; needed by File.glob.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="Vfs.vmountOptions"></a>
+<a name="Vfs.confOptions"></a>
+<h2>Options for "Vfs.vmount"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>callback</td><td><i>FUNC</i></td><td>Function implementing VFS. @function(op:string, mount:string, arg:string|object|null)</td><td><i></i></td></tr>
+<tr><td>extra</td><td><i>OBJ</i></td><td>Extra info, typically used by predefined VFS type.</td><td><i></i></td></tr>
+<tr><td>noAddDirs</td><td><i>BOOL</i></td><td>Disable auto-adding of directories; needed by File.glob.</td><td><i></i></td></tr>
+<tr><td>file</td><td><i>STRING</i></td><td>Fossil file to mount.</td><td><i></i></td></tr>
+<tr><td>fileList</td><td><i>ARRAY</i></td><td>List of files in the VFS (from listFunc).</td><td><i></i></td></tr>
+<tr><td>info</td><td><i>OBJ</i></td><td>Info for VFS that is stored upon init.</td><td><i></i></td></tr>
+<tr><td>mount</td><td><i>STRING</i></td><td>Mount point for the VFS.</td><td><i></i></td></tr>
+<tr><td>noPatches</td><td><i>BOOL</i></td><td>Ignore patchlevel updates: accepts only X.Y releases.</td><td><i></i></td></tr>
+<tr><td>param</td><td><i>OBJ</i></td><td>Optional 3rd argument passed to mount.</td><td><i></i></td></tr>
+<tr><td>type</td><td><i>STRKEY</i></td><td>Type for predefined VFS.</td><td><i></i></td></tr>
+<tr><td>user</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>version</td><td><i>STRKEY</i></td><td>Version to mount.</td><td><i></i></td></tr>
+</table>
+<a name="Vfsend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="WebSocket"></a>
+
+<hr>
+
+
+<h1>WebSocket</h1>
+
+<font color=red>Synopsis:new WebSocket(options:object=void):userobj
+
+</font><p>Commands for managing WebSocket server/client connections.
+
+
+<h2>Methods for "WebSocket"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>WebSocket</td><td>new WebSocket(<a href='#new WebSocketOptions'>options</a>:object=void):userobj </td><td>Create websocket server/client object.Create a websocket server/client object.  The server serves out pages to a web browser,
+which can use javascript to upgrade connection to a bidirectional websocket.</td></tr>
+<tr><td>conf</td><td>conf(<a href='#WebSocket.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
+<tr><td>file</td><td>file(name:string=void):array|void </td><td>Add file to hash, or with no args return file hash.</td></tr>
+<tr><td>handler</td><td>handler(extension:string=void, cmd:string|function=void, flags:number=0):string|array|function|void </td><td>Get/Set handler command for an extension. With no args, returns list of handlers.  With one arg, returns value for that handler.
+Otherwise, sets the handler. When cmd is a string, the call is via runModule([cmd], arg).
+If a cmd is a function, it is called with a single arg: the file name.</td></tr>
+<tr><td>header</td><td>header(id:number, name:string=void):string|object|void </td><td>Get one or all input headers for connect id.</td></tr>
+<tr><td>idconf</td><td>idconf(id:number, <a href='#WebSocket.idconfOptions'>options</a>:string|object=void) </td><td>Configure options for connect id.</td></tr>
+<tr><td>ids</td><td>ids():array </td><td>Return list of ids.</td></tr>
+<tr><td>query</td><td>query(id:number, name:string=void):string|object|void </td><td>Get one or all query values for connect id.</td></tr>
+<tr><td>send</td><td>send(id:number, data:any):void </td><td>Send a websocket message to id. Send a message to one (or all connections if -1). If not already a string, msg is formatted as JSON prior to the send.</td></tr>
+<tr><td>status</td><td>status():object|void </td><td>Return libwebsocket server status.</td></tr>
+<tr><td>unalias</td><td>unalias(path:string):string|void </td><td>Return alias reverse lookup.</td></tr>
+<tr><td>update</td><td>update():void </td><td>Service events for just this websocket.</td></tr>
+<tr><td>version</td><td>version():string </td><td>Runtime library version string.</td></tr>
+</table>
+
+
+<a name="new WebSocketOptions"></a>
+<a name="WebSocket.confOptions"></a>
+<h2>Options for "new WebSocket"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>address</td><td><i>STRING</i></td><td>In client-mode the address to connect to (127.0.0.1).</td><td><i></i></td></tr>
+<tr><td>bufferPwr2</td><td><i>INT</i></td><td>Tune the recv/send buffer: value is a power of 2 in [0-20] (16).</td><td><i></i></td></tr>
+<tr><td>client</td><td><i>BOOL</i></td><td>Run in client mode.</td><td><i>initOnly</i></td></tr>
+<tr><td>clientHost</td><td><i>STRKEY</i></td><td>Override host name for client.</td><td><i></i></td></tr>
+<tr><td>clientOrigin</td><td><i>STRKEY</i></td><td>Override client origin (origin).</td><td><i></i></td></tr>
+<tr><td>debug</td><td><i>INT</i></td><td>Set debug level. Setting this to 512 will turn on max libwebsocket log levels.</td><td><i></i></td></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all websock Send/Recv messages.</td><td><i></i></td></tr>
+<tr><td>formParams</td><td><i>STRKEY</i></td><td>Comma seperated list of upload form param names ('text,send,file,upload').</td><td><i>readOnly</i></td></tr>
+<tr><td>extHandlers</td><td><i>BOOL</i></td><td>Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi.</td><td><i>initOnly</i></td></tr>
+<tr><td>extOpts</td><td><i>OBJ</i></td><td>Key/value store for extension-handlers options.</td><td><i>initOnly</i></td></tr>
+<tr><td>getRegexp</td><td><i>REGEXP</i></td><td>Call onGet() only if Url matches pattern.</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>ARRAY</i></td><td>Output headers: name/value pairs.</td><td><i>initOnly</i></td></tr>
+<tr><td>jsiFnPattern</td><td><i>STRKEY</i></td><td>A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsig*.js).</td><td><i>readOnly</i></td></tr>
+<tr><td>interface</td><td><i>STRING</i></td><td>Interface for server to listen on, eg. 'eth0' or 'lo'.</td><td><i>initOnly</i></td></tr>
+<tr><td>local</td><td><i>BOOL</i></td><td>Limit connections to localhost addresses on the 127 network.</td><td><i></i></td></tr>
+<tr><td>localhostName</td><td><i>STRKEY</i></td><td>Client name used by localhost connections ('localhost').</td><td><i></i></td></tr>
+<tr><td>maxConnects</td><td><i>INT</i></td><td>In server mode, max number of client connections accepted.</td><td><i></i></td></tr>
+<tr><td>maxDownload</td><td><i>INT</i></td><td>Max size of file download.</td><td><i></i></td></tr>
+<tr><td>maxUpload</td><td><i>INT</i></td><td>Max size of file upload will accept.</td><td><i></i></td></tr>
+<tr><td>mimeTypes</td><td><i>OBJ</i></td><td>Object providing map of file extensions to mime types (eg. {txt:'text/plain', bb:'text/bb'}).</td><td><i>initOnly</i></td></tr>
+<tr><td>modifySecs</td><td><i>UINT</i></td><td>Seconds between checking for modified files with onModify (2).</td><td><i></i></td></tr>
+<tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of conf() to change options after options after create.</td><td><i>initOnly</i></td></tr>
+<tr><td>noCompress</td><td><i>BOOL</i></td><td>Disable per-message-deflate extension which can truncate large msgs.</td><td><i></i></td></tr>
+<tr><td>noUpdate</td><td><i>BOOL</i></td><td>Disable update event-processing (eg. to exit).</td><td><i></i></td></tr>
+<tr><td>noWebsock</td><td><i>BOOL</i></td><td>Serve html, but disallow websocket upgrade.</td><td><i>initOnly</i></td></tr>
+<tr><td>noWarn</td><td><i>BOOL</i></td><td>Quietly ignore file related errors.</td><td><i></i></td></tr>
+<tr><td>onAuth</td><td><i>FUNC</i></td><td>Function to call for http basic authentication. @function(ws:userobj, id:number, url:string, userpass:string)</td><td><i></i></td></tr>
+<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number)</td><td><i></i></td></tr>
+<tr><td>onCloseLast</td><td><i>FUNC</i></td><td>Function to call when last websock connection closes. On object delete arg is null. @function(ws:userobj|null)</td><td><i></i></td></tr>
+<tr><td>onFilter</td><td><i>FUNC</i></td><td>Function to call on a new connection: return false to kill connection. @function(ws:userobj, id:number, url:string, ishttp:boolean)</td><td><i></i></td></tr>
+<tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
+<tr><td>onModify</td><td><i>FUNC</i></td><td>Function to call when a served-out-file is modified. @function(ws:userobj, file:string)</td><td><i>initOnly</i></td></tr>
+<tr><td>onOpen</td><td><i>FUNC</i></td><td>Function to call when the websocket connection occurs. @function(ws:userobj, id:number)</td><td><i></i></td></tr>
+<tr><td>onUnknown</td><td><i>FUNC</i></td><td>Function to call to server out content when no file exists. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
+<tr><td>onUpload</td><td><i>FUNC</i></td><td>Function to call handle http-post. @function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)</td><td><i></i></td></tr>
+<tr><td>onRecv</td><td><i>FUNC</i></td><td>Function to call when websock data recieved. @function(ws:userobj, id:number, data:string)</td><td><i></i></td></tr>
+<tr><td>pathAliases</td><td><i>OBJ</i></td><td>Path alias lookups.</td><td><i>initOnly</i></td></tr>
+<tr><td>port</td><td><i>INT</i></td><td>Port for server to listen on (8080).</td><td><i>initOnly</i></td></tr>
+<tr><td>post</td><td><i>STRING</i></td><td>Post string to serve.</td><td><i>initOnly</i></td></tr>
+<tr><td>protocol</td><td><i>STRKEY</i></td><td>Name of protocol (ws/wss).</td><td><i></i></td></tr>
+<tr><td>realm</td><td><i>STRKEY</i></td><td>Realm for basic auth (jsish).</td><td><i></i></td></tr>
+<tr><td>recvBufMax</td><td><i>INT</i></td><td>Size limit of a websocket message.</td><td><i>initOnly</i></td></tr>
+<tr><td>recvBufTimeout</td><td><i>INT</i></td><td>Timeout for recv of a websock msg.</td><td><i>initOnly</i></td></tr>
+<tr><td>redirMax</td><td><i>BOOL</i></td><td>Temporarily disable redirects when see more than this in 10 minutes.</td><td><i></i></td></tr>
+<tr><td>rootdir</td><td><i>STRING</i></td><td>Directory to serve html from (".").</td><td><i></i></td></tr>
+<tr><td>server</td><td><i>STRKEY</i></td><td>String to send out int the header SERVER (jsiWebSocket).</td><td><i></i></td></tr>
+<tr><td>stats</td><td><i><a href='#statsOptions'>options</a></i></td><td>Statistical data.</td><td><i>readOnly</i></td></tr>
+<tr><td>startTime</td><td><i>TIME_T</i></td><td>Time of websocket start.</td><td><i>readOnly</i></td></tr>
+<tr><td>includeFile</td><td><i>STRKEY</i></td><td>Default file when no extension given (include.shtml).</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
+<tr><td>urlPrefix</td><td><i>STRKEY</i></td><td>Prefix in url to strip from path; for reverse proxy.</td><td><i></i></td></tr>
+<tr><td>urlRedirect</td><td><i>STRKEY</i></td><td>Redirect when no url or / is given. Must match urlPrefix, if given.</td><td><i></i></td></tr>
+<tr><td>use_ssl</td><td><i>BOOL</i></td><td>Use https (for client).</td><td><i>initOnly</i></td></tr>
+<tr><td>useridPass</td><td><i>STRKEY</i></td><td>The USERID:PASSWORD to use for basic authentication.</td><td><i></i></td></tr>
+<tr><td>version</td><td><i>OBJ</i></td><td>WebSocket version info.</td><td><i>readOnly</i></td></tr>
+</table>
+
+
+<a name="WebSocket.idconfOptions"></a>
+<a name="WebSocket.confOptions"></a>
+<h2>Options for "WebSocket.idconf"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>clientIP</td><td><i>STRKEY</i></td><td>Client IP Address.</td><td><i>readOnly</i></td></tr>
+<tr><td>clientName</td><td><i>STRKEY</i></td><td>Client hostname.</td><td><i>readOnly</i></td></tr>
+<tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all websock Send/Recv messages.</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>ARRAY</i></td><td>Input headers: name/value pairs.</td><td><i></i></td></tr>
+<tr><td>isWebsock</td><td><i>BOOL</i></td><td>Socket has been upgraded to a websocket connection.</td><td><i></i></td></tr>
+<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number)</td><td><i></i></td></tr>
+<tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
+<tr><td>onUnknown</td><td><i>FUNC</i></td><td>Function to call to server out content when no file exists. @function(ws:userobj, id:number, url:string, args:array)</td><td><i></i></td></tr>
+<tr><td>onRecv</td><td><i>FUNC</i></td><td>Function to call when websock data recieved. @function(ws:userobj, id:number, data:string)</td><td><i></i></td></tr>
+<tr><td>onUpload</td><td><i>FUNC</i></td><td>Function to call handle http-post. @function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)</td><td><i></i></td></tr>
+<tr><td>rootdir</td><td><i>STRING</i></td><td>Directory to serve html from (".").</td><td><i></i></td></tr>
+<tr><td>stats</td><td><i><a href='#statsOptions'>options</a></i></td><td>Statistics for connection.</td><td><i>readOnly</i></td></tr>
+<tr><td>query</td><td><i>ARRAY</i></td><td>Uri arg values for connection.</td><td><i></i></td></tr>
+<tr><td>queryObj</td><td><i>OBJ</i></td><td>Uri arg values for connection as an object.</td><td><i></i></td></tr>
+<tr><td>url</td><td><i>DSTRING</i></td><td>Url for connection.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="statsOptions"></a>
+<h2>Options for "stats"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>connectCnt</td><td><i>INT</i></td><td>Number of active connections.</td><td><i>readOnly</i></td></tr>
+<tr><td>eventCnt</td><td><i>INT</i></td><td>Number of events of any type.</td><td><i></i></td></tr>
+<tr><td>eventLast</td><td><i>TIME_T</i></td><td>Time of last event of any type.</td><td><i></i></td></tr>
+<tr><td>httpCnt</td><td><i>INT</i></td><td>Number of http reqs.</td><td><i></i></td></tr>
+<tr><td>httpLast</td><td><i>TIME_T</i></td><td>Time of last http reqs.</td><td><i></i></td></tr>
+<tr><td>isBinary</td><td><i>BOOL</i></td><td>Connection recv data is binary.</td><td><i>readOnly</i></td></tr>
+<tr><td>isFinal</td><td><i>BOOL</i></td><td>Final data for current message was recieved.</td><td><i>readOnly</i></td></tr>
+<tr><td>msgQLen</td><td><i>INT</i></td><td>Number of messages in input queue.</td><td><i>readOnly</i></td></tr>
+<tr><td>recvCnt</td><td><i>INT</i></td><td>Number of recieves.</td><td><i>readOnly</i></td></tr>
+<tr><td>recvLast</td><td><i>TIME_T</i></td><td>Time of last recv.</td><td><i>readOnly</i></td></tr>
+<tr><td>redirLast</td><td><i>TIME_T</i></td><td>Time of last redirect.</td><td><i>readOnly</i></td></tr>
+<tr><td>redirCnt</td><td><i>INT</i></td><td>Count of redirects.</td><td><i>readOnly</i></td></tr>
+<tr><td>sentCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i>readOnly</i></td></tr>
+<tr><td>sentLast</td><td><i>TIME_T</i></td><td>Time of last send.</td><td><i>readOnly</i></td></tr>
+<tr><td>sentErrCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i>readOnly</i></td></tr>
+<tr><td>sentErrLast</td><td><i>TIME_T</i></td><td>Time of last sendErr.</td><td><i>readOnly</i></td></tr>
+<tr><td>sentErrLast</td><td><i>TIME_T</i></td><td>Time of last sendErr.</td><td><i>readOnly</i></td></tr>
+<tr><td>uploadCnt</td><td><i>INT</i></td><td>Number of uploads.</td><td><i>readOnly</i></td></tr>
+<tr><td>uploadEnd</td><td><i>TIME_T</i></td><td>Time of upload end.</td><td><i>readOnly</i></td></tr>
+<tr><td>uploadLast</td><td><i>TIME_T</i></td><td>Time of last upload input.</td><td><i>readOnly</i></td></tr>
+<tr><td>uploadStart</td><td><i>TIME_T</i></td><td>Time of upload start.</td><td><i>readOnly</i></td></tr>
+</table>
+<a name="WebSocketend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="Zvfs"></a>
+
+<hr>
+
+
+<h1>Zvfs</h1>
+
+<font color=red>Synopsis:Zvfs.method(...)
+
+</font><p>Commands for mounting and accessing .zip files as a filesystem.
+
+
+<h2>Methods for "Zvfs"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>append</td><td>append(archive:string, filelist:array, path:string|null=void, filelist:array=void, path:string|null=void, ...):void </td><td>Like 'create()', but appends to an existing archive (with no dup checking).</td></tr>
+<tr><td>create</td><td>create(archive:string, filelist:array, path:string|null=void, filelist:array=void, path:string|null=void, ...):void </td><td>Create a zip with the given files in prefix path. This command creates a zip archive and adds files to it. Files are relative the given 'path', or the current directory. If the destignation file already exist but is not an archive (eg. an executable), zip data is appended to the end of the file. If the existing file is already an archive, an error will be thrown. To truncate an existing archive, use zvfs.truncate(). Or use zvfs.append() instead. 
+   zvfs.create('foo.zip',['main.js', 'bar.js'], 'src', ['a.html', 'css/a.css'], 'html');</td></tr>
+<tr><td>deflate</td><td>deflate(data:string):string </td><td>Compress string using zlib deflate.</td></tr>
+<tr><td>inflate</td><td>inflate(data:string):string </td><td>Uncompress string using zlib inflate.</td></tr>
+<tr><td>list</td><td>list(archive:string):array </td><td>List files in archive. Return contents of zip directory as an array of arrays. The first element contains the labels, ie: 
+[ 'Name', 'Special', 'Offset', 'Bytes', 'BytesCompressed' ] </td></tr>
+<tr><td>mount</td><td>mount(archive:string, mountdir:string=void):string </td><td>Mount zip on mount point. Read a ZIP archive and make entries in the virutal file hash table for all files contained therein.</td></tr>
+<tr><td>names</td><td>names(mountdir:string=void):array </td><td>Return all zvfs mounted zips, or archive for specified mount. Given an mount point argument, returns the archive for it. Otherwise, returns an array of mount points</td></tr>
+<tr><td>offset</td><td>offset(archive:string):number </td><td>Return the start offset of zip data. Opens and scans the file to determine start of zip data and truncate this off the end of the file.  For ordinary zip archives, the resulting truncated file will be of zero length. If an optional bool argument can disable errors. In any case, the start offset of zip data (or 0) is returned.</td></tr>
+<tr><td>stat</td><td>stat(filename:string):object </td><td>Return details on file in zvfs mount. Return details about the given file in the ZVFS.  The information consists of (1) the name of the ZIP archive that contains the file, (2) the size of the file after decompressions, (3) the compressed size of the file, and (4) the offset of the compressed data in the archive.</td></tr>
+<tr><td>truncate</td><td>truncate(archive:string, noerror:boolean=false):number </td><td>Truncate zip data from archive. Opens and scans the file to determine start of zip data and truncate this off the end of the file.  For ordinary zip archives, the resulting truncated file will be of zero length. If an optional bool argument can disable errors. In any case, the start offset of zip data (or 0) is returned.</td></tr>
+<tr><td>unmount</td><td>unmount(archive:string):void </td><td>Unmount zip.</td></tr>
+</table>
+<a name="Zvfsend"></a>
+<p><a href="#TOC">Return to top</a>
+<a name="console"></a>
+
+<hr>
+
+
+<h1>console</h1>
+
+<font color=red>Synopsis:console.method(...)
+
+</font><p>Console input and output to stderr.
+
+
+<h2>Methods for "console"</h2>
+<table border="1"class="cmdstbl table">
+<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#console.assertOptions'>options</a>:object=void):void </td><td>Same as System.assert().</td></tr>
+<tr><td>error</td><td>error(val, ...):void </td><td>Same as log.</td></tr>
+<tr><td>input</td><td>input():string|void </td><td>Read input from the console.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Same as System.puts, but goes to stderr and includes file:line.</td></tr>
+<tr><td>printf</td><td>printf(format:string, ...):void </td><td>Same as System.printf but goes to stderr.</td></tr>
+<tr><td>puts</td><td>puts(val, ...):void </td><td>Same as System.puts, but goes to stderr.</td></tr>
+<tr><td>warn</td><td>warn(val, ...):void </td><td>Same as log.</td></tr>
+</table>
+
+
+<a name="console.assertOptions"></a>
+<a name="console.confOptions"></a>
+<h2>Options for "console.assert"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>mode</td><td><i>STRKEY</i></td><td>Action when assertion fails. Default from Interp.assertMode. (one of: <b>throw</b>, <b>log</b>, <b>puts</b>)</td><td><i></i></td></tr>
+<tr><td>noStderr</td><td><i>BOOL</i></td><td>Logged msg to stdout. Default from Interp.noStderr.</td><td><i></i></td></tr>
+</table>
+<a name="consoleend"></a>
+<p><a href="#TOC">Return to top</a>
+<p>

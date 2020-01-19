@@ -1,0 +1,40 @@
+#!/usr/local/bin/jsish -u %s
+
+;File.tail(Info.argv0());
+;console.args.length;
+;console.args;
+
+var i;
+for (i = 0; i < console.args.length; ++i) {
+    puts ("argv[" + i + "] = " + console.args[i]);
+}
+
+
+
+// Memory leak to to argument alias.
+function foo(...) {
+  var args = arguments;
+  for (i=0; i<args.length; i++)
+    puts(args[i]);
+}
+foo(1,2,3,4);
+
+
+/*
+=!ARGSTART!=
+g 2 3
+=!ARGEND!=
+
+=!EXPECTSTART!=
+File.tail(Info.argv0()) ==> arg.jsi
+console.args.length ==> 3
+console.args ==> [ "g", "2", "3" ]
+argv[0] = g
+argv[1] = 2
+argv[2] = 3
+1
+2
+3
+4
+=!EXPECTEND!=
+*/

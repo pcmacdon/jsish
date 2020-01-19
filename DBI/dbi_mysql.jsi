@@ -1,0 +1,171 @@
+#!/usr/local/bin/jsish --U %s
+
+require('DBI', 0, {Test:true, Trace:true, Debug:true});
+
+var opts = { driver:'mysql', username:'jsish', password:'abc', host:'localhost', port:3306  }; 
+//Seems sqlite DBI driver does not work, on Ubuntu anyways.
+//var opts = { driver:'sqlite3', dbname:'test3.db', sqlite_dbdir:'/tmp', verbosity:255 };
+
+var id, modes, db;
+
+;'\n';
+;'  ==== Dump databases  ====   ';
+;db = new DBI(opts);
+;db.databases();
+delete db;
+
+;opts.dbname='jsitest';
+;db = new DBI(opts);
+
+;db.databases();
+;db.tables();
+;db.options();
+;db.driver();
+
+;db.check();
+;db.conf();
+;db.conf({queryOpts:{limit:4}});
+
+;db.query('SELECT * FROM test3;');
+
+;id = db.query('SELECT * FROM test3;', {mode:'cursor'});
+;db.idconf(id);
+;db.column(id,0);
+;db.row(id);
+
+;id = db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:'cursor'});
+;db.idconf(id);
+;db.ids();
+;db.seek(id,0);
+;db.row(id);
+;db.seek(id,1);
+;db.row(id);
+;db.free(id);
+
+;'\n';
+;'   ==== OUTPUT MODES ====   ';
+;modes = CEnum.names('DBI_mode');
+for (var mode of modes) {
+   if (mode=='cursor') continue;
+;'  ===================  ';
+;   mode;
+;   db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5});
+}
+
+;'\n';
+;'   ==== FORCE BACK TO rows (0) ====   ';
+;db.conf({queryOpts:{mode:'list'}});
+;db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:'row'});
+
+;'\n';
+;'   ==== FAIL TESTS ====   ';
+;// db.conf({driver:'sqlite'});
+;// db.conf({isopen:false});
+;//db.query('SELECT * FROM test3;', {values:['Box'], qag:9});
+;//db.query('SELECT * FROM test3;', {bag:9});
+;//db.query('SELECT * FROM test3;', {mode:'xx'});
+
+delete db;
+return;
+
+/*
+=!EXPECTSTART!=
+'
+'
+'  ==== Dump databases  ====   '
+db = new DBI(opts) ==> "#DBI_1"
+db.databases() ==> [ "jsitest" ]
+opts.dbname='jsitest' ==> jsitest
+db = new DBI(opts) ==> "#DBI_2"
+db.databases() ==> [ "jsitest" ]
+db.tables() ==> [ "test1", "test2", "test3", "xx" ]
+db.options() ==> [ "username", "password", "dbname", "host", "port" ]
+db.driver() ==> { date_compiled:"Apr 12 2016", description:"MySQL database support (using libmysqlclient)", file:"/usr/lib/x86_64-linux-gnu/dbd/libdbdmysql.so", maintainer:"Mark M. Tobenkin <mark@brentwoodradio.com>", name:"mysql", url:"http://libdbi-drivers.sourceforge.net", version:"dbd_mysql v0.9.0" }
+db.check() ==> true
+db.conf() ==> { callback:null, dbname:"jsitest", driver:"mysql", drvOpts:null, encoding:"ISO-8859-1", engineVersion:0, host:"localhost", isSqlite:false, password:"abc", port:3306, queryOpts:{ callback:null, headers:false, limit:0, mode:"rows", nullvalue:null, separator:null, table:null, values:null, widths:null }, socket:5, sqlite_dbdir:null, sqlite_timeout:0, timeout:0, username:"jsish", verbosity:0, version:900 }
+db.conf({queryOpts:{limit:4}}) ==> undefined
+db.query('SELECT * FROM test3;') ==> [ { dat:28801, last:"Fax", name:"Furry" }, { dat:28801, last:"Fax", name:"Figgy" }, { dat:0, last:"b", name:"a" }, { dat:0, last:"d", name:"c" } ]
+id = db.query('SELECT * FROM test3;', {mode:'cursor'}) ==> 4
+db.idconf(id) ==> { curInd:0, fieldCount:3, id:4, onrecord:true, resultCount:5, sql:"SELECT * FROM test3;" }
+db.column(id,0) ==> 28801
+db.row(id) ==> { dat:28801, last:"Fax", name:"Furry" }
+id = db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:'cursor'}) ==> 5
+db.idconf(id) ==> { curInd:0, fieldCount:3, id:5, onrecord:true, resultCount:2, sql:"SELECT * FROM test3 WHERE last=\'Fax\';" }
+db.ids() ==> [ 4, 5, 1, 2 ]
+db.seek(id,0) ==> true
+db.row(id) ==> { dat:28801, last:"Fax", name:"Furry" }
+db.seek(id,1) ==> true
+db.row(id) ==> { dat:28801, last:"Fax", name:"Figgy" }
+db.free(id) ==> undefined
+'
+'
+'   ==== OUTPUT MODES ====   '
+modes = CEnum.names('DBI_mode') ==> [ "rows", "arrays", "array1d", "list", "column", "json", "json2", "html", "csv", "insert", "line", "tabs", "cursor", "none" ]
+'  ===================  '
+mode ==> rows
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> [ { dat:28801, last:"Fax", name:"Furry" }, { dat:28801, last:"Fax", name:"Figgy" } ]
+'  ===================  '
+mode ==> arrays
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> [ [ 28801, "Furry", "Fax" ], [ 28801, "Figgy", "Fax" ] ]
+'  ===================  '
+mode ==> array1d
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> [ 28801, "Furry", "Fax", 28801, "Figgy", "Fax" ]
+'  ===================  '
+mode ==> list
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> 28801|Furry|Fax
+28801|Figgy|Fax
+'  ===================  '
+mode ==> column
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> dat        name       last       28801      Furry      Fax       
+28801      Figgy      Fax       
+'  ===================  '
+mode ==> json
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> [ {"dat":28801, "name":"Furry", "last":"Fax"}, {"dat":28801, "name":"Figgy", "last":"Fax"} ]
+'  ===================  '
+mode ==> json2
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> { "names": [ "dat", "name", "last" ], "values": [ [28801, "Furry", "Fax" ], [28801, "Figgy", "Fax" ] ] } 
+'  ===================  '
+mode ==> html
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> <TR><TD>28801</TD><TD>Furry</TD><TD>Fax</TD></TR>
+<TR><TD>28801</TD><TD>Figgy</TD><TD>Fax</TD></TR>
+'  ===================  '
+mode ==> csv
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> 28801,Furry,Fax
+28801,Figgy,Fax
+'  ===================  '
+mode ==> insert
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> INSERT INTO table VALUES(28801,'Furry','Fax');
+INSERT INTO table VALUES(28801,'Figgy','Fax');
+'  ===================  '
+mode ==> line
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==>   dat = 28801 name = Furry last = Fax
+  dat = 28801
+ name = Figgy
+ last = Fax
+'  ===================  '
+mode ==> tabs
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> 28801	Furry	Fax
+28801	Figgy	Fax
+'  ===================  '
+mode ==> none
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:mode, limit:5}) ==> undefined
+'
+'
+'   ==== FORCE BACK TO rows (0) ====   '
+db.conf({queryOpts:{mode:'list'}}) ==> undefined
+db.query('SELECT * FROM test3 WHERE last=%1;', {values:['Fax'], mode:'row'}) ==> [ { dat:28801, last:"Fax", name:"Furry" }, { dat:28801, last:"Fax", name:"Figgy" } ]
+'
+'
+'   ==== FAIL TESTS ====   '
+db.conf({driver:'sqlite'}) ==>
+PASS!: err = Error can not update option: "driver"
+db.conf({isopen:false}) ==>
+PASS!: err = unknown option "isopen" not one of: driver sqlite_dbdir username password dbname host encoding port sqlite_timeout timeout verbosity version engineVersion socket isSqlite drvOpts callback queryOpts 
+db.query('SELECT * FROM test3;', {values:['Box'], qag:9}) ==>
+PASS!: err = unknown option "qag" not one of: mode values widths limit headers nullvalue separator table callback 
+db.query('SELECT * FROM test3;', {bag:9}) ==>
+PASS!: err = unknown option "bag" not one of: mode values widths limit headers nullvalue separator table callback 
+db.query('SELECT * FROM test3;', {mode:'xx'}) ==>
+PASS!: err = unknown enum "xx" not one of: rows arrays array1d list column json json2 html csv insert line tabs cursor none 
+=!EXPECTEND!=
+*/

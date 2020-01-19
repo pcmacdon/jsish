@@ -1,0 +1,110 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+
+// Run module or main.js from a zip, sqlar or fossil repository.
+
+require('Jsi_Vfs');
+
+function Archive(args:array, conf:object=void)
+{
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    var self = {
+        app         :'',
+        cnt         :0
+    };
+    var options = { // Run application from a zip, sqlar or fossil repository.
+        mainFile    :'main.jsi',// File to execute, if no module given.
+        noRun       :false,     // Just mount, add mount dir to pkg path, and return mount.
+        noPatches   :false,     // Ignore patchlevel updates: accepts only X.Y releases.
+        rootdir     :null,      // Base directory.
+        update      :false,     // Do a pull update if a .fossil.
+        updateAll   :false,     // For all .fossil files in given directory do a pull update and exit.
+        version     :'tip'         // Version or commit
+    };
+
+    parseOpts(self, options, conf);
+    
+    function main() {
+        if (args.length<1)
+            throw("expected 1 or 2 args: file ?MODULE?: "+args.toString());
+        var fn = args[0];
+        if (self.updateAll) {
+            if (!File.isdir(fn))
+                throw('expected directory for updateAll');
+            var flst = File.glob('*.fossil', {dir:fn, prefix:fn+'/'});
+            if (!flst.length)
+                throw('no files to update');
+            for (var i of flst) {
+                puts('fossil pull -R '+i);
+                puts(exec('fossil pull -R '+i));
+            }
+            return flst;
+        }
+        var app = self.app = args[1];
+        if (!File.exists(fn))
+            throw("file not found: "+fn);
+        var mnt, pkgDirs = Interp.conf('pkgDirs');;
+        var ext = File.extension(fn);
+        var sbn, bn = File.rootname(File.tail(fn));
+        LogTrace('EXT:',ext);
+        var isfossil = (ext === '.fossil');
+        if (self.update) {
+            if (isfossil) {
+                try {
+                    exec('fossil pull -R '+fn);
+                } catch(e) {
+                    puts('update failed', e);
+                }
+            } // TODO: possible to support zip/sqlar as well?
+        }
+        var info;
+        if (ext !== '.zip') {
+            mnt = Vfs.vmount({type:ext.substr(1), file:fn, version:self.version, noPatches:self.noPatches});
+        } else {
+            mnt = Zvfs.mount(fn);
+        }
+        var dlst = [mnt];
+        sbn=mnt+'/lib';
+        if (File.isdir(sbn))
+            pkgDirs.unshift(sbn);
+        sbn=mnt+'/'+bn;
+        if (File.isdir(sbn)) {
+            pkgDirs.unshift(sbn);
+            dlst.push(sbn);
+            sbn+='/lib';
+            if (File.isdir(sbn))
+                pkgDirs.unshift(sbn);
+        }
+        LogTrace('MNT:',mnt);
+
+        pkgDirs.unshift(mnt);
+        Interp.conf({pkgDirs:pkgDirs});
+        if (app && app.match(/^[a-zA-Z0-9_]+$/)) {
+            LogTrace('APP:', app);
+            require(self.app);
+            if (self.noRun)
+                return mnt;
+            return runModule(self.app, args.slice(2));
+        }
+        if (self.noRun)
+            return mnt;
+        for (var cmnt of dlst) {
+            var msrc = cmnt+'/'+self.mainFile;
+            if (File.exists(msrc)) break;
+        }
+        if (!File.exists(msrc))
+            throw('no '+self.mainFile+' found in . or lib/ within archive');
+        //var cargs = console.args;
+        console.args.shift(); // = console.args.slice(1);
+        LogTrace('Source:', msrc, console.args);
+        return source(msrc, {global:true, isMain:true});
+    }
+    return main();
+}
+
+provide(Archive);
+
+if (isMain()) 
+    runModule(Archive);
+

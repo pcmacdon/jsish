@@ -1,0 +1,17 @@
+#!/usr/local/bin/jsish -u %s
+
+var b = new Boolean(false);
+;b.constructor == Boolean;
+;Boolean == b.constructor;
+
+function f() {};
+function g() {};
+g.prototype = new f();
+var h = new g();
+
+/*
+=!EXPECTSTART!=
+b.constructor == Boolean ==> true
+Boolean == b.constructor ==> true
+=!EXPECTEND!=
+*/

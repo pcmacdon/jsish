@@ -1,0 +1,158 @@
+/* CSS preprocessor definitions */
+$maincolor = {lightblue}
+$outcolor = {lightgoldenrodyellow}
+$altcolor1 = {lightsteelblue}
+$altcolor2 = {tan}
+
+#dboutput {
+    background:$outcolor;
+    resize: both;
+    overflow: auto;
+
+}
+
+#dbstatus {
+    background:$outcolor;
+}
+
+.butok { float:left; width:80px; margin:10px; padding:4px }
+.butcancel { float:right; width:80px; margin:10px; padding:4px  }
+
+.curline {
+    background:$maincolor;
+    border: 1px solid;
+}
+
+.bpline {
+    background:red;
+}
+
+.dlg {
+    margin: 0 auto;
+    position: fixed;
+    top: 5%;
+    left: 5%;
+    max-width:90%;
+    max-height:90%;
+    background-color: $maincolor;
+    border: 5px ridge;
+    border-radius:10px;
+    box-shadow:0 0 10px #333;
+    padding: 5px;
+    overflow:auto;
+}
+.dlgfile {
+    margin: 0 auto;
+    position: fixed;
+    top: 5%;
+    left: 5%;
+    width:600px;
+    height:600px;
+    background-color: white;
+    border: 5px ridge;
+    border-radius:10px;
+    box-shadow:0 0 10px #333;
+    padding: 5px;
+}
+
+.dlgbuts { width:100%;}
+table.dlgbuts td { text-align: center }
+table.dlgbuts button { padding:1px 5px 3px 5px; font-size:15px; box-shadow:0 0 3px #333;}
+table.dlgtbl th { border: 2px inset; }
+
+.right { text-align:right; }
+
+.tblconf { border: 2px ridge; background-color: #eeeeee; }
+.hdrbut {background-color: #eeeeee; font-weight:bold; }
+button {
+  border-radius: 4px;
+  background:#A5C5E2;
+}
+button:disabled {
+  background:lightgray;
+}
+
+button[name="halt"] {
+   background:orange;
+}
+
+#uifuncs button {
+  background:$altcolor2;
+}
+
+#uistack table {
+    border-collapse:collapse;
+}
+
+#uistack button {
+  background: $altcolor1;
+}
+
+.mainbuts, #tvals_parm button {
+  font-weight: bold;
+}
+h3 { margin: 3px }
+
+::selection { background-color: $maincolor }
+
+.shade {
+    background:silver;
+    opacity:0.5;
+    filter:alpha'(opacity=50)';
+    pointer-events:none;
+    overflow:hidden;
+}
+
+.flineno {
+    color:steelblue;
+}
+
+.invisible {
+    display:none;
+}
+
+cite {
+    color:red
+}
+
+i {
+    color:darkgreen;
+}
+
+b {
+    color:darkblue;
+}
+
+cite i {
+    color:red
+}
+cite b {
+    color:red
+}
+
+button.del {
+    background:orange;
+}
+button.menu {
+    background:lightskyblue;
+}
+button.topmenu {
+    background:dodgerblue;
+}
+
+.tooltip {
+    left:100px; top:400px;
+    position: absolute;
+    display: inline-block;
+    border: 1px dotted black;
+    background-color:bisque;
+}
+
+.panel {
+ /* TODO: perhaps animate open/close effect?
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease-out;*/
+}
+
+

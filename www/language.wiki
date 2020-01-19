@@ -1,0 +1,319 @@
+<title>Language</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#compare|Language Comparisons]</li>
+<ul>
+<li>[#defs|Definitions]</li>
+<ul>
+<li>[#standard|Standard]</li>
+<li>[#embed|Embeddable]</li>
+<li>[#standalone|Standalone]</li>
+<li>[#shrink|Shrink Wrap]</li>
+<li>[#modules|Modular Apps]</li>
+<li>[#typecheck|Type Checking]</li>
+<li>[#subinterp|Sub-Interps]</li>
+<li>[#errnav|Error Navigation]</li>
+<li>[#logging|Logging]</li>
+<li>[#debugger|Builtin Debugger]</li>
+<li>[#debugui|Debugger GUI]</li>
+<li>[#webready|Web Ready]</li>
+<li>[#examples|Example Applications]</li>
+<li>[#config|Self Configure]</li>
+<li>[#compat|C++ Compatible]</li>
+<li>[#capi|C-API]</li>
+<li>[#nocapi|Non-C API]</li>
+<li>[#impl|Implementation]</li>
+</ul>
+</ul>
+<li>[#syntax|Syntax]</li>
+<ul>
+<li>[#exprs|Expressions]</li>
+<li>[#terminals|Terminals]</li>
+<li>[#keywords|Keywords]</li>
+</ul>
+</ul>
+</div>
+
+<h2 id=compare>Language Comparisons</h2>
+
+
+Following is a feature comparison of various languages with Jsi.
+
+    <table border="1" class="cmdstbl">
+<tr><th>Feature</th> <th>Jsi</th> <th>NodeJs</th> <th>Tcl</th> <th>Lua</th> <th>Perl</th> <th>Python</th></tr>
+<tr><td>Standard</td>  <td>ES 5.2+</td> <td>ES 6+</td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Implemention</td>  <td>C/C++</td> <td>C++</td> <td>C</td> <td>C/C++</td> <td>C</td> <td>C</td></tr>
+<tr><td>C++ Compatible</td>  <td>&#10004;</td> <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Embeddable</td>  <td>&#10004;</td> <td>&#10006;</td> <td>&#10004;</td> <td>&#10004;</td> <td>&#10003;</td> <td>&#10003;</td></tr>
+<tr><td>C API</td>  <td>&#10004;</td> <td>&#10006;</td> <td>&#10004;</td> <td>&#10003;</td> <td>&#10003;</td> <td>&#10003;</td></tr>
+<tr><td>Non-Script API</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Standalone</td>  <td>&#10004;</td> <td></td> <td>&#10004;</td> <td>&#10004;</td> <td></td> <td></td></tr>
+<tr><td>Type Checking</td>  <td>&#10003;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Sub-Interps</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Introspection</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Error Navigation</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Logging</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Builtin Debugger</td>  <td>&#10004;</td> <td>&#10004;</td> <td></td> <td></td> <td>&#10004;</td> <td></td></tr>
+<tr><td>Debugger GUI</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Web Ready</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Modular Apps</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Shrink Wrap</td>  <td>&#10004;</td> <td></td> <td>&#10003;</td> <td></td> <td></td> <td></td></tr>
+<tr><td>Applications</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+<tr><td>Self Configure</td>  <td>&#10004;</td> <td></td> <td></td> <td></td> <td></td> <td></td></tr>
+</table>
+
+These comparisons are of software out-of-the-box.
+
+<b>Note:</b> <i>as of version 5.3.4, Lua also supports native C++.</i>
+
+<h3 id=defs>Definitions</h3>
+
+<h4 id=standard>Standard</h4>
+Jsi and Node-JS are javascript implementations, and so use the Ecmascript standard (at least as a starting point).
+
+The other languages, seem to have just sort of evolved.
+
+The advantage of using a standard are:
+
+  *  All languages have idiosyncracies.
+  *  However, users will find a "standard" language easier to learn.
+  *  Language implementation is hard.
+  *  But language design is even harder.
+
+Jsi has a further advantage in that it's internal design is based on Tcl.
+This means that there was just far less design involved,
+and more building on the shoulders of giants.
+
+<h4 id=embed>Embeddable</h4>
+ 
+All the compared languages can be embedded in a C application, except for Node-Js:
+it is C++, and is limited loading extensions.
+
+There is a difference in the degree of difficulty involved in embedding each.
+Perl, and perhaps Python
+Most require linking against an external libraries, and often involve dealing with
+dependancies.
+
+By contrast, Jsi was written from the ground-up to be C embeddable.
+It provides a single [build#amalgamation|amalgamated source] file for quick and easy embedding.
+
+<h4 id=standalone>Standalone</h4>
+
+To be standalone, a language should be easy to statically link.
+
+The jsish binary can be built within libmusl, sqlite and libwebsockets to provide
+a completely self contained executable.  Applications can also
+include jsi.c directly to build in Jsi support atomically.
+
+See [./build.wiki#standalone|Standalone].
+
+<h4 id=modules>Modular Apps</h4>
+
+Jsi supports modules.  But it can also execute applications directly
+from a <b>.zip</b> file.
+
+See [./zvfs.wiki|Zvfs].
+
+<h4 id=shrink>Shrink Wrap</h4>
+
+But there's more.  Script files used by Jsi are appended to a zip
+at the end of the executable.  This is mounted as a [./fs-zvfs|Zip filesystem] at runtime.
+In addition, user scripts can be merged with these to convert jsish into a shrink-wrapped application.
+
+<h4 id=typecheck>Type Checking</h4>
+
+The Javascript language does not provide type checking.
+Jsi however, supports [./functions.wiki|typechecking function arguments].
+
+See [./functions.wiki|Functions].
+
+<h4 id=subinterp>Sub-Interps</h4>
+
+A sub-interpreter can be used to run scripts in seperate environment and/or threads.
+Uses include sandboxing, debugging and multi-tasking.
+
+See [./js-interp.wiki|Interps].
+
+<h4 id=errnav>Error Navigation</h4>
+
+Error navigation refers to the error message format being compatible with gcc.
+This allows scripts to be run from editors such as geany and vi,
+and seamlessly navigate through errors and warnings.
+
+See [./js-errors.wiki|Errors].
+
+<h4 id=logging>Logging</h4>
+
+The logging facilitity in Jsi allows output messages, often including the file, line and function
+of the current line.  More importantly, these inclue <b>logDebug</b> and <b>logTrace</b>
+that output such messages only when debugging is enabled. 
+
+See [./js-logging.wiki|Logging].
+
+<h4 id=debugger>Debug Console</h4>
+
+Jsi provides a builtin console debugger, invoked with <b>jsish -d SCRIPT</b>.
+
+See [./debug.wiki|debugger].
+
+<h4 id=debugui>Debugger GUI</h4>
+
+Jsi also provides a web based interface debugger, which is a lot easier to
+navigate around in that the console.
+
+This is invoked with <b>jsish -D SCRIPT</b>.
+
+<h4 id=webready>Web Ready</h4>
+
+Jsi comes with builtin support for:
+
+  *  Websocket and database
+  *  Html, Javascript and CSS preprocessing
+  *  Wiki markup
+
+<h4 id=examples>Example Applications</h4>
+
+Aside from the builtin applications for the debugger and sqlite, Jsi comes with the external app Ledger.
+
+See [./testing.wiki|Examples].
+
+<h4 id=config>Self Configure</h4>
+
+Most unix software relies on '''autoconf''' for configuring the application prior to building.
+In Jsi, a minimial version Jsi is built first so it can self-configure.
+
+<h4 id=compat>C++ Compatible</h4>
+
+Jsi is written in <b>C+/-</b>.  It compiles as C, and as native C++ (without use of <b>extern C</b>).
+This means that Jsi source code is subjected to more stringent checking.
+
+One advantage of this is the detection of missing enum cases in a switch statements, as in the follow:
+
+    <nowiki><pre class=verbatim>
+<b>switch</b> (code) {
+    <b>case</b> CODE_A: break;
+    <b>case</b> CODE_B: break;
+#ifdef __cplusplus
+    <b>case</b> CODE_NONE:
+#else
+    <b>default</b>:
+#endif
+    Jsi_LogBug("invalid code %d", code);
+    <b>return</b> JSI_ERROR;
+
+}
+</pre></nowiki>
+
+That is, we employ a <b>default</b> label when compiled
+with C, but not when compiled with C++ so as to warn of missing cases.
+
+Thus, even if we don't intend to use C++, we can employ it for something useful.
+That said, extensions can (if desire) directly access C++ constructs.
+
+<h4 id=capi>C-API</h4>
+
+All code written in C has by definition some form of C API.
+
+But Jsi was modelled internally after Tcl, which has a very mature and well developed C API.
+
+
+<h4 id=nocapi>Non-C API</h4>
+
+A Jsi-Lite, a subset of the Jsi C-API that is available for use by C programs that require no scripting.
+
+This includes string processing, Hash, Tree and an Sqlite C-API.
+
+See [./c-jsi_lite.wiki|Jsi-Lite].
+
+<h4 id=impl>Implementation</h4>
+
+Implementation refers the language the source code is written in.  Jsi is unique in that although it is written in C99,
+it will compile with
+
+    <nowiki><pre class=verbatim>
+<b>make CC=g++</b>.
+</pre></nowiki>
+
+Using C++ provides a higher level of checking than provided by C, but requires a more rigourous coding style.
+
+<hr>
+
+<h2 id=syntax>Syntax</h2>
+The following syntax is implemented by Jsi (see [./reference.wiki|Reference] for commands):
+
+    <nowiki><pre class=verbatim>
+<b>continue</b> [<i>IDENT</i>] ;
+<b>break</b> [<i>IDENT</i>] ;
+<b>debugger</b> ;
+<b>delete</b> <i>IDENT</i> ;
+<b>do</b> { <i>STMTS</i>; } <b>while</b>( <i>EXPR</i> ) ;
+<b>for</b> ([<b>var</b>] <i>IDENT</i> <b>=</b> <i>EXPR</i>; <i>EXPR</i>; <i>EXPR</i>) { <i>STMTS</i>; }
+<b>for</b> ([<b>var</b>] <i>IDENT</i> <b>in</b> <i>EXPR</i>) { <i>STMTS</i>; }
+<b>for</b> ([<b>var</b>] <i>IDENT</i> <b>of</b> <i>EXPR</i>) { <i>STMTS</i>; }
+<b>function</b> [<i>IDENT</i>] ([<i>IDENT</i>, <i>IDENT</i>, ...]) { <i>STMTS</i>; }
+<b>function</b> [<i>IDENT</i>] ([<i>IDENT</i>:<i>TYPE</i>[=<i>PRIMATIVE</i>], <i>IDENT</i>:<i>TYPE</i>[=<i>PRIMATIVE</i>], ...]):<i>TYPE</i> { <i>STMTS</i>; }
+<b>if</b> (<i>EXPR</i>) { <i>STMTS</i>; } [ <b>else</b> { <i>STMTS</i>; } ]
+<i>IDENT</i> <b>instanceof</b> <i>IDENT</i> ;
+[<b>new</b>] <i>FUNC</i>( <i>ARGS</i> ) ;
+<b>return</b> [<i>EXPR</i>] ;
+<b>switch</b> (<i>EXPR</i>) { <b>case</b> <i>EXPR</i>: <i>STMTS</i>; [<b>break</b>;] <b>case</b> <i>EXPR</i>: <i>STMTS</i>; [<b>break</b>;]  ... [<b>default</b> <i>EXPR</i>;] }
+<b>throw</b> <i>EXPR</i> ;
+<b>try</b> { <i>EXPR</i>; } <b>catch</b>(<i>IDENT</i>) { <i>STMTS</i>; } [<b>finally</b> { <i>STMTS</i>; }]
+<b>typeof</b> <i>EXPR</i> ;
+<b>var</b> <i>IDENT</i> [ = <i>EXPR</i> ] [, ...] ;
+<b>with</b> ( <i>EXPR</i> ) { <i>STMTS</i>; }
+</pre></nowiki>
+
+  *  Square brackets indicate optional.
+  *  Curley braces are just for illustrative purposes and except for <b>function</b> and <b>switch</b> are not required.
+
+<hr>
+<h3 id=exprs>Expressions</h3>
+Expressions take the usual form:
+
+    <nowiki><pre class=verbatim>
+<i>IDENT</i>.<i>IDENT</i>
+<i>IDENT</i>[<i>EXPR</i>]
+<i>IDENT</i>(<i>ARGS</i>)
+(<i>EXPR</i>)
+<i>EXPR</i> <b>?</b> <i>STMTS</i> <b>:</b>  <i>STMTS</i>
+<i>STMTS</i> <b>,</b> <i>STMTS</i> [, ...]
+<i>EXPR</i> OP <i>EXPR</i> 
+</pre></nowiki>
+
+where <b>OP</b> is one of the binary operators <b>+</b>, <b>-</b>, <b>*</b>, <b>/</b>, etc.
+
+<hr>
+<h3 id=terminals>Terminals</h3>
+
+    <table border='1' class='cmdstbl' ><tr><th>Name</th><th>Description</th></tr>
+<tr ><td >ARGS</td><td>Zero or more comma-seperated arguments</td></tr>
+<tr ><td >EXPR </td><td>An expression (see below) </td></tr>
+<tr ><td >FUNC</td><td>A function value</td></tr>
+<tr ><td >IDENT </td><td>Is an valid identifier</td></tr>
+<tr ><td >PRIMITIVE </td><td>A primitive value acceptable as an [./functions.wiki#availtypes|argument type].</td></tr>
+<tr ><td >STMTS </td><td>Is zero or more statements </td></tr>
+<tr ><td >TYPE</td><td>A type value acceptable as [./functions.wiki#defvalue|defaults] </td></tr>
+</table>
+
+<hr>
+<h3 id=keywords>Keywords</h3>
+Keywords can be displayed using <b>Info.keywords()</b>:
+
+    <nowiki><pre class=verbatim_out>
+[
+  "...", "any", "arguments", "array", "boolean", "break", "case", "catch", 
+  "continue", "debugger", "default", "delete", "do", "else", "false", 
+  "finally", "for", "function", "if", "in", "instanceof", "new", "null", 
+  "number", "object", "of", "regexp", "return", "string", "switch", 
+  "this", "throw", "true", "try", "typeof", "undefined", "userobj", "var", 
+  "void", "while", "with"
+]
+</pre></nowiki>
+

@@ -1,0 +1,27 @@
+#!/usr/local/bin/jsish -u %s
+
+var i=0, j = 0, k = 0;
+function foo() {
+   i++,j++;
+}
+var id = setInterval(foo,100);
+puts(Event.names());
+while (true) {
+   if (k++<=3)
+     puts("UPDATE");
+   if (i>5) { clearInterval(id); break; }
+   Event.update(50);
+}
+puts("FOO CALLED: "+j);
+Event.update();
+
+/*
+=!EXPECTSTART!=
+[ 1 ]
+UPDATE
+UPDATE
+UPDATE
+UPDATE
+FOO CALLED: 6
+=!EXPECTEND!=
+*/

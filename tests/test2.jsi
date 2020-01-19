@@ -1,0 +1,16 @@
+#!/usr/local/bin/jsish -u
+
+function foo() { return true; }
+function bar() { return true; }
+
+;bar();
+puts('foo() ==> ', foo());
+puts('DONE');
+
+/*
+=!EXPECTSTART!=
+bar() ==> true
+foo() ==>  true
+DONE
+=!EXPECTEND!=
+*/

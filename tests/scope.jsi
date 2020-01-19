@@ -1,0 +1,26 @@
+#!/usr/local/bin/jsish -u %s
+
+function abc(a, b, c) {
+    var x = 123;
+    function fx(a, b) {
+        return (function (f) {
+            return x + a + b + c + f;
+        });
+    };
+    return fx(a, b);
+};
+
+var fn, fsh, x, y;
+fn = abc(3, 5, 6);
+fsh = abc(100, 100, 100);
+;[fn, fsh];
+;x = fn(3);
+;y = fsh(200);
+
+/*
+=!EXPECTSTART!=
+[fn, fsh] ==> [ "function (f) {...}", "function (f) {...}" ]
+x = fn(3) ==> 140
+y = fsh(200) ==> 623
+=!EXPECTEND!=
+*/

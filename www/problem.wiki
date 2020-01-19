@@ -1,0 +1,8 @@
+<title>Problems</title>
+
+What are the Problems facing Linux/freeware.
+
+A Shell game: profusion of application specific languages.
+
+<h2>Code Speed</h2>
+

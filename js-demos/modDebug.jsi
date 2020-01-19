@@ -1,0 +1,71 @@
+#!/usr/local/bin/jsish --U %s
+
+;'\n === Enabling LogDebug in fileSize.jsi only ===';
+;require('fileSize');
+;fileSize('fileSize.jsi');
+;require('fileSize', 0, {Debug:true, Test:true});
+;fileSize('fileSize.jsi');
+;require('module');
+;module([1]);
+;require('module', 0, {Debug:true, Test:true});
+;module([2]);
+
+;'\n === Trace function calls in fileSize.jsi ===';
+;require('fileSize', 0, {Debug:false, traceCall:['funcs']});
+;fileSize('fileSize.jsi');
+;module([2]);
+;require('fileSize', 0, {traceCall:[]});
+
+;'\n === Trace calls in Sqlite  ===';
+;require('Sqlite', 0, {traceCall:['cmds','args','return'], profile:true});
+var db = new Sqlite();
+db.eval('create table foo(a,b);');
+db.query('select * from foo;');
+
+;require('fileSize', 0, {profile:true, coverage:true});
+;fileSize('fileSize.jsi');
+
+;'\n === Done ===';
+
+/*
+=!EXPECTSTART!=
+'
+ === Enabling LogDebug in fileSize.jsi only ==='
+require('fileSize') ==> 1
+fileSize('fileSize.jsi') ==> 907
+require('fileSize', 0, {Debug:true, Test:true}) ==> 1
+fileSize('fileSize.jsi') ==> "TEST:  Starting", fileSize.jsi:27, fileSize()
+"DEBUG: Len [ "fileSize.jsi" ]", fileSize.jsi:15, getLength()
+907
+require('module') ==> 1
+module([1]) ==> undefined
+require('module', 0, {Debug:true, Test:true}) ==> 1
+module([2]) ==> "TEST:  Starting [ 2 ]", module.jsi:14, main()
+"DEBUG: Done", module.jsi:23, main()
+undefined
+'
+ === Trace function calls in fileSize.jsi ==='
+require('fileSize', 0, {Debug:false, traceCall:['funcs']}) ==> 1
+fileSize('fileSize.jsi') ==>   #2: > fileSize() in modDebug.jsi:15
+"TEST:  Starting", fileSize.jsi:27, fileSize()
+907
+module([2]) ==> "TEST:  Starting [ 2 ]", module.jsi:14, main()
+"DEBUG: Done", module.jsi:23, main()
+undefined
+require('fileSize', 0, {traceCall:[]}) ==> 1
+'
+ === Trace calls in Sqlite  ==='
+require('Sqlite', 0, {traceCall:['cmds','args','return'], profile:true}) ==> 2
+  #2: > Sqlite.Sqlite([]) in modDebug.jsi:21
+  #2: < Sqlite.Sqlite() in modDebug.jsi:21 <-- undefined
+  #2: > Sqlite.eval([ "create table foo(a,b);" ]) in modDebug.jsi:22
+  #2: < Sqlite.eval() in modDebug.jsi:22 <-- 0
+  #2: > Sqlite.query([ "select * from foo;" ]) in modDebug.jsi:23
+  #2: < Sqlite.query() in modDebug.jsi:23 <-- []
+require('fileSize', 0, {profile:true, coverage:true}) ==> 1
+fileSize('fileSize.jsi') ==> "TEST:  Starting", fileSize.jsi:27, fileSize()
+907
+'
+ === Done ==='
+=!EXPECTEND!=
+*/

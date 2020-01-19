@@ -1,0 +1,25 @@
+#!/usr/local/bin/jsish -u %s
+
+var john, jane;
+;john = {firstName: 'John', lastName: 'Smith'};
+;jane = {firstName: 'Jane'};
+;Object.setPrototypeOf(jane, john);
+;jane.lastName;
+;jane.lastName = 'Doe';
+;jane.lastName;
+;john.lastName;
+delete jane.lastName;
+;jane.lastName;
+
+/*
+=!EXPECTSTART!=
+john = {firstName: 'John', lastName: 'Smith'} ==> { firstName:"John", lastName:"Smith" }
+jane = {firstName: 'Jane'} ==> { firstName:"Jane" }
+Object.setPrototypeOf(jane, john) ==> undefined
+jane.lastName ==> Smith
+jane.lastName = 'Doe' ==> Doe
+jane.lastName ==> Doe
+john.lastName ==> Smith
+jane.lastName ==> Smith
+=!EXPECTEND!=
+*/

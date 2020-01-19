@@ -1,0 +1,36 @@
+#!/usr/local/bin/jsish -u %s
+
+var w, x, z, k, a;
+;w = {a:1,b:2,c:3};
+;x = [1,2,3];
+;z = 2;
+;k = (z in x);
+;2 in x;
+;4 in x;
+;'a' in w;
+;'d' in w;
+
+
+
+;a = {a: 1,b:2,c:3,d:4};
+for(var s in a) { 
+;   s + ':' + a[s];
+    delete a.b; 
+}
+
+/*
+=!EXPECTSTART!=
+w = {a:1,b:2,c:3} ==> { a:1, b:2, c:3 }
+x = [1,2,3] ==> [ 1, 2, 3 ]
+z = 2 ==> 2
+k = (z in x) ==> true
+2 in x ==> true
+4 in x ==> false
+'a' in w ==> true
+'d' in w ==> false
+a = {a: 1,b:2,c:3,d:4} ==> { a:1, b:2, c:3, d:4 }
+s + ':' + a[s] ==> a:1
+s + ':' + a[s] ==> c:3
+s + ':' + a[s] ==> d:4
+=!EXPECTEND!=
+*/

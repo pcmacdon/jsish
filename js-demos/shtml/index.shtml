@@ -1,0 +1,42 @@
+<!-- File: index.shtml -->
+<!--#include file="header.html"-->
+<!--#include file="body.shtml"-->
+
+<!--#if expr="${@!NOPLUGIN}"-->
+<B>Inc Plugins</B>
+<!--#include file="plugins.shtml"-->
+
+<!--#elif expr="${@ALTPLUGIN}"-->
+<B>Inc Atl-Plugins</B>
+<!--#include file="altplugins.shtml"-->
+
+<!--#else-->
+<B>No Plugins</B>
+<!--#endif-->
+END
+
+<!-- File: index.shtml -->
+<!--#include file="header.html"-->
+<!--#include file="body.shtml"-->
+
+<!--#if expr="${@!NOPLUGIN}"-->
+<B>Inc Plugins</B>
+<!--#include file="plugins.shtml"-->
+
+<!--#elif expr="${@ALTPLUGIN}"-->
+<B>Inc Atl-Plugins</B>
+<!--#include file="altplugins.shtml"-->
+
+<!--#else-->
+<B>No Plugins</B>
+<!--#endif-->
+
+<!--#if expr="${?OPT1}"-->
+QUERY OPT1
+<!--#elif expr="${:OPT1}"-->
+UDATA OPT1
+<!--#elif expr="${~OPT1}"-->
+REVERSE OPT1
+<!--#endif-->
+
+END2

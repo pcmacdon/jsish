@@ -1,0 +1,21 @@
+#!/usr/local/bin/jsish -u
+var x, y, z;
+
+x = JSON.parse('"\\u0060\\u0000\\u0062"');
+puts(x.length, x[0], x[1], x[2], x[3]);
+y = 'ab\0c';
+puts(y.length, y[0], y[1], y[2], y[3]);
+z = 'ab\u0000c';
+puts(z.length, z[0], z[1], z[2], z[3]);
+puts(y);
+puts(z);
+
+/*
+=!EXPECTSTART!=
+3 `  b undefined
+4 a b  c
+4 a b  c
+ab\0c
+ab\0c
+=!EXPECTEND!=
+*/

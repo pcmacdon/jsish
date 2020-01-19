@@ -1,0 +1,25 @@
+#!/usr/local/bin/jsish -u
+
+// Simple test script for the debugger.
+function foo2() {
+  debugger;
+}
+
+function foo1() {
+  var x = 99;
+  foo2();
+}
+
+function foo() {
+  var x = 88;
+  foo1();
+}
+
+foo();
+puts("SIMPLE");
+
+/*
+=!EXPECTSTART!=
+SIMPLE
+=!EXPECTEND!=
+*/

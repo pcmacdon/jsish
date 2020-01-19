@@ -1,0 +1,227 @@
+<title>CData</title>
+
+<div id=wikitoc>
+<ul>
+<li>[#overview|Overview]</li>
+<li>[#cenum|CEnum]</li>
+<li>[#cstruct|CStruct]</li>
+<li>[#ctype|CType]</li>
+<li>[#cdata|CData]</li>
+<li>[#db|Database]</li>
+</ul>
+</div>
+
+[./reference.wiki#CData|Cdata] in Jsi manipulates struct data using one of 2 interfaces:
+
+  *  The [./c-cdata.wiki|C-API] interface for generating C code, and
+  *  The javascript interface which is described here-in.
+ 
+Unlike the C-API, JS-defined structs are:
+
+  #  invisible in sub-interps,
+  #  incompatible with real structs due to packing differences, and
+  #  not as convenient for C-extensions.
+  
+Nevertheless, once defined both use the same commands for accessing data.
+
+<h3 id=overview>Overview</h3>
+
+A basic JS use of CData is:
+
+    <nowiki><pre class=verbatim>
+<b>CEnum.define</b>(<i>'Fruit', 'apple,banana,orange,grape=9'</i>);
+<b>CStruct.define</b>(<i>'Bee', 'int s:4; int r:3; int t=8; Fruit k;'</i>);
+<b>var</b> bee  = <b>new CData</b>(<i>'Bee'</i>);
+bee.get(null, <i>'t'</i>);
+bee.set(null, <i>'t'</i>, 4);
+</pre></nowiki>
+
+<i>Note: the above is extracted from test [../c-demos/cdata/cdatatest.jsi?mimetype=application/javascript|cdatatest.jsi].</i>
+
+<h3 id=cenum>CEnum</h3>
+
+There are 3 forms for enum definitions.
+
+The simplest is the single-line form as above, which is split on comma:
+
+    <nowiki><pre class=verbatim>
+<b>CEnum.define</b>(<i>'Fruit', 'apple,banana,orange,grape=9'</i>);
+</pre></nowiki>
+
+There is a multi-line form which is split on newlines, with comments extracted as <b>help</b>:
+
+    <nowiki><pre class=verbatim>
+<b>CEnum.define</b>(<i>'Vegetable', '
+    corn=0, // My favorite
+    peas=2, // Your favorite
+    potato=-1
+'</i>);
+</pre></nowiki>
+
+And there is an object form:
+
+    <nowiki><pre class=verbatim>
+<b>CEnum.define</b>({name:<i>'Herd'</i>}, [
+    {name:<i>'sheep'</i>},
+    {name:<i>'goat'</i>, value:3, help:<i>'set a value'</i>},
+    {name:<i>'cow'</i>}]);
+</pre></nowiki>
+
+Here are some test output from cdatatest.jsi:
+
+    <nowiki><pre class=verbatim_out>
+CEnum.names() ==> [ "Fruit", "Herd", "Vegetable" ]
+CEnum.names('Fruit') ==> [ "apple", "banana", "orange", "grape" ]
+CEnum.conf('Fruit') ==> { flags:0, help:null, idx:4, name:"Fruit" }
+CEnum.conf('Fruit', 'idx') ==> 4
+CEnum.find('Fruit', 1) ==> banana
+CEnum.fieldconf('Fruit', 'banana') ==> { flags:0, help:null, idx:1, name:"banana", value:1 }
+CEnum.fieldconf('Fruit', 'banana', 'value') ==> 1
+CEnum.value('Fruit', 'apple') ==> 0
+CEnum.get('Fruit') ==> { fields:[ { name:"apple", value:0 }, { name:"banana", value:1 }, { name:"orange", value:2 }, { name:"grape", value:9 } ], name:"Fruit" }
+</pre></nowiki>
+
+<h3 id=cstruct>CStruct</h3>
+
+
+As with CEnum, there are 3 forms of struct definitions.
+
+The simplest is the single-line form as above, which is split on semicolon:
+
+    <nowiki><pre class=verbatim>
+<b>CStruct.define</b>(<i>'Bee', 'int s:4; int r:3; int t=8; Fruit k;'</i>);
+</pre></nowiki>
+
+The multi-line form is split on newlines, with comments extracted as <b>help</b>:
+
+    <nowiki><pre class=verbatim>
+<b>CStruct.define</b>(<i>'Pest', '
+    int x=3;    // int field.
+    Bee b;      // A sub-struct
+    int y=5;
+'</i>);
+</pre></nowiki>
+
+And there is an object form:
+
+    <nowiki><pre class=verbatim>
+<b>CStruct.define</b>({name:<i>'Bkey'</i>, help:<i>'Struct to use for a key'</i>}, [
+        {name:<i>'a'</i>, type:<i>'int'</i>, help:<i>'first key field'</i>},
+        {name:<i>'b'</i>, type:<i>'int'</i>, help:<i>'second key field'</i>}]
+);
+</pre></nowiki>
+
+The type of a struct field is one of:
+
+  *  a base type (see below)
+  *  a struct
+  *  an array of base type or struct
+  *  an enum
+  *  a bitfield of an int type or enum
+  *  a bitset of an enum (name ends in @)
+
+Struct data is initialized to zero by default, but individual fields can be given a simple value using <b>=</b>.
+  
+Here are some test output from cdatatest.jsi:
+
+    <nowiki><pre class=verbatim_out>
+CStruct.conf('Bee') ==> { crc:0, flags:0, help:null, idx:4, name:"Bee", size:6, ssig:0, value:10 }
+CStruct.conf('Bee','name') ==> Bee
+CStruct.names() ==> [ "Bkey", "Pest", "Bee", "Flower" ]
+CStruct.names('Bee') ==> []
+CStruct.fieldconf('Bee', 't') ==> { arrSize:0, bits:0, boffset:7, flags:1, help:null, idx:2, info:null, init:8, name:"t", offset:1, size:4, type:"int" }
+CStruct.fieldconf('Bee', 's', 'bits') ==> 4
+CStruct.get('Bee') ==> { fields:[ { bitoffs:0, bitsize:4, id:"int", isbit:0, label:"", name:"s", offset:0, size:4 }, { bitoffs:4, bitsize:3, id:"int", isbit:0, label:"", name:"r", offset:0, size:4 }, { bitoffs:7, bitsize:0, id:"int", isbit:0, label:"", name:"t", offset:1, size:4 }, { bitoffs:39, bitsize:0, id:"Fruit", isbit:0, label:"", name:"k", offset:5, size:1 } ], name:"Bee", size:6 }
+'
+</pre></nowiki>
+
+
+<h3 id=ctype>CType</h3>
+
+CType is simply available to query available types (usable as struct fields).
+
+Here are some test output from cdatatest.jsi:
+
+    <nowiki><pre class=verbatim_out>
+CType.names().sort() ==> [ "ARRAY", "BOOL", "CUSTOM", "DOUBLE", "DSTRING", "FLOAT", "FUNC", "INT", "INT16", "INT32", "INT64", "INT8", "INTPTR_T", "LDOUBLE", "LONG", "NUMBER", "OBJ", "REGEXP", "SHORT", "SIZE_T", "SSIZE_T", "STRBUF", "STRING", "STRKEY", "TIME_D", "TIME_T", "TIME_W", "UINT", "UINT16", "UINT32", "UINT64", "UINT8", "UINTPTR_T", "ULONG", "USEROBJ", "USHORT", "VALUE", "VAR" ]
+CType.names(true).sort() ==> [ "Bee", "Bkey", "Flower", "Fruit", "Herd", "Jsi_DString", "Jsi_Number", "Jsi_Strbuf", "Jsi_Value*", "Pest", "Vegetable", "bool", "const char*", "double", "float", "int", "int16_t", "int32_t", "int64_t", "int8_t", "intptr_t", "ldouble", "long", "short", "size_t", "ssize_t", "time_d", "time_t", "time_w", "uint", "uint16_t", "uint32_t", "uint64_t", "uint8_t", "uintptr_t", "ulong", "ushort" ]
+CType.conf('INT') ==> { cName:"int", flags:0, fmt:"d", help:"Integer", idName:"INT", size:4, user:0, xfmt:"#x" }
+CType.conf('INT','flags') ==> 0
+</pre></nowiki>
+
+<h3 id=cdata>CData</h3>
+
+A basic JS use of CData to create and manipulate a single struct is:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> alpha  = <b>new CData</b>(<i>'Bee'</i>);
+alpha.get(null, <i>'t'</i>);
+alpha.set(null, <i>'t'</i>, 4);
+</pre></nowiki>
+
+Data is accessed with <b>set/get/incr</b>: 
+
+    <nowiki><pre class=verbatim_out>
+alpha.get(null) ==> { k:"apple", r:0, s:0, t:8 }
+alpha.get(null, 't') ==> 8
+alpha.set(null, 't', 4) ==> undefined
+alpha.incr(null, 't', 1) ==> 5
+n=alpha.get(null, 't') ==> 5
+</pre></nowiki>
+
+As above there is also an object form:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> bees   = <b>new CData</b>({structName:<i>'Bee'</i>, arrSize:10, help:<i>'An array of bees'</i>});
+</pre></nowiki>
+
+The string form is the simplest way to create [./c-jsi_lite.wiki#map|maps] and 
+[./c-jsi_lite.wiki#hash|hashes] of structs.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> alpha, beta, tree, tree2, tree3, hash, hash2, hash3, pest, flower, n;
+beta   = <b>new CData</b>(<i>'Bee[10]'</i>);      <i>// Array</i>
+tree   = <b>new CData</b>(<i>'Bee{}'</i>);        <i>// Map with string key</i>
+tree2  = <b>new CData</b>(<i>'Bee{0}'</i>);       <i>// Map with number key</i>
+tree3  = <b>new CData</b>(<i>'Bee{@Bkey}'</i>);   <i>// Map with struct key</i>
+hash   = <b>new CData</b>(<i>'Bee{#}'</i>);       <i>// Hash with string key</i>
+hash2  = <b>new CData</b>(<i>'Bee{#0}'</i>);      <i>// Hash with number key</i>
+hash3  = <b>new CData</b>(<i>'Bee{#@Bkey}'</i>);  <i>// Hash with struct key</i>
+</pre></nowiki>
+
+
+which are indexed with a non-null key:
+
+    <nowiki><pre class=verbatim>
+beta.set(0, 't', 2);
+tree.set('X', 't', 2);
+hash.set('X', 't', 2);
+</pre></nowiki>
+
+
+Struct keys are also supported:
+
+    <nowiki><pre class=verbatim_out>
+bkey={a:1,b:2} ==> { a:1, b:2 }
+tree3.set(bkey, 't', 2) ==> undefined
+tree3.get(bkey, 't') ==> 2
+</pre></nowiki>
+
+<h3 id=db>Database</h3>
+
+database definitions may be extracted from struct definitions and used with Sqlite.
+
+    <nowiki><pre class=verbatim_out>
+db = <b>new Sqlite</b>(<i>'/tmp/bees.db'</i>) ==> "#Sqlite_1"
+schema = <b>CStruct.schema</b>(<i>'Bee'</i>) ==> 
+  s int
+ ,r int
+ ,t INT
+ ,k TEXT
+  -- MD5=2c2573332fca5f166b7272366bd888b0
+db.eval(<i>'CREATE TABLE IF NOT EXISTS Bee (
+'</i>+schema+<i>'
+);'</i>) ==> undefined
+db.query(<i>'INSERT INTO Bee %s'</i>,{cdata:<i>'beta'</i>}) ==> 10
+db.query(<i>'SELECT %s FROM Bee'</i>,{cdata:<i>'beta'</i>}) ==> 10
+</pre></nowiki>

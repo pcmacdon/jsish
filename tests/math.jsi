@@ -1,0 +1,82 @@
+#!/usr/local/bin/jsish -u %s
+
+;Number.toPrecision(9.1234,2);
+;Number.toExponential(9.1234,2);
+;Number.toFixed(9.1234,2);
+var j;
+;j = new Number(9.1234);
+;j.toPrecision(2);
+;j.toExponential(2);
+;j.toFixed(2);
+;Math.tan(9);
+var k = Math.tan(9);
+;Number.toPrecision(k,2);
+;Number.toPrecision(Math.tan(9),2);
+;Number.toExponential(k,2);
+;Number.toFixed(k,2);
+;Math.abs(-1);
+;Math.acos(1);
+;Math.asin(1);
+;Math.atan(1);
+;Math.atan2(0.4,5);
+;Math.cos(1);
+;Math.sin(1);
+;Math.exp(2);
+;Math.ceil(5.33);
+;Math.floor(5.33);
+;Math.log(5.33);
+;Math.max(1,2,3);
+;Math.min(1,2,3);
+;Math.pow(2,3);
+;Math.round(5.33);
+Math.random();
+;Math.sqrt(5.33);
+;1/0;
+;-1/0;
+//;-1/0*'x';
+var x;
+;x = Math.pow(2,6);
+;x.toString(16);
+;x.toString(10);
+;x.toString(8);
+;x.toString(2);
+
+/*
+=!EXPECTSTART!=
+Number.toPrecision(9.1234,2) ==> 9.1
+Number.toExponential(9.1234,2) ==> 9.12e+00
+Number.toFixed(9.1234,2) ==> 9.12
+j = new Number(9.1234) ==> 9.1234
+j.toPrecision(2) ==> 9.1
+j.toExponential(2) ==> 9.12e+00
+j.toFixed(2) ==> 9.12
+Math.tan(9) ==> -0.45231565944181
+Number.toPrecision(k,2) ==> -0.4
+Number.toPrecision(Math.tan(9),2) ==> -0.4
+Number.toExponential(k,2) ==> -4.52e-01
+Number.toFixed(k,2) ==> -0.45
+Math.abs(-1) ==> 1
+Math.acos(1) ==> 0
+Math.asin(1) ==> 1.5707963267949
+Math.atan(1) ==> 0.785398163397448
+Math.atan2(0.4,5) ==> 0.0798299857122373
+Math.cos(1) ==> 0.54030230586814
+Math.sin(1) ==> 0.841470984807897
+Math.exp(2) ==> 7.38905609893065
+Math.ceil(5.33) ==> 6
+Math.floor(5.33) ==> 5
+Math.log(5.33) ==> 1.67335123817775
+Math.max(1,2,3) ==> 3
+Math.min(1,2,3) ==> 1
+Math.pow(2,3) ==> 8
+Math.round(5.33) ==> 5
+Math.sqrt(5.33) ==> 2.30867927612304
+1/0 ==> +Infinity
+-1/0 ==> -Infinity
+x = Math.pow(2,6) ==> 64
+x.toString(16) ==> 40
+x.toString(10) ==> 64
+x.toString(8) ==> 100
+x.toString(2) ==> 64
+=!EXPECTEND!=
+*/

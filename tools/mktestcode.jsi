@@ -1,0 +1,12 @@
+#!/usr/bin/env jsish
+// Create the samples index file for the wiki.
+
+var rc = '<h2 id=tests>Javascript Tests</h2>\nFollowing are links to all of the javascript test-files.<p>\n';
+var lst = File.glob('../tests/*.jsi', {tails:true});
+
+for (var i in lst.sort()) {
+    var n = lst[i];
+    rc += '[../tests/'+n+'?mimetype=application/javascript|'+n+']\n';
+}
+puts(rc);
+

@@ -1,0 +1,57 @@
+#!/usr/local/bin/jsish --U %s
+
+function Super(arg1,arg2,arg3) {
+   return ['SUPER',arg1,arg2,arg3];
+}
+
+;' Define/Invoke Aliases';
+var i = new Interp();
+;i.alias('foo', Super, []);
+;i.alias('bar', Super, [i, 'bar']);
+
+;i.eval('foo(1,2,3)');
+;i.eval('bar(99)');
+
+;' Dump Alias Info';
+;i.alias();
+;i.alias('foo');
+;i.alias('foo', null);
+
+;'Object-member Alias';
+;i.eval('var bb = {x:1};');
+;i.alias('bb.fig', Super, [i, 'bb.fig']);
+;i.eval('bb.fig(1)');
+
+;'Redefine Alias';
+;i.alias('bb.fig', Super, [i, 'bb.fig redefined']);
+;i.eval('bb.fig(3)');
+
+;'Undefine Alias';
+;i.alias();
+;i.alias('bb.fig', null, null);
+;i.alias();
+
+/*
+=!EXPECTSTART!=
+' Define/Invoke Aliases'
+i.alias('foo', Super, []) ==> undefined
+i.alias('bar', Super, [i, 'bar']) ==> undefined
+i.eval('foo(1,2,3)') ==> [ "SUPER", 1, 2, 3 ]
+i.eval('bar(99)') ==> [ "SUPER", "#Interp_1", "bar", 99 ]
+' Dump Alias Info'
+i.alias() ==> [ "foo", "bar" ]
+i.alias('foo') ==> "function Super(arg1,arg2,arg3) {\n   return [\'SUPER\',arg1,arg2,arg3];\n}"
+i.alias('foo', null) ==> []
+'Object-member Alias'
+i.eval('var bb = {x:1};') ==> undefined
+i.alias('bb.fig', Super, [i, 'bb.fig']) ==> undefined
+i.eval('bb.fig(1)') ==> [ "SUPER", "#Interp_1", "bb.fig", 1 ]
+'Redefine Alias'
+i.alias('bb.fig', Super, [i, 'bb.fig redefined']) ==> undefined
+i.eval('bb.fig(3)') ==> [ "SUPER", "#Interp_1", "bb.fig redefined", 3 ]
+'Undefine Alias'
+i.alias() ==> [ "bb.fig", "foo", "bar" ]
+i.alias('bb.fig', null, null) ==> undefined
+i.alias() ==> [ "foo", "bar" ]
+=!EXPECTEND!=
+*/

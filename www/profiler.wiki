@@ -1,0 +1,145 @@
+<title>Profiler</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#profile|Code Profile]</li>
+<li>[#coverage|Code Coverage]</li>
+<li>[#tracing|Code Tracing]</li>
+</ul>
+</div>
+
+<h2 id=profile>Code Profile</h2>
+
+Jsi can output detailed execution profile information for functions using:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -Iprofile true</b>  <i>SCRIPT</i>
+</pre></nowiki>
+
+The following demonstrates this on unix:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -Iprofile true</b>  <i>/tmp/while2.js</i>   2>&1 | grep ^PROFILE: | sort -g -r -t= -k2
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+PROFILE: TOTAL: time=4.169039, func=3.099403, cmd=1.068323, #funcs=10003, #cmds=300001, cover=58.0%, #values=1860447, #objs=610397 
+PROFILE:  self=3.000902  all=4.069200  #calls=10000     self/call=0.000300  all/call=0.000407  cover=100.0%  func=foo file=/tmp/while2.js:29 
+PROFILE:  self=1.068298  all=1.068298  #calls=300000    self/call=0.000004  all/call=0.000004  cmd=Info.funcs 
+PROFILE:  self=0.098484  all=4.167684  #calls=1         self/call=0.098484  all/call=4.167684  cover= 75.0%  func=bar file=/tmp/while2.js:44 
+PROFILE:  self=0.000024  all=0.000024  #calls=1         self/call=0.000024  all/call=0.000024  cmd=puts 
+PROFILE:  self=0.000017  all=4.167700  #calls=1         self/call=0.000017  all/call=4.167700  cover=100.0%  func=aa file=/tmp/while2.js:27 
+PROFILE:  self=0.000002  all=0.000002  #calls=1         self/call=0.000002  all/call=0.000002  cover=  7.0%  func=cc file=/tmp/while2.js:7 
+</pre></nowiki>
+
+All times are in seconds, and output is sorted by <b>self</b> time (descending).
+
+Following is a list of fields in the <b>PROFILE: TOTAL:</b> line:
+
+    <table border='1' class='cmdstbl' ><tr><th>Field</th><th>Description</th></tr>
+<tr ><td >time </td><td>Total amount of CPU used by the program run </td></tr>
+<tr ><td >func </td><td>Total mount of CPU used by functions</td></tr>
+<tr ><td >cmd </td><td>Total mount of CPU used by commands </td></tr>
+<tr ><td >#funcs </td><td>Total number of function calls</td></tr>
+<tr ><td >#cmds </td><td>Total number of command calls (non-functions)</td></tr>
+<tr ><td >cover </td><td>Total code coverage in percent (functions only)</td></tr>
+<tr ><td >#values</td><td>Total number of Jsi_Value allocations</td></tr>
+<tr ><td >#objs</td><td>Total number of Jsi_Obj allocations</td></tr>
+</table>
+
+Following is a list of fields in each <b>PROFILE</b> line:
+
+    <table border='1' class='cmdstbl' ><tr><th>Field</th><th>Description</th></tr>
+<tr ><td >self </td><td>Amount of CPU used by the function </td></tr>
+<tr ><td >all </td><td>Amount of CPU used by function and it's descendants</td></tr>
+<tr ><td >#calls </td><td>Number of times function was called</td></tr>
+<tr ><td >self/call</td><td>Per-call CPU used by the function</td></tr>
+<tr ><td >all/call </td><td>Per-call CPU used by the function and it's descendants</td></tr>
+<tr ><td >cover </td><td>Code coverage for function, in percent</td></tr>
+<tr ><td >func</td><td>Name of the function</td></tr>
+<tr ><td >cmd</td><td>Name of the command</td></tr>
+<tr ><td >file</td><td>File and line number of function</td></tr>
+</table>
+
+<hr>
+
+<h2 id=coverage>Code Coverage</h2>
+
+In addition to the simple coverage statistics available with <b>profile</b>,
+detailed code coverage can be obtained with <b>-Icoverage</b>, eg:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -Icoverage true</b>  <i>/tmp/while2.js</i>   2>&1 | grep ^COVERAGE: | sort -g -r -t= -k4
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+COVERAGE: func=bar  file=/tmp/while2.js:48  cover=75.0%  hits=6,  all=8,  misses=56-57
+COVERAGE: func=cc  file=/tmp/while2.js:7  cover=30.0%  hits=4,  all=13,  misses=10-13,18-22
+COVERAGE: func=bb  file=/tmp/while2.js:27  cover=0%
+</pre></nowiki>
+
+Output is produced only for functions with less than 100% coverage.
+Uncalled functions are indicated by <b>cover=0%</b> with remaining fields omitted.
+
+Following is a list of the <b>COVERAGE</b> fields:
+
+    <table border='1' class='cmdstbl' ><tr><th>Field</th><th>Description</th></tr>
+<tr ><td >func</td><td>Name of the function</td></tr>
+<tr ><td >file</td><td>File and line number for start of function</td></tr>
+<tr ><td >cover </td><td>Code coverage in percent for the function</td></tr>
+<tr ><td >hits </td><td>Number of distinct lines executed in the function </td></tr>
+<tr ><td >all </td><td>Total number of executable lines in the function </td></tr>
+<tr ><td >misses </td><td>List of line-ranges not executed</td></tr>
+</table>
+
+
+<h2 id=tracing>Code Tracing</h2>
+
+Jsi provides a number of program tracing options.  Perhaps the easiest to use is from the command-line with <b>-t</b>:
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b> -t tests/module.js
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+/home/user/jsi/jsi/tests/module.js:12 #1: > mod([]) 
+/home/user/jsi/jsi/tests/module.js:12 #1: < mod()  <-- { process:function (a) {...}, x:1, y:2 }
+/home/user/jsi/jsi/tests/module.js:22 #1: > process([ 9 ]) 
+/home/user/jsi/jsi/tests/module.js:17   #2: > sub([ 10 ]) 
+/home/user/jsi/jsi/tests/module.js:17   #2: < sub()  <-- 20
+/home/user/jsi/jsi/tests/module.js:22 #1: < process()  <-- 20
+20
+1
+/home/user/jsi/jsi/tests/module.js:36 #1: > fmod([]) 
+/home/user/jsi/jsi/tests/module.js:36 #1: < fmod()  <-- { process:function (a) {...}, x:1, y:2 }
+/home/user/jsi/jsi/tests/module.js:37 #1: > process([ 9 ]) 
+/home/user/jsi/jsi/tests/module.js:31   #2: > sub([ 10 ]) 
+/home/user/jsi/jsi/tests/module.js:31   #2: < sub()  <-- 20
+/home/user/jsi/jsi/tests/module.js:37 #1: < process()  <-- 20
+20
+1
+</pre></nowiki>
+
+The output may seem overly verbose, but is advantageous when executed 
+from within geany (or vim) in that we can click to navigate through the file.
+
+If simpler traces are desired, try:
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b> -ItraceCall funcs,args tests/module.js
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+#1: > mod([]) in module.js:12
+#1: > process([ 9 ]) in module.js:22
+  #2: > sub([ 10 ]) in module.js:17
+20
+1
+#1: > fmod([]) in module.js:36
+#1: > process([ 9 ]) in module.js:37
+  #2: > sub([ 10 ]) in module.js:31
+20
+1
+</pre></nowiki>
+

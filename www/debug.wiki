@@ -1,0 +1,289 @@
+<title>Debugging</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#strict|Strict Mode]</li>
+<li>[#debugui|Debugger GUI]</li>
+<li>[#debugger|Debugger]</li>
+<ul>
+<li>[#help|Commands]</li>
+<li>[#example|Debugging]</li>
+<ul>
+<li>[#list|Listing]</li>
+<li>[#print|Print]</li>
+<li>[#eval|Eval]</li>
+<li>[#break|Breakpoints]</li>
+<li>[#where|Where]</li>
+</ul>
+<li>[#impl|Implementation]</li>
+</ul>
+</ul>
+</div>
+
+Jsi comes with two script debuggers, command-line and GUI.
+
+But before resorting to the debugger it's usually a good idea to enable [./functions.wiki#checkconfig|strict mode],
+and make use of [./js-logging.wiki|logging].
+
+<h2 id=strict>Strict Mode</h2>
+
+For files with the <b>.jsi</b> extension, strict-checking is enabled by default.
+It can also be enabled adding <b>"use strict"</b> to the top of the file:
+
+    <nowiki><pre class=verbatim>
+<i>"use strict"</i>;
+function foo (a<b>:number</b>, b<b>:string</b>=<i>'ok'</i>)<b>:number</b> {}
+</pre></nowiki>
+
+Among other things, this will generate an [./functions.wiki#checkconfig|error] when a function:
+
+  *  accidentally creates a global variable by forgetting to use <b>var</b>
+  *  gets called with the wrong number of parameters
+
+This directive should go on the first line (or second if there is a <b>#!</b>).
+You should avoid adding it inside individual functions.
+
+
+<hr>
+
+<h2 id=debugui>Debugger GUI</h2>
+
+Jsi's comes with a web-browser based GUI (via [./js-websocket.wiki|WebSockets]) eg:
+
+    <pre class=verbatim>
+<b>jsish -D</b> [../tests/simple.jsi?mimetype=application/javascript|tests/simple.jsi]
+</pre>
+
+This works much the same as the command-line debugger (described next),
+but with a full-screen GUI with source navigation.
+
+<hr>
+
+<h2 id=debugger>Debugger</h2>
+
+Jsi comes with a built-in gdb-like command-line debugger, that is invoked with <b>-d</b>:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -d</b> simple.jsi
+</pre></nowiki>
+
+The debugger will stop automatically when a <b>debugger;</b> statement is encountered, or
+anytime an error or warning occurs (ie. in "strict mode").
+
+<h3 id=help>Commands</h3>
+
+The usual debugger commands are supported:
+
+    <nowiki>
+<table border='1' class='cmdstbl' ><tr><th>Command</th><th>Argument</th><th>Description</th></tr>
+<tr ><td >break </td><td>file:line|func</td><td>Break execution at a named function, line or file</td></tr>
+<tr ><td >continue</td><td></td><td>Continue execution</td></tr>
+<tr ><td >delete</td><td>id</td><td>Delete one or all breakpoints</td></tr>
+<tr ><td >disable </td><td>id</td><td>Disable one or all breakpoints</td></tr>
+<tr ><td >down</td><td>count</td><td>Move down one or more stack levels</td></tr>
+<tr ><td >enable</td><td>id</td><td>Enable one or all breakpoints</td></tr>
+<tr ><td >eval</td><td>expression</td><td>Evaluate expression in program context</td></tr>
+<tr ><td >finish</td><td></td><td>Run till return of current function</td></tr>
+<tr ><td >help</td><td>string</td><td>Display command usage</td></tr>
+<tr ><td >info</td><td>args|locals|bp|var</td><td>Show status info</td></tr>
+<tr ><td >list</td><td>proc|line count</td><td>List file lines</td></tr>
+<tr ><td >next</td><td></td><td>Single-step over function calls</td></tr>
+<tr ><td >print </td><td>name</td><td>Print value of variable</td></tr>
+<tr ><td >quit</td><td></td><td>Quit debugging current program and exit</td></tr>
+<tr ><td >step</td><td></td><td>Single-step into function calls</td></tr>
+<tr ><td >tbreak </td><td></td><td>Set a temporary breakpoint that is disabled when hit</td></tr>
+<tr ><td >up</td><td>count</td><td>Move up one or more stack levels</td></tr>
+<tr ><td >where </td><td></td><td>Display current location</td></tr>
+<tr ><td >xeval </td><td>expression</td><td>Does eval in debugger context</td></tr>
+</table>
+</nowiki>
+
+<h3 id=example>Debugging</h3>
+
+Here is an [../tests/simple.jsi?mimetype=application/javascript|example]:
+
+    <nowiki><pre class=verbatim_out>
+<b>jsish -d /tmp/simple.js</b>
+#1:/tmp/simple.js:16  foo(); 
+#1==> <b>s</b>   
+CMD: step
+#2:/tmp/simple.js:12    var x = 88; <in function foo()>
+#2==> 
+#2:/tmp/simple.js:13    foo1(); <in function foo()>
+#2==> 
+#3:/tmp/simple.js:7    var x = 99; <in function foo1()>
+#3==> <b>c</b>
+CMD: continue
+#4:/tmp/simple.js:3    debugger; <in function foo2()>
+#4==> <b>up</b>
+CMD: up
+#3:/tmp/simple.js:8    foo2(); <in function foo1()>
+#3==> <b>p x</b>
+CMD: print
+RESULT= "99"
+#3==> <b>up</b>
+CMD: up
+#2:/tmp/simple.js:13    foo1(); <in function foo()>
+#2==> <b>p x</b>
+CMD: print
+RESULT= "88"
+#2==> 
+</pre></nowiki>
+
+Note that just like gdb, an empty commands repeats the previous command.
+
+
+<h4 id=list>Listing</h4>
+
+Source file lines can be displayed with the <b>list</b> command:
+
+    <nowiki><pre class=verbatim_out>
+<b>jsish -d /tmp/simple.js</b>
+#1:/tmp/simple.js:16  foo(); 
+#1==> <b>c</b>
+CMD: continue
+#4:/tmp/simple.js:3    debugger; <in function foo2()>
+#2==> <b>l 1 20</b>
+CMD: list
+FILE: /tmp/simple.js:1
+1    : // Simple test script for the debugger.
+2    : function foo2() {
+3    :   debugger;
+4    : }
+5    : 
+6    : function foo1() {
+7    :   var x = 99;
+8    :   foo2();
+9    : }
+10   : 
+11   : function foo() {
+12   :   var x = 88;
+</pre></nowiki>
+
+Optional arguments are: <b>startLine|func numLines file</b>
+
+With no arguments the default is to list 10 lines starting from the current line
+in the current file.
+
+<h4 id=print>Print</h4>
+
+The <b>print</b> command can be used to display the value of variables:
+
+    <nowiki><pre class=verbatim_out>
+<b>jsish -d /tmp/simple.js</b>
+#1:/tmp/simple.js:16  foo(); 
+#1==> <b>s</b>
+CMD: step
+#2:/tmp/simple.js:12    var x = 88; <in function foo()>
+#2==> <b>s</b>
+CMD: step
+#2:/tmp/simple.js:13    foo1(); <in function foo()>
+#2==> <b>p</b> x
+CMD: print
+RESULT= <i>"88"</i>
+</pre></nowiki>
+
+<h4 id=eval>Eval</h4>
+
+The <b>eval</b> command can be used to evaluate expresssions or modify values:
+
+    <nowiki><pre class=verbatim_out>
+<b>jsish -d /tmp/simple.js</b>
+#1:/tmp/simple.js:16  foo(); 
+#1==> <b>c</b>
+CMD: continue
+#4:/tmp/simple.js:3    debugger; <in function foo2()>
+#4==> <b>up</b>
+CMD: up
+#3:/tmp/simple.js:8    foo2(); <in function foo1()>
+#3==> <b>p x</b>
+CMD: print
+RESULT= "99"
+#3==> <b>ev x=9</b>
+CMD: eval
+RESULT= 9
+#3==> <b>p x</b>
+CMD: print
+RESULT= "9"
+</pre></nowiki>
+
+
+<h4 id=break>Breakpoints</h4>
+
+Breakpoints can be set, cleared and queried as in the following example:
+
+    <nowiki><pre class=verbatim_out>
+<b>jsish -d /tmp/simple.js</b>
+#1:/tmp/simple.js:16  foo(); 
+#1==> <b>s</b>
+CMD: step
+#2:/tmp/simple.js:12    var x = 88; <in function foo()>
+#2==> <b>b</b>
+CMD: break
+breakpoint #1 set: /tmp/simple.js:12
+#2==> <b>b foo</b>
+CMD: break
+breakpoint #2 set: foo
+#2==> <b>c</b>
+CMD: continue
+Stopped at breakpoint #2
+#2:/tmp/simple.js:13    foo1(); <in function foo()>
+#2==> <b>info</b>
+CMD: info
+#1    : enabled=true, hits=0, file=/tmp/simple.js:12
+#2    : enabled=true, hits=1, func=foo
+#2==> <b>dis 1</b>
+CMD: disable
+#2==> <b>info</b>
+CMD: info
+#1    : enabled=false, hits=0, file=/tmp/simple.js:12
+#2    : enabled=true,  hits=1, func=foo
+</pre></nowiki>
+
+Note that the debugger will stop whenever a <b>debugger</b> statement is encountered.
+
+
+<h4 id=where>Where</h4>
+
+The <b>where</b> command outputs a stack backtrace:
+
+    <nowiki><pre class=verbatim_out>
+<b>jsish -d /tmp/simple.js</b>
+#1:/tmp/simple.js:16  foo(); 
+#1==> <b>c</b>
+CMD: continue
+#4:/tmp/simple.js:3    debugger; <in function foo2()>
+#4==> <b>wh</b>
+CMD: where
+{ fileName:"/tmp/simple.js", funcName:"foo2", level:4, line:3 }
+{ fileName:"/tmp/simple.js", funcName:"foo1", level:3, line:8 }
+{ fileName:"/tmp/simple.js", funcName:"foo", level:2, line:13 }
+{ fileName:"/tmp/simple.js", funcName:"", level:1, line:16 }
+#4==> <b>up 2</b>
+CMD: up
+#2:/tmp/simple.js:13    foo1(); <in function foo()>
+#2==> <b>wh</b>
+CMD: where
+{ fileName:"/tmp/simple.js", funcName:"foo", level:2, line:13 }
+{ fileName:"/tmp/simple.js", funcName:"", level:1, line:16 }
+#2==>
+</pre></nowiki>
+
+<h3 id=impl>Implementation</h3>
+
+The debugger runs the target script in a [./js-interp.wiki|sub-interpreter].
+
+The source: [../lib/Debug.jsi]
+
+Source for the GUI: [../lib/DebugUI/DebugUI.jsi]
+
+<b>Caveat:</b> Jsi
+bends the memory management rules of Sub-interps a bit to make debugging mode work seamlessly,
+a side-effect of which is that a small amount of memory may leak 
+during the debug session.
+

@@ -1,0 +1,24 @@
+#!/usr/local/bin/jsish -u %s
+
+if (!Signal) throw('signal unsupported');
+;Signal.names().sort();
+function mysig() {
+  puts("MYSIG");
+  exit(0);
+}
+
+var i = Util.getpid();
+//Signal.handle('USR1');
+Signal.callback(mysig,'USR1');
+
+Signal.kill(Util.getpid(),'USR1');
+while (true) {
+   Event.update(1000);
+}
+
+/*
+=!EXPECTSTART!=
+Signal.names().sort() ==> [ "SIGABRT", "SIGALRM", "SIGBUS", "SIGCLD", "SIGCONT", "SIGFPE", "SIGHUP", "SIGILL", "SIGINT", "SIGIO", "SIGKILL", "SIGPIPE", "SIGPROF", "SIGPWR", "SIGQUIT", "SIGSEGV", "SIGSTOP", "SIGSYS", "SIGTERM", "SIGTRAP", "SIGTSTP", "SIGTTIN", "SIGTTOU", "SIGURG", "SIGUSR1", "SIGUSR2", "SIGVTALRM", "SIGWINCH", "SIGXCPU", "SIGXFSZ" ]
+MYSIG
+=!EXPECTEND!=
+*/

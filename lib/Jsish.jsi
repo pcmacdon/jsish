@@ -1,0 +1,340 @@
+#! /usr/bin/env jsish
+// Parse command line options and other utilities.
+source('autoload.jsi', {once:true}); // Chains autoload to provide Jsish.
+
+/*
+=!EXPECTSTART!=
+RC=1 { a:2, b:1, c:2 }
+RC=1 { a:3, b:1, c:2 }
+=!EXPECTEND!=
+*/
+
+
+/* Used for command line invocation with the --invoke/-i option, eg: 
+     jsish --invoke command -opt1 val1 -opt2 val2 ... arg1 arg2 ...
+   which invokes:
+     command([arg1,arg2,...],{opt1:val1,opt2:val2,...});*/
+function Jsi_Run(cmd:string=void, conf:array=undefined) {
+    puts("NOTE: Jsi_Run has been deprecated by runModule");
+    if (!cmd) {
+        cmd = Info.level(1).fileName;
+        cmd = File.rootname(File.tail(cmd));
+    }
+    if (!conf)
+        conf = console.args;
+    var i, c = "", n = 1, astr = '', ostr, s0;
+        for (i=0; conf && i<conf.length; i+=2) {
+        if (conf[i] === '--') {
+            i++;
+            break;
+        }
+        if (conf[i].substr(0,1) !== '-')
+            break;
+        ostr = conf[i].substr(1);
+        if (c != '')
+            c += ',';
+        c += "\""+ostr+"\":";
+        if (conf[i+1] === undefined) {
+            if (i!==0 || (conf[i] !== '-h' && conf[i] !== '--help'))
+                throw("Expected even number of conf: "+conf.toString());
+            else {
+                c += 'true';
+                break;
+            }
+        }
+        ostr = conf[i+1];
+        switch (ostr) {
+            case 'true':
+            case 'false':
+            case 'null':
+                c += ostr; break;
+            default:
+                if (!isNaN(ostr))
+                    c += ostr;
+                else
+                    c += "\""+ostr+"\"";
+        }
+    }
+   // if (Jsi_Auto.__In_jsi_invokeMain__)
+    //    throw("recursive call to Jsi_Run");
+    //Jsi_Auto.__In_jsi_invokeMain__ = 1;
+    for (; conf && i<conf.length; i++) {
+        if (astr != '')
+            astr += ',';
+        astr += "\""+conf[i]+"\"";
+    }
+    if (Jsi_Auto && Jsi_Auto['jsi_'+cmd] && !Jsi_Auto[cmd] && !this[cmd])
+        cmd = 'jsi_'+cmd;
+    else if (Jsi_Auto && Jsi_Auto['Jsi_'+cmd] && !Jsi_Auto[cmd] && !this[cmd])
+        cmd = 'Jsi_'+cmd;
+    if (Jsi_Auto && Jsi_Auto[cmd] && !this[cmd]) {
+        //puts("EVALUATING AUTO-LOAD CODE FOR: "+cmd);
+        eval(Jsi_Auto[cmd]);
+    }
+    var func = this[cmd];
+    if (typeof func !== "function")
+        throw('Unable to autoload the command: "'+cmd+'"');
+    var nargs = JSON.parse('['+astr+']');
+    var nopts = JSON.parse('{'+c+'}');
+    return(func(nargs, nopts));
+}
+var Jsi_Main = Jsi_Run;
+
+// Output help for options.
+function Jsi_ThrowHelp(self:object, options:object) {
+    var help=[], rc = '';
+    var pkg = self.package;
+    if (!pkg) {
+        var fn = Info.argv0();
+        if (fn)
+            pkg = File.rootname(File.tail(fn));
+    }
+    if (pkg) {
+        // Pull comments from options object, if possible
+        try {
+            pkg = require(pkg, 0);
+            if (pkg && pkg.loadFile) {
+                var fdat = File.read(pkg.loadFile);
+                var re = fdat.match(/var options\s*=\s*\{([^\}]+)/);
+                if (re) {
+                    var st, sc, sd, sn, si = re[1].split('\n');
+                    for (var i in si) {
+                        if (!si[i]) continue;
+                        if (i==0) {
+                            st = si[i];
+                            sc = st.lastIndexOf('//');
+                            if (sc<0) continue;
+                            rc += '\n'+st.substr(sc+2).trim()+'\n';
+                            continue;
+                        }
+                        st = si[i].trim();
+                        sc = st.lastIndexOf('//');
+                        if (sc<0) continue;
+                        sd = st.indexOf(':');
+                        if (sd<0) continue;
+                        sn = st.substr(0, sd).trim();
+                        help[sn] = st.substr(sc).trim();
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+    rc += '\nOptions/defaults:\n';
+    for (i in options) {
+        var ost = options[i];
+        if (typeof ost === 'string')
+            ost = '"'+ost+'"';
+        else if (ost === null)
+            ost = 'null';
+        else
+            ost = ost.toString();
+        var hs = '';
+        if (help[i])
+            hs = (ost.length<7?'\t':'')+'\t'+help[i];
+        var is = i;
+        if (i.length<7)
+            is += '\t';
+        rc += '\t-'+is + ' \t'+ost+hs+'\n';
+    }
+    throw(rc);
+}
+
+// A general option parser. conf is an object or an array of form: -nam1 val1 -nam2 val2
+function Jsi_Conf (self:object, options:object, opts:object|null=undefined):object {
+    puts("NOTE: Jsi_Conf has been deprecated by parseOpts");
+    var i, isarr, len, topts = {};
+    for (i in options)
+        self[i] = options[i];
+    if (!opts)
+        return self;
+    isarr = (typeof(opts) !== 'object');
+    if (isarr) {
+        // Convert array to object.
+        if (opts.length%2) {
+            if (opts[0] == '-h')
+                Jsi_ThrowHelp(self, options);
+            throw("Odd opts length: "+opts.toString());
+        }
+        for (i=0; i<opts.length; i+= 2) {
+            var dst = opts[i];
+            if (dst.substr(0,1) != '-')
+                throw("expected - before arg: "+dst);
+            dst = dst.substr(1);
+            topts[dst] = opts[i+1];
+        }
+    } else
+        for (i in opts)
+            topts[i] = opts[i];
+    i = 0;
+    for (dst in topts) {
+        if (options && options[dst] === undefined) {
+            if (dst == 'h')
+                Jsi_ThrowHelp(self, options);
+            var ret = "unknown option: '"+dst+"' not one of:\n  ";
+            for (i in options)
+                if (i !== 'Jsi_Auto')
+                    ret += i + ' ';
+            throw(ret);
+        }
+        if (!isarr)
+            switch (typeof self[dst]) {
+            case "number":
+                topts[dst] = parseFloat(topts[dst]);
+                if (isNaN(topts[dst]))
+                    throw("expected number: "+topts[dst]);
+            case "object":
+            case "boolean":
+                if (typeof topts[dst] != typeof self[dst])
+                    throw("type mismatch for '"+dst+"': '"+topts[dst]+"' is not a "+typeof self[dst]);
+                break;
+            }
+        self[dst] = topts[dst];
+        i++;
+    }
+    var scope = Info.level(-1).scope;
+    if (scope) {
+        if (self.debug)
+            scope.LogDebug = console.log.bind(null, "DEBUG:");
+        if (self.trace)
+            scope.LogTrace = console.log.bind(null, "TRACE:");
+        if (self.test)
+            scope.LogTest  = console.log.bind(null, "TEST: ");
+    }
+    return self;
+};
+var Jsi_Opts = Jsi_Conf;
+
+function Jsi_LogFile(path:string) {
+    var chan = new Channel(path, 'a+');
+    Interp.conf({logOpts:{chan:chan}});
+}
+
+function Jsi_AutoPkg(pkg:string|array, dir:string) {
+    var fn = File.join(Info.scriptDir(), dir);
+    if (!File.exists(fn))
+        throw("no such directory: "+fn);
+    if (typeof pkg === 'string')
+        pkg = [pkg];
+    for (var p of pkg)
+        Jsi_Auto[p]  = 'require("'+p+'")';
+    var pn = Interp.conf('pkgDirs');
+    if (!pn)
+        pn = [fn];
+    else if (pn.indexOf(fn)<0)
+        pn.push(fn);
+    else
+        return;
+    Interp.conf({pkgDirs:pn});
+}
+
+// Generate auto-load for an object.
+function Jsi_AutoMake(objName:string) {
+    //provide(objName);
+    var sdir = Info.scriptDir();
+    var methods = Info.methods(objName+'.*');
+    if (methods.length<=0) throw("can not generate methods for: "+objName);
+
+    var ext = File.extension(objName);
+    var ldCmd =  "require('"+objName+"')";
+    
+    // Define an object with functions self load then reinvoke function
+    var s = 'var '+objName+' = {\n';
+    var cnt = 0;
+    for (var i in methods) {
+        var minf = Info.methods(objName+'.'+methods[i]);
+        if (!minf) continue;
+        if (cnt++) s += ',\n';
+        var rtyp = '';
+        if (minf.retType !== '' && minf.retType !== undefined)
+            rtyp = ':'+minf.retType;
+        s += "    "+methods[i]+': function('+minf.args+')'+rtyp+' { '+ldCmd+'; return '+objName+'.'+methods[i]+'.apply(this,arguments); }';
+    }
+    s += "\n};\n";
+    return s;
+}
+
+function Jsi_SqlValues(name:string, val:object) {
+    return 'VALUES($'+name+'('+val.keys().join('),$'+name+'(')+'))';
+}
+
+// Modify table, adding missing columns that are in data to support up/down grading.
+function Jsi_SchemaUpdate(db:userobj, table:string, data:object, conf:object=void) {
+    var self = {};
+    var options = {
+        objOpts     :{},        // Options for objOpts
+        verbose     :false
+    };
+    parseOpts(self, options, conf);
+    var cl = {}, cols = db.query('PRAGMA table_info("'+table+'")');
+    if (!cols.length)
+        return true;
+    for (var c=0; c<cols.length; c++)
+        cl[cols[c].name] = cols[c];
+    var oo = self.objOpts;
+    oo.getSql = true;
+    var s = db.query('CREATE TABLE '+table+' %s', {objName:'data', objOpts:oo});
+    s = ','+s.substr( s.indexOf('(')+1);
+    s = s.substr(0, s.length-2);
+    s +=',';
+    for (var i in data) {
+        if (cl[i]) continue;
+        var rec = s.substr( s.indexOf(','+i+' '));
+        if (!rec) throw('failed to find schema: '+i);
+        rec = rec.substr(1);
+        rec = rec.substr(0, rec.indexOf(','));
+        var sql = 'ALTER TABLE '+table+' ADD COLUMN '+rec;
+        if (self.verbose)
+            LogInfo('SCHEMA:',sql);
+        db.eval(sql);
+        cl[i] = rec;
+    }
+    // Now check if schema matches.
+    var t = '';
+    for (i in cl) {
+        t += ',';
+        if (typeof(cl[i])==='string')
+            t += cl[i];
+        else
+            t += (i+' '+cl[i].type+' DEFAULT '+cl[i].dflt_value);
+    }
+    t += ',';
+    if (s === t)
+        return true;
+    LogWarn('Schema mismatch (possible downgrade?) in table "'+table+'":\n"'+s+'" !=\n"'+t+'"');
+    return false;
+}
+
+function Jsi__Init() {    
+    // Module-level Log functions, aliased if not in debugger.
+    if (Interp.conf('debugOpts.debugCallback')) {
+        var scope = Info.level(1).scope;
+        scope.LogDebug = console.log.bind(null, "DEBUG:");
+        scope.LogTrace = console.log.bind(null, "TRACE:");
+        scope.LogTest  = console.log.bind(null, "TEST: ");
+        scope.LogWarn  = console.log.bind(null, "WARN: ");
+        scope.LogInfo  = console.log.bind(null, "INFO: ");
+        scope.LogError = console.log.bind(null, "ERROR:");
+    } else {
+        Interp.alias('LogTrace', console.log, ["TRACE:"]);
+        Interp.alias('LogDebug', console.log, ["DEBUG:"]);
+        Interp.alias('LogTest',  console.log, ["TEST: "]);
+        Interp.alias('LogWarn',  console.log, ["WARN: "]);
+        Interp.alias('LogInfo',  console.log, ["INFO: "]);
+        Interp.alias('LogError', console.log, ["ERROR:"]);
+    }
+    Interp.conf({logOpts:{file:true, func:true, before:true}});
+}
+
+Jsi__Init();
+
+if (Info.isMain()) {
+    /* Self test for Jsi_Conf. */
+    var self = {};
+    var options = {a:0, b:1, c:2};
+    var rc = Jsi_Conf(self, options, {a:2});
+    puts("RC="+rc+" "+self.toString());
+    rc = Jsi_Conf(self, options);
+    puts("RC="+rc+" "+self.toString());
+}
+
+provide('Jsish', Info.version());

@@ -1,0 +1,58 @@
+<title>JSON</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#descr|Description]</li>
+<li>[#caveats|Caveats]</li>
+</ul>
+</div>
+
+This pages describes the JSON driver.
+For API details see [./reference.wiki#JSON|reference].
+
+<h3 id=descr>Description</h3>
+JSON (JavaScript Object Notation) is an open standard format that
+uses human-readable text to transmit data objects consisting of attribute–value pairs.
+It is the primary means of exchanging data with web-browsers.
+
+The <i>JSON</i> object provides the following methods:
+
+<b>function stringify(val:any, strict:boolean=true):string</b>
+ 
+The <i>stringify()</i> method converts a javascript data object to a string:
+
+    <nowiki><pre class=verbatim>
+var obj = { a:1, b:2, c:"able", d:[ 1, 2, 3 ] };
+var str = JSON.stringify(obj);
+//RETURNS: '{"a":1, "b":2, "c":"able", "d":[1,2,3]}';
+</pre></nowiki>
+
+<hr>
+
+<b>function parse(str:string, strict:boolean=true):any</b>
+ 
+The <i>parse()</i> method converts a string into javascript data:
+
+    <nowiki><pre class=verbatim>
+var str = '{"a":1, "b":2, "c":"able", "d":[1,2,3]}';
+var obj = JSON.parse(str);
+//RETURNS: { a:1, b:2, c:"able", d:[ 1, 2, 3 ] }
+</pre></nowiki>
+
+When <b>strict</b> is <i>false</i> then <i>parse()</i>
+that does not require quoting of names.
+
+    <nowiki><pre class=verbatim>
+var str = '{a:1, b:2, c:"able", d:[1,2,3]}';
+var obj = JSON.parse(str, false);
+</pre></nowiki>
+
+Non-strict parsing is particularly helpful when encoding JSON in [./c-json.wiki|C].
+
+<h3 id=caveats>Caveats</h3>
+  *  the underlying parser is not a validating parser.
+  

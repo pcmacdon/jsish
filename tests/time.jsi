@@ -1,0 +1,68 @@
+#!/usr/local/bin/jsish -u %s
+
+var s, t, n;
+;'\n===Basic utc tests===';
+;n = strptime('1970-01-01', {utc:true});
+assert(n==0);
+;s = strftime(0, {utc:true});
+;strptime(s, {utc:true});
+;s = strftime(0, {utc:true, fmt:'%Y-%m-%d %H:%M:%S'});
+;t = strptime(s, {utc:true, fmt:'%Y-%m-%d %H:%M:%S'});
+
+;t = strptime('1970-01-01 10:00:00', {utc:true});
+;s = strftime(t, {utc:true});
+
+;'\n===Use of seconds vs ms===';
+;t = strptime('2010-01-01 10:00:00.123', {utc:true});
+;s = strftime(t, {utc:true});
+;t/1000;
+;Math.floor(t/1000);
+
+;'\n===Coerce to seconds===';
+;t = strptime('2010-01-01 10:00:00.123', {utc:true, secs:true});
+;s = strftime(t, {utc:true, secs:true});
+
+;'\n===Now and future dates===';
+var ofs = strptime('1970-01-01');
+;strptime('1970-01-01 10:00:00')-ofs;
+strptime('now');
+;strftime(ofs);
+;n=strptime('2020-03-04 12:34:56.123')-ofs;
+;strftime(n, {utc:true, fmt:'%Y-%m-%d %H:%M:%S.%f'});
+
+if (Info.platform().timeSize >= 8) {
+    n = strptime('2060-03-04 12:34:56.123')-ofs;
+    s = strftime(n, {utc:true, fmt:'%Y-%m-%d %H:%M:%S.%f'});
+    if (s !== '2060-03-04 12:34:56.123')
+        puts("64 bit time test failure: "+s);
+}
+
+/*
+=!EXPECTSTART!=
+'
+===Basic utc tests==='
+n = strptime('1970-01-01', {utc:true}) ==> 0
+s = strftime(0, {utc:true}) ==> 1970-01-01 00:00:00
+strptime(s, {utc:true}) ==> 0
+s = strftime(0, {utc:true, fmt:'%Y-%m-%d %H:%M:%S'}) ==> 1970-01-01 00:00:00
+t = strptime(s, {utc:true, fmt:'%Y-%m-%d %H:%M:%S'}) ==> 0
+t = strptime('1970-01-01 10:00:00', {utc:true}) ==> 36000000
+s = strftime(t, {utc:true}) ==> 1970-01-01 10:00:00
+'
+===Use of seconds vs ms==='
+t = strptime('2010-01-01 10:00:00.123', {utc:true}) ==> 1262340000123
+s = strftime(t, {utc:true}) ==> 2010-01-01 10:00:00
+t/1000 ==> 1262340000.123
+Math.floor(t/1000) ==> 1262340000
+'
+===Coerce to seconds==='
+t = strptime('2010-01-01 10:00:00.123', {utc:true, secs:true}) ==> 1262340000
+s = strftime(t, {utc:true, secs:true}) ==> 2010-01-01 10:00:00
+'
+===Now and future dates==='
+strptime('1970-01-01 10:00:00')-ofs ==> 36000000
+strftime(ofs) ==> 1970-01-01 00:00:00
+n=strptime('2020-03-04 12:34:56.123')-ofs ==> 1583325296123
+strftime(n, {utc:true, fmt:'%Y-%m-%d %H:%M:%S.%f'}) ==> 2020-03-04 12:34:56.123
+=!EXPECTEND!=
+*/

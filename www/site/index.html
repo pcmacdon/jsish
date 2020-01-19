@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- META  HTTP-EQUIV=refresh CONTENT="5; url=http://jsish.sourceforge.net" -->
+<!-- <base href="http://jsish.org/" /> -->
+<title>jsish.org</title>
+
+<link href="index.css" rel="stylesheet" media="screen">
+</head>
+
+<body>
+<div class="header">
+  <div class="logo">
+<a href="/jsi" title="Jsish fossil repository and documentation"><img src="logojsi.png" alt="logo" /></a>
+  </div>
+
+ <div class="title" style="vertical-align:middle">a JavaScript Interpreter</div>
+
+  <div class="status"> </div>
+</div>
+<div class="mainmenu">
+<a href='/jsi' title="Jsish fossil repository and documentation">Enter Site</a>
+</div>
+<div class="content">
+<script>
+function gebi(x){
+if(/^#/.test(x)) x = x.substr(1);
+var e = document.getElementById(x);
+if(!e) throw new Error("Expecting element with ID "+x);
+else return e;}
+</script>
+
+
+<!-- <p align="center">
+<font size="3">
+<i>Embedded Application Development</i>
+</font>
+</p> -->
+
+
+<a href="http://jsish.org/jsi">Jsi</a> is a small <i>javascript</i> interpreter written <b>in C</b>
+with builtin <b>Database</b> and <b>Websocket</b> support.
+<p>
+
+What distinguishes it from other script languages is:
+<ul>
+<li>Typed <i>functions</i></li>
+<li>Embedded access to <b>C</b> struct data</li>
+<li>Executable is an atomic standalone incorporating it's own zip filesystem</li>
+<li>No need to learn <i>yet-another-syntax</i>: it's javascript</li>
+</ul>
+<p>
+
+<hr>
+
+<p>
+<p>
+Jsi was designed by  <a href="http://pdqi.com/">PDQI</a>,
+specifically for industrial embedded applications requiring
+<b>diagnostics</b>, <b>testing</b>, <b>configuration</b>, and <b>data-acquisition</b>
+capabilities
+<p>
+</div>
+</body></html>

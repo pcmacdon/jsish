@@ -1,0 +1,10 @@
+#!/usr/local/bin/jsish -u %s
+
+var j = Util.base64('1234');
+puts(Util.base64(j, true) + ' ---> ' + j);
+
+/*
+=!EXPECTSTART!=
+1234 ---> MTIzNA==
+=!EXPECTEND!=
+*/

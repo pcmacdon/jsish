@@ -1,0 +1,6 @@
+Jsi is a small javascript interpreter for embedded-C development.
+
+Internally Jsi emulates Tcl.  The parser and execution engine originate from quad_wheel, 
+
+It is being developed under an MIT license.
+

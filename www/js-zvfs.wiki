@@ -1,0 +1,85 @@
+<title>Zvfs</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#exec|Executing Zips]</li>
+<li>[#zeroinstall|Zero-Install]</li>
+<li>[#writing|Writing]</li>
+<li>[#reading|Reading]</li>
+</ul>
+</div>
+
+[./reference.wiki#zvfs]
+
+Zvfs stands for Zip Virtual File System, which is used by Jsi to read and write zip files.
+
+There are two important uses of Zvfs:
+
+  *  Running scripts directly from <b>.zip</b> files.
+  *  Running scripts zipped into the <b>jsish</b> binary (zero-install).
+
+
+In both cases the Zip archive can contain all files (scripts, web pages, images, etc)
+required by an application, and thus
+can deploy complete working standalone applications.
+
+<hr>
+<h3 id=exec>Executing Zips</h3>
+
+Jsi can execute a zip archive that contains <b>main.jsi</b>  or  <b>lib/main.jsi</b>, eg:
+
+    <nowiki><pre class=verbatim>
+# jsish DebugUI.zip my.jsi arg1 arg2
+</pre></nowiki>
+
+Jsi mounts the .zip file on <b>/zvfs1</b>, then executes <i>main.jsi</i> (or <i>lib/main.jsi</i>) therein.
+
+Any other resources contained in the archive are also available to Jsi.
+
+<hr>
+<h3 id=zeroinstall>Zero-Install</h3>
+
+It is also possible to zip <b>"main.jsi</b> (and other files) directly onto the end of the jsish binary itself.
+This lets jsish be used to deploy Zero-Install, standalone application.
+
+The simplesst way to create a Zero-Install application is to copy your scripts into <b>lib/</b> then use:
+
+    <nowiki><pre class=verbatim>
+make jsize
+</pre></nowiki>
+
+The direct approach uses the script <b>"tools/mkjsize.js"</b>:
+
+    <nowiki><pre class=verbatim>
+cp jsish jsize
+tools/mkjsize.js create jsize zipdir
+</pre></nowiki>
+
+See [./usingjsi.wiki#examples] for concrete working example applications.
+<hr>
+
+<hr>
+<h3 id=writing>Writing</h3>
+
+To create a zip archive simpy use:
+<nowiki><pre class=verbatim>
+  Zvfs.create('arch.zip', file.glob('*.js'))
+</pre></nowiki>
+This creates a zip file containing all the .js files in the current directory.
+<hr>
+
+<h3 id=reading>Reading</h3>
+Jsi can mount .zip files as local filesystem:
+
+    <nowiki><pre class=verbatim>
+var dir = Zvfs.mount('arch.zip');
+File.glob('*', dir);
+</pre></nowiki>
+
+Note: If a mount point is not given, it is generated in the pattern <i>/zvfsN</i>, where N=1,2,3,...
+<hr>
+

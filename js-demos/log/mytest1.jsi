@@ -1,0 +1,25 @@
+#!/usr/bin/env jsish
+
+function mytest1(args:array=void, conf:object=void) {
+    var self = {
+        count: 0
+    };
+    var options = { // Here is my test.
+        Debug       :false,     // LogDebug output.
+        label       :''         // Some other argument.
+    };
+    
+    parseOpts(self, options, conf);
+    for (var msg of args) {
+        self.count++;
+        LogDebug("testing:", msg);
+    }
+    puts("Done");
+    return self;
+}
+
+provide(mytest1);
+LogDebug("Starting");
+
+if (isMain())
+    runModules(mytest1);

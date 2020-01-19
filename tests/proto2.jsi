@@ -1,0 +1,96 @@
+#!/usr/local/bin/jsish -u %s
+
+var i, h, garfield, felix;
+
+function Cat(name){
+    this.name = name;
+};
+;Cat.prototype;
+
+;garfield = new Cat('Garfield');
+;Object.getPrototypeOf(garfield) === Cat.prototype;
+Cat.prototype.greet = function(){
+    puts('Meow, I am ' + this.name);
+};
+;garfield.greet();
+
+;felix = new Cat('Felix');
+;felix.greet();
+garfield.greet = function(){
+    puts("What's new?");
+};
+;garfield.greet();
+;felix.greet();
+
+function Animal(){};
+Cat.prototype = new Animal;
+//Cat.prototype.constructor = Cat;
+/*Animal.prototype.breed = function(){
+    puts('Making a new animal!');
+    return new this.constructor();
+};
+var kitty = garfield.breed(); */
+
+function f(i,j) {}
+function g() {}
+;g.prototype = new f(1,2);
+;i = new f(1,2);
+;h = new g();
+;g.prototype.isPrototypeOf(h);
+;g.prototype.isPrototypeOf(f);
+;[i.constructor];
+;[h.constructor];
+;h.constructor == f;
+function Fee() {
+    // . . .
+}
+
+function Fi() {
+    // . . .
+}
+;Fi.prototype = new Fee();
+
+function Fo() {
+    // . . .
+}
+;Fo.prototype = new Fi();
+
+function Fum() {
+    // . . .
+}
+;Fum.prototype = new Fo();
+
+var fum;
+;fum = new Fum();
+
+;Fi.prototype.isPrototypeOf(fum);
+
+/*
+=!EXPECTSTART!=
+Cat.prototype ==> {}
+garfield = new Cat('Garfield') ==> { name:"Garfield" }
+Object.getPrototypeOf(garfield) === Cat.prototype ==> true
+garfield.greet() ==> Meow, I am Garfield
+undefined
+felix = new Cat('Felix') ==> { name:"Felix" }
+felix.greet() ==> Meow, I am Felix
+undefined
+garfield.greet() ==> What's new?
+undefined
+felix.greet() ==> Meow, I am Felix
+undefined
+g.prototype = new f(1,2) ==> {}
+i = new f(1,2) ==> {}
+h = new g() ==> {}
+g.prototype.isPrototypeOf(h) ==> true
+g.prototype.isPrototypeOf(f) ==> false
+[i.constructor] ==> [ "function f(i, j) {...}" ]
+[h.constructor] ==> [ "function f(i, j) {...}" ]
+h.constructor == f ==> true
+Fi.prototype = new Fee() ==> {}
+Fo.prototype = new Fi() ==> {}
+Fum.prototype = new Fo() ==> {}
+fum = new Fum() ==> {}
+Fi.prototype.isPrototypeOf(fum) ==> true
+=!EXPECTEND!=
+*/

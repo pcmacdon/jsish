@@ -1,0 +1,35 @@
+#!/usr/local/bin/jsish -u %s
+
+File.mkdir('XX1');
+File.mkdir('XX1/AA');
+File.mkdir('XX1/BB');
+File.rename('XX1/BB','XX1/CC.txt');
+;File.glob(null,{dir:'XX1'}).sort();
+;File.dirname('XX1/AA');
+;File.rootname('XX1/CC.txt');
+;File.tail('XX1/CC.txt');
+;File.type('XX1/CC.txt');
+;File.extension('XX1/CC.txt');
+//;File.realpath('XX1/CC.txt');
+;File.writable('XX1/CC.txt');
+;File.readable('XX1/CC.txt');
+;File.exists('XX1/CC.txt');
+;File.isdir('XX1/CC.txt');
+;File.isfile('XX1/CC.txt');
+File.remove('XX1',true);
+
+/*
+=!EXPECTSTART!=
+File.glob(null,{dir:'XX1'}).sort() ==> [ "AA", "CC.txt" ]
+File.dirname('XX1/AA') ==> XX1
+File.rootname('XX1/CC.txt') ==> XX1/CC
+File.tail('XX1/CC.txt') ==> CC.txt
+File.type('XX1/CC.txt') ==> directory
+File.extension('XX1/CC.txt') ==> .txt
+File.writable('XX1/CC.txt') ==> true
+File.readable('XX1/CC.txt') ==> true
+File.exists('XX1/CC.txt') ==> true
+File.isdir('XX1/CC.txt') ==> true
+File.isfile('XX1/CC.txt') ==> false
+=!EXPECTEND!=
+*/

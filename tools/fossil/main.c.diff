@@ -1,0 +1,32 @@
+--- main.c.orig	2019-01-15 11:03:38.198955797 -0800
++++ main.c	2019-01-17 08:29:37.977503492 -0800
+@@ -594,6 +594,17 @@
+   }
+ }
+ 
++#if 0
++#undef MINIZ_HEADER_FILE_ONLY
++#include "miniz.c"
++#include "linenoise.c"
++
++#else
++#undef MINIZ_HEADER_FILE_ONLY
++#include "jsi.c"
++#include "linenoise.c"
++#endif
++
+ /*
+ ** This procedure runs first.
+ */
+@@ -611,6 +622,11 @@
+   const CmdOrPage *pCmd = 0;
+   int rc;
+ 
++  const char *ce = strrchr(argv[0], '/');
++  ce = (ce?ce+1:argv[0]);
++  if (!strcmp("jsish", ce))
++      return jsi_main(argc, argv);
++
+ #if !defined(_WIN32_WCE)
+   if( fossil_getenv("FOSSIL_BREAK") ){
+     if( isatty(0) && isatty(2) ){

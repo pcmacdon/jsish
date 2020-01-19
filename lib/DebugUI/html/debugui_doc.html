@@ -1,0 +1,51 @@
+<div style="margin:8px">
+<H2>DebugUI: a debugger for Jsi</H2>
+
+<a href="http://jsish.org">Jsi</a> is a scripting language for C developers, and
+<i>DebugUI</i> is it's web-based script debugger supporting:
+<ul>
+  <li>Breakpoint toggle by double clicking (on whitespace in a line).</li>
+  <li>Command buttons for <b>step</b> and <b>next</b>, moving <b>up</b> and <b>down</b> call stack, etc.</li>
+  <li>Printing/evaluating values by highlighting a variable and clicking Print or Eval.</li>
+  <li>A <b>halt</b> command to stop execution (in place of control-c).</li>
+  <li>Dialogs/navigators for Functions, Breakpoint, Options and the Stack.</li>
+</ul>
+
+The input area allows commands to be entered that support:
+
+<ul>
+  <li>Shortcut commands using first 1-2 chars, eg. <b>s</b> for <b>step</b>.</li>
+  <li>Empty line repeat of the last command.</li>
+  <li>Up/down arrow to recall previous commands.</li>
+</ul>
+
+Available commands include:
+
+<pre>
+<b>args</b>      : Show function arguments
+<b>break</b>     : Break execution at a named function, line or file
+<b>continue</b>  : Continue execution
+<b>delete</b>    : Delete one or all breakpoints
+<b>disable</b>   : Disable one or all breakpoints
+<b>down</b>      : Move down one or more stack levels
+<b>enable</b>    : Enable one or all breakpoints
+<b>eval</b>      : Evaluate expression in program context
+<b>finish</b>    : Run till return of current function
+<b>help</b>      : Display command usage
+<b>halt</b>      : Stop execution
+<b>info</b>      : Info subcommands: bp args locals var 
+<b>list</b>      : List file lines args can be: startLine|func numLines file
+<b>locals</b>    : Show function local variables
+<b>next</b>      : Single-step over function calls
+<b>print</b>     : Print value of variable
+<b>quit</b>      : Quit debugging current program and exit
+<b>step</b>      : Single-step into function calls
+<b>tbreak</b>    : Sets a temporary breakpoint
+<b>up</b>        : Move up one or more stack levels
+<b>where</b>     : Display current location
+<b>xeval</b>     : Does eval in debugger context
+</pre>
+
+<p>
+The backed for DebugUI is builtin in <a href=http://jsish.org/jsi/www/home.html  target=_blank>Jsish</a>.
+</div>

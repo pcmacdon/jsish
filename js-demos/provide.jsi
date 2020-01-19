@@ -1,0 +1,35 @@
+#!/usr/local/bin/jsish --U %s
+
+var status = {Cnt:0, run:false};
+provide('Provide', 1, status);
+;require('Provide', 0);
+
+function Status (x=void) { return {cnt:0, Run:false}; }
+provide('Prov', 1, Status);
+;require('Prov', 0);
+
+
+;require('WebSocket',0);
+var x = new WebSocket({port:0});
+;require('WebSocket',0);
+x = null;
+;require('WebSocket',0);
+
+;require('Sqlite',0);
+x = new Sqlite();
+;require('Sqlite',0);
+delete x;
+;require('Sqlite',0);
+
+/*
+=!EXPECTSTART!=
+require('Provide', 0) ==> { func:null, info:{ Cnt:0, run:false }, lastReq:0, loadFile:"/home/pmacdona/src/jsi/js-demos/prov.jsi", status:null, verStr:"1.0.0", version:1 }
+require('Prov', 0) ==> { func:null, info:{ Run:false, cnt:0 }, lastReq:0, loadFile:"/home/pmacdona/src/jsi/js-demos/prov.jsi", status:null, verStr:"1.0.0", version:1 }
+require('WebSocket',0) ==> { func:"function WebSocket(options:object=void) { [native code] }", info:{ hdrVer:"2.2.2", libVer:"2.2.2 pmacdona@peter-pc-", pkgVer:2 }, lastReq:0, loadFile:"", status:{ activeCnt:0, newCnt:0 }, verStr:"2.0.0", version:2 }
+require('WebSocket',0) ==> { func:"function WebSocket(options:object=void) { [native code] }", info:{ hdrVer:"2.2.2", libVer:"2.2.2 pmacdona@peter-pc-", pkgVer:2 }, lastReq:0, loadFile:"", status:{ activeCnt:1, newCnt:1 }, verStr:"2.0.0", version:2 }
+require('WebSocket',0) ==> { func:"function WebSocket(options:object=void) { [native code] }", info:{ hdrVer:"2.2.2", libVer:"2.2.2 pmacdona@peter-pc-", pkgVer:2 }, lastReq:0, loadFile:"", status:{ activeCnt:0, newCnt:1 }, verStr:"2.0.0", version:2 }
+require('Sqlite',0) ==> { func:"function Sqlite(file:string=void, options:object=void) { [native code] }", info:{ hdrNum:3018000, hdrSrcId:"2017-03-28 18:48:43 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37", hdrVer:"3.18.0", libVer:"3.18.0", pkgVer:2 }, lastReq:0, loadFile:"", status:{ activeCnt:0, newCnt:0 }, verStr:"2.0.0", version:2 }
+require('Sqlite',0) ==> { func:"function Sqlite(file:string=void, options:object=void) { [native code] }", info:{ hdrNum:3018000, hdrSrcId:"2017-03-28 18:48:43 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37", hdrVer:"3.18.0", libVer:"3.18.0", pkgVer:2 }, lastReq:0, loadFile:"", status:{ activeCnt:1, newCnt:1 }, verStr:"2.0.0", version:2 }
+require('Sqlite',0) ==> { func:"function Sqlite(file:string=void, options:object=void) { [native code] }", info:{ hdrNum:3018000, hdrSrcId:"2017-03-28 18:48:43 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37", hdrVer:"3.18.0", libVer:"3.18.0", pkgVer:2 }, lastReq:0, loadFile:"", status:{ activeCnt:0, newCnt:1 }, verStr:"2.0.0", version:2 }
+=!EXPECTEND!=
+*/

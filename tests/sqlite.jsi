@@ -1,0 +1,167 @@
+#!/usr/local/bin/jsish -u %s
+
+require('Sqlite', '2');
+
+var db, n, x, s, dbc;
+;db = new Sqlite('testsql.db',{stmtCacheMax:1000, readonly:false});
+
+;db.eval('drop table IF EXISTS foo;');
+try {
+;   db.query('drop table foo;');
+} catch(e) {
+;   e;
+};
+
+;db.eval('drop table IF EXISTS foo; create table foo(a,b);');
+n = 0;
+x = 99;
+while (n++ < 3) {
+    db.query('insert into foo values(@x,@n);');
+    x -= 4;
+}
+db.query('select * from foo;', function (n) {
+;   'B='+n.b + ', A='+n.a;
+});
+
+;db.query('select * from foo;');
+
+dbc = db.conf();
+dbc.version = '';
+;dbc;
+function DbProfile(db:userobj, sql:string, time:number) { puts('PROFILING: '+sql); }
+
+;db.conf({onProfile:DbProfile});
+;db.onecolumn('select a from foo where b == 2;');
+db.conf({onProfile:null});
+
+s = {b:2};
+
+;db.query('select * from foo;');
+;db.query('select * from foo;',{mode:'list'});
+;db.query('select * from foo;',{mode:'list',headers:true});
+;db.query('select * from foo;',{mode:'html'});
+;db.query('select * from foo;',{mode:'html',headers:true});
+;db.query('select * from foo;',{mode:'csv'});
+;db.query('select * from foo;',{mode:'csv',headers:true});
+;db.query('select * from foo;',{mode:'column'});
+;db.query('select * from foo;',{mode:'column',headers:true});
+;x=db.query('select * from foo;',{mode:'json'});
+JSON.parse(x);
+;x=db.query('select * from foo;',{mode:'json',headers:true});
+JSON.parse(x);
+;x=db.query('select * from foo;',{mode:'json2'});
+JSON.parse(x);
+;db.query('select * from foo;',{mode:'tabs'});
+;db.query('select * from foo;',{mode:'tabs',headers:true});
+;db.query('select * from foo;',{mode:'line'});
+;db.query('select * from foo;',{mode:'insert'});
+
+var binds;
+;binds = [91,3];
+;db.query('insert into foo values(?,?);', binds);
+;db.query('insert into foo values(?,?);', {values:binds});
+;db.query('insert into foo values(?,?);', {values:[91,3]});
+
+;db.func('bar',function(n) { return n+'.000'; });
+
+function DbTrace(db:userobj, sql:string) { puts('TRACING: '+sql);}
+
+db.conf({onTrace:DbTrace});
+;db.onecolumn('select bar(a) from foo where b == 2;');
+;db.conf({onTrace:null});
+
+//;db.version();
+delete db;
+
+
+/*
+var res1 = db.query('select * from table foo(a,b;';
+for (i in res1) {
+  ;"CONS: "+i.toString(); 
+}
+
+
+var curs, n;
+for (curs = db.query('select * from table foo(a,b;'),
+    (n = db.getresult(curs))!=undefined,
+    db.nextresult(curs)) {
+    ;n.toString();
+}
+db.endresult(curs;
+
+
+*/
+
+/*
+=!EXPECTSTART!=
+db = new Sqlite('testsql.db',{stmtCacheMax:1000, readonly:false}) ==> "#Sqlite_1"
+db.eval('drop table IF EXISTS foo;') ==> 0
+db.query('drop table foo;') ==> e ==> PREPARE: no such table: foo
+db.eval('drop table IF EXISTS foo; create table foo(a,b);') ==> 0
+'B='+n.b + ', A='+n.a ==> B=1, A=99
+'B='+n.b + ', A='+n.a ==> B=2, A=95
+'B='+n.b + ', A='+n.a ==> B=3, A=91
+db.query('select * from foo;') ==> [ { a:99, b:1 }, { a:95, b:2 }, { a:91, b:3 } ]
+dbc ==> { bindWarn:false, changeCnt:1, changeCntAll:3, debug:[], echo:false, errCnt:0, errorCode:0, forceInt:false, lastInsertId:3, load:false, mutex:"default", name:"", noConfig:false, noCreate:false, noJsonConv:false, onAuth:null, onBusy:null, onCommit:null, onNeedCollate:null, onProfile:null, onProgress:null, onRollback:null, onTrace:null, onUpdate:null, onWalHook:null, progressSteps:0, queryOpts:{ callback:null, cdata:null, echo:false, headers:false, limit:0, mapundef:false, mode:"rows", nocache:false, nullvalue:null, objName:null, objOpts:[], retChanged:false, separator:null, table:null, typeCheck:"convert", values:null, width:undefined }, readonly:false, sortCnt:0, stepCnt:2, stmtCacheCnt:2, stmtCacheMax:1000, timeout:0, udata:null, version:"", vfs:null }
+db.conf({onProfile:DbProfile}) ==> undefined
+db.onecolumn('select a from foo where b == 2;') ==> PROFILING: select a from foo where b == 2;
+95
+db.query('select * from foo;') ==> [ { a:99, b:1 }, { a:95, b:2 }, { a:91, b:3 } ]
+db.query('select * from foo;',{mode:'list'}) ==> 99|1
+95|2
+91|3
+db.query('select * from foo;',{mode:'list',headers:true}) ==> a|b
+99|1
+95|2
+91|3
+db.query('select * from foo;',{mode:'html'}) ==> <TR><TD>99</TD><TD>1</TD></TR>
+<TR><TD>95</TD><TD>2</TD></TR>
+<TR><TD>91</TD><TD>3</TD></TR>
+db.query('select * from foo;',{mode:'html',headers:true}) ==> <TR><TH>a</TH><TH>b</TH></TR>
+<TR><TD>99</TD><TD>1</TD></TR>
+<TR><TD>95</TD><TD>2</TD></TR>
+<TR><TD>91</TD><TD>3</TD></TR>
+db.query('select * from foo;',{mode:'csv'}) ==> 99,1
+95,2
+91,3
+db.query('select * from foo;',{mode:'csv',headers:true}) ==> a,b
+99,1
+95,2
+91,3
+db.query('select * from foo;',{mode:'column'}) ==> a          b          99         1         
+95         2         
+91         3         
+db.query('select * from foo;',{mode:'column',headers:true}) ==> a          b           
+---------- ----------
+99         1         
+95         2         
+91         3         
+x=db.query('select * from foo;',{mode:'json'}) ==> [ {"a":99, "b":1}, {"a":95, "b":2}, {"a":91, "b":3} ]
+x=db.query('select * from foo;',{mode:'json',headers:true}) ==> [ ["a", "b"], [99, 1], [95, 2], [91, 3] ]
+x=db.query('select * from foo;',{mode:'json2'}) ==> { "names": [ "a", "b" ], "values": [ [99, 1 ], [95, 2 ], [91, 3 ] ] } 
+db.query('select * from foo;',{mode:'tabs'}) ==> 99	1
+95	2
+91	3
+db.query('select * from foo;',{mode:'tabs',headers:true}) ==> a	b
+99	1
+95	2
+91	3
+db.query('select * from foo;',{mode:'line'}) ==>     a = 99    b = 1
+    a = 95
+    b = 2
+    a = 91
+    b = 3
+db.query('select * from foo;',{mode:'insert'}) ==> INSERT INTO "table" VALUES(99,1);
+INSERT INTO "table" VALUES(95,2);
+INSERT INTO "table" VALUES(91,3);
+
+binds = [91,3] ==> [ 91, 3 ]
+db.query('insert into foo values(?,?);', binds) ==> []
+db.query('insert into foo values(?,?);', {values:binds}) ==> []
+db.query('insert into foo values(?,?);', {values:[91,3]}) ==> []
+db.func('bar',function(n) { return n+'.000'; }) ==> undefined
+db.onecolumn('select bar(a) from foo where b == 2;') ==> 95.000
+db.conf({onTrace:null}) ==> undefined
+=!EXPECTEND!=
+*/
+

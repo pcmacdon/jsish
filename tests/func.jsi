@@ -1,0 +1,23 @@
+#!/usr/local/bin/jsish -u
+
+function a(n) {
+    var sum = 0;
+    for (var i = 0; i < n; i++)
+        sum = sum + i;
+    return sum;
+};
+
+;'===Begin Test===';
+;a(10);
+;a(100);
+;a(1000);
+
+/*
+=!EXPECTSTART!=
+'===Begin Test==='
+a(10) ==> 45
+a(100) ==> 4950
+a(1000) ==> 499500
+=!EXPECTEND!=
+*/
+

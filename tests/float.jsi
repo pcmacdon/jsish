@@ -1,0 +1,48 @@
+#!/usr/local/bin/jsish -u %s
+
+;parseFloat(2400);
+;parseFloat('2400');
+;1.2 + '12.3';
+;parseFloat('xx');
+;parseFloat('99');
+;parseInt('xx');
+;parseInt('99');
+;parseInt('99.9');
+;parseInt('01001',2);
+;parseInt('0x16',16);
+;parseInt('0x16');
+;parseInt('16',8);
+;parseInt('016');
+;isNaN(18);
+;isNaN('abc');
+;isNaN(NaN);
+;NaN === NaN;
+;NaN == NaN;
+;NaN !== NaN;
+;NaN != NaN;
+
+
+/*
+=!EXPECTSTART!=
+parseFloat(2400) ==> 2400
+parseFloat('2400') ==> 2400
+1.2 + '12.3' ==> 1.212.3
+parseFloat('xx') ==> NaN
+parseFloat('99') ==> 99
+parseInt('xx') ==> NaN
+parseInt('99') ==> 99
+parseInt('99.9') ==> 99
+parseInt('01001',2) ==> 9
+parseInt('0x16',16) ==> 22
+parseInt('0x16') ==> 22
+parseInt('16',8) ==> 14
+parseInt('016') ==> 14
+isNaN(18) ==> false
+isNaN('abc') ==> true
+isNaN(NaN) ==> true
+NaN === NaN ==> false
+NaN == NaN ==> false
+NaN !== NaN ==> true
+NaN != NaN ==> true
+=!EXPECTEND!=
+*/

@@ -1,0 +1,352 @@
+<title>Interp</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#interp|Interps]</li>
+<ul>
+<li>[#subinterp|Sub-interps]</li>
+<li>[#safe|Safe-Interps]</li>
+<li>[#threads|Thread-Interps]</li>
+<li>[#alias|Aliases]</li>
+<li>[#options|Options]</li>
+<li>[#events|Events]</li>
+<li>[#evalcall|Call]</li>
+<li>[#evalsend|Send]</li>
+<li>[#interpdata|Interps and Data]</li>
+<li>[#envvars|Environment]</li>
+<li>[#compat|Backward Compatibility]</li>
+</ul>
+<li>[#refs|References]</li>
+</ul>
+</div>
+
+<h2 id=interp>Interps</h2>
+An <b>interp</b> encapsulates the run-time state of a javascript interpreter.
+
+We can dynamically configure and/or query
+interp [./reference.wiki#new InterpOptions|options] as follows:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf()</b>;
+</pre></nowiki>
+
+which outputs something like:
+
+    <nowiki><pre class=verbatim_out>
+{ args:[  ], callTrace:0, compat:false, ... }
+</pre></nowiki>
+
+In Jsi there are 3 ways to change an interps options:
+
+  *  Programmatically within a script:
+
+    <nowiki><pre class=verbatim>
+Interp.conf({<b>typeCheck</b>:[<i>"error"</i>]});
+</pre></nowiki>
+
+  *  From the command-line using <b>-I</b>:
+
+    <nowiki><pre class=verbatim>
+jsish <b>-ItypeCheck error</b> foo.s
+</pre></nowiki>
+
+  *  Environment variables:
+
+    <nowiki><pre class=verbatim>
+<b>JSI_INTERP_OPTS</b>=<i>'{typeCheck:["<b>parse</b>"]}'</i> jsish foo.js
+</pre></nowiki>
+
+<hr>
+
+<h3 id=subinterp>Sub-interps</h3>
+
+A sub-interp provides a separate environment in which to run scripts, eg.
+
+    <nowiki><pre class=verbatim>
+var interp1 = <b>new Interp()</b>;
+interp1.source(<i>'myfile.jsi'</i>);
+interp1.eval(<i>'myfunc();'</i>);
+<b>delete</b> interp1;
+</pre></nowiki>
+
+When we use <b>eval</b> to execute code in an interp,
+execution is normally in the foreground.
+
+To use asynchronous execution we set the second argument to <i>true</i>.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> i = <b>new Interp</b>();
+i.<b>eval</b>(<i>"doWork();"</i>, true);
+//...
+<b>update</b>(100);
+</pre></nowiki>
+
+See the [./reference.wiki#Interp|Interp Reference] for interface details about creating and using <b>sub-interps</b>.
+
+<hr>
+
+<h3 id=safe>Safe-Interps</h3>
+
+Sub-interps may be created with the <b>isSafe</b> option
+for restricting access to the file system:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> interp1 = <b>new Interp</b>({isSafe:true});
+File.write(<i>'/tmp/stuff.txt'</i>, <i>abc'</i>); <i>// This will throw an error...</i>
+</pre></nowiki>
+
+Additional options are available to relax these limitations, such as:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> interp1 = <b>new Interp</b>({isSafe:true, safeWriteDirs:['/tmp'], , safeReadDirs:['/tmp']});
+</pre></nowiki>
+
+From the command-line, safe execution of scripts can be invoked via <b>-S</b>:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -S</b> tests/while.js a b c
+<b>jsish -S</b> tests/file.js a b c;  <i>// kicks a file access error.</i>
+<b>jsish -S</b>         <i>// With no arguments runs the safe interp in interactive mode</i>
+</pre></nowiki>
+
+The implemenation is here: [../lib/Safe.jsi].
+ 
+<hr>
+
+<h3 id=threads>Thread-Interps</h3>
+
+A sub-interp can be created in a threaded:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> interp1 = <b>new Interp</b>({subthread:true, scriptFile:<i>'mythrd.js'</i>});
+interp1.<b>eval</b>(<i>"doWork();"</i>, true);
+</pre></nowiki>
+
+Note that if a <b>scriptFile</b>/<b>scriptStr</b> option is not given at create time, the thread blocks waiting for events.
+
+Using a non-asynchronous <b>eval()</b> on a threaded interp, will block the caller until the thread calls
+<b>sleep()</b> or <b>update()</b> with sleep time.  The same goes for <b>source()</b> and <b>uplevel()</b>.
+
+Several Interp commands are not supported with threads, such as:
+
+  *  <b>alias()</b>
+  *  <b>value()</b>
+
+<hr>
+
+<h3 id=alias>Aliases</h3>
+
+Interpreters can create alias commands with prepended arguments.
+
+    <nowiki><pre class=verbatim>
+<b>function</b> foo(a,b) {
+  <b>puts</b>('A='+a+' B='+b);
+}
+foo(1,2);
+
+<b>Interp.alias</b>(<i>'bar'</i>, foo, [3]);
+bar(4);
+</pre></nowiki>
+
+Similarly an alias can be set in a sub-interp. 
+
+    <nowiki><pre class=verbatim>
+<b>var</b> i = new Interp</b>();
+
+<b>function</b> myAlias(interp,name,arg1,arg2) {
+   <b>puts</b>(<i>'myAlias: interp name arg1 '</i>+arg2);
+}
+
+<b>function</b> myAlias2(arg1,arg2) {
+   <b>puts</b>(<i>'myAlias2: arg1 '</i>+arg2);
+}
+
+i.alias(<i>'foo'</i>, myAlias, [i, <i>'foo'</i>]);
+i.alias(<i>'bar'</i>, myAlias2,null);
+<b>puts</b>(i.alias()); puts(i.alias(<i>'foo'</i>));
+puts(i.alias(<i>'foo'</i>, myAlias));
+i.eval(<i>'bar(1,2)'</i>);
+i.eval(<i>'var bb = {x:1};'</i>);
+i.alias(<i>'bb.fig'</i>, myAlias, [i, <i>'bb.fig'</i>]);
+i.eval(<i>'bb.fig(1)'</i>);
+i.alias(<i>'bb.fig'</i>, myAlias, [i, <i>'bb.FIG'</i>]);
+i.eval(<i>'bb.fig(1)'</i>);
+<b>puts</b>(i.alias());
+</pre></nowiki>
+
+To delete an aliases just redefine as <b>null</b>.
+
+    <nowiki><pre class=verbatim>
+i.alias(<i>'bb.fig'</i>, null, null);
+puts(i.alias());
+<b>try</b> { i.eval('bb.fig(1)'); } <b>catch</b>(e) { <b>puts</b>(<i>"CAUGHT ERROR: "</i>+e); }; puts(<i>"OK"</i>);
+</pre></nowiki>
+
+
+Note that aliases can not be create in a threaded sub-interpreter.
+
+<hr>
+
+<h3 id=options>Options</h3>
+
+When we create an interpreter, we can pass in an number of options.
+The available options are described [./reference.wiki#new InterpOptions|here].
+
+Note that options marked as <b>initOnly</b> may only be set at interpreter creation time.
+
+We can also set or get [./usingjsi.wiki#options|options] for the current interpreter in the usual way:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>(); <i>// Dump all options</i>
+<b>Interp.conf</b>(<i>'strict'</i>); <i>// Get one option</i>
+<b>Interp.conf</b>({strict:false, maxDepth:99}); <i>// Set one or more options.</i>
+</pre></nowiki>
+
+
+<hr>
+
+<h3 id=events>Events</h3>
+
+Events in javascript are traditionally created by the standard <b>setTimeout()</b>/<b>setInterval()</b> methods. 
+
+In Jsi, various commands and extensions (eg. [./js-websocket.wiki|websockets]) implement asynchronous 
+features that use events.
+
+Events explicitly get processed by calls to <b>update()</b>.
+For more details see [./js-events.wiki|Events].
+
+<hr>
+
+<h3 id=evalcall>Call</h3>
+
+Due to overhead of parsing, <b>eval()</b>
+is actually the least efficient way to run commands. 
+
+The two other, faster alternatives are <b>call()</b> and <b>send()</b>.
+
+<b>call()</b> will invoke a method that is already defined in an interp. 
+
+This is much more efficient as there is no parsing involved,
+and just like <b>eval()</b> it takes an async argument.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> cmd = <i>"
+    function recv2(s) { puts('recv2: '+s.toString()); return {x:8, y:9}; };
+    thrd = Info.interp().thread;
+    puts(thrd);
+    puts('Child starting: '+(thrd?'true':'false'));
+    while (thrd) {
+        update(1000);
+        puts('Child-loop');
+    };
+"</i>;
+
+<b>var</b> cnt=0, i = <b>new Interp</b>({subthread:true, scriptStr:cmd});
+
+<b>Sys.sleep</b>(1000);
+<b>var</b> obj = {AA:1,BB:2};
+<b>var</b> aobj = [obj];
+<b>var</b> ret;
+<b>while</b> (cnt<10) {
+  <b>update</b>(100);
+  <b>puts</b>(<i>"Main-loop"</i>);
+  <b>if</b> (((cnt++)%3)==0)
+      i.eval(<i>"puts('Hello from main!!!!!!!!!!!!!!!!!!!!!!!!');"</i>);
+  ret = i.<b>call</b>(<i>'recv2'</i>,aobj);
+  <b>puts</b>(ret);
+}
+</pre></nowiki>
+
+<hr>
+
+<h3 id=evalsend>Send</h3>
+
+<b>send()</b> is used to pass messages via the function named
+in the <b>recvCallback</b> option of the interps. 
+
+This asynchronous function, which simply receives an array of messages,
+is actually the most efficient way to communicate between interps.
+
+    <nowiki><pre class=verbatim>
+var cmd = <i>"
+    function recv(s) { puts('recv: '+s.toString()); };
+    thrd = Info.interp().thread;
+    puts(thrd);
+    puts('Child starting: '+(thrd?'true':'false'));
+    while (thrd) {
+        update(500);
+        puts('Child-loop');
+        Interp.send({abc:1});
+    };
+"</i>;
+
+<b>function</b> myrecv(s) { <b>puts</b>(<i>'>>>>>>>>>>MYRECV: '</i>+s.toString()); };
+<b>Interp.conf</b>({recvCallback:'myrecv'});
+
+<b>var</b> cnt=0, i = new Interp</b>({subthread:true, scriptStr:cmd, recvCallback:'recv'});
+
+<b>Sys.sleep</b>(1000);
+<b>var</b> obj = {AA:1,BB:2};
+<b>var</b> aobj = [obj];
+<b>while</b> (cnt<10) {
+  <b>update</b>(100);
+  <b>puts</b>("Main-loop");
+  i.<b>send</b>(obj);
+} 
+</pre></nowiki>
+
+<hr>
+
+<h3 id=interpdata>Interps and Data</h3>
+
+To reduce coupling and increase integrity within interpreters, data objects are never shared. 
+
+To accomplish this, all data is internally converted to and from [./js-json.wiki|JSON] at the Interp-Interp interface.
+
+This all happens automatically, so normally users don't need to be worry about the details.
+
+But there are potential performance issues with this JSON translation.
+
+<hr>
+
+<h3 id=envvars>Environment</h3>
+
+The environment variable <b>JSI_INTERP_OPTS</b> can be used for running scripts
+with certain Interp options set:
+
+    <nowiki><pre class=verbatim>
+<b>JSI_INTERP_OPTS</b>="{memDebug:1, maxOpCnt:1000000}" jsish myscript.js
+</pre></nowiki>
+
+This is important as it allows options to be set before an interpreter starts.
+
+For example, in the case of <b>memDebug</b>, it is vital that no Value memory be allocated before
+hand, otherwise detection of memory leaks will not be accurate.
+
+Thus this is the only way this particular option can be set.
+
+<hr>
+
+<h3 id=compat>Backward Compatibility</h3>
+
+The <b>compat</b> option is provided to support backward compatibility with code written
+which uses options available in future releases of Jsi. Running such code with an older 
+Jsi can cause script parse errors due to unknown options. We can prevent this by adding to the script:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>({compat:<b>true</b>}); 
+</pre></nowiki>
+ 
+This provides an alternative to adding conditionals with <b>Info.version()</b>.
+
+The application may still not work correctly, but at least parsing won't fail.
+
+<hr>
+
+<h2 id=refs>References</h2>
+
+For more details see the [./reference.wiki#Interp|Interp Reference] and [./reference.wiki#Event|Event Reference].

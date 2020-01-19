@@ -1,0 +1,130 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+
+/* Preprocessor to provide CSS with $var define/substitution, eg:
+ * 
+ *  $mycolor = { blue }
+ *  $mysize = { 14pt }
+ *  $mydefn = {
+ *      color:$mycolor;
+ *      font-size:$mysize 
+ *  }
+ * 
+ *  #mybut1 { color:$mycolor; font-size:$mysize}
+ *  #myentry { $mydefn; margin:1px }
+ * 
+ * $myg = { #top ul li > a }
+ *   
+ * $myg p { color:blue; }
+ * $myg li { background:red; }
+ *
+ * 
+ *
+ */
+
+function Csspp(files:array|string=null, conf:object=undefined):string|object
+{
+    var options = { // A CSS preprocessor providing $var substitution
+        debug       :false,      // Enable debug.
+        fatal       :false,      // Throw error on redefine/undefined.
+        trimDef     :true,       // Trim whitespace from definitions.
+        trimAll     :true,       // Trim whitespace from final.
+        wsName      :''          // Name of ws object
+    };
+    var self = {
+        vmap:[],            // Set of maps.
+        curFile:'',         // Current file being processed.
+        tail:''             // Basename of file.
+    };
+    var ws;
+    parseOpts(self, options, conf);
+    self.curFile = '';
+    
+    // Function called on any error.
+    function errorCmd(msg:string) {
+        if (self.fatal) throw 'ERROR: '+msg;
+        puts('WARNING: '+msg);
+    }
+    
+    function Fileread(fname) {
+        var ret = File.read(fname);
+        if (ws)
+            ws.file(fname);
+        return ret;
+    }
+
+    // Function called when an undefined $var is encountered.
+    function undefinedVar(str:string) {
+        var reg = /\$[a-zA-Z0-9_]*/;
+        var vals = reg.exec(str);
+        var name = (vals?vals[0]:"");
+        errorCmd("Use of undefined variable in "+self.curFile+': "'+name+'"');
+    }
+    
+    // Collect name/replacement pairs into self.vmap to pass in to String.map()
+    function reMethod(str:string) {
+        var reg = /^(\$[a-zA-Z0-9_]+)\s*=\s*\{([^\}]*)\}/;
+        var vals = reg.exec(str);
+        if (!vals)
+            errorCmd("invalid css define: "+str);
+        var fnam = vals[1];
+        var nstr = vals[2];
+        if (self.trimDef)
+            nstr = nstr.trim();
+        var res = nstr;
+        var cres = nstr;
+        var i = self.maxRecurse;
+        if (self.vmap.length) {
+            if (self.vmap.indexOf(fnam)>=0)
+                errorCmd("Redefined symbol: "+fnam);
+            if (nstr.indexOf('$')>=0) {
+                res = nstr.map(self.vmap);
+                if (res.indexOf('$')>=0)
+                    undefinedVar(res);
+            }
+        }
+        nstr = res;
+        self.vmap.push(fnam, nstr);
+        return '';
+    }
+    
+    function parse(files:array|string, wsn:string=void, arg:string=void) {
+        //debugger;
+        files = Util.argArray(files);
+        var rc = '';
+        var reg = /^\$[a-zA-Z0-9_]+\s*=\s*\{[^\}]*\}/gm;
+        for (var i in files) {
+            self.curFile = files[i];
+            self.tail = File.tail(File.rootname(self.curFile));
+            var s = Fileread(self.curFile);
+            var nstr = s.replace(reg, reMethod);
+            if (self.vmap.length) {
+                nstr = nstr.map(self.vmap);
+                if (nstr.indexOf('$')>=0) {
+                    var res = nstr.map(self.vmap);
+                    if (res.indexOf('$')>=0)
+                        undefinedVar(res);
+                    nstr = res;
+                }
+            }
+            rc += nstr;
+        }
+        if (self.trimAll)
+            rc = rc.trim();
+        return rc;
+    }
+    if (self.wsName.length)
+        ws = Info.named(self.wsName);
+    if (files && files.length)
+        return parse(files);
+        
+    self.parse = parse;
+    return self;
+}
+
+provide(Csspp, 1.0);
+
+if (isMain())
+    runModule(Csspp);
+

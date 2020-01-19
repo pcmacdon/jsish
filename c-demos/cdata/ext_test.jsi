@@ -1,0 +1,123 @@
+#!/usr/local/bin/jsish --U %s
+"use strict";
+
+var n, m, c, p;
+
+;'\nBee';
+;require('Bee');
+;n=Bee.keys();
+for (var i of n) {
+   m=Info.cmds('Bee.'+i);
+   puts('  '+m.name+'('+m.args+')');
+}
+;Bee.conf();
+;Bee.buzz(2);
+;Bee.conf('buzzCnt');
+;Bee.buzz(4);
+;Bee.pollinate('daisy');
+;Bee.pollinate('rose');
+;Bee.sting('dave', 3);
+;Bee.conf();
+
+;'\nBAKER';
+;require('Baker');
+;n = Baker.keys();
+for (i of n) {
+   m=Info.cmds('Baker.'+i);
+   puts('  '+m.name+'('+m.args+')');
+}
+;Baker.kneed('bakl');
+;Baker.conf();
+;Baker.kneed('bakl',{minutes:1});
+;Baker.slice(1,{coolTime:5});
+;Baker.label('rye',.75);
+
+;'\nCar';
+;require('Car');
+;n=Car.keys();
+;m=Info.cmds('Car');
+;c=new Car();
+for (i of n) {
+   m=Info.cmds('Car.'+i,{constructor:true});
+   p = (i=='Car'?'new Car':m.name);
+   puts('  '+p+'('+m.args+')');
+}
+;c.conf();
+;c.shift(2);
+;c.shift(3);
+;c.setSpeed('max', 3);
+;c.fix('brakes', {Max:1, Cnt:2});
+;c.conf();
+delete c;
+
+;Car_fix_Data.conf();
+;Car_fix_Data.info();
+;Car_fix_Data.get();
+;Car_fix_Data.get(null);
+;Car_fix_Data.set(null,{Cnt:3});
+;Car_fix_Data.incr(null,'Cnt');
+;Car_fix_Data.incr(null,'Max');
+;Car_fix_Data.incr(null,'Max', 3.3);
+
+;Car_Data.get();
+
+
+/*
+=!EXPECTSTART!=
+'
+Bee'
+require('Bee') ==> 1
+n=Bee.keys() ==> [ "conf", "buzz", "sting", "pollinate" ]
+  Bee.conf(options:object|string=void)
+  Bee.buzz(n1:number)
+  Bee.sting(victim:string, times:number)
+  Bee.pollinate(flower:string='daisy', times:number=1)
+Bee.conf() ==> { buzzCnt:0, flower:"", max:0, pollinateCnt:0, stingCnt:0, type:"Drone" }
+Bee.buzz(2) ==> 2
+Bee.conf('buzzCnt') ==> 2
+Bee.buzz(4) ==> 6
+Bee.pollinate('daisy') ==> undefined
+Bee.pollinate('rose') ==> undefined
+Bee.sting('dave', 3) ==> stung dave 3 times
+Bee.conf() ==> { buzzCnt:6, flower:"rose", max:0, pollinateCnt:2, stingCnt:3, type:"Drone" }
+'
+BAKER'
+require('Baker') ==> 1
+n = Baker.keys() ==> [ "conf", "kneed", "slice", "label" ]
+  Baker.conf(options:object|string=void)
+  Baker.kneed(name:string, options:object=void)
+  Baker.slice(loafType:number, options:object=void)
+  Baker.label(pref:string, end:number)
+Baker.kneed('bakl') ==> undefined
+Baker.conf() ==> { cnt:0, kneedCnt:1, kneedMins:0, max:0 }
+Baker.kneed('bakl',{minutes:1}) ==> undefined
+Baker.slice(1,{coolTime:5}) ==> 101
+Baker.label('rye',.75) ==> rye_0.75
+'
+Car'
+require('Car') ==> 1
+n=Car.keys() ==> [ "Car", "conf", "shift", "setSpeed", "fix" ]
+m=Info.cmds('Car') ==> { args:"options:object=void", constructor:true, help:"Extension to create a Car object command.", name:"Car", retType:"any", type:"object" }
+c=new Car() ==> "#Car_1"
+  new Car(options:object=void)
+  Car.conf(options:object|string=void)
+  Car.shift(gear:number)
+  Car.setSpeed(pref:string, times:number)
+  Car.fix(str:string, options:object=void)
+c.conf() ==> { callback:null, gear:0, maxSpeed:120, shiftCnt:0 }
+c.shift(2) ==> 2
+c.shift(3) ==> 3
+c.setSpeed('max', 3) ==> accel max 3 times
+c.fix('brakes', {Max:1, Cnt:2}) ==> undefined
+c.conf() ==> { callback:null, gear:3, maxSpeed:120, shiftCnt:2 }
+Car_fix_Data.conf() ==> { arrSize:0, flags:0, help:"", keyName:null, keyType:"number", mapType:"none", maxSize:0, name:"Car_fix_Data", noAuto:false, structName:"Car_fix", user:0, varParam:"" }
+Car_fix_Data.info() ==> { label:"", spec:[ { cName:"double", help:"", initOnly:false, name:"Max", noCase:false, readOnly:false, required:false, size:8, type:"DOUBLE" }, { cName:"int", help:"", initOnly:false, name:"Cnt", noCase:false, readOnly:false, required:false, size:4, type:"INT" } ], struct:"Car_fix" }
+Car_fix_Data.get() ==> { Cnt:0, Max:0 }
+Car_fix_Data.get(null) ==> { Cnt:0, Max:0 }
+Car_fix_Data.set(null,{Cnt:3}) ==> undefined
+Car_fix_Data.incr(null,'Cnt') ==> 4
+Car_fix_Data.incr(null,'Max') ==> 1
+Car_fix_Data.incr(null,'Max', 3.3) ==> 4.3
+Car_Data.get() ==> { activeCnt:0, loaded:true, newCnt:1 }
+=!EXPECTEND!=
+*/

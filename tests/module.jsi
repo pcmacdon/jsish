@@ -1,0 +1,39 @@
+#!/usr/local/bin/jsish -u
+
+// Standard javascript module pattern.
+var mod = (function () {
+    function sub(n:number) { return n*2; }
+    var that = {
+        x:1,
+        y:2,
+        process:function(a:number) { return sub(a+1); }
+    };
+    return that;
+}());
+
+puts(mod.process(9));
+puts(mod.x);
+
+// Another module
+function fmod() {
+    function sub(n:number) { return n*2; }
+    var that = {
+        x:1,
+        y:2,
+        process:function(a:number) { return sub(a+1); }
+    };
+    return that;    
+}
+
+var fm = fmod();
+puts(fm.process(9));
+puts(fm.x);
+
+/*
+=!EXPECTSTART!=
+20
+1
+20
+1
+=!EXPECTEND!=
+*/

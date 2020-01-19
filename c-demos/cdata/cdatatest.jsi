@@ -1,0 +1,408 @@
+#!/usr/local/bin/jsish --U %s
+"use strict";
+
+var alpha, beta, tree, tree2, tree3, hash, hash2, hash3, pest, flower, n, bees;
+
+;'\n====DEFINES====';
+
+// String form brief: split on comma.
+;CEnum('Fruit', 'apple,banana,orange,grape=9');
+
+// String form with comments used as help field: split on newline.
+CEnum('Vegetable', '
+    corn=0, // My favorite
+    peas=2, // Your favorite
+    potato=-1
+');
+
+// Object form.
+CEnum({name:'Herd'}, [
+    {name:'sheep'},
+    {name:'goat', value:3, help:'set a value'},
+    {name:'cow'}]
+);
+
+
+// String form brief: split on semicolon.
+;CStruct('Bee', 'int s:4; int r:3; int t=8; Fruit k;');
+
+// String form with comments used as help field: split on newline.
+CStruct('Pest', '
+    int x=3;    // int field.
+    Bee b;      // A sub-struct
+    int y=5;
+');
+
+CStruct('Flower', '
+    int x=3;        // int field.
+    int t[3];       // Simple array
+    Bee b[4];       // A struct array
+    Herd herd@;     // Enum bitset. 
+');
+
+// Object form.
+CStruct(
+    {name:'Bkey', help:'Struct to use for a key'}, [
+        {name:'a', type:'int', help:'first key field'},
+        {name:'b', type:'int', help:'second key field'}]
+);
+        
+alpha  = new CData('Bee');          // Struct
+beta   = new CData('Bee[10]');      // Array
+tree   = new CData('Bee{}');        // Map with string key
+tree2  = new CData('Bee{0}');       // Map with number key
+tree3  = new CData('Bee{@Bkey}');   // Map with struct key
+hash   = new CData('Bee{#}');       // Hash with string key
+hash2  = new CData('Bee{#0}');      // Hash with number key
+hash3  = new CData('Bee{#@Bkey}');  // Hash with struct key
+;pest   = new CData('Pest');
+;flower = new CData('Flower');
+;bees   = new CData({structName:'Bee', arrSize:10, help:'An array of bees'});
+
+;'\n====Enum====';
+;CEnum.names();
+;CEnum.names('Fruit');
+;CEnum.conf('Fruit');
+;CEnum.conf('Fruit', 'idx');
+;CEnum.get('Fruit');
+;CEnum.find('Fruit', 1);
+;CEnum.fieldconf('Fruit', 'banana');
+;CEnum.fieldconf('Fruit', 'banana', 'value');
+;CEnum.value('Fruit', 'apple');
+;CEnum.conf('Herd');
+;CEnum.fieldconf('Herd', 'goat');
+;n=CEnum.value('Herd', 'cow');
+assert(n===4);
+;CEnum.conf('Vegetable');
+;n=CEnum.value('Vegetable', 'potato');
+assert(n===-1);
+
+;'\n====Struct====';
+;CStruct.conf('Bee');
+;CStruct.conf('Bee','name');
+;CStruct.names();
+;CStruct.names('Bee');
+;CStruct.fieldconf('Bee', 't');
+;CStruct.fieldconf('Bee', 's', 'bits');
+;CStruct.get('Bee');
+
+;'\n====Types====';
+;CType.names().sort();
+;CType.names(true).sort();
+;CType.conf('INT');
+;CType.conf('INT','flags');
+var x;
+for (var i of CType.names()) {
+;   x=CType.conf(i);
+    if (x.cName.length) {
+;       CType.conf(x.cName);
+    }
+}
+
+;'\n====Data====';
+;alpha.get(null);
+;alpha.get(null, 't');
+;alpha.set(null, 't', 4);
+;alpha.incr(null, 't', 1);
+;n=alpha.get(null, 't');
+assert(n===5);
+//;CStruct.fieldconf('Bee'));
+
+;'\n====Array====';
+;beta.set(0, 't', 2);
+;beta.get(0);
+;beta.get(0, 't');
+;beta.conf();
+
+;bees.set(0, 't', 7);
+;bees.get(0);
+;bees.get(0, 't');
+;bees.conf();
+
+;'\n====Map====';
+;tree.set('X', 't', 2);
+;tree.names();
+;tree.get('X', 't');
+;tree.conf();
+
+;tree2.set(0, 't', 2);
+;n=tree2.get(0, 't');
+assert(n===2);
+;tree2.names();
+;tree2.conf();
+
+var bkey;
+;bkey={a:1,b:2};
+;tree3.set(bkey, 't', 2);
+;tree3.get(bkey, 't');
+;bkey.a++;
+;tree3.set(bkey, 't', 2);
+;tree3.names();
+;tree3.conf();
+
+;hash.set('X', 't', 2);
+;n=hash.get('X', 't');
+assert(n===2);
+;hash.names();
+;hash.conf();
+
+;hash2.set(0, 't', 2);
+;hash2.get(0, 't');
+;hash2.names();
+;hash2.conf();
+
+;hash3.set(bkey, 't', 2);
+;hash3.get(bkey, 't');
+;hash3.names();
+;hash3.conf();
+
+;'\n====Misc====';
+;pest.get(null);
+;n=pest.get(null, 'x');
+assert(n===3);
+;n=pest.get(null, 'y');
+assert(n===5);
+;pest.set(null,'b.s', 2);
+;n=pest.get(null, 'b.s');
+assert(n===2);
+
+;flower.get(null);
+;n=flower.get(null, 'x');
+assert(n===3);
+;flower.set(null, 't[1]', 6);
+;flower.get(null, 't');
+;n=flower.get(null, 't[1]');
+assert(n===6);
+;n=flower.get(null, 'b[1].t');
+assert(n===8);
+;flower.set(null, 'herd', ['goat', 'cow']);
+;flower.get(null, 'herd');
+
+;'\n====Db====';
+var db, schema;
+;db = new Sqlite('/tmp/bees.db');
+;schema = CStruct.schema('Bee');
+;db.eval('CREATE TABLE IF NOT EXISTS Bee (\n'+schema+'\n);');
+;db.query('INSERT INTO Bee %s',{cdata:'beta'});
+;db.query('SELECT %s FROM Bee',{cdata:'beta'});
+
+;'\n====Cleanup====';
+;Info.named('CData');
+delete hash;
+delete hash2;
+delete hash3;
+delete beta;
+delete alpha;
+delete tree3;
+delete tree;
+delete tree2;
+delete pest;
+;CStruct.remove('Pest');
+
+;'\nTODO';
+try {
+;CStruct.remove('Bee');
+} catch(e) {}
+try {
+;CEnum.remove('Fruit');
+} catch(e) {}
+
+
+/*
+=!EXPECTSTART!=
+'
+====DEFINES===='
+CEnum('Fruit', 'apple,banana,orange,grape=9') ==> undefined
+CStruct('Bee', 'int s:4; int r:3; int t=8; Fruit k;') ==> undefined
+pest   = new CData('Pest') ==> "#CData_9"
+flower = new CData('Flower') ==> "#CData_10"
+bees   = new CData({structName:'Bee', arrSize:10, help:'An array of bees'}) ==> "#CData_11"
+'
+====Enum===='
+CEnum.names() ==> [ "Fruit", "Herd", "Vegetable" ]
+CEnum.names('Fruit') ==> [ "apple", "banana", "orange", "grape" ]
+CEnum.conf('Fruit') ==> { flags:0, help:null, idx:4, name:"Fruit" }
+CEnum.conf('Fruit', 'idx') ==> 4
+CEnum.get('Fruit') ==> { fields:[ { name:"apple", value:0 }, { name:"banana", value:1 }, { name:"orange", value:2 }, { name:"grape", value:9 } ], name:"Fruit" }
+CEnum.find('Fruit', 1) ==> banana
+CEnum.fieldconf('Fruit', 'banana') ==> { flags:0, help:null, idx:1, name:"banana", value:1 }
+CEnum.fieldconf('Fruit', 'banana', 'value') ==> 1
+CEnum.value('Fruit', 'apple') ==> 0
+CEnum.conf('Herd') ==> { flags:0, help:null, idx:3, name:"Herd" }
+CEnum.fieldconf('Herd', 'goat') ==> { flags:0, help:"set a value", idx:1, name:"goat", value:3 }
+n=CEnum.value('Herd', 'cow') ==> 4
+CEnum.conf('Vegetable') ==> { flags:0, help:null, idx:3, name:"Vegetable" }
+n=CEnum.value('Vegetable', 'potato') ==> -1
+'
+====Struct===='
+CStruct.conf('Bee') ==> { crc:0, flags:0, help:null, idx:4, name:"Bee", size:6, ssig:0, value:11 }
+CStruct.conf('Bee','name') ==> Bee
+CStruct.names() ==> [ "Bkey", "Pest", "Bee", "Flower" ]
+CStruct.names('Bee') ==> []
+CStruct.fieldconf('Bee', 't') ==> { arrSize:0, bits:0, boffset:7, flags:1, help:null, idx:2, info:null, init:8, name:"t", offset:1, size:4, type:"int" }
+CStruct.fieldconf('Bee', 's', 'bits') ==> 4
+CStruct.get('Bee') ==> { fields:[ { bitoffs:0, bitsize:4, id:"int", isbit:0, label:"", name:"s", offset:0, size:4 }, { bitoffs:4, bitsize:3, id:"int", isbit:0, label:"", name:"r", offset:0, size:4 }, { bitoffs:7, bitsize:0, id:"int", isbit:0, label:"", name:"t", offset:1, size:4 }, { bitoffs:39, bitsize:0, id:"Fruit", isbit:0, label:"", name:"k", offset:5, size:1 } ], name:"Bee", size:6 }
+'
+====Types===='
+CType.names().sort() ==> [ "ARRAY", "BOOL", "CUSTOM", "DOUBLE", "DSTRING", "FLOAT", "FUNC", "INT", "INT16", "INT32", "INT64", "INT8", "INTPTR_T", "LDOUBLE", "LONG", "NUMBER", "OBJ", "REGEXP", "SHORT", "SIZE_T", "SSIZE_T", "STRBUF", "STRING", "STRKEY", "TIME_D", "TIME_T", "TIME_W", "UINT", "UINT16", "UINT32", "UINT64", "UINT8", "UINTPTR_T", "ULONG", "USEROBJ", "USHORT", "VALUE", "VAR" ]
+CType.names(true).sort() ==> [ "Bee", "Bkey", "Flower", "Fruit", "Herd", "Jsi_DString", "Jsi_Number", "Jsi_Strbuf", "Jsi_Value*", "Pest", "Vegetable", "bool", "const char*", "double", "float", "int", "int16_t", "int32_t", "int64_t", "int8_t", "intptr_t", "ldouble", "long", "short", "size_t", "ssize_t", "time_d", "time_t", "time_w", "uint", "uint16_t", "uint32_t", "uint64_t", "uint8_t", "uintptr_t", "ulong", "ushort" ]
+CType.conf('INT') ==> { cName:"int", flags:0, fmt:"d", help:"Integer", idName:"INT", size:4, user:0, xfmt:"#x" }
+CType.conf('INT','flags') ==> 0
+x=CType.conf(i) ==> { cName:"short", flags:0, fmt:"hd", help:"Short", idName:"SHORT", size:2, user:0, xfmt:"#hx" }
+CType.conf(x.cName) ==> { cName:"short", flags:0, fmt:"hd", help:"Short", idName:"SHORT", size:2, user:0, xfmt:"#hx" }
+x=CType.conf(i) ==> { cName:"long", flags:0, fmt:"ld", help:"Long", idName:"LONG", size:8, user:0, xfmt:"#lx" }
+CType.conf(x.cName) ==> { cName:"long", flags:0, fmt:"ld", help:"Long", idName:"LONG", size:8, user:0, xfmt:"#lx" }
+x=CType.conf(i) ==> { cName:"uint8_t", flags:0, fmt:"u", help:"Unsigned 8-bit integer", idName:"UINT8", size:1, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"uint8_t", flags:0, fmt:"u", help:"Unsigned 8-bit integer", idName:"UINT8", size:1, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A Var Value", idName:"VAR", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"ssize_t", flags:0, fmt:"zu", help:"Size integer", idName:"SSIZE_T", size:8, user:0, xfmt:"#zx" }
+CType.conf(x.cName) ==> { cName:"ssize_t", flags:0, fmt:"zu", help:"Size integer", idName:"SSIZE_T", size:8, user:0, xfmt:"#zx" }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"const char*", flags:0, fmt:null, help:"Const string", idName:"STRKEY", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"const char*", flags:0, fmt:null, help:"Const string", idName:"STRKEY", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"time_t", flags:0, fmt:"ld", help:"A time value stored in a unix time_t", idName:"TIME_T", size:8, user:0, xfmt:"#lx" }
+CType.conf(x.cName) ==> { cName:"time_t", flags:0, fmt:"ld", help:"A time value stored in a unix time_t", idName:"TIME_T", size:8, user:0, xfmt:"#lx" }
+x=CType.conf(i) ==> { cName:"time_d", flags:0, fmt:"g", help:"A time value in milliseconds stored as a double", idName:"TIME_D", size:8, user:0, xfmt:"#g" }
+CType.conf(x.cName) ==> { cName:"time_d", flags:0, fmt:"g", help:"A time value in milliseconds stored as a double", idName:"TIME_D", size:8, user:0, xfmt:"#g" }
+x=CType.conf(i) ==> { cName:"uint64_t", flags:0, fmt:"lu", help:"Unsigned 64-bit integer", idName:"UINT64", size:8, user:0, xfmt:"#lx" }
+CType.conf(x.cName) ==> { cName:"uint64_t", flags:0, fmt:"lu", help:"Unsigned 64-bit integer", idName:"UINT64", size:8, user:0, xfmt:"#lx" }
+x=CType.conf(i) ==> { cName:"", flags:0, fmt:null, help:"A Custom value", idName:"CUSTOM", size:0, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A Regex Value", idName:"REGEXP", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"Jsi_DString", flags:0, fmt:null, help:"A dynamic string", idName:"DSTRING", size:224, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_DString", flags:0, fmt:null, help:"A dynamic string", idName:"DSTRING", size:224, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"double", flags:0, fmt:"lg", help:"Floating point double", idName:"DOUBLE", size:8, user:0, xfmt:"#lg" }
+CType.conf(x.cName) ==> { cName:"double", flags:0, fmt:"lg", help:"Floating point double", idName:"DOUBLE", size:8, user:0, xfmt:"#lg" }
+x=CType.conf(i) ==> { cName:"intptr_t", flags:0, fmt:"d", help:"Integer large enough to store pointer", idName:"INTPTR_T", size:8, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"intptr_t", flags:0, fmt:"d", help:"Integer large enough to store pointer", idName:"INTPTR_T", size:8, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"bool", flags:0, fmt:"u", help:"Boolean value: true or false", idName:"BOOL", size:1, user:0, xfmt:"u" }
+CType.conf(x.cName) ==> { cName:"bool", flags:0, fmt:"u", help:"Boolean value: true or false", idName:"BOOL", size:1, user:0, xfmt:"u" }
+x=CType.conf(i) ==> { cName:"ulong", flags:0, fmt:"lu", help:"Unsigned long", idName:"ULONG", size:8, user:0, xfmt:"#lx" }
+CType.conf(x.cName) ==> { cName:"ulong", flags:0, fmt:"lu", help:"Unsigned long", idName:"ULONG", size:8, user:0, xfmt:"#lx" }
+x=CType.conf(i) ==> { cName:"time_w", flags:0, fmt:"ld", help:"A time value in milliseconds stored as a 64 bit integer", idName:"TIME_W", size:8, user:0, xfmt:"#lx" }
+CType.conf(x.cName) ==> { cName:"time_w", flags:0, fmt:"ld", help:"A time value in milliseconds stored as a 64 bit integer", idName:"TIME_W", size:8, user:0, xfmt:"#lx" }
+x=CType.conf(i) ==> { cName:"uint32_t", flags:0, fmt:"u", help:"Unsigned 32-bit integer", idName:"UINT32", size:4, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"uint32_t", flags:0, fmt:"u", help:"Unsigned 32-bit integer", idName:"UINT32", size:4, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"int64_t", flags:0, fmt:"ld", help:"An 64-bit integer", idName:"INT64", size:8, user:0, xfmt:"#lx" }
+CType.conf(x.cName) ==> { cName:"int64_t", flags:0, fmt:"ld", help:"An 64-bit integer", idName:"INT64", size:8, user:0, xfmt:"#lx" }
+x=CType.conf(i) ==> { cName:"Jsi_Strbuf", flags:0, fmt:"s", help:"A fixed size string buffer", idName:"STRBUF", size:0, user:0, xfmt:"s" }
+CType.conf(x.cName) ==> { cName:"Jsi_Strbuf", flags:0, fmt:"s", help:"A fixed size string buffer", idName:"STRBUF", size:0, user:0, xfmt:"s" }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"An Array Value", idName:"ARRAY", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"uint16_t", flags:0, fmt:"u", help:"Unsigned 16-bit integer", idName:"UINT16", size:2, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"uint16_t", flags:0, fmt:"u", help:"Unsigned 16-bit integer", idName:"UINT16", size:2, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"uint", flags:0, fmt:"u", help:"Unsigned", idName:"UINT", size:4, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"uint", flags:0, fmt:"u", help:"Unsigned", idName:"UINT", size:4, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"int32_t", flags:0, fmt:"d", help:"An 32-bit integer", idName:"INT32", size:4, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"int32_t", flags:0, fmt:"d", help:"An 32-bit integer", idName:"INT32", size:4, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"Jsi_Number", flags:0, fmt:"g", help:"Double or long double", idName:"NUMBER", size:8, user:0, xfmt:"#g" }
+CType.conf(x.cName) ==> { cName:"Jsi_Number", flags:0, fmt:"g", help:"Double or long double", idName:"NUMBER", size:8, user:0, xfmt:"#g" }
+x=CType.conf(i) ==> { cName:"uintptr_t", flags:0, fmt:"u", help:"Unsigned large enough to store pointer", idName:"UINTPTR_T", size:8, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"uintptr_t", flags:0, fmt:"u", help:"Unsigned large enough to store pointer", idName:"UINTPTR_T", size:8, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"int16_t", flags:0, fmt:"d", help:"An 16-bit integer", idName:"INT16", size:2, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"int16_t", flags:0, fmt:"d", help:"An 16-bit integer", idName:"INT16", size:2, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"An Object Value", idName:"OBJ", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"int", flags:0, fmt:"d", help:"Integer", idName:"INT", size:4, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"int", flags:0, fmt:"d", help:"Integer", idName:"INT", size:4, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"int8_t", flags:0, fmt:"d", help:"An 8-bit integer", idName:"INT8", size:1, user:0, xfmt:"#x" }
+CType.conf(x.cName) ==> { cName:"int8_t", flags:0, fmt:"d", help:"An 8-bit integer", idName:"INT8", size:1, user:0, xfmt:"#x" }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A Func Value", idName:"FUNC", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A Value", idName:"VALUE", size:8, user:0, xfmt:null }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"ushort", flags:0, fmt:"hu", help:"Unsigned short", idName:"USHORT", size:2, user:0, xfmt:"#hx" }
+CType.conf(x.cName) ==> { cName:"ushort", flags:0, fmt:"hu", help:"Unsigned short", idName:"USHORT", size:2, user:0, xfmt:"#hx" }
+x=CType.conf(i) ==> { cName:"size_t", flags:0, fmt:"zd", help:"Size unsigned", idName:"SIZE_T", size:8, user:0, xfmt:"#zx" }
+CType.conf(x.cName) ==> { cName:"size_t", flags:0, fmt:"zd", help:"Size unsigned", idName:"SIZE_T", size:8, user:0, xfmt:"#zx" }
+x=CType.conf(i) ==> { cName:"float", flags:0, fmt:"g", help:"Floating point", idName:"FLOAT", size:4, user:0, xfmt:"#g" }
+CType.conf(x.cName) ==> { cName:"float", flags:0, fmt:"g", help:"Floating point", idName:"FLOAT", size:4, user:0, xfmt:"#g" }
+x=CType.conf(i) ==> { cName:"Jsi_Value*", flags:0, fmt:"s", help:"A string Value", idName:"STRING", size:8, user:0, xfmt:"s" }
+CType.conf(x.cName) ==> { cName:"Jsi_Value*", flags:0, fmt:null, help:"A User-define Object Value", idName:"USEROBJ", size:8, user:0, xfmt:null }
+x=CType.conf(i) ==> { cName:"ldouble", flags:0, fmt:"Lg", help:"Floating point long double", idName:"LDOUBLE", size:16, user:0, xfmt:"#Lg" }
+CType.conf(x.cName) ==> { cName:"ldouble", flags:0, fmt:"Lg", help:"Floating point long double", idName:"LDOUBLE", size:16, user:0, xfmt:"#Lg" }
+'
+====Data===='
+alpha.get(null) ==> { k:"apple", r:0, s:0, t:8 }
+alpha.get(null, 't') ==> 8
+alpha.set(null, 't', 4) ==> undefined
+alpha.incr(null, 't', 1) ==> 5
+n=alpha.get(null, 't') ==> 5
+'
+====Array===='
+beta.set(0, 't', 2) ==> undefined
+beta.get(0) ==> { k:"apple", r:0, s:0, t:2 }
+beta.get(0, 't') ==> 2
+beta.conf() ==> { arrSize:10, flags:0, help:null, keyName:null, keyType:"number", mapType:"none", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"[10]" }
+bees.set(0, 't', 7) ==> undefined
+bees.get(0) ==> { k:"apple", r:0, s:0, t:7 }
+bees.get(0, 't') ==> 7
+bees.conf() ==> { arrSize:10, flags:0, help:"An array of bees", keyName:null, keyType:"number", mapType:"none", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:null }
+'
+====Map===='
+tree.set('X', 't', 2) ==> undefined
+tree.names() ==> [ "X" ]
+tree.get('X', 't') ==> 2
+tree.conf() ==> { arrSize:0, flags:0, help:null, keyName:null, keyType:"string", mapType:"tree", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"{}" }
+tree2.set(0, 't', 2) ==> undefined
+n=tree2.get(0, 't') ==> 2
+tree2.names() ==> [ 0 ]
+tree2.conf() ==> { arrSize:0, flags:0, help:null, keyName:null, keyType:"number", mapType:"tree", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"{0}" }
+bkey={a:1,b:2} ==> { a:1, b:2 }
+tree3.set(bkey, 't', 2) ==> undefined
+tree3.get(bkey, 't') ==> 2
+bkey.a++ ==> 1
+tree3.set(bkey, 't', 2) ==> undefined
+tree3.names() ==> [ { a:1, b:2 }, { a:2, b:2 } ]
+tree3.conf() ==> { arrSize:0, flags:0, help:null, keyName:"Bkey", keyType:"8", mapType:"tree", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"{@Bkey}" }
+hash.set('X', 't', 2) ==> undefined
+n=hash.get('X', 't') ==> 2
+hash.names() ==> [ "X" ]
+hash.conf() ==> { arrSize:0, flags:0, help:null, keyName:null, keyType:"string", mapType:"hash", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"{#}" }
+hash2.set(0, 't', 2) ==> undefined
+hash2.get(0, 't') ==> 2
+hash2.names() ==> [ 0 ]
+hash2.conf() ==> { arrSize:0, flags:0, help:null, keyName:null, keyType:"number", mapType:"hash", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"{#0}" }
+hash3.set(bkey, 't', 2) ==> undefined
+hash3.get(bkey, 't') ==> 2
+hash3.names() ==> [ { a:2, b:2 } ]
+hash3.conf() ==> { arrSize:0, flags:0, help:null, keyName:"Bkey", keyType:"8", mapType:"hash", maxSize:0, name:null, noAuto:false, structName:"Bee", user:0, varParam:"{#@Bkey}" }
+'
+====Misc===='
+pest.get(null) ==> { b:{ k:"apple", r:0, s:0, t:8 }, x:3, y:5 }
+n=pest.get(null, 'x') ==> 3
+n=pest.get(null, 'y') ==> 5
+pest.set(null,'b.s', 2) ==> undefined
+n=pest.get(null, 'b.s') ==> 2
+flower.get(null) ==> { b:[ { k:"apple", r:0, s:0, t:8 }, { k:"apple", r:0, s:0, t:8 }, { k:"apple", r:0, s:0, t:8 }, { k:"apple", r:0, s:0, t:8 } ], herd:[], t:[ 0, 0, 0 ], x:3 }
+n=flower.get(null, 'x') ==> 3
+flower.set(null, 't[1]', 6) ==> undefined
+flower.get(null, 't') ==> [ 0, 6, 0 ]
+n=flower.get(null, 't[1]') ==> 6
+n=flower.get(null, 'b[1].t') ==> 8
+flower.set(null, 'herd', ['goat', 'cow']) ==> undefined
+flower.get(null, 'herd') ==> [ "goat", "cow" ]
+'
+====Db===='
+db = new Sqlite('/tmp/bees.db') ==> "#Sqlite_1"
+schema = CStruct.schema('Bee') ==> 
+  s int
+ ,r int
+ ,t INT
+ ,k TEXT
+  -- MD5=2c2573332fca5f166b7272366bd888b0
+db.eval('CREATE TABLE IF NOT EXISTS Bee (
+'+schema+'
+);') ==> 0
+db.query('INSERT INTO Bee %s',{cdata:'beta'}) ==> 10
+db.query('SELECT %s FROM Bee',{cdata:'beta'}) ==> 10
+'
+====Cleanup===='
+Info.named('CData') ==> [ "#CData_8", "#CData_4", "#CData_9", "#CData_5", "#CData_1", "#CData_6", "#CData_2", "#CData_10", "#CData_7", "#CData_3", "#CData_11" ]
+CStruct.remove('Pest') ==> undefined
+'
+TODO'
+CStruct.remove('Bee') ==> CEnum.remove('Fruit') ==> =!EXPECTEND!=
+*/

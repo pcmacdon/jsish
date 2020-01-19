@@ -1,0 +1,78 @@
+<!-- User interface for sqliteui -->
+<!DOCTYPE html>
+
+<head>
+<title>SqliteUI</title>
+<!--
+<script src='sqlite.js'></script> 
+<link rel="stylesheet" type="text/css" href="sqlite.css">
+-->
+<script src='/SqliteUI/jsi/web/jsi.js'></script> 
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<? 
+// Load .jsi and .cssi for preprocessing.
+include(['sqlite.jsi', 'sqlite.cssi']);
+?>
+</head>
+
+<body id=body_main'>
+
+
+<div id=frame_main>
+<button class=mainbuts onclick='ToggleUI("uibutton")'>SqliteUI:</button>
+<div id=uibutton style="display: none;">
+    <button onclick='ToggleUI("uihelp")'>Help</button>
+    <button onclick='ToggleUI("uioptions")'>Options</button>
+    <button onclick='Tool("read")' title="Read and evaluate an SQL file">Read</button>
+    <button onclick='Tool("export")' title="Export a table to a file">Export</button>
+    <button onclick='Tool("import")' title="Import data into a table">Import</button>
+    <button onclick='Tool("backup")' title="Backup database to a file">Backup</button>
+    <button onclick='Tool("restore")' title="Restore a database backup from a file">Restore</button>
+<!--    <button onclick='FileBrowse()' title="Open a file">Open</button> -->
+    <br>
+    <div id=uioptions style="display:none">
+        <table>
+        <tr><td class=right title="Table value newlines suppressed">No-Newlines:</td>
+            <td> <input type=checkbox onclick='ToggleOpt("wrap")'></td>
+        </tr>
+        </table>
+    </div>
+    <div id=uihelp style="display:none">
+    <? include('sqliteui_doc.html'); ?>
+For more information, see the <a href=/html/sqliteui_doc.md target=_blank>SqliteUI Manual</a>.
+    </div>
+</div>
+<input style="width:90%" id=parm_query title='Enter a free-form SQL query here'>
+
+<div id=tvals_parm style="display:block" class=tblconf>
+    <button onclick='TNavAddRow()' id=tnav_row_add title='Add a new row to the current table'>+</button>
+    <button onclick='TNavDelRow()' id=tnav_row_del title='Delete selected row'>-</button>
+    <button onclick='TNavCmd("start")' id=tnav_page_start title='First page of data'>&lt;&lt;</button>
+    <button onclick='TNavCmd("up")' id=tnav_page_up title='Previous page of data'>&lt;</button>
+    <button onclick='TNavCmd("down")' id=tnav_page_down title='Next page of data'>&gt;</button>
+    <button onclick='TNavCmd("end")' id=tnav_page_end title='Last page of data'>&gt;&gt;</button>
+    SELECT <input id=parm_columns title='Comma-seperated list of columns to display'>
+    WHERE <input id=parm_where title='An SQL where-clause to apply (eg. COL>9).'>
+    ORDER BY <input id=parm_orderby size=4 title='Column name(s) to use in a ORDER BY'>
+    LIMIT <input id=parm_limit size=4  onfocus="this.value=''" value=20 title='Number of rows to display (default: 20)'>
+    OFFSET <input id=parm_offset size=4 title='How many rows to skip'>
+</div>
+<table>
+    <tr>
+        <td valign=top>
+            <table id=qlist border=1 class="tlisttbl" onclick='ClickQList(event)' width=100%></table>
+            <table id=tlist border=1 class="tlisttbl" title="Double-click to see schema" 
+                onclick='ClickTList(event)' ondblclick='DblClickTList(event)'></table>
+        </td>
+        <td valign=top width=100%>
+            <table id=tvals border=1 class="tvalstbl conf_spacepre" title="Double-click to edit" onclick='ClickTVals(event)' ondblclick='DblClickTVals(event)'></table>
+        </td>
+    </tr>
+</table>
+</div>
+
+</body>
+
+<? include('dialog.html'); ?>
+
+</html>

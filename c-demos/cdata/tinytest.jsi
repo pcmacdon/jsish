@@ -1,0 +1,10 @@
+#!/usr/local/bin/jsish --U %s
+
+;require('Tiny');
+;'tinytest';
+;Tiny.range();
+;Tiny.range(20,10);
+;Tiny.range(20,0,2);
+
+;Util.times(function() {Tiny.range(10000,0,2);});
+

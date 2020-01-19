@@ -1,0 +1,14 @@
+#!/usr/local/bin/jsish --U %s
+
+// Demonstrates warnings.
+
+function warndemo2() {
+    exec();           // Builtin.
+    System.exec('a',2,3,4);  // Builtin.
+    warndemoA(1,2,3); // No warning
+    warndemoB();      // Missing arg.
+    warndemoB(1,2,3); // Extra args
+    warndemoB('abc'); // Wrong type
+}
+
+provide('warndemo2');

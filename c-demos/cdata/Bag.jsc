@@ -1,0 +1,35 @@
+#!/usr/local/bin/jsish -c -compile true %s
+
+// Simple range functions using of CAPI.
+
+struct Bag_ranger = { // Struct used by ranger()
+    int size = 10;        //
+    int start;            // Note: 0 is default in structs.
+    int step = 1;
+};
+
+extension Bag = { // A C Extension
+    // C code starts after the last comment.
+    #include <stdio.h>
+
+    function range(size:number=10, start:number=0, step:number=1):array { // Fill a range.
+        /* C-code. */
+        Jsi_Value *a = Jsi_ValueMakeArrayObject(interp, ret, NULL);
+        Jsi_RC rc = JSI_OK;
+        int n=size-1, i=start+n*step;
+        for (; n>=0&&rc==JSI_OK; i-=step,n--)
+            rc = Jsi_ValueInsertArray(interp, a, n, Jsi_ValueNewNumber(interp, i), 0);
+        return rc;
+    }
+
+    function ranger(options:object=void):array { // Fill a range using config
+        /* C code. */
+        Jsi_Value *a = Jsi_ValueMakeArrayObject(interp, ret, NULL);
+        Jsi_RC rc = JSI_OK;
+        int n=options->size-1, i=options->start+n*options->step;
+        for (; n>=0&&rc==JSI_OK; i-=options->step, n--)
+            rc = Jsi_ValueInsertArray(interp, a, n, Jsi_ValueNewNumber(interp, i), 0);
+        return rc;
+    }
+
+};

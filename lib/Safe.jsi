@@ -1,0 +1,133 @@
+#! /usr/bin/env jsish
+
+require('Jsish');
+
+function Safe(fileargs:array, conf:object=void) {
+
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    var options = { // Run a safe sub-interp on script arg: when arg is ommitted or a dir, runs interactively.
+        evalStr     :'',        // Code-string to eval instead of sourcing filearg.
+        msgCmd      :null,      // Command to relay Interp.msgCallback..
+        noRead      :false,     // Omit setting safeReadDirs that lets source() be used.
+        opts        :{},        // Options for sub-interp create.
+        paranoid    :false,     // Extra safety: sets noRead=true, and disables subinterps, networking, etc.
+        putsCmd     :null,      // Command to relay Interp.putsCallback.
+        quiet       :false,     // Quiet mode
+        retAll      :false,     // Return object with these fields: retVal, putsVal, msgVal.
+        unitTest    :false      // Enable unit test output (ie. like -U).
+    };
+    var self = {
+        srcFile:null,
+        version:1.0
+    };
+    var all = {
+        putsVal:'',
+        msgVal:[]
+    };
+    
+    parseOpts(self, options, conf);
+    
+    function msgFunc(msg:string, type:string, file:string, line:number, col:number) {
+        puts("GOT MSG", msg);
+        if (self.msgCmd)
+            self.msgCmd(msg, type, file, line, col);
+        if (self.retAll)
+            all.msgVal.push([msg, type, file, line, col]);
+    }
+    
+    function putsFunc(msg:string, isStderr:number) {
+        if (self.putsCmd)
+            self.putsCmd(msg, isStderr);
+        if (self.retAll)
+            all.putsVal += msg + '\n';
+        puts("GOT PUTS", msg);
+    }
+    
+    function main() {
+        LogTrace('Starting');
+        debugger;
+        if (!self.rootdir)
+            self.rootdir=Info.scriptDir();
+        self.args = [];
+        var scr = null, fn = self.srcFile = fileargs[0];
+        if (fn === undefined)
+            fn = '.';
+        fn = File.realpath(fn);
+        self.args = fileargs.splice(1);
+        LogTrace('ARGS:', self.args);
+        if (!File.exists(fn))
+            throw("script file does not exist: "+fn);
+        var ext = File.extension(fn),
+            isdir = File.isdir(fn);
+        if (!isdir && ext != '.jsi' && ext != '.js')
+            throw("Safe module file extension "+ext+" not one of: .js .jsi: ");
+        if (self.unitTest && (isdir || self.noRead))
+            throw('can not use both unitTest and noRead or directory arg');
+        var sopts = {isSafe:true, name:'safeProg'};
+        if (self.paranoid) {
+            self.noRead = true;
+            sopts.asserts=true;
+            sopts.noNetwork = true;
+            //sopts.noInput = true;
+            sopts.stdinStr = 'INPUT DISALLOWED';
+            sopts.subOpts = {noproto:true};
+            sopts.noLoad = true;
+            sopts.noConfig = true,
+            sopts.maxDepth = 20;
+            sopts.maxUserObjs = 100;
+            sopts.maxOpCnt = 1000000;
+            sopts.noSubInterps = true;
+            sopts.typeCheck = ['error', 'strict'];
+            sopts.debugOpts = {putsCallback:'putsFunc', msgCallback:'msgFunc'};
+        }
+        for (var i in self.opts)
+            sopts[i] = self.opts[i];
+        if (!self.noRead) {
+            if (isdir) {
+                sopts.scriptFile='';                
+                sopts.safeReadDirs = [fn];
+            } else {
+                sopts.safeReadDirs = [File.dirname(fn)];
+                sopts.scriptFile=fn;
+            }
+
+            if (self.unitTest) {
+                sopts.unitTest = 1;
+                sopts.asserts = true;
+            }
+        } else {
+            if (isdir) {
+                sopts.scriptFile='';                
+            } else if (self.evalStr === '') {
+                scr = File.read(fn);
+                LogTrace("SRC", fn, ":", src);
+                if (scr.substr(0,1) === '#') {
+                    var nl = scr.indexOf('\n');
+                    scr = scr.substr(nl);
+                }
+                self.evalStr = scr;
+                sopts.scriptFile=fn;
+            }
+        }
+        if (self.evalStr !== '')
+            sopts.scriptStr = self.evalStr;
+        sopts.args = self.args;
+        if (!self.quiet)
+            puts("Running in safe interp: file=",fn,', args=',self.args,', indir=',self.rootdir,'\nWith options:', sopts);
+        self.interp = new Interp(sopts);
+        var val = self.interp.conf('retValue');
+        delete self.interp;
+        if (!self.retAll)
+            return val;
+        all.retVal = val;
+        return all;
+    }
+    
+    return main();
+}
+
+provide(Safe, 1);
+
+
+if (isMain())
+    runModule(Safe);

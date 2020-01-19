@@ -1,0 +1,17 @@
+Typed Function Arguments demo.
+<p>
+To see warnings open console <i>(F12, Ctrl-Shift-I or Inspect-Element)</i> and reload page.
+
+<script src="../lib/web/jsi.js"></script>
+<script>
+    $jsi.include('bark.jsi');
+    $jsi.onload(function () {
+        bark('abc',0);
+        bark(9,0);
+        bark('9','0');
+        bark(9);
+        bark(9,0,0);
+    });
+    
+</script>
+

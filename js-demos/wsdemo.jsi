@@ -1,0 +1,78 @@
+#!/usr/bin/env jsish
+require('Jsish');
+require('WebSocket', '2');
+
+function wsdemo(args:array|string=void, conf:object=void) {
+    
+    var self = { done:false };
+    var options = { // A minimal WebSocket demo
+        client  :false,         // Run in client mode.  Default is server mode.
+        count   :10,            // Number of times client sends a string.
+        local   :true,          // Connection listens only on localhost.
+        port    :8818,          // Port number for server.
+        file    :'wspage.html', // File to serve out: can also be given as cmdline arg.
+        wsdebug :0,             // WebSockets debug level.
+        wsOpts  :{}             // WebSockets options.
+    };
+    
+    parseOpts(self, options, conf);
+
+    function WsCloseLast(ws:userobj|null) {
+        self.done = true;
+    }
+        
+    function WsFilter(ws:userobj, id:number, urlprot:string, ishttp:boolean) {
+        printf("onFilter: %d %s %S\n", id, urlprot, ishttp);
+        return true;
+    }
+    
+    function WsRecv(ws:userobj, id:number, str:string) {
+        puts("RECV(srv="+!self.client+"): "+ str);
+        if (!self.client)
+            self.ws.send(id, str);
+    }
+    
+    function ClientSend(n) {
+        var msg = 'hello world '+(n+1);
+        LogDebug('SEND:', msg, n);
+        self.ws.send(-1, msg);
+        if (n<0)
+            exit(0);
+        setTimeout(function () { ClientSend(n-1); }, 1000);
+    }
+
+    function main() {
+         if (typeof args == 'string' && args !== '')
+            self.file = args;
+        else if (typeof args === 'array' && args.length)
+            self.file = args[0];
+
+        var wsopts = {
+            port:self.port, client:self.client, onRecv:WsRecv, debug:self.wsdebug,
+            onFilter:WsFilter, onCloseLast:WsCloseLast, local:self.local
+        };
+        for (var i in self.wsOpts) {
+            wsopts[i] = self.wsOpts[i];
+        }
+        LogDebug("Starting:\n", conf, wsopts);
+        debugger;
+        self.ws = new WebSocket( wsopts );
+        
+        if (self.client)
+            ClientSend(self.count);
+        else if (self.file != '')
+            exec('xdg-open http://127.0.0.1:'+self.port+'/'+self.file+' &');
+        
+        while (!self.done)
+            update(10);
+    }
+    
+    main();
+}
+
+provide(wsdemo);
+
+if (isMain())
+    runModule(wsdemo);
+
+

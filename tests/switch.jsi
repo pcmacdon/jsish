@@ -1,0 +1,18 @@
+#!/usr/local/bin/jsish -u %s
+
+switch(3) {
+    default:   puts("default");
+    case 1:
+        puts("1");
+        break;
+    case 2:
+        puts("2");
+    continue;
+}
+
+/*
+=!EXPECTSTART!=
+default
+1
+=!EXPECTEND!=
+*/

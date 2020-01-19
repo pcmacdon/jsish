@@ -1,0 +1,29 @@
+#!/usr/local/bin/jsish -u %s
+
+var b, s, x;
+;b = new Boolean(true);
+;b.valueOf();
+
+;s = new String('aa');
+;s.valueOf();
+
+;x = { a:1, b:3 };
+;x.valueOf();
+
+;b.constructor;
+;Boolean;
+;Boolean == b.constructor;
+
+/*
+=!EXPECTSTART!=
+b = new Boolean(true) ==> true
+b.valueOf() ==> true
+s = new String('aa') ==> aa
+s.valueOf() ==> aa
+x = { a:1, b:3 } ==> { a:1, b:3 }
+x.valueOf() ==> { a:1, b:3 }
+b.constructor ==> "function Boolean(bool:boolean=false) { [native code] }"
+Boolean ==> "function Boolean(bool:boolean=false) { [native code] }"
+Boolean == b.constructor ==> true
+=!EXPECTEND!=
+*/

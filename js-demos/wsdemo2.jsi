@@ -1,0 +1,76 @@
+#!/usr/local/bin/jsish
+require('Jsish');
+require('WebSocket', '2');
+
+function wsdemo2(args:array|string=void, conf:object=void) {
+
+    var self = { };
+    var options = { // Demo for exercising Websrv. Called with arg 1-6
+        noexit:false,    // Ignore exit request in websocket demo.
+        timeout:5000    // Shutdown for non-WebSocket demos.
+    };
+    
+    parseOpts(self, options, conf);
+
+    var page = 'wspage.html';
+    
+    function onAuth(ws:userobj, id:number, url:string, userpass:string) {
+        puts('Url=',url,' UP=',userpass);
+        puts(ws.conf({realm:'altRealm'}));
+        return (userpass === 'abc:xyz');
+    }
+    
+    function onRecv(ws:userobj, id:number, dat:object)
+    {
+        puts('onRecv', dat);
+        switch (dat.cmd) {
+            case 'init':
+                return ['process', "got it"];
+            case 'process':
+                return 'got process';
+            case 'exit': if (!self.noexit) exit(0); return 'exiting';
+                
+            default: break;
+        }
+    }
+    
+    assert(args.length<=1);
+    var arg = args[0];
+
+    switch (arg?parseInt(arg):'') {
+        case 1:
+            puts('Serve out file', page);
+            Websrv(page);
+            break;
+        case 2:
+            puts('Serve out string');
+            Websrv([], {pageStr:'Hello <b>world</b>', timeout:self.timeout});
+            break;
+        case 3:
+            puts('Serve out string read from file', page);
+            Websrv([], {pageStr:File.read(page), timeout:self.timeout});
+            break;
+        case 4:
+            puts('Serve out file', page, 'with custom callback');
+            Websrv(page, {onRecv:onRecv});
+            break;
+        case 5:
+            puts('Serve out file', page, 'with static password: login "abc:123"');
+            Websrv(page, {onRecv:onRecv, useridPass:'abc:123', timeout:self.timeout});
+            break;
+        case 6:
+            puts('Serve out file', page, 'with onAuth callback: login "abc:xyz"');
+            Websrv(page, {wsOpts:{onAuth:onAuth}, timeout:self.timeout});
+            break;
+        default:
+            throw("call with arg: 1-6");
+    }
+}
+
+provide(wsdemo2);
+
+if (isMain())
+    runModule(wsdemo2);
+
+    
+    

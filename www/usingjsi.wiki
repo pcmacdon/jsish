@@ -1,0 +1,305 @@
+<title>Using jsish</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#invoke|Invocation]</li>
+<ul>
+<li>[#interactive|Interactive]</li>
+<li>[#scrfiles|Script]</li>
+<li>[#inline|Inline]</li>
+</ul>
+<li>[#arguments|Switches]</li>
+<ul>
+</ul>
+<li>[#options|Options]</li>
+<li>[#introspec|Introspection]</li>
+<li>[#examples|Example Applications]</li>
+<li>[#shell|Shell]</li>
+<li>[#auto|Autocompletion]</li>
+<li>[#editors|Editors]</li>
+<ul>
+<li>[#geany|Geany]</li>
+<li>[#vim|Vim]</li>
+</ul>
+</ul>
+</div>
+
+<h2 id=invoke>Invocation</h2>
+
+The following describes a few of the ways to use <b>jsish</b>.
+
+<h3 id=interactive>Interactive</h3>
+
+Interactive mode is the easiest way to try out code snippets, eg:
+
+    <nowiki><pre class=verbatim_out>
+  ./jsish
+# var a = [1,2,3];
+# for (var i in a) { puts(a[i]); }
+1
+2
+3
+...
+</pre></nowiki>
+
+
+<h3 id=scrfiles>Script</h3>
+
+The script file to be executed is the first argument:
+
+    <nowiki><pre class=verbatim>
+jsish prog.js arg1 arg2
+</pre></nowiki>
+
+Under unix, the first line of executable scripts can be <b>#!</b>:
+
+    <nowiki><pre class=verbatim>
+#!/usr/bin/env jsish
+for (var i in console.args)
+   puts(console.args[i]);
+</pre></nowiki>
+
+The above allows jsish to be found in the path.
+
+<h3 id=inline>Inline</h3>
+Javascript can also be evaluated from the command-line with <b>-e</b>, eg:
+
+    <nowiki><pre class=verbatim>
+jsish -e 'var i = 0; while (i++<10) puts(i);'
+</pre></nowiki>
+
+<hr>
+
+<h2 id=arguments>Switches</h2>
+
+To see the supported switches in jsish use <b>-h</b>
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b> -h
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+usage: jsi -h|--help|-v|--version|-d|--debug|-D|--debugui|-W|--websrv|-S|--safe|-Z|--zip|-H|--htmli|
+    -J|-jsi|-C|--cssi|-i|--invoke CMD|-e|--eval SCRIPT|-t|--tracecall|-T|--typecheck OPT|-IOPT VAL|FILE arg arg ...
+</pre></nowiki>
+
+The available switches are:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Options</th> <th>Description</th> </tr>
+<tr><td>-h|--help</td> <td>Outputs jsish help, or module help</td><tr>
+<tr><td>-v|--version</td> <td>Output jsish version information</td><tr>
+<tr><td>-d|--debug</td> <td>Command-line [./debug.wiki|debugger] [./js-modules.wiki|module]</td><tr>
+<tr><td>-D|--debugui</td> <td>Jsi web-based gui debugger</td><tr>
+<tr><td>-W|--websrv</td> <td>Web server and start browser</td><tr>
+<tr><td>-S|--safe</td> <td>Run a safe interpreter, script or interactive</td><tr>
+<tr><td>-Z|--zip</td> <td>File zip utility</td><tr>
+<tr><td>-H|--htmli</td> <td>Html preprocessor</td><tr>
+<tr><td>-J|-jsi</td> <td>Javascript preprocessor</td><tr>
+<tr><td>-c|--cdata FILE</td> <td>Process a [./js-cdata.wiki|Cdata] definition</td><tr>
+<tr><td>-C|--cssi</td> <td>Css preprocessor</td><tr>
+<tr><td>-i|--invoke CMD</td> <td>Invoke command Sys module stored in /zvfs</td><tr>
+<tr><td>-e|--eval SCRIPT</td> <td>Evaluate a script string from command-line</td><tr>
+<tr><td>-t|--tracecall</td> <td>[./profiler.wiki#tracing|Trace] function calls and returned values</td><tr>
+<tr><td>-T|--typecheck OPT</td> <td>Set function [./functions.wiki|type-checking] level</td><tr>
+<tr><td>-IOPT VAL</td> <td>Set an [./js-interp.wiki|interp] [reference.wiki#new InterpOptions|option]</td><tr>
+</table>
+
+Help for module commands can similarly be displayed, eg:
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b> -d -h
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+/zvfs/lib/JsiUtil.jsi:121: error: throw: 
+A command-line Debugger for Jsi scripts.
+
+Options/defaults:
+    -debug      false       // Debugging output
+    -echoCmd    true        // Echo user cmds.
+    -safe       false       // Debug program in a safe interp (untested)
+
+ERROR
+</pre></nowiki>
+
+which is used as:
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b> -d -debug true tests/while.js
+</pre></nowiki>
+
+<hr>
+
+<h2 id=options>Options</h2>
+
+Options are parameters handled by builtin commands.
+These get passed in an <i>object</i>:
+
+    <pre class=verbatim>
+var db = new Sqlite('/tmp/testsql.db',{maxStmts:1000, readonly:true});
+</pre>
+
+Usually there is a <b>conf()</b> method providing access to options after creation:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>(); <i>// Dump all options</i>
+<b>Interp.conf</b>(<i>'strict'</i>); <i>// Get one option</i>
+<b>Interp.conf</b>({strict:false, maxDepth:99}); <i>// Set one or more options.</i>
+</pre></nowiki>
+
+Note some options may be <b>readOnly</b>. And an option that is <b>initOnly</b>
+may only be set at object creation time.
+
+Internally, option parsing is implemented via [./c-options.wiki|C-Options].
+
+<hr>
+
+<h2 id=introspec>Introspection</h2>
+
+There are several levels of introspection built-in to Jsi.
+One is displayed when calling an invalid method:
+
+    <nowiki><pre class=verbatim>
+# <b>Array.xxx()</b>
+error: 'Array' sub-commands are: concat fill filter forEach indexOf join lastIndexOf map pop push reverse shift sizeOf slice some sort splice unshift.    (at or near "xxx")
+</pre></nowiki>
+
+Another, is querying with the
+[./reference.wiki#Info|Info] command:
+
+    <nowiki><pre class=verbatim_out>
+# <b>Info.platform()</b>
+{ crc:7, hasThreads:true, intSize:4, isBigEndian:false, numberSize:8, os:"linux", platform:"unix", pointerSize:8, timeSize:8, wideSize:8 }
+
+# <b>Info.cmds()</b>
+[  "Array", "Boolean", "File", "FileIO", "Function", "Interp", "Info", "JSON", "Math", "Number",
+   "Object", "RegExp", "Signal", "Sqlite", "String", "Sys", "Websocket", "Zvfs", "assert", "clearInterval",
+   "console", "decodeURI", "encodeURI", "exit", "source",
+   "isFinite", "isNaN", "load", "parseFloat", "parseInt", "puts", "quote",
+   "setInterval", "setTimeout", "format" ]
+
+# <b>Info.cmds('Array.*')</b>
+[ "concat", "fill", "filter", "forEach", "indexOf", "join", "lastIndexOf", "map", "pop", "push",
+  "reverse", "shift", "sizeOf", "slice", "some", "sort", "splice", "unshift" ]
+
+# <b>Info.named()</b>
+[ "Socket", "Channel", "MySql", "WebSocket", "Sqlite", "Interp" ]
+
+<b>var</b> ii = <b>new Interp</b>();
+# <b>Info.named('Interp')</b>
+[ "#Interp_1" ]
+</pre></nowiki>
+
+and so on.
+
+
+<hr>
+<h2 id=examples>Example Applications</h2>
+
+Jsi is distributed with several demonstration web applications:
+
+  *  [./app/debugui.wiki|DebugUI]: a Debugger user interface for Jsi scripts. 
+  *  [./app/sqliteui.wiki|SqliteUI]: a web user interface to Sqlite. 
+  *  [./app/ledgerjs.wiki|LedgerJS]: an accounting program.
+  
+These can all be run as [./js-zvfs.wiki#zeroinstall|standalone] applications.
+
+<hr>
+<h2 id=shell>Shell</h2>
+
+You can use <b>jsish</b>
+as an enhanced replacement for [https://en.wikipedia.org/wiki/Shebang_(Unix)|#!/usr/bin/env].
+This lets you run scripts from the command line with default arguments:
+
+    <nowiki><pre class=verbatim>
+<b>#!/usr/local/bin/jsish</b> -T Debug %s -Trace true myinput1.txt
+puts(console.args.join(' '));
+</pre></nowiki>
+
+<i>(there must be a <b>%s</b> and at least one argument)</i>
+
+From <b>geany</b> you can now run the script with F9, and step through
+warnings and errors.
+
+This also works for [./js-logging.wiki|logging] messages: [../js-demos/log/mytest2.jsi|mytest2]
+
+<hr>
+<h2 id=auto>Autocompletion</h2>
+
+Autocompletion can be set-up on unix by adding to .bashrc:
+
+
+    <pre class=verbatim>
+complete -W '-h --help -v --version -d --debug -D --debugui -u -unittest -s --safe -Z --zip \
+  -S --sqliteui -W --websrv -H --htmli -J --jsi -c --cdata -C --cssi -m --module -e --eval \
+  -T --typecheck -t --tracecall' -f '*.jsi'  'jsish'
+</pre>
+
+or running:
+
+    <pre class=verbatim>
+<b>make setup</b>.
+</pre>
+
+Next time you login you can use autocompletion with <i>TAB</i>.
+
+This can make running
+<b>jsish</b> from the command-line a little nicer.
+
+<hr>
+<h2 id=editors>Editors</h2>
+
+<h3 id=geany>Geany</h3>
+
+[http://www.geany.org|Geany] is a convenient editor to use with Jsi.
+To enable Jsi file completion with Geany:
+
+  *  Copy <i>tools/geany/filetypes.javascript</i> to <i>~/.config/geany/filedefs/</i>.
+  *  Open geany and navigate to Tools->Configuration Files->filetypes_extensions.conf, then:
+  *  Add "*.jsi;*.jsc" to Javascript, "*.wiki;*.htmli;" to HTML and "*.cssi;" to CSS
+  *  Keep the file <i>tools/protos.jsi</i> open in the editor so Geany knows how to complete Jsi functions.
+
+Geany can also navigate
+through Jsi's gcc style scripting errors:
+
+  *  Start by editing a <b>.jsi</b> file.
+  *  From the Geany <b>Build</b> menu, select <b>Set Build Commands</b>.
+  *  Click on the first blank label in Javascript and enter <i>Jsish</i>.
+  *  In the command section enter the pathspec to jsish, eg. <i>$HOME/bin/jsish %f</i>
+  *  Click <b>Ok</b>
+  
+Now hit <b>F8</b> to run the script. Upon errors, you should be able to navigate to the
+highlighted lines, and see warnings in the bottom pane.
+
+Alternatively, you can just create a Makefile to run jsish.
+
+Also, if using the [./js-logging.wiki|logging] feature in Jsi, you can also navigate through
+debug messages when using [#shell|F9 or shell exec].
+
+To run scripts that honor the [#shell|shebang], repeat the above but set the command section 
+to <i>jsish -# %f</i>.  
+
+<b>Caveat</b>: one limitation of Geany is
+that a function with a return type will likely not show up in the symbols list.
+
+<h3 id=vim>Vim</h3>
+Here is how to setup/use vim with Jsi:
+
+    <nowiki><pre class=verbatim>
+:set filetype javascript
+:set makeprg=jsish\ %
+:copen
+</pre></nowiki>
+
+Then to run scripts just use:
+
+    <nowiki><pre class=verbatim>
+:make
+</pre></nowiki>
+
+And much of what was said about navigation in Geany also applies to Vim.
+

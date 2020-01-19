@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+  <head>
+    <meta charset=utf-8 />
+    <title>DebugUI</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
+    <script src="/jsi/web/jsi.js"></script>
+    <script src="/jsi/web/bind.js"></script>
+<? 
+    // Load .jsi and .cssi for preprocessing inline.
+    include(['debugui.jsi', 'debugui.cssi']);
+?>
+  </head>
+  <body id="body" onload="onload()" style="display: flex; height: 97%; flex-direction: column; margin:3px">
+    <div>
+      <button class="topmenu panel" id="mainbut" class="mainbuts" onclick='TogglePanel("uibutton",this)' title="Click to toggle menu visibility">Jsi Debug-</button>
+      <div id="uibutton" style="display: none;">
+        <button onclick='DoCommand("step")' title="Step into function">Step</button>
+        <button onclick='DoCommand("next")' title="Step over function">Next</button>
+        <button onclick='DoCommand("finish")' title="Step out of current function">Finish</button>
+        <button onclick='DoCommand("continue")' title="Continue execution">Continue</button>
+        <button onclick='DoCommand("up")' title="Go up stack">Up</button>
+        <button onclick='DoCommand("down")' title="Go down stack">Down</button>
+        <button onclick='DoCommand("halt")' title="Stop execution" name=halt>Halt!</button>
+        <button class=menu onclick='TogglePanel("uibreak",this)' title="Show/Hide Breakpoints view">Breakpoints+</button>
+        <button class=menu onclick='TogglePanel("uistack",this)' title="Show/Hide Stack view">Stack+</button>
+        <button class=menu onclick='TogglePanel("uifuncs",this)' title="Show/Hide Function list-navigation view">Functions+</button>
+        <button class=menu onclick='TogglePanel("uioptions",this)' title="Show/Hide Debugger options">Options+</button>
+        <button class=menu onclick='TogglePanel("uihelp",this)' title="Show/Hide Help page">Help+</button>
+        <button onclick='GuiCommand("info args",true)' title="Display function arguments">Args</button>
+        <button onclick='GuiCommand("info locals",true)' title="Display function local vars">Locals</button>
+        <button onclick='GuiCommand("eval")' title="Evaluate selection">Eval</button>
+        <button onclick='GuiCommand("print")' title="Print selected value">Print</button>
+    </div>
+    
+    <!-- User settable options... -->
+    <div id="uioptions" style="display:none" class="panel">
+        <table>
+        <tr><td class="right" title="Show line numbers in file display">Line-Numbers =</td>
+            <td> <input type="checkbox" name="lineNumbers"></td>
+            <td class="right" title="Lookup and print value of vars under cursor">Print-Vars =</td>
+            <td> <input type="checkbox" name="varPrint"></td>
+            <td class="right" title="Pop tooltip for vars under mouse">Tooltip-Vars =</td>
+            <td> <input type="checkbox" name="varTooltip"></td>
+            <td class="right" title="Echo user commands">Verbose =</td>
+            <td> <input type="checkbox" name="verbose"></td>
+            <td class="right" title="Upon command send, auto-select and set-focus to the input area">Auto-Select =</td>
+            <td> <input type="checkbox" name="autoSelect"></td>
+            <td class="right" title="For viewing the debuggers network traffic">Network-IO =</td>
+            <td> <input type="checkbox" name="netDebug"></td>
+        </tr>
+        </table>
+    </div>
+    
+    <div id="uibreak" style="display:none" class="panel">
+      </div>
+    <div id="uistack" style="display:none" class="panel">
+      </div>
+    <div id="uifuncs" style="display:none" class="panel">
+      </div>
+    <div id="uihelp" style="display:none" class="panel">
+<?
+        // Page for the Help button.
+        include('debugui_doc.html');
+?>
+      </div>
+      <input id="dbinput" title="Command input. Click 'Help' for available commands" style="width:90%" autofocus></input>
+    </div>
+    <textarea id="dboutput" rows=5></textarea>
+    <!--     <div id="dboutput" rows=5 contenteditable="true"> -->
+    <pre   id="dbfile" style="flex: 1; overflow: auto"></pre>
+    <input id="dbstatus" style="width:100%"></input>
+    </div>
+  </body>
+</html>

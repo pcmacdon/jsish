@@ -1,0 +1,27 @@
+#!/usr/local/bin/jsish -u %s
+
+function foo(n) {
+  puts('foo');
+};
+
+foo(1);
+eval('foo(1);');
+var x1;
+x1 = Info.interp();
+eval('foo(1);');
+var x2;
+x2 = Info.interp();
+;x1.codeCacheHits+' '+x2.codeCacheHits;
+;x1.funcCallCnt+' '+x2.funcCallCnt;
+;x1.cmdCallCnt+' '+x2.cmdCallCnt;
+
+/*
+=!EXPECTSTART!=
+foo
+foo
+foo
+x1.codeCacheHits+' '+x2.codeCacheHits ==> 0 1
+x1.funcCallCnt+' '+x2.funcCallCnt ==> 2 3
+x1.cmdCallCnt+' '+x2.cmdCallCnt ==> 2 4
+=!EXPECTEND!=
+*/

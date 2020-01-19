@@ -1,0 +1,33 @@
+#!/usr/local/bin/jsish -u %s
+
+var a = 1;
+var b = 2;
+
+function abc(a,b) {
+    var c, d;
+;   c = a+b;
+;   d = a * b;
+    return d;
+};
+
+var x;
+;x = abc(5,6);
+;x += 100;
+;a;
+;b;
+;abc(3,4)+100;
+
+
+/*
+=!EXPECTSTART!=
+x = abc(5,6) ==> c = a+b ==> 11
+d = a * b ==> 30
+30
+x += 100 ==> 130
+a ==> 1
+b ==> 2
+abc(3,4)+100 ==> c = a+b ==> 7
+d = a * b ==> 12
+112
+=!EXPECTEND!=
+*/

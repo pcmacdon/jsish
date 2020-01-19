@@ -1,0 +1,23 @@
+#!/usr/local/bin/jsish -u %s
+
+var a = {};
+eval("a.a = 1;");
+;a;
+
+
+var y = eval("{ a:1, b:2, c:'abc', d:[1,2,3], e: {}}");
+;y;
+
+
+var m = 0, n = 'abc';
+eval("(m = n)");
+
+;m;
+
+/*
+=!EXPECTSTART!=
+a ==> { a:1 }
+y ==> { a:1, b:2, c:"abc", d:[ 1, 2, 3 ], e:{} }
+m ==> abc
+=!EXPECTEND!=
+*/

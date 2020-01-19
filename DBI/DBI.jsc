@@ -1,0 +1,440 @@
+#!/usr/local/bin/jsish -c %s
+// The libDBI object.  Create with "new DBI()"
+
+code Header = {
+#include <dbi/dbi.h>
+};
+
+enum DBI_mode = {
+    rows, arrays, array1d, list, column, json,
+    json2, html, csv, insert, line, tabs, cursor, none
+};
+
+
+struct DBI_query = { // Options for queries.
+    DBI_mode mode;          // Output mode.
+    OBJ values;             // Input parameters.
+    ARRAY widths;           // In column mode, set column widths
+    int limit;              // Maximum number of returned values.
+    bool headers;           // First row returned contains column labels
+    const char* nullvalue;  // Null string output (for non-json mode)
+    const char* separator;  // Separator string (for csv and text mode)
+    const char* table;      // Table name for mode=insert
+    FUNC callback;          // <FUNC(values:object)> Function to call with each row result.
+};
+    
+struct DBI_ = { // Module struct (optional), will be per-interp if no DBI_Data var.
+    bool loaded;        // <RO> Module load count.
+    int activeCnt;      // Count of active objects.
+    int newCnt;         // Total number of new.
+    int init;           // is init
+    dbi_inst _dbi;      //  db instance
+};
+
+struct DBI = {              // Per-object struct
+    const char* driver;     // <IO> Name of driver (sqlite3)
+    const char* sqlite_dbdir;//<IO> File path, obviously only for sqlite
+    const char* username;   // <IO> Userid for login
+    const char* password;   // <IO> Password for login
+    const char* dbname;     // <IO> Database
+    const char* host;       // <IO> Hostname
+    const char* encoding;   // <IO> Char encoding (UTF-8)
+    int port;               // <IO> Timeout.
+    int sqlite_timeout;     // <IO> Timeout for sqlite.
+    int timeout;            // <IO> Timeout.
+    int verbosity;          // <IO> Verbosity level
+    int version;            // <RO> Version
+    int engineVersion;      // <RO> Version of db engine
+    int socket;             // <RO> Socket handle
+    bool isSqlite;          // <RO> True if using sqlite.
+    OBJ drvOpts;            // <IO> Other driver options.
+    FUNC callback;          // <IO; FUNC(str:string, id:number)> Callback function for queries.
+    DBI_query queryOpts;    // Options to use for all queries.
+    
+    Jsi_Interp* _interp;     // Note: must add interp field for object command.
+    DBI_* _;                // Ptr to DBI_ defined above
+    dbi_conn  _db;          // The database connection
+    int _idx;
+    Jsi_Hash* _resHash;
+};
+    
+struct DBI_id = {
+    int id;                 // <RO> Index id.
+    bool onrecord;          // <RO> True if on a record.
+    int resultCount;        // <RO> Number of rows in result.
+    int fieldCount;         // <RO> Number of fields.
+    int curInd;             // <RO> Current result row index, staring from 0.
+    STRING sql;             // <RO> Expanded sql from query.
+
+    Jsi_HashEntry* _hPtr;
+    dbi_result _res;
+    DBI* _cmdPtr;
+    short* _fieldTypes;
+    char** _fieldNames;
+};
+
+vars DBIVars = {
+    DBI_query DBI_query_Data;
+    DBI_ DBI_Data; // ie. Module struct is not per-interp.
+};
+
+extension DBI = { // Extension to create a DBI object command.
+
+    // Anything outside of a 'function' definition is C-code.
+    #include "DBIinc.c"
+    
+    function _() {
+        /* C code for Init/Done */
+        _->init += (isRelease?-1:1);
+        if (isRelease) {
+            if (_->init == 0)
+                dbi_shutdown_r(_->_dbi);
+            //puts("Unloading DBI");
+        } else {
+            if (_->init==1)
+                dbi_initialize_r(NULL, &_->_dbi);
+            //puts("Loading DBI");
+        }
+    }
+    
+    function ~() {
+        /* C code for Object free */
+        //puts("CLOSING");
+        cmdPtr->_->activeCnt--;
+        if (cmdPtr->_resHash)
+            Jsi_HashDelete(cmdPtr->_resHash);
+        if (cmdPtr->_db)
+            dbi_conn_close(cmdPtr->_db);
+    }
+    
+    function DBI(options:object=void):userobj { // DBI constructor
+        /* C code. */
+        Jsi_LogTest("Creating new DBI");
+        const char *cp;
+        Jsi_RC rc = JSI_OK;
+        dbi_set_verbosity_r(cmdPtr->verbosity, cmdPtr->_->_dbi);
+        cmdPtr->_interp = interp;
+        cmdPtr->version = LIBDBI_VERSION;
+        if (!cmdPtr->driver)
+            cmdPtr->driver = "sqlite3";
+        cmdPtr->isSqlite = !Jsi_Strcmp(cmdPtr->driver, "sqlite3");
+        cmdPtr->_db = dbi_conn_new_r(cmdPtr->driver, cmdPtr->_->_dbi);
+        if (!cmdPtr->_db)
+            return Jsi_LogError("connection failed");
+        const char *msg = "N/A";
+#define MYDBI_OPT_SET(name,typ) \
+        if (cmdPtr->name) \
+            if (dbi_conn_set_option##typ(cmdPtr->_db, #name, cmdPtr->name)) { \
+                msg = #name; \
+                goto bail; \
+            }
+                
+        MYDBI_OPT_SET(username,)
+        MYDBI_OPT_SET(password,)
+        MYDBI_OPT_SET(dbname,)
+        MYDBI_OPT_SET(encoding,)
+        MYDBI_OPT_SET(host,)
+        MYDBI_OPT_SET(sqlite_dbdir,)
+        MYDBI_OPT_SET(sqlite_timeout,_numeric)
+        MYDBI_OPT_SET(timeout,_numeric)
+        MYDBI_OPT_SET(port,_numeric)
+        
+        if (cmdPtr->drvOpts) {
+            Jsi_Value *dargs = cmdPtr->drvOpts;
+            Jsi_TreeEntry *tPtr;
+            Jsi_TreeSearch search;
+            Jsi_Tree *tp = Jsi_TreeFromValue(interp, dargs);
+            if (!tp)
+                goto bail;
+            
+            for (tPtr = Jsi_TreeSearchFirst(tp, &search, 0, NULL);
+                tPtr != NULL; tPtr = Jsi_TreeSearchNext(&search)) {
+                msg =(char*) Jsi_TreeKeyGet(tPtr);
+                Jsi_Value *optval = (Jsi_Value*)Jsi_TreeValueGet(tPtr);
+                
+                if (Jsi_ValueIsString(interp, optval)) {
+                    // Set as string option:
+                    const char *vstr = Jsi_ValueString(interp, optval, 0);
+                    if (dbi_conn_set_option(cmdPtr->_db, msg, vstr)) {
+                        rc = JSI_ERROR;
+                        break;
+                    }
+                }
+                else if (Jsi_ValueIsNumber(interp, optval)) {
+                    // Set as numeric option:
+                    int vnum = Jsi_ValueToNumberInt(interp, optval, 1);
+                    if (dbi_conn_set_option_numeric(cmdPtr->_db, msg, vnum)) {
+                        rc = JSI_ERROR;
+                        break;
+                    }
+                } else {
+                    rc = JSI_ERROR;
+                    msg = "option must be int or string";
+                    break;
+                }
+            }
+            Jsi_TreeSearchDone(&search);
+            if (rc != JSI_OK)
+                goto bail;
+        }
+        if (dbi_conn_connect(cmdPtr->_db))
+            return Jsi_LogError("DBI connect failed");
+        cmdPtr->engineVersion = dbi_conn_get_engine_version(cmdPtr->_db);
+        cp = dbi_conn_get_encoding(cmdPtr->_db);
+        if (cp)
+            cmdPtr->encoding = Jsi_KeyAdd(interp, cp);
+        cmdPtr->socket = dbi_conn_get_socket(cmdPtr->_db);
+        cmdPtr->_resHash = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, DBI_IdErase);
+        cmdPtr->_->newCnt++;
+        cmdPtr->_->activeCnt++;
+bail:
+        if (rc == JSI_OK)
+            return JSI_OK;
+        return Jsi_LogError("failed to create DBI: %s", msg);
+    }
+
+    function conf(options:object|string=void):any { // Function to configure DBI options
+        /* Builtin. */
+    }
+
+    function options():array { // Return list of options
+        const char *cur = NULL;
+        Jsi_Obj *o = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
+        Jsi_ValueMakeArrayObject(interp, ret, o);
+        while ((cur=dbi_conn_get_option_list(cmdPtr->_db, cur)))
+            Jsi_ObjArrayAdd(interp, o, Jsi_ValueNewStringDup(interp, cur));
+        return JSI_OK;
+    }
+
+    function capability(capname:string):number { // Return capability
+        Jsi_Number n = dbi_conn_cap_get(cmdPtr->_db, capname);
+        RETURN(n);
+    }
+    
+    function driver():object { // Return driver info
+        dbi_driver d = dbi_conn_get_driver(cmdPtr->_db);
+        if (!d)
+            return Jsi_LogError("failed to get driver info");
+        Jsi_Obj *o = Jsi_ObjNew(interp);
+        Jsi_ValueMakeObject(interp, ret, o);
+        Jsi_ValueInsert(interp, *ret, "name", Jsi_ValueNewStringDup(interp, dbi_driver_get_name(d)), 0);
+        Jsi_ValueInsert(interp, *ret, "file", Jsi_ValueNewStringDup(interp, dbi_driver_get_filename(d)), 0);
+        Jsi_ValueInsert(interp, *ret, "description", Jsi_ValueNewStringDup(interp, dbi_driver_get_description(d)), 0);
+        Jsi_ValueInsert(interp, *ret, "maintainer", Jsi_ValueNewStringDup(interp, dbi_driver_get_maintainer(d)), 0);
+        Jsi_ValueInsert(interp, *ret, "url", Jsi_ValueNewStringDup(interp, dbi_driver_get_url(d)), 0);
+        Jsi_ValueInsert(interp, *ret, "version", Jsi_ValueNewStringDup(interp, dbi_driver_get_version(d)), 0);
+        Jsi_ValueInsert(interp, *ret, "date_compiled", Jsi_ValueNewStringDup(interp, dbi_driver_get_date_compiled(d)), 0);
+        return JSI_OK;
+    }
+    
+    function begin():boolean { // Open a transaction
+        /* C-code. */
+        int rval = dbi_conn_transaction_begin(cmdPtr->_db);
+        bool b = (rval == 0 ? 1 : 0);
+        RETURN(b);
+    }
+    
+    function commit():boolean { // Commit a transaction
+        /* C-code. */
+        int rval = dbi_conn_transaction_commit(cmdPtr->_db);
+        bool b = (rval == 0 ? 1 : 0);
+        RETURN(b);
+    }
+    
+    function rollback():boolean { // Rollback a transaction
+        /* C-code. */
+        int rval = dbi_conn_transaction_rollback(cmdPtr->_db);
+        bool b = (rval == 0 ? 1 : 0);
+        RETURN(b);
+    }
+    
+    function error():object { // Return the last error on this connection
+        /* C-code. */
+        const char *errstr;
+        int errnum = dbi_conn_error(cmdPtr->_db, &errstr);
+        Jsi_Obj *nobj = Jsi_ObjNew(interp);
+        Jsi_ValueMakeObject(interp, ret, nobj);
+        Jsi_ValueInsert(interp, *ret, "number", Jsi_ValueNewBlob(interp, (uchar*)errstr, Jsi_Strlen(errstr)), 0);
+        Jsi_ValueInsert(interp, *ret, "text", Jsi_ValueNewNumber(interp, errnum), 0);
+        return JSI_OK;
+    }
+    
+    function use(dbname:string):boolean { // Use a database 
+        int rval = dbi_conn_select_db(cmdPtr->_db, dbname);
+        bool b = !rval;
+        if (b)
+            cmdPtr->dbname = Jsi_KeyAdd(interp, dbname);
+        RETURN(b);
+    }
+
+    function lastseq(seqname:string=void):number { // Fetch the last sequence ID assigned if supported
+        const char *seqname = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+        Jsi_Number n = dbi_conn_sequence_last(cmdPtr->_db, seqname);
+        RETURN(n);
+    }
+    
+    function nextseq(seqname:string=void):number { // Fetch the next sequence ID if supported
+        const char *seqname = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+        Jsi_Number n = dbi_conn_sequence_next(cmdPtr->_db, seqname);
+        RETURN(n);
+    }
+    
+    function check():boolean { // Check the server connection
+        bool b = dbi_conn_ping(cmdPtr->_db);
+        RETURN(b);
+    }
+
+    function escape(vstr:string):string { // Escape a string
+        int bufLength;
+        char *quoted;
+        const char *unquoted = Jsi_ValueArrayIndexToStr(interp, args, 0, &bufLength);
+        int newLength = dbi_conn_quote_binary_copy(cmdPtr->_db, (const unsigned char *)unquoted,
+            bufLength, (unsigned char **)&quoted );
+        Jsi_ValueMakeBlob(interp, ret, (unsigned char *)quoted, newLength);
+        return JSI_OK;
+    }
+    
+    function tables(pattern:string=''):number { // Return tables in current database
+        dbi_result res = dbi_conn_get_table_list(cmdPtr->_db, cmdPtr->dbname, pattern);
+        if (!res) {
+            const char *msg = "N/A";
+            int num = dbi_conn_error(cmdPtr->_db, &msg);
+            return Jsi_LogWarn("tables failed: %d %s", num, msg);
+        }
+        DBI_id *pss = DbiQueryNew(interp, cmdPtr, res);
+        if (!pss)
+            return JSI_ERROR;
+        DBI_query *q = &cmdPtr->queryOpts;
+        DBI_mode om = q->mode;
+        q->mode = array1d;
+        Jsi_RC rc = DbiQueryCmd(interp, args, _this, ret, funcPtr, pss, q, false);
+        q->mode = om;
+        return rc;
+    }
+    
+    function databases(pattern:string=''):number { // Return available databases
+        dbi_result res = dbi_conn_get_db_list(cmdPtr->_db, pattern);
+        if (!res)
+            return Jsi_LogWarn("databases unsupported");
+        DBI_id *pss = DbiQueryNew(interp, cmdPtr, res);
+        if (!pss)
+            return JSI_ERROR;
+        DBI_query *q = &cmdPtr->queryOpts;
+        DBI_mode om = q->mode;
+        q->mode = array1d;
+        Jsi_RC rc = DbiQueryCmd(interp, args, _this, ret, funcPtr, pss, q, false);
+        q->mode = om;
+        return rc;
+    }
+        
+    function query(query:string, options:object=void):number { // Run query and return id
+        /* C-code. */
+        Jsi_DString dStr = {};
+        Jsi_Value *values = options->values;
+        if (!values || !Jsi_ValueGetLength(interp, values))
+            Jsi_DSAppendLen(&dStr, query, queryLen);
+        else
+            if (DBI_AddArgs(cmdPtr, &dStr, query, queryLen, values) != JSI_OK)
+                return JSI_ERROR;
+
+        dbi_result res = dbi_conn_query(cmdPtr->_db, Jsi_DSValue(&dStr));
+        if (!res) {
+            const char *msg = "N/A";
+            int num = dbi_conn_error(cmdPtr->_db, &msg);
+            Jsi_DSFree(&dStr);
+            return Jsi_LogError("query failure: %d %s", num, msg);
+        }
+        DBI_id *pss = DbiQueryNew(interp, cmdPtr, res);
+        if (!pss) {
+            Jsi_DSFree(&dStr);
+            return JSI_ERROR;
+        }
+        
+        if (options->mode == cursor) {
+            int id = pss->id;
+            pss->sql = Jsi_ValueNewStringDup(interp, Jsi_DSValue(&dStr));
+            Jsi_IncrRefCount(interp, pss->sql);
+            Jsi_DSFree(&dStr);
+            RETURN(id);
+        }
+        Jsi_DSFree(&dStr);
+        // Handle special case of options->mode is rows (0), and DB.queryOpts.mode got set to non-zero.
+        bool ovmode = JSI_CDATA_OPTION_CHANGED(mode);
+        Jsi_RC rc = DbiQueryCmd(interp, args, _this, ret, funcPtr, pss, options, ovmode);
+        Jsi_HashEntryDelete(pss->_hPtr);
+        return rc;
+    }
+    
+    function ids():array { // Return list of query ids
+        /* C code. */
+        Jsi_DString dStr;
+        Jsi_DSInit(&dStr);
+        Jsi_DSAppend(&dStr, "[", NULL);
+        DBI_id *pss = NULL;
+        Jsi_HashEntry *hPtr;
+        Jsi_HashSearch cursor;
+        int cnt = 0;
+        for (hPtr = Jsi_HashSearchFirst(cmdPtr->_resHash, &cursor);
+            hPtr != NULL; hPtr = Jsi_HashSearchNext(&cursor)) {
+            pss = (DBI_id *)Jsi_HashValueGet(hPtr);
+            Jsi_DSPrintf(&dStr, "%s%d", cnt++?",":"", pss->id);
+        }
+        Jsi_DSAppend(&dStr, "]", NULL);
+        Jsi_RC rc = Jsi_JSONParse(interp, Jsi_DSValue(&dStr), ret, 0);
+        Jsi_DSFree(&dStr);
+        return rc;
+    }
+
+    function idconf(id:number, options:object|string=void):any { // Function to configure query id options
+        /* C code. */
+        return JSI_OK;
+    }
+
+    function seek(id:number, row:number):boolean { // Seek to a row
+        /* C code. */
+        DBI_id *pss = DBI_IdGet(cmdPtr, id, 0);
+        if (!pss)
+            return JSI_ERROR;
+        bool b = pss->onrecord = dbi_result_seek_row(pss->_res, row+1);
+        RETURN(b);
+    }
+
+    function column(id:number, column:number):any { // Fetch a single column value
+        /* C code. */
+        DBI_id *pss = DBI_IdGet(cmdPtr, id, 0);
+        if (!pss)
+            return JSI_ERROR;
+        return DBI_IdValue(interp, pss, ret, column);
+    }
+    
+    function row(id:number):any { // Fetch a row
+        /* C code. */
+        DBI_id *pss = DBI_IdGet(cmdPtr, id, 0);
+        if (!pss)
+            return JSI_ERROR;
+        Jsi_Obj *res = Jsi_ObjNew(interp);
+        Jsi_ValueMakeObject(interp, ret, res);
+        //Jsi_IncrRefCount(interp, *ret);
+        int i;
+        for (i=0; i<pss->fieldCount; i++) {
+            Jsi_Value *v = Jsi_ValueNew(interp);
+            if (JSI_OK != DBI_IdValue(interp, pss, &v, i))
+                Jsi_ValueMakeNull(interp, &v);
+            Jsi_ObjInsert(interp, res, pss->_fieldNames[i], v, JSI_OM_READONLY );
+        }
+        pss->onrecord = dbi_result_seek_row(pss->_res, ++pss->curInd);
+        return JSI_OK;
+    }
+
+    function free(id:number):void { // Delete query id
+        /* C code. */
+        DBI_id *pss = DBI_IdGet(cmdPtr, id, 0);
+        if (!pss)
+            return JSI_ERROR;
+        Jsi_HashEntryDelete(pss->_hPtr);
+        return JSI_OK;
+    }
+
+
+};
+

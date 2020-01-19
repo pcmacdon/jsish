@@ -1,0 +1,134 @@
+#!/usr/local/bin/jsish -u %s
+
+var y = [ '2', '1' ];
+var x = { '0': 'A', '1':'B' };
+;x[0];
+var a = new Array(5,4,3,2,1);
+a.dog = 9;
+;a[0];
+var b = a.shift();
+;'SHIFTED: '+b;
+;a[0];
+a[7] = -1;
+a[8] = 'dog';
+;a.unshift('pig', 'cat', 99);
+for (var i in a) {
+;   i+' = '+a[i];
+}
+;a.join(',');
+;a.indexOf('dog');
+;a.lastIndexOf('dog');
+var s;
+;s = a.slice(1,4);
+;s.join(',');
+
+var t = a.concat('SICK!!!',s);
+;'T: '+t.join(',');
+
+
+var z = new Array(5,4,3,2,1);
+var za = z.splice(2,2,'A','B');
+;'Z: '+z.join(',') + ' ==> '+za.join(',');
+
+
+//var q = new Array(5,4,2,3,1;
+var q = new Array('Aaa','aAb','AAc','Bba','bBb');
+var qq = q.sort();
+
+;'Q: '+qq.join(',');
+
+t = [ 5, 4, 3, 2, 1];
+function mysort(a,b) { return (a-b); }
+;t;
+;t.sort(mysort);
+
+;x = [0, 2, 3 ];
+;x.map(function (el,idx,obj) { return el+idx+obj[idx]; });
+;x.some(function (el) { return (el%5)==4; });
+;x.some(function (el) { return (el%3)==2; });
+;x.find(function (el) { return (el%3)==2; });
+;x.find(function (el) { return (el%5)==4; });
+;x.every(function (el) { return (el%3)==2; });
+;x.every(function (el) { return (el>=0); });
+;x.includes(3);
+;x.includes(4);
+
+function Red(a, c, i, o) {
+  puts(c);
+  return a + c;
+}
+
+;x = [0, 1, 2, 3, 4];
+;x.reduce(Red);
+;x.reduce(Red, 10);
+;x.reduceRight(Red);
+;x.reduceRight(Red, 10);
+
+;x.isArray();
+;Array.isArray(x);
+;Array.isArray({});
+
+/*
+=!EXPECTSTART!=
+x[0] ==> A
+a[0] ==> 5
+'SHIFTED: '+b ==> SHIFTED: 5
+a[0] ==> 4
+a.unshift('pig', 'cat', 99) ==> 12
+i+' = '+a[i] ==> 0 = pig
+i+' = '+a[i] ==> 1 = cat
+i+' = '+a[i] ==> 2 = 99
+i+' = '+a[i] ==> 3 = 4
+i+' = '+a[i] ==> 4 = 3
+i+' = '+a[i] ==> 5 = 2
+i+' = '+a[i] ==> 6 = 1
+i+' = '+a[i] ==> 10 = -1
+i+' = '+a[i] ==> 11 = dog
+a.join(',') ==> pig,cat,99,4,3,2,1,-1,dog
+a.indexOf('dog') ==> 11
+a.lastIndexOf('dog') ==> 11
+s = a.slice(1,4) ==> [ "cat", "99", "4", "3" ]
+s.join(',') ==> cat,99,4,3
+'T: '+t.join(',') ==> T: pig,cat,99,4,3,2,1,-1,dog,SICK!!!,cat,99,4,3
+'Z: '+z.join(',') + ' ==> '+za.join(',') ==> Z: 5,4,A,B,1 ==> 3,2
+'Q: '+qq.join(',') ==> Q: AAc,Aaa,Bba,aAb,bBb
+t ==> [ 5, 4, 3, 2, 1 ]
+t.sort(mysort) ==> [ 1, 2, 3, 4, 5 ]
+x = [0, 2, 3 ] ==> [ 0, 2, 3 ]
+x.map(function (el,idx,obj) { return el+idx+obj[idx]; }) ==> [ 0, 5, 8 ]
+x.some(function (el) { return (el%5)==4; }) ==> false
+x.some(function (el) { return (el%3)==2; }) ==> true
+x.find(function (el) { return (el%3)==2; }) ==> 2
+x.find(function (el) { return (el%5)==4; }) ==> undefined
+x.every(function (el) { return (el%3)==2; }) ==> false
+x.every(function (el) { return (el>=0); }) ==> true
+x.includes(3) ==> true
+x.includes(4) ==> false
+x = [0, 1, 2, 3, 4] ==> [ 0, 1, 2, 3, 4 ]
+x.reduce(Red) ==> 1
+2
+3
+4
+10
+x.reduce(Red, 10) ==> 0
+1
+2
+3
+4
+20
+x.reduceRight(Red) ==> 3
+2
+1
+0
+10
+x.reduceRight(Red, 10) ==> 4
+3
+2
+1
+0
+20
+x.isArray() ==> true
+Array.isArray(x) ==> true
+Array.isArray({}) ==> false
+=!EXPECTEND!=
+*/

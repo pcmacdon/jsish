@@ -1,0 +1,41 @@
+#!/usr/local/bin/jsish -u %s
+
+var x, h, s;
+;x = {x:1};
+;x.propertyIsEnumerable('x');
+;x = {a:1, b:2};
+;x.hasOwnProperty('a');
+;x.hasOwnProperty('c');
+
+function f() {}
+;f.a = 9;
+function g() {}
+;g.prototype.x = new f();
+
+;h = new g();
+;f.a;
+;g.a;
+;h.a;
+
+;s = new String('Sample');
+;s.hasOwnProperty('split');
+;String.prototype.hasOwnProperty('split');
+
+/*
+=!EXPECTSTART!=
+x = {x:1} ==> { x:1 }
+x.propertyIsEnumerable('x') ==> true
+x = {a:1, b:2} ==> { a:1, b:2 }
+x.hasOwnProperty('a') ==> true
+x.hasOwnProperty('c') ==> false
+f.a = 9 ==> 9
+g.prototype.x = new f() ==> {}
+h = new g() ==> {}
+f.a ==> 9
+g.a ==> undefined
+h.a ==> undefined
+s = new String('Sample') ==> Sample
+s.hasOwnProperty('split') ==> false
+String.prototype.hasOwnProperty('split') ==> true
+=!EXPECTEND!=
+*/

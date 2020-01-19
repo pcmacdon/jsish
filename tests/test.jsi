@@ -1,0 +1,15 @@
+#!/usr/local/bin/jsish -u
+
+function foo(n) {
+    return "FOO"+n;
+}
+
+puts(foo(1));
+puts(foo(2));
+
+/*
+=!EXPECTSTART!=
+FOO1
+FOO2
+=!EXPECTEND!=
+*/

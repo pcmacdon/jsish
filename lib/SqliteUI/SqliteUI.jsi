@@ -1,0 +1,656 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+require('Sqlite');
+require('WebSocket', '2');
+// An sqlite browser user interface.
+
+function SqliteUI(files:array|string, conf:object=void)
+{
+    var options = { // Provide an sqlite user interface via a browser.
+        Debug       :false,             // LogDebug output.
+        Trace       :false,             // LogTrace output.
+        closeTimeout:5000,              // Time til exit after close of final client websocket (ms).
+        browser     :'',                // Browser program to use.
+        dump        :false,             // Dump database.
+        foreignkey  :true,              // Enable foreign key constraints.
+        integrity   :true,              // Do integrity check on startup.
+        isDemo      :false,             // Demo mode to disable certain features.
+        local       :true,              // Web server is to listen only on localhost.
+        noCheck     :false,             // Disable typechecking.
+        noGui       :false,             // Disable starting local browser.
+        noUpdate    :false,             // Caller will provide update calls.
+        noIO        :false,             // Disable disk io operations, other than to db.
+        port        :0,                 // Port, or zero to let OS choose.
+        readonly    :false,             // Databases are opened readonly.
+        server      :false,             // Server mode: same as noGui=true and closeTimout=0
+        sizeViews   :true,              // Return count(*) for views. 
+        timeout     :0,                 // Set timeout to shutdown (ms).
+        trace       :false,             // Tracing output.
+        urlPrefix   :'/SqliteUI',       // Prefix for service.
+        wsObj       :null,              // Websock proxy object.
+        wsId        :0,                 // Connection id for wsObj.
+        wsdebug     :0                  // Debug websock.
+    };
+    var self = 
+    {
+        debugging:false,      // Break in debugger on recv.
+        integrityFail:null,
+        foreignKeysFail:null,
+        rootdir: null,                  // Where main.js lives.
+        SJO : { mode: 'json2' },        // Sqlite mode.
+        browsers: {                     // Not used, yet.
+            unix:[ "xdg-open", "gnome-open", "firefox", "google-chrome" ],
+            win: [ "start" ],
+            mac: [ "open" ]
+        },
+        optdbfile: '~/.sqliteui.db',    // Store options, saved queries, etc.
+        optSchema :
+            "CREATE TABLE IF NOT EXISTS dbfiles (file);" +
+            "CREATE TABLE IF NOT EXISTS saved_queries (query NOT NULL, dbID NOT NULL);" +
+            "CREATE UNIQUE INDEX IF NOT EXISTS savedq_idx ON saved_queries(query, dbID);"
+    };
+    
+    parseOpts(self, options, conf);
+
+    function DumpSql(files:string|array, skipTbls:array=void) {
+        var rv = 'PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n';
+        if (typeof files === 'string') files = [files];
+        for (var fn of files) {
+            var re = '', db = new Sqlite(fn);
+            for (var i of db.query("SELECT name, type, sql FROM sqlite_master WHERE sql NOT NULL")) {
+                if (i.name.match(/^sqlite_/)) continue;
+                switch (i.type) {
+                    case 'table':
+                        rv += i.sql + ';\n';
+                        if (skipTbls && skipTbls.indexOf(i.name)>=0) continue;
+                        rv += db.query('SELECT * FROM '+i.name, {mode:'insert', table:i.name});
+                        break;
+                    case 'index': case 'trigger': case 'view':
+                        re += i.sql+';\n';
+                }
+            }
+            rv += re;
+        }
+        rv += 'COMMIT;\n';
+        return rv;
+    }
+    
+    function tvalsDelete(id:number, d:object)  //Handle submit of tvals action delete.
+    {
+        var q = 'DELETE FROM "'+d.table+'" WHERE rowid = '+d.rowid+';';
+        self.db.query(q);
+        WsSend(id,"tvalsDeleteAck",{result:true, tag:d.tag, table:d.table, from:'tvalsDelete'});
+    }
+    
+    function dbAdd(id:number, d:object)  //Add a row.
+    {
+        var msg, __q, __v, n = 0, e, req = {success:true, did:'add', msg:''};
+        __q = "INSERT INTO '"+d.table+"' (";
+        __v = "";
+        var res = d.res;
+        for (var i in res) {
+            if (n++) { __q += ","; __v +=  ","; }
+            __q += "'"+i+"'";
+            __v += "$res("+i+")";
+        }
+        __q += ") VALUES(" + __v + ");";
+        try {
+            self.db.query(__q);
+        }
+        catch (e) {
+            req.msg = e;
+            req.success = false;
+        }
+        WsSend(id, 'tvalsAddAck', req);
+    }
+    
+    function tvalsSubmit(id:number, d:object)  //Handle submit of tvals action edit.
+    {
+        //puts("TS: "+d.toString());
+        var cols = '', vals = '';
+        var res = d.res, db = self.db;
+        try {
+            switch (d.tag) {
+                case 'Delete':
+                    var q = 'DELETE FROM "'+d.table+'" WHERE rowid = '+d.id+';';
+                    //puts("QQ: "+q);
+                    db.query(q);
+                    break;
+                case 'Add':
+                case 'Duplicate':
+                    for (var i in res) {
+                        if (cols != '') { cols += ','; vals += ','; }
+                        cols += '"'+i+'"';
+                        vals += "$res("+i+")";
+                    }
+                    q = 'INSERT INTO "'+ d.table+'" ('+cols+") VALUES("+vals+");";
+                    db.query(q);
+                    break;
+                    
+                case 'Update':
+                    for (i in res) {
+                        if (vals != '') { vals += ','; }
+                        vals += i+" = $res("+i+")";
+                    }
+                    q = "UPDATE "+d.table+" SET "+vals+" WHERE rowid = "+d.id+";";
+                    db.query(q);
+                    break;
+                default:
+                    LogDebug("WTF: tvalsSubmit: "+d.tag);
+            }
+            WsSend(id,"tvalsSubmitAck",{result:true, tag:d.tag, table:d.table, from:'tvalsSubmit'});
+        }
+        catch (e) {
+            WsSend(id,"tvalsSubmitAck",{result:false, msg:e});
+        }
+    }
+    
+    function loadTList(id:number)
+    {
+        var rc = {}, db = self.db;
+        var lst = db.query('SELECT * FROM sqlite_master ORDER BY name;');
+        self.dbinfo = {};
+        for (var t in lst) {
+            var l = lst[t];
+            try {
+                if (l.type === 'index') {
+                    lst[t].info = db.query('PRAGMA index_info("'+l.name+'")');
+                }
+                if (l.type !== 'table' && l.type !== 'view') continue;
+                lst[t].index_list = db.query('PRAGMA index_list("'+l.name+'")');
+                lst[t].size = ((self.sizeViews || l.type === 'table')?db.onecolumn('SELECT count(*) FROM "'+l.name+'"'):'');
+                lst[t].info = db.query('PRAGMA table_info("'+l.name+'")');
+                self.dbinfo[l.name] = l;
+            } catch(e) {
+                puts('DB error',e);
+            }
+        }
+        rc.db_list= db.query('PRAGMA database_list');
+        if (self.optdb)        
+            rc.savedq = self.optdb.eval("SELECT query FROM saved_queries WHERE dbID == $self(dbID)");
+        rc.dbfile = self.dbfile;
+        rc.dbtail = File.tail(self.dbfile);
+        rc.dbdirname = File.dirname(self.dbfile);
+        rc.integrityFail = self.integrityFail;
+        rc.foreignKeysFail = self.foreignKeysFail;
+        rc.lst = lst;
+        self.dblist = lst;
+        //puts("RR "+rc.toString());
+        return rc;
+    }
+    
+    function loadTable(id:number, req:object)
+    {
+       // debugger;
+        try {
+            var table = req.table;
+            var lst = {};
+            var cols = req.columns.trim(' ');
+            if (cols === '') cols = 'rowid as rowid,*';
+            else cols = 'rowid as rowid,'+cols;
+            req.where = req.where.trim(' ');
+            if (req.where !== '') req.where = ' WHERE '+req.where;
+            if (req.orderby !== '') req.orderby = ' ORDER BY '+req.orderby;
+            req.limit = parseInt(req.limit);
+            if (req.limit === NaN || req.limit<=0) req.limit = 20;
+            req.offset = parseInt(req.offset);
+            if (req.offset === NaN || req.offset<=0) req.offset = 0;
+            var query = 'select '+cols+' from "'+table+'" '+req.where;
+            query += ' ' + req.orderby + ' limit '+req.limit;
+            if (req.offset)
+                query += ' offset '+req.offset;
+            query += ';';
+            //puts("QQ: "+query);
+            //puts(req.opts);
+            lst.data = self.db.query(query,req.opts);
+            lst.opts = req.opts;
+            lst.query = query;
+            lst.from = 'loadTable';
+            WsSend(id,'loadTable', lst);
+        }
+        catch (e) {
+            WsSend(id,'error', e);
+        }
+    }
+    
+    
+    function runQuery(id:number, req:object)
+    {
+        try {
+            var lst = {};
+            lst.data = self.db.query(req.query, req.opts);
+            lst.opts = req.opts;
+            lst.from = 'runQuery';
+            lst.replay = req.replay;
+            WsSend(id,'loadTable', lst);
+        }
+        catch (e) {
+            WsSend(id,'error', e);
+        }
+    }
+    
+    function saveQuery(id:number, req:object) // Save query to opt db.
+    {
+        if (!self.optdb) return;
+        if (req.save)
+            self.optdb.eval("INSERT OR REPLACE INTO saved_queries (query,dbID) VALUES($req(query),$self(dbID))");
+        else
+            self.optdb.eval("DELETE FROM saved_queries WHERE query == $req(query) AND dbID == $self(dbID)");
+    }
+    
+    function dbLoad(id:number, req:object) // Open new view.
+    {
+        //SqliteUI(req.dbFile, {noUpdate:true});
+        setTimeout(function () { SqliteUI(req.dbFile, {noUpdate:true}); }, 100);
+        return;
+    }
+    
+    function loadAll(id:number)
+    {
+        LogDebug("LOADALL");
+        WsSend(id,'loadAll', loadTList(id));
+    }
+    
+    function DoExit()   // Notify all going down, then exit.
+    {
+        WsSend(-1, 'exit');
+        setTimeout(function () {exit(0); }, 1000); 
+    }
+    
+    function CloseNow(ws:userobj|null)
+    {
+        self.closeId = null;
+        var wcnt = ws.conf('stats.connectCnt');
+        LogDebug("Client connections left: " + wcnt);
+        if (wcnt>0)
+            return;
+        if (ws && !self.wsObj)
+            ws.conf({noUpdate:true});
+        self.done = 1;
+    }
+    
+    function CloseLast(ws:userobj|null)
+    {
+        // Wait around for a while for refresh or new clients before exiting
+        LogDebug("Delaying for last to close");
+        if (self.closeId)
+            clearInterval(self.closeId);
+        self.closeId = null;
+        if (self.closeTimeout>0)
+            self.closeId = setTimeout(function () { CloseNow(ws); }, self.closeTimeout);
+        return true;
+    }
+    
+    /**********************/
+    
+    function WebSendRaw (id:number, cmd:string, data:object)
+    {
+        data = '{"cmd":"'+cmd+'", "data" : '+ data +'}';
+        //puts("RAWSEND: "+data);
+        self.ws.send(id, data);
+    }
+    
+    function WsSend (id:number, cmd:string, data:object|string)
+    {
+        var dat = {cmd:cmd, data:data };
+        dat = JSON.stringify(dat);
+        LogTrace(dat);
+        self.ws.send(id, dat);
+    }
+    
+    function fileValid(fn:string, writing:boolean)
+    {
+        //return 'write to directory not permitted';
+    }
+    
+    function dbRead(id:number, d:object)
+    {
+        var msg, e, req = {success:true, did:'read', msg:''}, fn = d.read_file;
+        fn = fn.trim(' ');
+        if (self.noIO) { req.success = false; req.msg = 'IO is disabled'; }
+        else if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty file name';
+        } else if (!File.exists(fn)) {
+            req.success = false;
+            req.msg = 'can not find file: '+fn;
+        } else if ((msg=fileValid(fn,false))) {
+            req.success = false;
+            req.msg = msg;
+        } else {
+            try {
+    
+                var str = File.read(fn);
+                if (d.export_begin == "1") {
+                    str = "BEGIN TRANSACTION;\n" + str + "\nCOMMIT;\n";
+                }
+                req.count  = self.db.eval(str);
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        WsSend(id, 'DlgDone', req);
+    }
+    
+    function dbImport(id:number, d:object)
+    {
+        var msg, e, req = {success:true, did:'import', msg:''}, fn = d.import_file;
+        fn = fn.trim(' ');
+        if (self.noIO) { req.success = false; req.msg = 'IO is disabled'; }
+        else if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty file name';
+        } else if (!File.exists(fn)) {
+            req.success = false;
+            req.msg = 'can not find file: '+fn;
+        } else if ((msg=fileValid(fn,false))) {
+            req.success = false;
+            req.msg = msg;
+        } else {
+            try {
+                var opts = { conflict:d.import_conflict};
+                var prefix = '', suffix = '';
+                if (d.import_csv == "1")
+                    opts.csv = true;
+                if (d.import_headers == "1")
+                    opts.headers = true;
+                if (d.import_sep != '')
+                    opts.separator = d.import_sep;
+                if (d.import_limit != '')
+                    opts.limit = parseInt(d.import_limit);
+                if (d.import_null != '')
+                    opts.nullvalue = d.import_null;
+                req.count  = self.db.import(d.import_table, fn, opts);
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        WsSend(id, 'DlgDone', req);
+    }
+    
+    function dbExport(id:number, d:object)
+    {
+        var msg, e, req = {success:true, did:'export', msg:''}, fn = d.export_file;
+        fn = fn.trim(' ');
+        if (self.noIO) { req.success = false; req.msg = 'IO is disabled'; }
+        else if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty file name';
+        } else if (File.exists(fn)) {
+            req.success = false;
+            req.msg = 'can not overwrite existing db file';
+        } else if ((msg=fileValid(fn,true))) {
+            req.success = false;
+            req.msg = msg;
+        } else {
+            try {
+                var opts = { mode:d.export_mode, table:d.export_table};
+                var prefix = '', suffix = '';
+                if (d.export_headers == "1")
+                    opts.headers = true;
+                if (d.export_sep != '')
+                    opts.separator = d.export_sep;
+                if (d.export_null != '')
+                    opts.nullvalue = d.export_null;
+                if (d.export_begin == "1") {
+                    prefix = "BEGIN TRANSACTION;\n";
+                    suffix = "\nCOMMIT;\n";
+                }
+                if (d.export_schema == "1")
+                    prefix += self.db.onecolumn("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = $d(export_schema)")+ "\n";
+                var rc = self.db.query("SELECT * FROM '"+d.export_table+"'", opts);
+                File.write(fn, prefix+rc+suffix);
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        WsSend(id, 'DlgDone', req);
+    }
+    
+    
+    function dbBackup(id:number, d:object)
+    {
+        var e, req = {success:true, did:'backup', msg:''}, fn = d.backup_file;
+        fn = fn.trim(' ');
+        if (self.noIO) { req.success = false; req.msg = 'IO is disabled'; }
+        else if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty file name';
+        } else if (File.exists(fn)) {
+            req.success = false;
+            req.msg = 'can not overwrite existing db file';
+        } else {
+            try {
+                self.db.backup(fn, d.backup_db);
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        WsSend(id, 'DlgDone', req);
+    }
+    
+    function dbRestore(id:number, d:object)
+    {
+        var e, req = {success:true, did:'restore', msg:''}, fn = d.restore_file;
+        fn = fn.trim(' ');
+        if (self.noIO) { req.success = false; req.msg = 'IO is disabled'; }
+        else if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty file name';
+        } else if (!File.exists(fn)) {
+            req.success = false;
+            req.msg = 'can not find db file';
+        } else {
+            try {
+                self.db.restore(fn, d.restore_db);
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        WsSend(id, 'DlgDone', req);
+    }
+    
+    function fileBrowse(id:number, d:object)
+    {
+       var e, req = {success:true, did:'files', msg:''}, fn = d.files_dir;
+        fn = fn.trim(' ');
+        if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty dir name';
+        } else if (!File.isdir(fn)) {
+            req.success = false;
+            req.msg = 'can not find db file';
+        } else {
+            try {
+                req.files = File.glob('*', {dir:fn, types:'f'}).sort();
+                req.dirs = File.glob('*', {dir:fn, types:'d'}).sort();
+                req.dir = fn;
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        WsSend(id, 'fileBrowse', req);
+    }
+
+    function CheckIntegrity() {
+        var db = self.db;
+        self.integrityFail = true;
+        try {
+            var ok = db.onecolumn('PRAGMA integrity_check');
+            if (ok == 'ok')
+                self.integrityFail = false;
+        } catch(e) {
+            puts("FAILED INTEGRITY CHECK: "+e);
+        }
+        self.foreignKeysFail = true;
+        try {
+            self.foreignKeysInfo = db.query('PRAGMA foreign_key_check');
+            if (self.foreignKeysInfo.length<=0)
+                self.foreignKeysFail = false;
+        } catch(e) {
+            puts("FAILED FOREIGN KEY CHECK: "+e);
+        }
+    }
+
+    function WsOpen(ws:userobj, id:number)
+    {
+        var hdrs = self.ws.header(id);
+        LogDebug('OPEN:', hdrs.keys(), "\n", hdrs);
+        LogTrace('HDRS:', self.ws.header(id,'get '));
+    }
+        
+    function WsRecv(ws:userobj, id:number, data:string)
+    {
+        var buf, buf0, buf1, buf2;
+        LogDebug("SERVER GOT: "+ id +": "+data);
+        if (self.debugging)
+            debugger;
+        var dat = JSON.parse(data);
+        LogDebug("JSON: "+dat.toString());
+        switch (dat.cmd) {
+            case 'loadAll':     return loadAll(id);
+            case 'loadTable':   return loadTable(id,dat.data);
+            case 'runQuery':    return runQuery(id,dat.data);
+            case 'saveQuery':   return saveQuery(id,dat.data);
+            case 'reloadAcct':  return chgAcct(id);
+            case 'tvalsSubmit': return tvalsSubmit(id,dat.data);
+            case 'tvalsDelete': return tvalsDelete(id,dat.data);
+            case 'chgAcct':     return chgAcct(id,dat.data);
+            case 'reqStatus':   return WsSend(id,'status', {state:'starting', curAcct:-1});
+            case 'dbLoad':      return dbLoad(id,dat.data);
+            case 'dbExport':    return dbExport(id,dat.data);
+            case 'dbImport':    return dbImport(id,dat.data);
+            case 'dbBackup':    return dbBackup(id,dat.data);
+            case 'dbRestore':   return dbRestore(id,dat.data);
+            case 'dbRead':      return dbRead(id,dat.data);
+            case 'dbAdd':       return dbAdd(id,dat.data);
+            case 'fileBrowse':  return fileBrowse(id,dat.data);
+            case 'exit':        DoExit(); break;
+                
+            default: LogWarn("unknown webmsg: "+data); break;
+        }
+    }
+
+    function cleanup() {
+        LogDebug("Done!");
+        if (self.optdbfile)
+            delete self.optdb;
+        delete self.db;
+        if (!self.wsObj)
+            delete self.ws;
+    }
+    
+    function main() {
+        debugger;
+        self.done = 0;
+        var req = require("SqliteUI", 1.0);
+        if (!self.rootdir)
+            self.rootdir=File.dirname(req.loadFile);
+        if (files === undefined)
+            throw("expected a db file argument");
+        if (typeof(files) === 'string')
+            self.dbfile = files;
+        else
+            self.dbfile = files[0];
+        if (!File.exists(self.dbfile))
+            throw("db file not found");
+        if (self.dump)
+            return DumpSql(self.dbfile);
+        self.db = new Sqlite(self.dbfile, {queryOpts: {nullvalue:'NULL'}, readonly:self.readonly});
+        if (self.foreignkey) {
+            self.db.query('PRAGMA foreign_keys = ON');
+        }
+        if (self.integrity)
+            CheckIntegrity();
+        var i;
+        if (typeof(files) !== 'string') {
+            for (i=1; i<files.length; i++) {
+                var fn = files[i];
+                var dbn = File.rootname(File.tail(fn));
+                self.db.query("ATTACH DATABASE '"+fn+"' AS "+dbn);
+            }
+        }
+        self.wsopts = {
+            local:self.local,
+            port:self.port, 
+            rootdir:self.rootdir, 
+            onRecv:WsRecv,
+            onOpen:WsOpen,
+            onCloseLast:CloseLast,
+            debug:self.wsdebug,
+            extHandlers:true,
+            urlRedirect:self.urlPrefix+'/html/main.htmli',
+            urlPrefix:self.urlPrefix
+        };
+        if (self.local)
+            self.wsopts.noCompress = true;
+        if (self.server) {
+            self.closeTimeout = 0;
+            self.noGui = true;
+        }
+        self.cleanup = cleanup;
+        /* Open websockets on first available port. */
+        var emsg = '';
+        if (self.wsObj && self.wsId) {
+            // External proxy
+            self.ws = self.wsObj;
+            self.wsObj.idconf(self.wsId, {onRecv:WsRecv, rootdir:self.rootdir});
+            self.noUpdate = 1;
+            self.noGui = 1;
+            return self;
+        } else {
+            LogDebug('WSopts', self.wsopts);
+            self.ws = new WebSocket(self.wsopts);
+            self.wsopts.port = self.ws.conf('port');
+        }
+        /* Setup options. */
+        if (self.optdbfile && self.optdbfile != '') {
+            self.optdb = new Sqlite(self.optdbfile);
+            self.optdb.eval(self.optSchema);
+            self.optdb.eval("INSERT OR REPLACE INTO dbfiles (file) VALUES($self(dbfile))");
+            self.dbID = self.optdb.onecolumn("SELECT rowid FROM dbfiles WHERE file == $self(dbfile)");
+        }
+        
+        LogDebug("Listen on "+self.wsopts.port);
+        if (!self.noGui) {
+            if (!self.browser.length) {
+                switch (Info.platform().os) {
+                    case 'win': self.browser = 'start';     break;
+                    default:    self.browser = "xdg-open";  break;
+                }
+            }
+            exec(self.browser + " http://127.0.0.1:"+self.wsopts.port+self.wsopts.urlRedirect+" &");
+        }
+    
+        if (self.debugging)
+            debugger;
+        if (self.noUpdate)
+            return self;
+        if (self.timeout>0)
+            setTimeout(function () { self.done = 1; }, self.timeout);
+        while (self.done === 0 && Event.update(10) ) {} // Loop processing events.
+        cleanup();
+        return 0;
+    }
+    
+    return main();
+}
+
+provide(SqliteUI, 1.1);
+
+if (isMain())
+    exit(runModule(SqliteUI));
+

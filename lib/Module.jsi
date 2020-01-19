@@ -1,0 +1,67 @@
+#! /usr/bin/env jsish
+
+require('Jsi', '2.4');
+
+function Module(args:array, conf:object=void) {
+
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    var options = { // Run or create a Jsi module.
+        create  :'',        // Create a Jsi module template with this name.
+        output  :'',        // Override the output filename default of create + .jsi.
+        force   :false,     // Remove output if exists.
+        quiet   :false,     // No messages.
+        web     :false      // Use websock server template.
+    };
+    var self = {
+        rootdir      :''    // Root directory.
+    };
+
+    parseOpts(self, options, conf);
+    
+    function main() {
+        LogTrace('Starting');
+        if (self.rootdir === '')
+            self.rootdir=Info.scriptDir();
+        debugger;
+        var ext, fn = self.create;
+        if (fn === '') {
+            var lst = File.glob('/zvfs/lib/*'), rc = [];
+            for (var i of lst) {
+                var ft = File.tail(i), fr = File.rootname(ft);
+                ext = File.extension(ft);
+                if (File.isdir(i) && File.exists(i+'/'+fr+'.jsi'))
+                    rc.push(fr);
+                else if (ext === '.jsi' && ft !== 'Jsish.jsi' && ft !=='autoload.jsi')
+                    rc.push(fr);
+            }
+            throw('missing required module name or builtin:\n    '+rc.sort().join(', ')+'\n');
+        }
+        ext = File.extension(fn);
+        if (ext !== '.jsi')
+            fn += '.jsi';
+        if (self.output !== '')
+            fn = self.output;
+        if (File.exists(fn)) {
+            if (!self.force)
+                throw('file exists: '+fn);
+            File.remove(fn);
+        }
+        var pat = File.rootname(File.tail(fn));
+        var pref = (self.web?'WebApp':'module');
+        var tmpl = File.read('/zvfs/lib/templates/'+(self.web?'WebApp':'module')+'.jsi');
+        var re = new RegExp(pref,'g');
+        tmpl = tmpl.replace(re, pat);
+        File.write(fn, tmpl);
+        File.chmod(fn, 0744);
+        LogTrace('Done');
+        if (!self.quiet)
+            console.printf("Created module '%s' in %s\n", pat, fn);
+    }
+    
+    return main();
+}
+
+provide(Module, 1);
+
+if (isMain())
+    runModule(Module);

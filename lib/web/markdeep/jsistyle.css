@@ -1,0 +1,8 @@
+.md .mediumTOC {background:#fff; border:1px solid #ccc; padding-right:3px;}
+.md .mediumTOC center { display:none; }
+h1,h2,h3,h4 { clear:none; padding:0px; }
+.tocNumber {display:none; }
+.md h1::before, .md h2::before, .md h3::before,.md h4::before { display:none; }
+body { max-width:980px; }
+.output { background:#000; color:#fff; }
+.markdeepFooter { visibility:hidden; }

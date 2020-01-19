@@ -1,0 +1,32 @@
+#!/usr/local/bin/jsish --U %s
+
+// Demonstrate warnings by enabling parse warnings, then require().
+// or run  "jsish --T parse warndemo.jsi"
+// or Interp.conf({typeCheck:['parse']});
+
+Interp.conf({logOpts:{ftail:true}});
+
+function warndemoA() {
+}
+
+function warndemoB(n:number) {
+}
+
+require('warndemo2');
+
+/*
+=!EXPECTSTART!=
+warndemo2.jsi:4: warn: got 0 args, expected 1-2, calling function exec(val:string, options:string|object=void)    (at or near "warndemo2")
+
+warndemo2.jsi:5: warn: got 4 args, expected 1-2, calling function exec(val:string, options:string|object=void)    (at or near "warndemo2")
+
+warndemo2.jsi:6: warn: got 3 args, expected 0, calling function warndemoA()    (at or near "warndemo2")
+
+warndemo2.jsi:7: warn: got 0 args, expected 1, calling function warndemoB(n:number)    (at or near "warndemo2")
+
+warndemo2.jsi:8: warn: got 3 args, expected 1, calling function warndemoB(n:number)    (at or near "warndemo2")
+
+warndemo2.jsi:9: error: type mismatch for argument arg 1 'warndemoB': expected "number" but got "string", in call to 'warndemoB' declared at warndemo.jsi:12.2    (at or near "warndemo2")
+
+=!EXPECTEND!=
+*/

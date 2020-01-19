@@ -1,0 +1,18 @@
+#!/usr/local/bin/jsish -u %s
+
+;format('%.03d', 9);
+var me, cnt;
+;me = 'Me';
+;cnt = 9;
+;format('Help %s = %d', me, cnt);
+;format('%d %ld %hd %05.2f %-6i %*d %#9x', 99, 99, 99, 99, 99, 9, 9, 9);
+
+/*
+=!EXPECTSTART!=
+format('%.03d', 9) ==> 009
+me = 'Me' ==> Me
+cnt = 9 ==> 9
+format('Help %s = %d', me, cnt) ==> Help Me = 9
+format('%d %ld %hd %05.2f %-6i %*d %#9x', 99, 99, 99, 99, 99, 9, 9, 9) ==> 99 99 99 99.00 99             9       0x9
+=!EXPECTEND!=
+*/

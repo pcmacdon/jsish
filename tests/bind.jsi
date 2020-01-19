@@ -1,0 +1,54 @@
+#!/usr/local/bin/jsish -u %s
+
+var x = 9; 
+var module = {
+  x: 81,
+    getX: function() { return this.x; }
+};
+
+;module.getX();
+
+var getX = module.getX;
+;getX();
+// 9, because in this case, "this" refers to the global object
+
+// create a new function with 'this' bound to module
+var boundGetX = getX.bind(module);
+;boundGetX();
+
+
+// Example showing binding some parameters
+var sum = function(a, b) {
+  return a + b;
+};
+
+var add5 = sum.bind(null, 5);
+;add5(10);
+;add5(10);
+;sum(5,10);
+add5 = sum.bind(null, 6);
+;add5(10);
+add5 = sum.bind(null);
+;add5(10,12);
+add5 = sum.bind();
+;add5(10,11);
+var nn = noOp.bind(null,99);
+nn(10);
+var pp = puts.bind(null,'XX');
+;pp('HI');
+
+/*
+=!EXPECTSTART!=
+module.getX() ==> 81
+getX() ==> 9
+boundGetX() ==> 81
+add5(10) ==> 15
+add5(10) ==> 15
+sum(5,10) ==> 15
+add5(10) ==> 16
+add5(10,12) ==> 22
+add5(10,11) ==> 21
+pp('HI') ==> XX HI
+undefined
+=!EXPECTEND!=
+*/

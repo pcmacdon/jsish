@@ -1,0 +1,1177 @@
+// JS for Web browser side of SqliteUI user interface.
+"use strict";
+
+var self = {
+    debug:0,
+    msg:null,
+    tlist:{ opened:[], dblclick:null, clkcnt:0 },
+    qlist:{ sel:-1, dblclick:null, clkcnt:0, data:[] },
+    flist:{ sel:-1, dblclick:null, clkcnt:0 },
+    nullValue:'NULL',
+    queryLimit:20,
+    tvals:{},
+    parms:{},
+    showing:'tvals',
+    frames: ["frame_main"],
+    dlgmaxrows:20, queries:[],
+    qpos:0,
+    conf:{ wrap:false },
+    inputs: ['where', 'columns', 'limit', 'offset', 'orderby', 'query'],
+    defaults: {where:'', columns:'*', limit:20, offset:0, orderby:'', query:''},
+    escFunc: null
+};
+
+function onload()
+{
+    puts("ONLOAD");
+    WsConnect();
+    var lst = self.inputs;
+    var pid = $('#parm_query');
+    //pid.on('keyup', function(e){ return KeyPress(e);});
+    //$(document).on('keyup', function(e){ return EscPress(e);});
+    window.addEventListener("keyup", function(e){ return EscPress(e);}, false);
+    pid[0].addEventListener("keyup", function(e){ return KeyPress(e);}, false);
+    var fe = function(e){ DoEnter(e,lst[i]); };
+    for (var i in lst) {
+        $('#parm_'+lst[i])[0].onkeypress = fe;
+    }
+    $('#parm_columns')[0].value = ('*');
+    $('#parm_limit')[0].value = (self.queryLimit);
+}
+
+function dputs(str) {
+    if (self.debug)
+        puts(str);
+}
+
+function Alert(msg) {
+    puts('Alert: '+msg);
+    window.alert(msg);
+};
+function Confirm(msg) {
+    puts('Confirm: '+msg);
+    return window.confirm(msg);
+};
+
+// Close websocket.  TODO: attempt reconnect.
+function WsClose() {
+    puts("Connection dropped");
+    $('body')[0].classList.add('shade');
+    $('title')[0].innerHTML = '[SqliteUI: '+self.loadObj.dbtail+']';
+    //setTimeout(WsReconnect, 1000);
+}
+
+function WsReconnect() {
+    if (Confirm('Connection dropped.  Attempt to reconnect?'))
+        WsConnect();
+}
+
+function WsConnect() {
+    var url = document.URL.replace(/^http/,'ws').split('#')[0];
+    puts("Trying to connect: "+url);
+    self.ws = new WebSocket(url, "ws");
+    try {
+        self.ws.onmessage = WsRecv;
+        self.ws.onclose = WsClose;
+        setTimeout(StartConn, 50);
+        $('body')[0].classList.remove('shade');
+    } catch(e) {
+        puts("Connect failed");
+        setTimeout(WsConnect, 5000);
+    }
+}
+
+/****** SHARED ***/
+
+
+function ClearSelection() {
+    if(document.selection && document.selection.empty) {
+        document.selection.empty();
+    } else if(window.getSelection) {
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+    }
+}
+
+function ClassMod(sel:string|object, name:string, add:boolean) {
+    var id = sel;
+    if (typeof sel === 'string')
+        id = $(sel);
+    if (id.length==0)
+        return;
+    if (add)
+        id[0].classList.add(name);
+    else
+        id[0].classList.remove(name);
+}
+
+/**************/
+
+function SelRow(tbl:any, row:number, on:boolean) {
+    return ClassMod('#'+tbl+'_tr_'+row, 'rowsel', on);
+}
+
+//Select table.
+function ClickQList(event)
+{
+    self.in = 'qlist';
+    if (event.ctrlKey) {
+        DblClickQList(event);
+        return false;
+    }
+    if (!self.dblDelay)
+        return _ClickQList(event);
+    if (self.qlist.dbclick) {
+        clearTimeout(self.qlist.dbclick);
+        self.qlist.dbclick=null;
+        DblClickQList(event);
+    } else {
+        self.qlist.dbclick = setTimeout(function() { _ClickQList(event); } , self.dblDelay);
+    }
+    ClearSelection();
+}
+
+//Select table.
+function DblClickQList(event)
+{
+    var target = event.target || event.srcElement;
+    var id, pid = target.parentNode;
+    id = pid.id;
+    if (id === '') return;
+    self.curtbl = 'qlist';
+    var rsplit = id.split('_');
+    var row = parseInt(rsplit[2]);
+    if (rsplit[1] == 'th') { 
+        row = 'th_'+rsplit[2];
+        var tag = rsplit[2];
+        ShowHideRows('qlisttbl', row, tag);       return;
+    }
+}
+
+//Select table.
+function _ClickQList(event)
+{
+    self.qlist.dbclick=null;
+    var target = event.target || event.srcElement;
+    var id, pid = target.parentNode;
+    id = pid.id;
+    if (id === '') return;
+    var rsplit = id.split('_');
+    var row = parseInt(rsplit[2]);
+    if (rsplit[1] == 'th') {
+        return DblClickQList(event);
+    }
+    
+   // if (row === self.qlist.sel && self.showing == 'tvals') return row;
+    SelRow('qlist', self.qlist.sel, false);
+    SelRow('tlist', self.tlist.sel, false);
+    SelRow('qlist', row, true);
+    self.qlist.sel = row;
+    var q = self.qlist.data[row];
+    SendQuery(q,true);
+    $('#parm_query')[0].value = (q);
+    return row;
+}
+
+
+//Select table.
+function OLD_ClickTList(event)
+{
+    self.in = 'tlist';
+    if (event.ctrlKey) {
+        DblClickTList(event);
+        return false;
+    }
+    if (!self.dblDelay)
+        return _ClickTList(event);
+    if (self.tlist.dbclick) {
+        clearTimeout(self.tlist.dbclick);
+        self.tlist.dbclick=null;
+        DblClickTList(event);
+    } else {
+        self.tlist.dbclick = setTimeout(function() { _ClickTList(event); } , self.dblDelay);
+    }
+}
+
+
+function DblClickTList(event)       // Show schema
+{
+    var target = event.target || event.srcElement;
+    var id, pid = target.parentNode;
+    id = pid.id;
+    if (id === '') return '';
+    var rsplit = id.split('_');
+    var row = rsplit[2];
+    if (rsplit[1] == 'th') row = 'th_'+rsplit[2];
+
+    if (row==='') return;
+    self.tlist.sel = -1;
+    if (row.substr(0,3) == 'th_') { // In header?
+        var tag = row.substr(3);
+        ShowHideRows('tlisttbl', row, tag);
+    } else {
+        var tbl = self.curTable;
+        if (!tbl) return;
+        LoadSchema(parseInt(row));
+    }
+    ClearSelection();
+}
+
+//Select table.
+function ClickTList(event)
+{
+    if (event.ctrlKey) {
+        DblClickTList(event);
+        return false;
+    }
+    if (!(self.tlist.clkcnt++))
+        $('#tlist')[0].setAttribute('title','');
+    var target = event.target || event.srcElement;
+    var id, pid = target.parentNode;
+    id = pid.id;
+    if (id === '')
+        return '';
+    var rsplit = id.split('_');
+    if (rsplit[1] == 'th')
+        return DblClickTList(event);
+    var row = parseInt(rsplit[2]);
+    dputs("ID_: "+id);
+    SelRow('qlist', self.qlist.sel, false);
+    SelRow('tlist', self.tlist.sel, false);
+    SelRow('tlist', row, true);
+    // Prevent a dblclick from doing load+schema.
+    if (self.tlist.sel == row && self.curtbl == 'tlist')
+        return;
+    self.curtbl = 'tlist';
+    self.tlist.sel = self.tlist.reqload = row;
+    var tbl = pid.firstChild.innerHTML;
+    if (!tbl)
+        return '';
+    if (rsplit[1] == 'db') {
+        return WsSend('dbLoad', {dbFile:tbl});
+    }
+    var data = self.tlist.data[row];
+    if (!data)
+        return; //database file.
+    
+    switch (data.type) {
+        case 'index':
+            return LoadSchema(row);
+        case 'trigger':
+            return LoadSchema(row);
+        case 'view':
+            break;
+        case 'table':
+            break;
+    }
+    var defs = {columns:'*', limit:20};
+    self.parms[self.curTable] = Parms(defs, true);
+    Parms(self.parms[tbl], false);
+    self.curTable = tbl;
+    ReqLoadTable(tbl);
+    //$('#tnav_add_row')[0].disabled=(data.type === 'table')?false:true;
+    return row;
+}
+
+
+//Select file.
+function ClickFList(event)
+{
+    self.tlist.dbclick=null;
+    var target = event.target || event.srcElement;
+    var id, pid = target.parentNode;
+    id = pid.id;
+    if (id === '') return '';
+    var rsplit = id.split('_');
+    if (rsplit[1] == 'th')
+        return;
+    var row = parseInt(rsplit[2]);
+    dputs("ID_: "+id);
+    SelRow('tblfiles', self.flist.sel, false);
+    SelRow('tblfiles', row, true);
+    self.flist.sel = row;
+}
+
+function ShowHideRows(prefix:string, row:number, tag:string) {
+    if (self.tlist.opened[prefix] === undefined)
+        self.tlist.opened[prefix] = [];
+    if (self.tlist.opened[prefix][row] === undefined)
+        self.tlist.opened[prefix][row] = true;
+    var i, open = self.tlist.opened[prefix][row];
+    ClassMod('.'+prefix+'_'+tag, prefix+'_hide', open);
+    self.tlist.opened[prefix][row] = !open;
+}
+
+// Select row in current table.
+function ClickTVals(event)
+{
+    if (self.showing === 'schema') return;
+    if (!(self.tvals.clkcnt++))
+        $('#tvals')[0].setAttribute('title','');
+    var target = event.target || event.srcElement;
+    var id = target.parentNode.id;
+    if (id === '') return;
+    self.curtbl = 'tvals';
+    var rids = id.split('_'), row = parseInt(rids[2]);
+    if (row === self.tvals.sel) return row;
+    SelRow('tvals', self.tvals.sel, false);
+    SelRow('tvals', row, true);
+    self.tvals.sel = row;
+    if (row == 0) {
+        var tname = target.innerHTML;
+        id = $('#parm_orderby')[0];
+        if (id.value === tname)
+            id.value = tname+' DESC';
+        else
+            id.value = tname;        
+        ReloadTbl();
+    }
+    return row;
+}
+
+// Edit row 
+function DblClickTVals(event) {
+    if (self.showing != 'tvals' || self.in == 'qlist') return;
+    var row = ClickTVals(event);
+    if (row<=0)
+        return;
+    $('#dlg_edit_tvals')[0].setAttribute('style', 'display:block');
+    DlgEditTVals(row);
+    ClearSelection();
+}
+
+function Tool(name:string) {
+    var id = DlgOpen('dlg_tool_'+name, true);
+}
+
+// Open/close a dialog and shade/unshade frame below.
+function DlgOpen(name:string, open:boolean)
+{
+    var id = $('#'+name)[0];
+    var fend = self.frames[self.frames.length-1];
+    if (open) {
+        if (fend == name) return;
+        $('#'+name)[0].setAttribute('style','display:block');
+        puts("NAME: "+name);
+        //document.body.style.overflow = "hidden";
+        $('#'+fend)[0].classList.add('shade');
+        self.frames.push(name);
+        self.escFunc = function () { DlgOpen(name, false); };
+        var z = $('input', id);
+        if (z && z[0])
+            z[0].focus();
+        if (id.firstElementChild.className !== 'close-icon') {
+            var ct = document.createElement('button');
+            ct.onclick = self.escFunc;
+            ct.className='close-icon';
+            id.insertBefore(ct, id.firstElementChild);
+        }
+    } else {
+        if (fend != name) return;
+        $('#'+name)[0].setAttribute('style','display:none');
+        self.frames.pop();
+        fend = self.frames[self.frames.length-1];
+        $('#'+fend)[0].classList.remove('shade');
+        if (self.frames.length<=1)
+            self.escFunc = null;
+        else
+            self.escFunc = function () { DlgOpen(fend, false); };
+    }
+    return id;
+}
+
+/**********************/
+
+function TableData(fname:string=void, row:number=void)
+{
+    if (row === undefined)
+        row = S.accts.sel;
+    var data = S.accts.data[row];
+    if (row === undefined || data === undefined)
+        return Bug("bad row");
+    if (fname !== undefined)  {
+        var ind = S.accts.alup[fname];
+        if (ind === undefined)
+            return Bug("bad ind: "+fname);
+        return data[ind];
+    }
+    var rc = {};
+    for (var i in S.accts.alup)
+        rc[i] = data[S.accts.alup[i]];
+    return rc;
+}
+
+function DBData(fname:string=void, row:number=void)
+{
+    if (row === undefined)
+        row = S.trans.sel;
+    var data = S.trans.data[row];
+    if (row === undefined || data === undefined)
+        return Bug("bad row");
+    if (fname !== undefined)  {
+        var ind = S.trans.alup[fname];
+        if (ind === undefined)
+            return Bug("bad ind: "+fname);
+        return data[ind];
+    }
+    var rc = {};
+    for (var i in S.trans.alup)
+        rc[i] = data[S.trans.alup[i]];
+    return rc;
+}
+
+// Update the active/inactive status of Nav buttons.
+function TNavUpdateBut()
+{
+    if (self.tlist.sel<0) return;
+    var buts = $('#tvals_parm button'),
+        //adata = TListData(),
+        ofs = parseInt($('#parm_offset')[0].value), 
+        maxrows = self.dlgmaxrows,
+        max = self.tlist.data[self.tlist.sel].size,
+        atend = ((ofs+maxrows)>=max),
+        atstart = (ofs<=0);
+        
+    for (var i in buts) {
+        switch (buts[i].id) {
+            case 'tnav_row_add': break;
+            case 'tnav_row_del':
+                buts[i].disabled = (self.tlist.sel<0);
+                break;
+            case 'tnav_page_down':
+            case 'tnav_page_end':
+                buts[i].disabled = atend;
+                break;
+            case 'tnav_page_up':
+            case 'tnav_page_start':
+                buts[i].disabled = atstart;
+                break;
+            case undefined: break;
+            default:
+                puts("Unknown id: "+buts[i].id);
+        }
+    }
+}
+
+function OTNavUpdateBut()
+{
+    var buts = $('#tvals_parm button');
+    for (var i in buts) {
+        switch (buts[i].id) {
+            case 'tnav_row_add': break;
+            case 'tnav_row_del': break;
+            case 'tnav_page_down':
+            case 'tnav_page_end': break;
+            case 'tnav_page_up':
+            case 'tnav_page_start': break;
+        }
+    }
+}
+
+function TNavCmd(cmd:string)
+{
+    var id = $('#parm_offset')[0];
+    var sz = self.tlist.data[self.tlist.sel].size;
+    var val = id.value, ql = self.queryLimit, max = sz-ql;
+    if (max<0)
+        max = 0;
+    val = parseInt(val);
+    if (isNaN(val))
+        val = 0;
+    dputs("SZ: "+sz);
+    switch (cmd) {
+        case "down":
+            val += ql;
+            break;
+        case "up":
+            val -= ql;
+            break;
+        case "start":
+            val = 0;
+            break;
+        case "end":
+            val = max;
+            break;
+    }
+    dputs("VAL: "+val);
+    if (isNaN(val) || val<0)
+        val = 0;
+    if (val > max)
+        val = max;
+    id.value = val;
+    ReloadTbl();
+}
+
+// Add row 
+function TNavAddRow(row:number=void)
+{
+    if (row === undefined)
+        row = self.tlist.sel;
+    if (row<0)
+        return Alert("table not selected");
+    var data = self.tlist.data[row];
+    if (!data || data.type !== 'table') return;
+    self.curTable = data.name;
+    $('#dlg_add_tvals')[0].setAttribute('style', 'display:block');
+    DlgAddTVals(row);
+    ClearSelection();
+};
+
+// Delete row.
+function TNavDelRow(row:number=void)
+{
+    var trow = self.tlist.sel;
+    var tdata = self.tlist.data[trow];
+    if (!tdata || tdata.type !== 'table') return;
+    if (row === undefined)
+        row = self.tvals.sel;
+    var data = self.tvals.data[row];
+    var flds = self.tvals.data[0];
+    if (!data)
+        return Alert("row not selected");
+    if (!Confirm("Delete row"))
+        return;
+        puts("DELE");
+    var subd = {table:tdata.name, rowid:data[0]};
+    WsSend('tvalsDelete', subd);
+};
+
+//Fill the Edit-Transaction dialog.
+function DlgEditTVals(row:number=void)
+{
+    var id = DlgOpen('dlg_edit_tvals', true);
+    var z = $('tbody',id)[0];
+    var ttl = self.tvals.data[0];
+    var len = ttl.length-1, dat, dval = '', i, j, n, bd = '', ccnt;
+    dat = self.tvals.data[row];
+    len = dat.length-1;
+    ccnt = parseInt((len+self.dlgmaxrows-2)/self.dlgmaxrows);
+    for (i=0; i<len; i++) {
+        bd += "<tr>";
+        for (j=0; j<ccnt && i<len; j++, i++) {
+            //dval = ConvChar(dat[i+1]);
+            if (isNaN(parseInt(dval)))
+                dval = dval;
+            bd += "<td style='text-align:right'><b>"+ttl[i+1]+":</b></td><td><input id=edt_"+ttl[i+1];
+            bd += "></td>";
+            //bd += " value='"+dval+"'></input></td>";
+        }
+        i--;
+        bd += "</tr>\n";
+    }
+    z.innerHTML = bd;
+    z = $('thead', id)[0];
+    bd = '<tr>';
+    for (j=0; j<ccnt; j++)
+        bd += "<th>Name</th><th>Value</th>";
+    bd += "</tr>";
+    z.innerHTML = bd;
+    for (i=1; i<=len; i++) 
+        document.getElementById('edt_'+ttl[i]).value = dat[i];
+    self.tvals.curRow = row;
+    self.tvals.curEd = {row:row, table:self.curTable};
+}
+
+//Fill the Add-Transaction dialog.
+function DlgAddTVals(row:number=void)
+{
+    var id = DlgOpen('dlg_add_tvals', true);
+    var z = $('tbody',id)[0];
+    var tinfo = self.tlist.data[row], info = tinfo.info;
+    var len = info.length, dat, dval = '', i, j, n, bd = '', ccnt;
+    ccnt = parseInt((len+(self.dlgmaxrows-1))/self.dlgmaxrows);
+    for (i=0; i<len; i++) {
+        bd += "<tr>";
+        for (j=0; j<ccnt && i<len; j++, i++) {
+            var fnam = info[i].name;
+            dval = ((info[i].dflt_value===null)?'':info[i].dflt_value);
+            if (dval === "NULL" && self.nullValue !== null)
+                dval = self.nullValue;
+            bd += "<td style='text-align:right'><b>"+fnam+":</b></td><td><input id=edt_"+fnam;
+            bd += " value='"+dval+"'></input></td>";
+        }
+        i--;
+        bd += "</tr>\n";
+    }
+    z.innerHTML = bd;
+    z = $('thead',id)[0];
+    bd = '<tr>';
+    for (j=0; j<ccnt; j++)
+        bd += "<th>Name</th><th>Value</th>";
+    bd += "</tr>";
+    z.innerHTML = bd;
+    self.tvals.curRow = row;
+    self.tvals.curEd = {row:row, table:self.curTable};
+}
+
+// Return fields from form.
+function DlgFormFields(fname:string, prefix:string)
+{
+    var x = $("#dlg_"+fname)[0];
+    var zl = [];
+    zl[0] = $('input',x);
+    zl[1] = $('select',x);
+    var s, id, n, res = {};
+    for (var j in zl) {
+        var z = zl[j];
+        for (var i in z) {
+            if (z[i].id === undefined) continue;
+            id = z[i].id.substr(6+prefix.length);
+            res[id] = z[i].value;
+        }
+    }
+    return res;
+}
+
+// Return fields from add form.
+function DlgAddFields(fname:string, prefix:string)
+{
+    var x = $("#dlg_"+fname)[0];
+    var z = $('input',x);
+    var s, id, n, res = {};
+    for (var i in z) {
+        if (z[i].id === undefined) continue;
+        id = z[i].id.substr(prefix.length+1);
+        res[id] = z[i].value;
+    }
+    return res;
+};
+
+function DlgAddRow() {
+    var flds = DlgAddFields("add_tvals", "edt");
+    var trow = self.tlist.sel;
+    var tdata = self.tlist.data[trow];
+    if (!tdata || tdata.type !== 'table') return;
+    var subd = {table:tdata.name, res:flds};
+    WsSend('dbAdd',subd);
+};
+
+//Handle submit.
+function DlgSubmit(fname:string, cmd:string)
+{
+    if (cmd == "Cancel") {
+        self.escFunc();
+        return;
+    }
+    var flds;
+    switch (fname) {
+        case "tool_import":
+            flds = DlgFormFields(fname,"tool");
+            WsSend('dbImport',flds);
+            break;
+        case "tool_export":
+            flds = DlgFormFields(fname,"tool");
+            WsSend('dbExport',flds);
+            break;
+        case "tool_backup":
+            flds = DlgFormFields(fname, "tool");
+            WsSend('dbBackup',flds);
+            break;
+        case "tool_read":
+            flds = DlgFormFields(fname, "tool");
+            WsSend('dbRead',flds);
+            break;
+        case "tool_add":
+            return DlgAddRow();
+        default:
+            puts("Unknown cmd: "+fname);
+    }
+}
+
+function DlgDone(m:object)
+{
+    dputs("MM: "+JSON.stringify(m));
+    if (m.success) {
+        self.escFunc();
+        if (m.did === 'read')
+            LoadAll(m);
+    } else {
+        Alert(m.msg);
+    }
+}
+
+//Handle submit in table edit.
+function DlgSubmitTVals(tag:string)
+{
+    var i, fnam = self.frames[self.frames.length-1];
+    if (tag == "Cancel")
+        return DlgOpen(fnam, false);
+    var isEdit = (fnam.indexOf('edit')>=0);
+    var row = self.tvals.curEd;
+    var x = $('#'+fnam)[0];
+    var z = $('input',x);
+    var dat, ttl;
+    if (isEdit) {
+        row = self.tvals.curRow;
+        dat = self.tvals.data[row];
+        ttl = self.tvals.data[0];
+    } else {
+        dat = [];
+        ttl = [];
+        row = self.tvals.curRow;
+        var info = self.tlist.data[row].info;
+        for (i in info)
+            ttl.push(info[i].name);
+    }
+    var n = 0;
+    var res = {};
+    for (i in z) {
+        if (z[i].id === undefined) continue;
+        var id = z[i].id.substr(4); /* Strip leading 4 chars. */
+        
+        n = ttl.indexOf(id);
+        if (self.nullValue !== null && z[i].value === self.nullValue)
+            res[id] = null;
+        else
+            res[id] = z[i].value;
+    }
+    var subd = {};
+    subd.res = res;
+    subd.id = dat[0]; /* rowid */
+    subd.tag = tag;   /* "Update", "Delete", "Duplicate", "Add" */
+    subd.table = self.curTable;
+    self.tvals.submit = subd;
+    WsSend('tvalsSubmit', subd);
+}
+
+function tvalsSubmitAck(m:object)
+{
+    var fnam = self.frames[self.frames.length-1];
+    if (!m.result)
+        return Alert(m.msg);
+    DlgOpen(fnam, false);
+    ReloadTbl();
+    if (m.tag == "Add" || m.tag == "Delete") {
+        var row = self.tlist.sel;
+        var tr = $('#tlist_tr_'+row)[0];
+        var td = $('td',tr)[1];
+        var inc = (m.tag == "Add" ? 1 : -1);
+        var n = parseInt(td.innerHTML)+inc;
+        td.innerHTML = n;
+    }
+}
+
+function tvalsDeleteAck(m:object) {
+    ReloadTbl();
+}
+
+function tvalsAddAck(m:object)
+{
+    if (!m.success)
+        return Alert(m.msg);
+    DlgOpen('dlg_add_tvals', false);
+    var trow = self.tlist.sel;
+    self.tlist.data[trow].size++;
+    ReloadTbl();
+    RedrawTList();
+}
+
+// Save (or restore) parms.
+function Parms(rv:object|void, save:boolean)
+{
+    var lst = self.inputs;
+    for (var i in lst) {
+        var ll = lst[i], id = $('#parm_'+ll)[0],
+            defs = self.defaults[ll];
+        if (save)
+            rv[ll] = id.value;
+        else
+            id.value = (rv===undefined?defs:rv[ll]);
+    }
+    return rv;
+}
+
+// Request table load from JSI.
+function ReqLoadTable(tbl:string) { 
+    var req = {table:tbl};
+    self.curTable=tbl;
+    req = Parms(req, true);
+    req.opts = {mode:'arrays', headers:true};
+    WsSend('loadTable', req, '');
+}
+
+function ReloadTbl() {
+    ReqLoadTable(self.curTable);
+}
+
+function LoadSchema(row:number, text:boolean=false)
+{
+    var cclass, data=self.tlist.data[row], values=data.info, hd = '', bd = '', typ=data.type;
+    self.tvals.sel = -1;
+    if (typ == 'table' || typ == 'view') {
+        hd += '<caption><button onclick="LoadSchema('+row+','+(text?'false':'true')+')">';
+        hd += 'Click to show '+(text?'Schema':'Sql')+' for '+typ+': "';
+        hd += self.tlist.data[row].name+'"</button></caption>';
+    }
+    else {
+        hd += '<caption>SQL for '+typ+': "'+self.tlist.data[row].name+'"</caption>';
+        text = true;
+    }
+    if (text) {
+        bd += '<tr><td><pre style="white-space:normal">'+ ConvChar(self.tlist.data[row].sql) +'</pre></td></tr>';
+    } else {
+        for (var i in values) {
+            cclass = ' id=tvals_tr_'+i;
+            if (i==0)
+                hd +=  '<tr id=tvals_th>';
+            bd +=  '<tr '+cclass+'>';
+            row = values[i];
+            for (var j in row) {
+                if (i==0)
+                    hd +=  '<th id=tvals_th>'+j+'</th>';
+                bd += '<td>' + ConvChar(row[j]) + '</td>';
+            }
+            bd += '</tr>\n';
+            if (i==0)
+                hd +=  '</tr>';
+        }
+    }
+    var tt = $('#tvals')[0];
+    tt.innerHTML = hd+bd;
+    //$('#tvals')[0].innerHTML = (hd+bd);
+    SetShowing("schema");
+}
+
+function SetShowing(show:string, from:string='')
+{
+    self.showing = show;
+    var vis = (show == 'tvals' && from == 'loadTable');
+    ClassMod('#tvals_parm', 'shade', !vis);
+}
+
+function LoadSaved()
+{
+    var data = self.qlist.data;
+    if (!data.length) return;
+    bd = '<tr id=qlist_th_main><th>Saved Queries</th></tr>';
+    for (var i in data) {
+        var q = data[i];
+        var qsub = (q.length<=30?q:q.substr(0,30)+'...');
+        bd += '<tr id=qlist_tr_'+i+' class="qlisttbl_main"><td>'+qsub+'</td></tr>';
+    }
+    $('#qlist')[0].innerHTML = bd;
+}
+
+function SaveQuery(unsave:boolean)
+{
+    var uqd='block', sqd='none';
+    if (unsave) { sqd='block'; uqd='none'; }
+
+    var row, q = $('#parm_query')[0].value.trim(' '), qind = self.qlist.data.indexOf(q);
+    $('#SaveQuery')[0].setAttribute('style','display:'+sqd);
+    $('#UnsaveQuery')[0].setAttribute('style','display:'+uqd);
+    if (unsave) {
+        if (qind<0)
+            return;
+        self.qlist.data.splice(qind,1);
+        row = -1;
+    } else {
+        if (qind>=0)
+            return;
+        row = self.qlist.data.length;
+        self.qlist.data.push(q);
+    }
+    LoadSaved();
+    SelRow('qlist', self.qlist.sel, false);
+    if (row>0)
+        SelRow('qlist', row, true);
+    self.qlist.sel = row;
+    WsSend("saveQuery", { from:'saveQuery', save:!unsave, query:q } );
+}
+
+function LoadTable(m:object)
+{
+    SetShowing('tvals', m.from);
+    self.tlist.reqload = -1;
+    switch (m.opts.mode) {
+    case 'html':
+        $('#tvals')[0].innerHTML = m.data;
+        return;
+
+    case 'arrays':
+        var cclass, tag, row, values=m.data, bd = '';
+        self.tvals.data = m.data;
+        self.tvals.sel = -1;
+        if (m.from == "runQuery") {
+            var sqd='block', uqd='none';
+            if (m.replay) { uqd='block'; sqd='none'; }
+            bd += '<caption><button id=SaveQuery onclick="SaveQuery(false)" style="display:'+sqd+'">Save Query</button></caption>';
+            bd += '<caption><button id=UnsaveQuery onclick="SaveQuery(true)" style="display:'+uqd+'">Unsave Query</button></caption>';
+        }
+        for (var i in values) {
+            if (i==0) {
+                tag='th';
+            } else {
+                tag='td';
+                self.tvals.sel = 1;
+            }
+            cclass = ' id=tvals_tr_'+i;
+            bd +=  '<tr '+cclass+'>';
+            row = values[i];
+            for (var j in row) {
+                if (j==0 && m.from != 'runQuery') continue; /* Rowid */
+                var vval = '';
+                if (row[j] !== undefined)
+                    vval = ConvChar(row[j]);  // TODO: perhaps use dom access instead.
+                bd += '<'+tag+'>' + vval + '</'+tag+'>';
+            }
+            bd += '</tr>\n';
+        }
+        $('#tvals')[0].innerHTML = bd;
+        if (self.tvals.sel != -1)
+            SelRow('tvals', self.tvals.sel, true);
+        TNavUpdateBut();
+        return;
+    }
+}
+
+function RedrawTList() {
+    LoadTList(self.tlist.mlSave);
+}
+
+// Load the table-list
+function LoadTList(ml:object)
+{
+    dputs("MM: "+JSON.stringify(ml));
+    var cclass, j, idx = -1, bd = '<tr id=tlist_th_main><th>Table</th><th>Size</th></tr>\n';
+    var i, m = ml.lst, tcnt = 0;
+    self.tlist.mlSave = ml;
+    self.tlist.db_list = ml.db_list;
+    self.tlist.data = m;
+    self.tlist.sel = 1;
+    var indices = [], views = [], trigs = [];
+    for (i in m) {
+        var typ = m[i].type;
+        if (typ === 'index' && !m[i].name.match(/^sqlite_autoindex/))
+            indices.push(i);
+        if (typ === 'view')
+            views.push(i);
+        if (typ === 'trigger')
+            trigs.push(i);
+        if (typ !== 'table') continue;
+        /*if (self.curTable === undefined)
+            self.curTable = m[i].name;
+        if (self.tlist.sel<0)
+            self.tlist.sel = i;*/
+        if (tcnt++==0)
+            self.curTable = m[i].name;
+        cclass = ' id=tlist_tr_'+i+' class="tlist_table tlisttbl_main"';
+        bd +=  '<tr '+cclass+'><td>' + m[i].name + '</td><td>' + m[i].size + '</td></tr>\n';
+    }
+    if (views.length) {
+        bd += "<tr id=tlist_th_view><th>View</th><th>Size</th></tr>";
+        for (i in views) {
+            j = views[i];
+            cclass = ' id=tlist_tr_'+j+' class="tlist_view  tlisttbl_view"';
+            bd +=  '<tr '+cclass+'><td>' + m[j].name + '</td><td>' + m[j].size + '</td></tr>\n';
+        }
+    }
+    if (trigs.length) {
+        bd += "<tr id=tlist_th_trigger><th>Trigger</th><th>Table</th></tr>";
+        for (i in trigs) {
+            j = trigs[i];
+            cclass = ' id=tlist_tr_'+j+' class="tlist_trigger tlisttbl_trigger"';
+            bd +=  '<tr '+cclass+'><td>' + m[j].name + '</td><td>' + m[j].tbl_name + '</td></tr>\n';
+        }
+    }
+    if (indices.length) {
+        bd += "<tr id=tlist_th_index><th>Index</th><th>Table</th></tr>";
+        for (i in indices) {
+            j = indices[i];
+            cclass = ' id=tlist_tr_'+j+' class="tlist_index  tlisttbl_index"';
+            bd +=  '<tr '+cclass+'><td>' + m[j].name + '</td><td>' + m[j].tbl_name + '</td></tr>\n';
+        }
+    }
+    if (ml.db_list.length>=1) { //TODO: finish db support.
+        var dbs = ml.db_list;
+        bd += "<tr id=tlist_th_db><th>Database Files</th><th>Name</th></tr>";
+        for (i in dbs) {
+            j = dbs[i];
+            //if (j.name == 'main') continue; 
+            cclass = ' id=tlist_db_'+j.name+' class="tlist_db  tlisttbl_db"';
+            bd +=  '<tr '+cclass+'><td>' + j.file + '</td><td>' + j.name + '</td></tr>\n';
+        }
+    }
+    $('#tlist')[0].innerHTML = bd;
+    if (tcnt) {
+        SelRow('tlist', self.tlist.sel, true);
+        ReqLoadTable(self.curTable);
+    }
+}
+
+/* Load schemas and current-table. */
+function LoadAll(m:object)
+{
+    self.loadObj =  m;
+    $('title')[0].innerHTML = 'SqliteUI: '+m.dbtail;
+    LoadTList(m);
+    if (m.savedq) {
+        for (var i in m.savedq) 
+            self.qlist.data.push(m.savedq[i].query);
+        LoadSaved();
+    }
+    if (m.integrityFail)
+        Alert("DB Integrity Check Failed!");
+    else if (m.foreignKeysFail)
+        Alert("DB Foreign Keys Check Failed");
+} 
+
+function SendQuery(value:object, replay:boolean) {
+    var req = {query:value};
+    req.opts = {mode:'arrays', headers:true, limit:self.queryLimit};
+    req.replay = replay;
+    WsSend('runQuery',req,'');
+}
+
+//Handle hitting enter
+function DoEnter(e:any, inp:string)
+{
+    if (!e) e = window.event;
+    var keyCode = e.keyCode || e.which;
+    if (keyCode == '13'){
+        if (inp === 'query') {
+            var val = $('#parm_query')[0].value.trim(' ');
+            if (val !== '') {
+                self.queries.push(val);
+                self.qpos = 0;
+                SelRow('qlist', self.qlist.sel, false);
+                SelRow('tlist', self.tlist.sel, false);
+                return SendQuery(val,false);
+            }
+        } 
+        ReloadTbl();
+        return false;
+    }
+}
+
+// Key pressed in query input.
+function KeyPress(e:any)
+{
+    var key = e.key;
+    switch (key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+            var len = self.queries.length;
+            var val = $('#parm_query')[0].value.trim(' ');
+            self.qpos += (key=="ArrowUp"?1:-1);
+            if (self.qpos<0)
+                self.qpos = 0;
+            else if (self.qpos>=len)
+                self.qpos=len-1;
+            val = self.queries[len-1-self.qpos];
+            break;
+        default: return;
+    }
+    id.value = (val === undefined ? '' : val);
+}
+
+function ToggleUI(ui:string) {
+    var id = $('#'+ui)[0];
+    if (id.style.display === 'none')
+        id.style.display = 'inline';
+    else
+        id.style.display = 'none';
+}
+
+function ToggleOpt(opt:string) {
+    var old = self.conf[opt];
+    self.conf[opt] = !old;
+    switch (opt) {
+        case 'wrap':
+            ClassMod('#tvals', 'conf_spacepre', old);
+            break;
+        default: dputs("unknown opt: "+opt);
+    }
+}
+
+function EscPress(e:any) {
+    if(e.keyCode == 27 && self.escFunc) self.escFunc();
+}
+
+function DoExit() {
+    $('#body_main')[0].innerHTML = '<H3>SqliteUI has exited: please close window</H3>';
+}
+
+function StartConn() {
+    if (self.ws.readyState == 1)
+        WsSend("loadAll", {init:true});
+    else
+        setTimeout(StartConn, 50);
+}
+
+function WsSend(cmd:string, data:object, type:string='') {
+    data = { data:data, cmd:cmd, type:type };
+    data = JSON.stringify(data);
+    dputs("SENDING: "+data);
+    self.ws.send(data);
+}
+
+function WsRecv(msg:any)
+{
+    dputs("RECV: "+msg.data);
+    var ms=JSON.parse(msg.data);
+    self.msg = ms;       
+    var m = ms.data;
+    switch (ms.cmd) {
+        
+        case 'chgAcct':     return LoadTran(m);
+        case 'loadTable':   return LoadTable(m);
+        case 'loadAll':     return LoadAll(m);
+        case 'status':      self.status = m; break;
+        case 'tvalsSubmitAck': return tvalsSubmitAck(m);
+        case 'tvalsDeleteAck':  return tvalsDeleteAck(m);
+        case 'tvalsAddAck':  return tvalsAddAck(m);
+        case 'DlgDone':     return DlgDone(m);
+        case 'fileBrowse':  return fileBrowse(m);
+        case 'error':       Alert(m); break;
+        case 'exit':        DoExit(); break;
+        default:            puts('Unknown webmsg: '+ms.cmd);
+    }
+}
+
+function ToggleMe(id:object) {
+    id.value = (id.value=="1"?"0":"1");
+}
+
+function FileBrowse() {
+    flds = { files_dir:'/tmp' };
+    WsSend('fileBrowse',flds);
+}
+
+function fileBrowse(d)      // File selector.
+{
+    dputs("fileBrowse: "+JSON.stringify(d));
+    var hid = $('#tblfiles_th_0')[0];
+    $('th',hid)[0].innerHTML = d.dir;
+    self.flist.data = d;
+    var files = d.files;
+    var dirs  = d.dirs;
+    var n = 1;
+    var rc = '<tr id=tblfiles_tr_0><td>../</td></tr>';
+     for (var i in dirs) {
+        rc += '<tr id=tblfiles_tr_'+ n++ +'><td>' + ConvChar(dirs[i]) + '/</td></tr>';
+     }
+     for (var j in files) {
+        rc += '<tr id=tblfiles_tr_'+ n++ +'><td>' + ConvChar(files[j]) + '</td></tr>';
+    }
+    var tbl = $('#tblfiles')[0];
+    $('tbody',tbl)[0].innerHTML = rc;
+    DlgOpen('dlg_tool_files', true);
+}
+
+
+function ConvChar( str:any )
+{
+    if (str === undefined) return '';
+    if (str === null) {
+        if (self.nullValue !== null)
+            return self.nullValue;
+        return '';
+    }
+    var c = {'<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&#039;', '#':'&#035;'};
+    return str.toString().replace( /[<&>'"#]/g, function(s) { return c[s]; } );
+}
+
+$jsi.onload( function() { onload(); });
+
+puts("DONE");

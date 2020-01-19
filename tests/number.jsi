@@ -1,0 +1,38 @@
+#!/usr/local/bin/jsish -u %s
+
+;Number.toPrecision(9.1234,2);
+;Number.toExponential(9.1234,2);
+;Number.toFixed(9.1234,1);
+var j;
+;j = new Number(9.1234);
+;j.toPrecision(2);
+;j.toExponential(2);
+;j.toFixed(1);
+
+var num;
+;num = 15;
+;num=Math.pow(2,53);
+;Number.isInteger(num);
+;Number.isSafeInteger(num-1);
+;Number.isSafeInteger(num);
+;Number.isNaN(num);
+;Number.isFinite(num);
+
+/*
+=!EXPECTSTART!=
+Number.toPrecision(9.1234,2) ==> 9.1
+Number.toExponential(9.1234,2) ==> 9.12e+00
+Number.toFixed(9.1234,1) ==> 9.1
+j = new Number(9.1234) ==> 9.1234
+j.toPrecision(2) ==> 9.1
+j.toExponential(2) ==> 9.12e+00
+j.toFixed(1) ==> 9.1
+num = 15 ==> 15
+num=Math.pow(2,53) ==> 9007199254740992
+Number.isInteger(num) ==> true
+Number.isSafeInteger(num-1) ==> true
+Number.isSafeInteger(num) ==> false
+Number.isNaN(num) ==> false
+Number.isFinite(num) ==> true
+=!EXPECTEND!=
+*/

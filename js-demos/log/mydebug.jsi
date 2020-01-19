@@ -1,0 +1,7 @@
+"use Debug,Trace";
+var i = 0;
+while  (i++ < 2) {
+    LogDebug("test loop:", i);
+    LogTrace("test loop:", i);
+    LogTest("test loop:", i);
+}

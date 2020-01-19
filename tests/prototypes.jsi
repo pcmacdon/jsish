@@ -1,0 +1,79 @@
+#!/usr/local/bin/jsish -u %s
+
+;Object.prototype;
+Object.prototype.a = 123;
+;Object.prototype;
+
+var a, h, x, zhang;
+;a = { b:1, c:2 };
+;a.a = 'shot';
+
+;Object.prototype;
+
+Number.prototype.fock = function() {
+;this / 2;
+};
+
+;x = 12;
+;x.fock();
+
+
+function Person(name, sex) {
+   this.name = name;
+   this.sex = sex;
+};
+
+Person.prototype = {
+   getName: function() {
+       return this.name;
+   },
+   getSex: function() {
+       return this.sex;
+   },
+   age: 18
+};
+
+function Employee(name, sex, employeeID) {
+    this.name = name;
+    this.sex = sex;
+    this.employeeID = employeeID;
+};
+
+Employee.prototype = new Person('defaultName', 'defaultSex');
+Employee.prototype.getEmployeeID = function() {
+    return this.employeeID;
+};
+
+;zhang = new Employee('ZhangSan', 'man', '1234');
+;zhang.getName();
+;zhang.age;
+delete zhang.name;
+;zhang.name;
+
+function f() {}
+function g() {}
+;g.prototype = new f();
+;h = new g();
+;g.prototype.isPrototypeOf(h);
+;g.prototype.isPrototypeOf(f);
+
+/*
+=!EXPECTSTART!=
+Object.prototype ==> {  }
+Object.prototype ==> { a:123 }
+a = { b:1, c:2 } ==> { b:1, c:2 }
+a.a = 'shot' ==> shot
+Object.prototype ==> { a:123 }
+x = 12 ==> 12
+x.fock() ==> this / 2 ==> 6
+undefined
+zhang = new Employee('ZhangSan', 'man', '1234') ==> { employeeID:"1234", name:"ZhangSan", sex:"man" }
+zhang.getName() ==> ZhangSan
+zhang.age ==> 18
+zhang.name ==> defaultName
+g.prototype = new f() ==> {}
+h = new g() ==> {}
+g.prototype.isPrototypeOf(h) ==> true
+g.prototype.isPrototypeOf(f) ==> false
+=!EXPECTEND!=
+*/

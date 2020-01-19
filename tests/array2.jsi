@@ -1,0 +1,36 @@
+#!/usr/local/bin/jsish -u %s
+
+var a = new Array(1);
+
+;a;
+;a[1] = 2;
+;a;
+
+;a.push(1,2,3);
+;a.pop();
+;a.pop();
+;a.pop();
+;a.length;
+;a.pop();
+;a.pop();
+;a.pop();
+;a.pop();
+;a.length;
+
+/*
+=!EXPECTSTART!=
+a ==> [ undefined ]
+a[1] = 2 ==> 2
+a ==> [ undefined, 2 ]
+a.push(1,2,3) ==> 5
+a.pop() ==> 3
+a.pop() ==> 2
+a.pop() ==> 1
+a.length ==> 2
+a.pop() ==> 2
+a.pop() ==> undefined
+a.pop() ==> undefined
+a.pop() ==> undefined
+a.length ==> 0
+=!EXPECTEND!=
+*/

@@ -1,0 +1,147 @@
+<title>Web</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#preprocess|Preprocessors]</li>
+<ul>
+<li>[#webpp|HTML Preprocessing]</li>
+<li>[#csspp|CSS Preprocessing]</li>
+<li>[#typepp|Javascript Preprocessing]</li>
+</ul>
+<li>[#utilities|Utilities]</li>
+</ul>
+</div>
+
+Jsi provides server-side web services built upon the [./js-websocket.wiki|WebSockets] extension.
+
+<h2 id=preprocess>Preprocessors</h2>
+Three pre-processing facilities are provided, depending upon file extension:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Extension</th> <th>Type</th> <th>Description</th> </tr>
+<tr><td>.htmli</td> <td>HTML</td><td>Evaluate javascript between tags <b>&lt;?</b> and <b>?&gt;</b>.</td><tr>
+<tr><td>.cssi</td><td>CSS</td><td>Preprocess <b>$defined</b> symbols.</td><tr>
+<tr><td>.jsi</td><td>Javascript</td><td>Translate [./functions.wiki|typed-functions] (for use within browsers)</td><tr>
+</table>
+
+Pre-processors are enabled via <b>handlers</b>:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> ws = <b>new WebSocket</b>({callback:ws_input});
+ws.<b>handler</b>(<i>'.htmli'</i>, <i>'Htmlpp'</i>,  null);
+ws.<b>handler</b>(<i>'.jsi'</i>,   <i>'Jspp'</i>, null);
+ws.<b>handler</b>(<i>'.cssi'</i>,  <i>'Csspp'</i>,  null);
+</pre></nowiki>
+
+The specifics are described below.
+
+<hr>
+<h3 id=webpp>HTML Preprocessing</h3>
+The HTML preprocessor is triggered by the extension <b>.htmli</b>.
+
+It evaluates javascript contained in <b>&lt;?</b> and <b>?&gt;</b> tags.
+
+This code is run in a private subinterp to which two new commands have been added:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Command</th> <th>Prototype</th> <th>Description</th> </tr>
+<tr><td>echo</td> <td>echo(str:string)</td><td>Output a string</td><tr>
+<tr><td>include</td> <td>include(files:string|array, debug=false)</td><td>Include and evaluate files, recusively.</td><tr>
+</table>
+
+Here is an example:
+
+    <nowiki><pre class=verbatim>
+<!DOCTYPE html>    <i><!-- File: main.htmli --></i>
+<html>
+<b><?</b>
+    <b>echo</b>(<i>'&lt;title>My App&lt;/title>'</i>);
+    var files = [<i>'head.html'</i>, <i>'body.html'</i>, <i>'dialogs.html'</i>];
+    for (var i in files)
+        <b>include</b>(files[i]);
+<b>?></b>
+</html>
+</pre></nowiki>
+
+All <b>include</b>-ed files are also similarly processed recursively, regardless of extension.
+The only exception are <b>.js .jsi</b> and <b>.css</b>,
+whose handling is described below.
+
+Files with the .css/.cssi extensions are wrapped in <b>&lt;style></b> tags
+and .js/.jsi are wrapped in <b>&lt;script></b> tags.
+
+When the include <b>debug</b> flag is <i>true</i>, non-html files are not included inline but rather
+via link/script tags.  This is used to simplify debugging in the browser, eg.
+
+    <nowiki><pre class=verbatim>
+<head>
+    <b>include</b>([<i>'main.jsi'</i>, <i>'main.cssi'</i>, <i>'common.cssi'</i>], <b>true</b>);
+</head>
+</pre></nowiki>
+
+<hr>
+<h3 id=csspp>CSS Preprocessing</h3>
+The CSS preprocessor is triggered by the <b>.cssi</b> extension, and provides symbolic substitution via defines prefixed with <b>$</b>:
+
+    <nowiki><pre class=verbatim>
+<b>$mycolor =</b> { blue }    <i>/* File: styles.cssi */</i>
+<b>$mysize =</b> { 14pt }
+<b>$mydefn =</b> {
+    color:<b>$mycolor</b>;
+    font-size:<b>$mysize</b>;
+}
+  
+#mybut1 { color:<b>$mycolor</b>; font-size:<b>$mysize</b>}
+.eclass { <b>$mydefn</b>; margin:1px }
+
+<b><?</b>
+    <b>echo</b>(<i>'#mylist { color: $mycolor; }\n'</i>);
+    <b>include</b>(<i>'common.cssi'</i>);
+<b>?></b>
+</pre></nowiki>
+
+Note  after <b>$define</b> expansion, <b>&lt;?</b> and <b>?&gt;</b> evaluation is also applied.
+
+
+<hr>
+<h3 id=typepp>Javascript Preprocessing</h3>
+
+The type pre-processor is triggered by the <b>.jsi</b> extension.
+
+It converts typed-[./functions.wiki|function] code into standard web browser javascript, ie.
+
+    <nowiki><pre class=verbatim>
+function notifyUser(m:string, n:number=1) {
+    alert('NOTICE: '+m+': '+n);
+}
+</pre></nowiki>
+
+which gets converted to:
+
+    <nowiki><pre class=verbatim>
+function notifyUser(m, n) { $jsig("notifyUser(m:string, n:number=1)"); if (arguments.length<2) n=arguments[1];
+    alert('NOTICE: '+m+': '+n);
+}
+</pre></nowiki>
+
+
+This provides runtime type-checking of function calls.
+
+To debug, we set a breakpoint on warnings which are output
+to the console.
+
+The Jsi support functions are included from: <b>/jsi/lib/jsi.js</b>
+
+<hr>
+<h2 id=utilities>Utilities</h2>
+
+The following resources are available to include from <b>/jsi/lib/</b>:
+
+  *  [../lib/web/jsi.js|jsi.js]: Support code for type-checking.
+  *  [https://github.com/remy/bind.js|bind.js]: Two way binding between data and elements.
+  *  [http://zeptojs.com/|zepto.js]: Lite subset of JQuery.

@@ -1,0 +1,138 @@
+#!/usr/bin/env jsish
+
+// File generated using: "jsish -m -create WebApp"
+
+require('Jsi');
+require('WebSocket');
+
+function WebApp(args:array|string=void, conf:object=void) {
+    
+    var self = { done:false };
+    var options = { // A  WebSocket server module
+        file        :'html/main.htmli', // Source file.
+        local       :true,          // Connection listens only on localhost.
+        port        :0,             // Port number for server.
+        quiet       :false,         // Suppress startup messages.
+        rootdir     :'',            // Root directory
+        server      :false,         // Just the server: do not open a browser.
+        useridPass  :'',            // USER:PASS for web GUI.
+        wsdebug     :0,             // WebSockets debug level.
+        wsOpts      :{}             // WebSockets options.
+    };
+    
+    parseOpts(self, options, conf);
+
+    function onAuth(ws:userobj, id:number, url:string, userpass:string) {
+        LogDebug('Url:',url, 'UP:',userpass);
+        return true; // userpass === self.pass
+    }
+        
+    function onFilter(ws:userobj, id:number, urlprot:string, ishttp:boolean) {
+        LogTrace("onFilter:", id, urlprot, ishttp);
+        return true;
+    }
+    
+    function onRecv(ws:userobj, id:number, str:string) {
+        LogTrace("RECV: "+str);
+    }
+
+    function onOpen(ws:userobj, id:number) {
+        LogDebug("Opening WS: "+id);
+    }
+    
+    function onClose(ws:userobj, id:number) {
+        LogDebug("Closing WS: "+id);
+    }
+
+    function onCloseLast(ws:userobj) {
+        LogDebug("Close Last");
+        self.done = true;
+    }
+
+    function onGet(ws:userobj, id:number, url:string, query:array) {
+        LogDebug("onGet:", id, 'url:', url, 'query:', query);
+    }
+
+    function onUnknown(ws:userobj, id:number, url:string, query:array) {
+        LogDebug("onUnknown:", id, 'url:', url, 'query:', query);
+    }
+    
+    function onUpload(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)
+    {
+        LogDebug("onUpload:", id, 'file:', filename, 'pos:', startpos, complete);
+    }
+
+    function main() {
+        LogTest("Starting", args);
+        debugger;
+        var mod = 'WebApp', afile;
+        var req = require(mod, 0);
+        args = Util.argArray(args);
+        afile = args[0];
+            
+        if (afile) {
+            self.file = afile;
+            self.rootdir = File.dirname(afile);
+        } else if (self.rootdir === '')
+            self.rootdir=File.realpath(File.dirname(req.loadFile));
+
+        if (!File.exists(self.rootdir+'/'+self.file))
+            throw('file not found: '+self.file);
+
+        var wsopts = {
+            local       :self.local,
+            rootdir     :self.rootdir, 
+            port        :self.port,
+            debug       :self.wsdebug,
+            onFilter    :onFilter,
+            onCloseLast :onCloseLast,
+            onRecv      :onRecv,
+            onOpen      :onOpen,
+            onClose     :onClose,
+            extHandlers :true, 
+            urlRedirect :'/'+mod+'/'+self.file,
+            urlPrefix   :'/'+mod
+            //onAuth      :onAuth,
+            //onGet       :onGet,
+            //onUnknown   :onUnknown,
+            //onUpload    :onUpload,
+            //getRegex    :/^\/admin/,
+        };
+        if (self.local)
+            wsopts.noCompress = true;
+        if (self.useridPass !== '')
+            wsopts.useridPass = self.useridPass;
+        if (typeof self.wsOpts === 'string')
+            self.wsOpts = JSON.parse(self.wsOpts, false);
+        for (var i in self.wsOpts)
+            wsopts[i] = self.wsOpts[i];
+        LogDebug("Begin:", conf, wsopts);
+        debugger;
+        self.ws = new WebSocket( wsopts );
+        if (!self.port)
+            self.port = self.ws.conf('port');
+        if (!self.quiet)
+            printf('Server started:', self.file, self.port);
+        if (!self.server && self.file)
+            exec('xdg-open http://127.0.0.1:'+self.port+'/'+self.file+' &');
+        
+        while (!self.done)
+            update(10);
+    }
+    
+    main();
+}
+
+provide(WebApp, "1.0.0");
+
+if (isMain()) {
+    if (!Interp.conf('unitTest'))
+        return runModule(WebApp);
+
+;'WebApp unit-test';
+;WebApp();
+;//WebApp('',{badArg:0});
+
+}
+
+

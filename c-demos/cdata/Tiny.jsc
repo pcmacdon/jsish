@@ -1,0 +1,13 @@
+#!/usr/local/bin/jsish -c -compile true %s
+
+extension Tiny = { // A Tiny C Extension
+
+    function range(size:number=10, start:number=0, step:number=1):array { // Fill a range.
+        Jsi_Value *a = Jsi_ValueMakeArrayObject(interp, ret, NULL);
+        Jsi_RC rc = JSI_OK;
+        int n=size-1, i=start+n*step;
+        for (; n>=0&&rc==JSI_OK; i-=step,n--)
+            rc = Jsi_ValueInsertArray(interp, a, n, Jsi_ValueNewNumber(interp, i), 0);
+        return rc;
+    }
+};

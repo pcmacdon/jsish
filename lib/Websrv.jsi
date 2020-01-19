@@ -1,0 +1,467 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+require('WebSocket', '2');
+
+function Websrv(args:string|array, conf:object=void):void
+{
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    var self = {
+        chans   :{}
+    };
+    var options = { // Run a standalone web server, opening browser to serve out url.
+        anchor      :'',        // Anchor after url.
+        closeTimeout:0,         // Time til exit after close of final client websocket (ms).
+        confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
+        browser     :'',        // The browser to exec, eg. "chrome-browser"
+        ignoreExit  :false,     // Ignore exit request.
+        initArg     :[],        // List of app modules to run.
+        isFile      :false,     // Url is a file, so throw if not exists.
+        local       :true,      // Accept only local connections.
+        maxPort     :1000,      // Max to add to above port.
+        mode        :'',        // Mode string: menu, admin
+        noCheck     :false,     // Disable function type-checking for .jsi files in browser.
+        noGui       :false,     // Disable starting local browser.
+        noReload    :false,     // Disable requesting hot-reload when files change.
+        noWait      :false,     // Just return object: caller will provide an update() loop.
+        onRecv      :null,      // Callback command to handle websocket msgs.
+        pageStr     :'',        // String to serve out as url.
+        port        :0,         // Start search for port.
+        query       :'',        // Query to append to url.
+        rootdir     :null,      // Base directory.
+        server      :false,     // Server mode: same as noGui=true and closeTimout=0
+        srcFile     :'',        // File of code to source inside the Websrv function.
+        uploadDir   :'/tmp',    // Upload files go here
+        timeout     :60000,     // Set timeout (in ms) to shutdown. This is idle time, unless negative.
+        trace       :false,     // Tracing output.
+        udata       :{},        // Shortcut add of udata to wsOpts.
+        url         :"",        // The file/url to serve out and clears timeout.
+        urlPrefix   :'/Websrv', // Prefix for urls
+        useridPass  :'',        // USER:PASS for web GUI.
+        wsdebug     :0,         // Debug option for websockets.
+        wsOpts      :{},        // Websocket options.
+        zip         :'',        // A .zip, .sqlar, or .fossil file to mount and use as rootdir.
+        zipVer      :''         // Version to mount in fossil.
+    };
+
+    parseOpts(self, options, conf);
+    if (self.confFile != '')
+        parseOpts(self, options, JSON.parse(File.read(self.confFile)));
+    
+    function DoExit()   // Notify all going down, then exit.
+    {
+        if (self.ignoreExit) return;
+        WsSend(-1, 'exit');
+        setTimeout(function () {self.done = 1; }, 1000); 
+    }
+
+    function CloseNow(ws:userobj)
+    {
+        self.closeId = null;
+        if (ws.conf('stats.connectCnt')>0)
+            return;
+        LogTrace("Last client has closed");
+        ws.conf({noUpdate:true});
+        self.done = 1;
+    }
+    
+    function WsFilter(ws:userobj, id:number, url:string, ishttp:boolean)
+    {
+        LogTrace("FILTER:",url,ishttp);
+        LogTrace('HDRS:',ws.header(id));
+        LogTrace('ID:',ws.idconf(id));
+        LogTrace('STATUS:',ws.status());
+    }
+    
+    function WsOpen(ws:userobj, id:number)
+    {
+        LogTrace("Opening WS:",id);
+    }
+    
+    function WsClose(ws:userobj|null, id:number)
+    {
+        LogTrace("Closing WS:",id);
+    }
+    
+    function WsAuth(ws:userobj, id:number, url:string, userpass:string)
+    {
+        LogTrace("WsAuth:", id, url, userpass);
+        // return (self.useridPass === userpass); // ie. return false to block page.
+        return true;
+    }
+    
+    function WsCloseLast(ws:userobj|null) // Wait around for a while for reconnect or new clients before exiting
+    {
+        LogTrace("Close last");
+        if (self.timeout)
+            return true;
+        if (self.closeTimeout>0) {
+            if (self.closeId)
+                clearInterval(self.closeId);
+            self.closeId = setTimeout(function () { CloseNow(ws); }, self.closeTimeout);
+        }
+        return true;
+    }
+    
+    function wsSend(chan:string, id:number, cmd:string, obj:object, opts:object=void) {
+        if (!opts) opts = {};
+        var data = { chan:chan, cmd:cmd, data:obj, opts:opts };
+        data = JSON.stringify(data);
+        puts("SEND:",data);
+        LogTrace("SENDING: "+data);
+        self.ws.send(id, data);
+    }
+    
+    function WsSend (id:number, cmd:string, obj:object, opts:object=void)
+    {
+        wsSend(self.mode, id, cmd, obj);
+    }
+    
+    function InitData(id:number) {
+        if (self.mode === 'menu') {
+            return self.initArg;
+        }
+        var rv='', rids = self.ws.ids();
+        LogTrace('RIDS: '+id+' '+rids.toString());
+        for (var nid of rids) {
+            var cv = self.ws.idconf(nid);
+            var cur = (id === nid?' (CURRENT)':'');
+            rv += '<H3> Conn #'+nid+cur+'</H3>'+tablifyObj(cv, true);
+        }
+        return rv;
+    }
+    
+    function WsRecv(ws:userobj, id:number, data:string)
+    {
+        var msg;
+        LogTrace("SERVER GOT:",id,":",data);
+        var dat;
+        if (self.onRecv) {
+            LogTrace('Self');
+            dat = JSON.parse(data);
+            var ret = self.onRecv(ws, id, dat);
+            if (ret) {
+                if (typeof(ret) !== 'array' )
+                    return WsSend(id, dat.cmd, ret);
+                if (ret.length !== 2) throw('array size != 2: '+ret.toString());
+                WsSend(id, ret[0], ret[1]);
+            }
+            return;
+        }
+        try {
+            LogTrace("JSON: "+data.length);
+            dat = JSON.parse(data);
+            puts('DC',dat.cmd);
+            switch (dat.cmd) {
+                case 'init':
+                    msg = InitData(id);
+                    LogTrace("MSG:", msg);
+                    WsSend(id, 'init', msg);
+                    break;
+                case 'run':
+                    var app = dat.data;
+                    require(app);
+                    var rv = runModule(app, []);
+                    WsSend(id, 'run', rv?rv:{});
+                    break;
+                case 'save': 
+                    var file = File.tail(dat.url)+'.save';
+                    File.write(file, dat.data);
+                    break;
+                case 'process':     WsSend(id, 'process', {}); break;
+                case 'exit':        DoExit(); break;
+                    
+                default: LogWarn("unknown cmd:", dat.cmd); break;
+            }
+        } catch (e) {
+          LogWarn("ERROR:",e);
+        }
+        LogTrace("Done");
+    }
+
+    function WsUpload(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)
+    {
+        LogTrace('QUERY:', self.ws.query(id));
+        LogTrace('HDRS:', self.ws.header(id));
+        LogTrace('POS='+startpos+' FN='+filename+' DATA:', data);
+        
+        if (!data.length && !startpos) {
+            var fn = File.join(self.uploadDir, File.tail(filename));
+            self.chans[id] = new Channel(fn, 'w+');
+            return;
+        }
+        var chan = self.chans[id];
+        chan.write(data);
+        if (complete) {
+            delete self.chans[id];
+            return "Uploaded file: " + filename;
+        }
+    }
+    
+    function OpenWebsock() {
+        if (!self.port) {
+            self.ws = new WebSocket(self.wsopts);
+            self.wsopts.port = self.ws.conf('port');
+            LogTrace("PORT IS:",self.wsopts.port);
+            return true;
+        }
+        /* Try opening websocket on first available port. */
+        var i;
+        for (i=0; i<self.maxPort; i++) {
+            var err = null;
+            try {
+                self.ws = new WebSocket(self.wsopts);
+                break;
+            }
+            catch (e) {
+                if (e.indexOf("failed on port")<0)
+                    err=e;
+            }
+            if (err)
+                throw('wsfail: '+err);
+            self.wsopts.port++;
+            LogTrace("ee:", err);
+        }
+        if (i>=self.maxPort) {
+            console.log("Failed to get port");
+            return false;
+        }
+        LogTrace('STATUS:', self.ws.status());
+        return true;
+    }
+    
+    function OpenBrowser(url:string, anchor:string, query:string) {
+        var prog = self.browser;
+        var browsers = {
+            unix: "xdg-open",
+            win:  "start",
+            mac:  "open"
+        };
+        if (!prog.length)
+            prog = browsers[Info.platform().os];
+        if (!prog)
+            prog = "xdg-open";
+        // Display page in browser.
+        var eurl = self.urlPrefix + '/'+url;
+        eurl = eurl.map(['//', '/']);
+        var surl = " http://127.0.0.1:"+self.wsopts.port+eurl;
+        if (query)
+            surl += '?'+ query.replace(/&/g,'\\&');
+        if (anchor)
+            surl += '#'+ anchor;
+        LogTrace("URL:",surl);
+        exec(prog + surl +" &");
+    }
+
+
+    self.css = "<STYLE>" +
+        "table.cmdstbl { background-color: #f5f5f5; border-collapse: collapse; padding: 3px; }"+
+        "table.cmdstbl th { background-color: #558195; color: #FFFFFF; padding: 3px; }"+
+        "table.cmdstbl td { padding: 3px; }"+
+        "table.cmdstbl td:first-child { font-weight: bold; }"+
+        "</STYLE>";
+
+    function tablifyObj(cv:object, all:boolean=false) {
+        var rv = '<TR><TH>Name</TH><TH>Value</TH></TR>';
+        for (var i in cv) {
+            rv += '<TR><TD>'+i+'</TD><TD>'+JSON.stringify(cv[i])+'</TD></TR>';
+        }
+        if (all)
+            rv = '<TABLE border=1 class=cmdstbl>'+rv+'</TABLE>';
+        return rv;        
+    }
+    
+    function WebGetString(ws:userobj, id:number, url:string, query:array) {
+        return self.pageStr;
+    }
+    
+    function onModify(ws:userobj, fname:string) {
+        puts("MODIFY");
+        setTimeout(function() { wsSend('!', -1, 'reload', {}); }, 300);
+    }
+
+    function WebAdmin(ws:userobj, id:number, url:string, query:array) {
+        LogTrace('url', url);
+        if (self.pageStr !== '')
+            return self.pageStr;
+        var cv = ws.conf();
+        var rv = '<HEAD>'+self.css+'</HEAD>' + tablifyObj(cv, true);
+        var rids = ws.ids();
+        LogTrace('RIDS: '+id+' '+rids.toString());
+        for (var nid of rids) {
+            cv = ws.idconf(nid);
+            var cur = (id === nid?' (CURRENT)':'');
+            rv += '<H3> Conn #'+nid+cur+'</H3>'+tablifyObj(cv, true);
+        }
+        return "<H2>Websrv Admin</H2>"+rv;
+    }
+    
+    /*function WebMenu(ws:userobj, id:number, url:string, query:array) {
+        return File.read('/zvfs/lib/web/wsMenu.htmli');
+    }*/
+    
+    // url = getUrlInDir(self.mnt)
+    function getUrlInDir(indir:string, depth=1) {
+        var flst;
+        for (var fext of ['.htmli','.html']) {
+            flst = File.glob('*'+fext, {dir:indir});
+            if (flst.length === 1)
+                return flst[0];
+        }
+        if (depth>0) {
+            flst = File.glob('*', {dir:indir, types:'d'});
+            if (flst.length === 1)
+                return getUrlInDir(indir+'/'+flst[0], depth-1);
+        }
+        return '';
+    }
+    
+    function DoTimeout() {
+        if (self.timeout>0) {
+            var lt=self.ws.conf('stats.eventLast'), last = strptime(lt), now = strptime(), dif=(now-last);
+            LogTrace('lt',lt,'last',last, strftime(now), 'now',now, 'dif',dif);
+            if (last && dif<self.timeout) {
+                setTimeout(function () { DoTimeout(); }, (self.timeout-(dif<0?dif:0)));
+                return;
+            }
+        }
+        self.done = 1;
+    }
+    
+    function main() {
+        var urlarg, urlOrig = self.url;
+        if (typeof args === 'string')
+            args = [args];
+        urlarg = args[0];
+        args.shift();
+        if (urlarg) {
+            var fext = File.extension(urlarg);
+            var zexts = ['.zip', '.sqlar', '.fossil'];
+            if (zexts.indexOf(fext)>=0) {
+                self.zip = urlarg;
+                urlarg = args[0];
+                args.shift();
+            }
+        }
+        if (urlarg) {
+            if (self.url)
+                throw('can not have args and specify -url');
+            var iiq;
+            if (self.query === '' && (iiq=urlarg.indexOf('?'))>0) {
+                self.query = urlarg.substr(iiq+1);
+                urlarg = urlarg.substr(0, iiq);
+            }
+            self.url = urlarg;
+        }
+        
+        if (self.zip) {
+            self.mnt = Jsi_Archive([self.zip], {noRun:true, version:self.zipVer});
+            if (!self.rootdir)
+                self.rootdir = self.mnt;
+            else
+                self.rootdir = self.mnt + '/' + self.rootdir;
+            if (!self.url)
+                self.url = getUrlInDir(self.mnt);
+        }
+        else if (!self.rootdir) {
+            if (!self.url.length)
+                self.rootdir = Info.scriptDir();
+            else
+                self.rootdir = File.dirname(self.url);
+            var rlen = self.rootdir.length;
+            if (self.url.substr(0, rlen) === self.rootdir)
+                self.url = self.url.substr(rlen);
+        }
+        if (!self.rootdir)
+            self.rootdir = '.';
+        // Provide default values for websocket.
+        var wo = self.wsopts = {
+            local:self.local,
+            debug:self.wsdebug,
+            extHandlers:true,
+            onOpen:WsOpen,
+            onClose:WsClose,
+            onCloseLast:WsCloseLast,
+            onRecv:WsRecv,
+            onUpload:WsUpload,
+            onFilter:WsFilter,
+            port:self.port,
+            rootdir:self.rootdir,
+            urlPrefix:self.urlPrefix
+        };
+        switch (self.mode) {
+            case 'admin':
+                self.url = '/admin';
+                wo.getRegexp=/^\/admin/;
+                wo.onGet=WebAdmin;
+                break;
+            case 'menu':
+                self.url = '/jsi/web/Websrv.htmli';
+                break;
+            case '': break;
+            default: throw('mode "'+self.mode+'" not one of: admin, menu');
+        }
+        if (urlOrig!=='' && self.timeout === 60000)
+            self.timeout = 0;
+        if (!self.server && !self.pageStr && self.mode === '' && urlOrig=='' && (!self.url || !File.isfile(self.rootdir+'/'+self.url)))
+            throw("url file empty or not found: "+self.url);
+        if (self.urlPrefix.length && self.urlPrefix[0] != '/')
+            throw('urlPrefix must start with a slash');
+        
+        if (self.local)
+            wo.noCompress = true;
+        if (self.server) {
+            self.noGui = true;
+            if (self.timeout !== options.timeout)
+                self.timeout = 0;
+        } else if (!self.noReload)
+            wo.onModify = onModify;
+        if (self.pageStr !== '') {
+            wo.getRegexp=/^\/page/;
+            self.url = '/page';
+            wo.onGet=WebGetString;
+        }
+        if (self.useridPass != '') {
+            wo.useridPass = self.useridPass;
+            if (self.useridPass === ':') // Exercise onAuth callback.
+                wo.onAuth = WsAuth;
+        }
+        if (typeof self.wsOpts === 'string')
+            self.wsOpts = JSON.parse(self.wsOpts, false);
+        if (typeof self.udata === 'string')
+            self.udata = JSON.parse(self.udata, false);
+        if (self.udata && self.udata.length)
+            self.wsOpts.udata = self.udata;
+        for (var i in self.wsOpts)
+            wo[i] = self.wsOpts[i];
+
+        OpenWebsock();        
+        LogTrace("Listening on port:",self.port);
+        
+        if (!self.noGui && self.url && self.url.length) {
+            OpenBrowser(self.url, self.anchor, self.query);
+        }
+
+        if (self.noWait) {
+            self.openWebsock = OpenWebsock;
+            return self;
+        }
+
+        self.done = 0;
+        if (self.timeout)
+            setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
+        while (self.done == 0 && Event.update(100) ) ;
+        delete self.ws;
+    }
+    
+    if (self.srcFile !== '')
+        source(self.srcFile);
+    
+    main();
+    
+}
+
+provide(Websrv, "1.1");
+
+if (isMain())
+    runModule(Websrv);

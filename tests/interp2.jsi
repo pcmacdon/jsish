@@ -1,0 +1,73 @@
+#!/usr/local/bin/jsish -u %s
+
+var ii = new Interp();
+puts(Info.named('Interp'));
+puts (ii.eval('3+4'));
+ii.eval('exit(0)');
+delete ii;
+
+if (!File.isdir('/tmp')) File.mkdir('/tmp');
+ii = new Interp({isSafe:true, safeWriteDirs:['/tmp/xx.txt'], safeReadDirs:['/tmp/']});
+ii.eval("File.write('/tmp/xx.txt','hi');");
+var s;
+;s = ii.eval('return File.read(\'/tmp/xx.txt\');');
+
+;//ii.eval('File.write(\'~/xx.txt\',\'bye\');');
+
+delete ii;
+
+;ii = new Interp({isSafe:true, safeMode:'lockdown', safeWriteDirs:['/tmp/'], safeReadDirs:['/tmp/']});
+;ii.eval('var fp = new Channel(\'/tmp/xx.txt\',\'w\'); fp.write(\'upd\'); delete fp;');
+
+//;//ii.eval('fp = new Channel(\'/tmp/yy.txt\',\'w\'); fp.write(\'upd\'); delete fp;//LOCKCREATE');
+;//ii.eval('Interp.conf({maxDepth:1000});//LOCKCONF');
+
+;File.remove('/tmp/xx.txt',true);
+;File.write('/tmp/xx.txt','');
+;ii.eval('var db = new Sqlite(\'/tmp/xx.txt\'); db.eval(\'CREATE TABLE foo(a,b)\');');
+
+;//ii.eval('var db = new Sqlite(\'/tmp/xx.db\');//LOCKWRITE');
+
+File.remove('/tmp/xx.txt',true);
+delete ii;
+
+ii = new Interp({isSafe:true, safeExecPattern:'^ls '});
+var val;
+ii.eval("exec('ls -l')");
+try {
+    ii.eval("exec('ls')");
+} catch (e) {
+    puts('SAFE EXEC: ', e);
+}
+delete ii;
+
+ii = new Interp({noSubInterps:true});
+try {
+  ii.eval("new Interp()");
+} catch (e) {
+    puts('SUBINTERP: ', e);
+}
+delete ii;
+
+/*
+=!EXPECTSTART!=
+[ "#Interp_1" ]
+7
+s = ii.eval('return File.read('/tmp/xx.txt');') ==> hi
+ii.eval('File.write('~/xx.txt','bye');') ==>
+PASS!: err = write access denied by safe interp: ~/xx.txt
+ii = new Interp({isSafe:true, safeMode:'lockdown', safeWriteDirs:['/tmp/'], safeReadDirs:['/tmp/']}) ==> "#Interp_3"
+ii.eval('var fp = new Channel('/tmp/xx.txt','w'); fp.write('upd'); delete fp;') ==> undefined
+ii.eval('Interp.conf({maxDepth:1000});//LOCKCONF') ==>
+PASS!: err = Error isSafe disallows updating option: "maxDepth"
+File.remove('/tmp/xx.txt',true) ==> undefined
+File.write('/tmp/xx.txt','') ==> 0
+ii.eval('var db = new Sqlite('/tmp/xx.txt'); db.eval('CREATE TABLE foo(a,b)');') ==> undefined
+ii.eval('var db = new Sqlite('/tmp/xx.db');//LOCKWRITE') ==>
+PASS!: err = Safe accces denied
+SAFE EXEC:  no exec in safe mode
+SUBINTERP:  subinterps disallowed
+=!EXPECTEND!=
+*/
+
+

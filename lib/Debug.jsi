@@ -1,0 +1,498 @@
+#! /usr/bin/env jsish
+
+require('Jsish');
+
+// A Debugger for Jsi scripts.  Scripts are executed in a sub-interpreter.
+
+function Debug(fileargs:array, conf:object=void):number {
+
+    var options = { // A command-line Debugger for Jsi scripts.
+        echoCmd     :true,      // Echo user cmds.
+        safe        :false      // Debug program in a safe interp (untested)
+    };
+    var self = {
+        curline:0,      // Next 3 are changed by up/down.
+        curfile:null,
+        curlev:0,
+        curfunc:null,
+        level:0,
+        line:0,         // Next 3 are saved by Callback.
+        file:null,
+        files:[],
+        filedata:{},
+        lastCmd:'',     // Previous cmd, empty string repeats.
+        lastCommand:'',  // Full command name (unaliased)
+        lastPrintArg:null,
+        minLevel:0,
+        rootdir:null,   // Where self script, jdebug.jsi lives.
+        stopped:false,
+        stopSig:false,
+        toplev:0,
+        version:1.0
+    };
+    
+    parseOpts(self, options, conf);
+    
+    var commands = {
+        "break":"Break execution at a named function, line or file", 
+        "continue":"Continue execution", 
+        "delete":"Delete one or all breakpoints", 
+        "disable":"Disable one or all breakpoints", 
+        "down":"Move down one or more stack levels", 
+        "enable":"Enable one or all breakpoints", 
+        "eval":"Evaluate expression in program context", 
+        "finish":"Run till return of current function", 
+        "help":"Display command usage", 
+        "info":"Info subcommands: bp args locals var", 
+        "list":"List file lines args can be: startLine|func numLines file", 
+        "next":"Single-step over function calls", 
+        "print":"Print value of a simple variable", 
+        "quit":"Quit debugging current program and exit", 
+        "step":"Single-step into function calls", 
+        "tbreak":"Sets a temporary breakpoint", 
+        "up":"Move up one or more stack levels", 
+        "where":"Display current location",
+        "xeval":"Does eval in debugger context" 
+    };
+
+    var eputs = console.puts;
+
+    function cmdPrint(lst:array) {
+        var val = lst[1];
+        if (lst.length === 1 && self.lastPrintArg !== null) {
+            val = self.lastPrintArg;
+        } else if (lst.length != 2 || val === '') {
+            eputs("first print requires one argument");
+            return;
+        }
+        self.lastPrintArg = val;
+        try {
+            var rc = self.interp.value(val, self.curlev);
+            if (rc === undefined)
+                rc = 'undefined';
+            else if (rc === null)
+                rc = 'null';
+            puts("RESULT= " + rc.toString());
+        } catch(e) {
+            eputs("ERROR: "+e);
+        }
+    }
+    
+    function cmdEval(inval:string, myinterp:boolean) {
+        var ofs = inval.indexOf(' ');
+        var val;
+        if (ofs<0 || ((val=inval.substr(ofs+1).trim()) === ''))
+            return eputs("eval requires an argument");
+
+        try {
+            var rc = (myinterp ? eval(val) : self.interp.uplevel(val, self.curlev));
+            if (rc === undefined)
+                rc = 'undefined';
+            else if (rc === null)
+                rc = 'null';
+            puts("RESULT= " + rc.toString());
+        } catch(e) {
+            puts("ERROR: "+e);
+        }
+    }
+    
+    function cmdHelp(lst:array) {
+        var val = lst[1];
+        if (commands[val] !== undefined)
+            puts(commands[val]);
+        else {
+            for (var i in commands)
+                printf("%-10s: %s\n", i, commands[i]);
+        }
+    }
+    
+    function getFunc(func) {
+        var fstr = null;
+        try {
+            fstr = self.interp.eval('Info.funcs("'+func+'")');
+        } catch (e) {
+        }
+        return fstr;
+    }
+    
+    // Print lines of file
+    function cmdList(lst:array) {
+        var file = self.curfile;
+        var line = self.curline;
+        var num = 10;
+        if (lst.length > 1) {
+            var lstr = lst[1];
+            if (lstr.match(/^[0-9]+$/))
+                line = parseInt(lstr);
+            else {
+                fstr = getFunc(lstr);
+                if (typeof fstr !== "object") {
+                    eputs("unknown func: "+lstr);
+                    return;
+                }
+                file = fstr.script;
+                line = fstr.lineStart;
+            }
+        }
+        if (lst.length > 2)
+            num = parseInt(lst[2]);
+        if (lst.length > 3) {
+            file = File.realpath(lst[3]);
+            if (!File.exists(file))
+                return eputs("bad file name: "+lst[3]);
+        }
+        if (!line)
+            return eputs("Error: expected line number: "+line);
+        if (!num)
+            return eputs("Error: expected count: "+num);
+        if (line<1)
+            line = 1;
+        listFile(file, line, num);
+    }
+    
+    function listFile(file:string, line:number, num:number) {
+        var find = addFile(file);
+        var data = self.filedata[file];
+        printf("FILE: %s:%d\n", file, line);
+        for (var i=line; i<line+num && data[i-1] !== undefined; i++)
+                printf("%-5d: %s\n", i, data[i-1]);
+    }
+    
+    var infoCmds = { "bp":"Show breakpoints", "var":"Show variables",
+        "args":"Show function args", "locals":"Show function local vars"  };
+    
+    function cmdInfo(lst:array) {
+        var val = lst[1], lev = self.curlev;
+        if (!lev)
+            lev = self.interp.eval('Info.level()')-1;
+        if (lst.length != 2)
+            return eputs("expected 1 arg");
+        var cmd = getCommand(val, infoCmds);
+        if (cmd === '')
+            return;
+        switch (cmd) {
+            case 'breakpoints':
+                var blst = self.interp.eval('Debugger.info()');
+                for (var i in blst.sort()) {
+                    var bp = self.interp.eval('Debugger.info('+blst[i]+')');
+                    str = format("#%-5d: enabled=%s hits=%d, ", bp.id, bp.enabled?"true, ":"false,", bp.hits);
+                    switch (bp.type) {
+                        case 'line': str += format("file=%s:%d", bp.file, bp.line); break;
+                        case 'func': str += format("func=%s", bp.func); break;
+                        default: eputs("ERROR: bad breakpoint type: "+bp.type); return;
+                    }
+                    if (bp.temporary)
+                        str += ", temp=true";
+                    puts(str);
+                }
+                break;
+            case 'var':
+                puts(self.interp.eval('Interp.uplevel("Info.vars()", '+lev+')'));
+                break;
+            case 'args':
+                puts(self.interp.eval('Info.level('+lev+').scope'));
+                break;
+            case 'locals':
+                puts(self.interp.eval('Info.level('+lev+').locals.join(", ")'));
+                break;
+            case 'help':
+                break;
+            case 'help': // TODO: detect dup case.
+                break;
+            default:
+                break;
+        }
+    }
+
+    function cmdBreak(lst:array, line:number, func:string, file:string, temp:boolean=false) {
+        var bp, val;
+        if (lst.length > 2) {
+            eputs("too many arguments");
+            return;
+        }
+        if (lst.length === 2) {
+            var ofs, nline;
+            val = lst[1];
+            if ((ofs=val.indexOf(':'))>0) {
+                nline=parseInt(val.substr(ofs+1));
+                if (nline<=0) {
+                    eputs("invalid line number: "+val);
+                    return;
+                }
+                file = val.substr(0,ofs);
+                file = File.realpath(file);
+                if (!File.exists(file)) {
+                    eputs("unknown file: "+file);
+                    return;
+                }
+                bp = file+':'+nline;
+            } else if ((nline=parseInt(val))>0) {
+                bp = file+':'+nline;
+            } else {
+                bp = val;
+                var fstr = getFunc(val);
+                //if (typeof fstr !== "object")
+                 //   eputs("Note: function '"+val+"' is not yet defined");
+            }
+        } else {
+             bp = file+':'+line;
+        }
+        //printf("BP: %s\n", bp);
+        try {
+            var b = self.interp.eval('Debugger.add("'+bp+'", '+(temp?"true":"false")+')');
+            puts((temp?"temporary ":"") +"breakpoint #"+b+" set: "+bp);
+        } catch(e) {
+            puts("add failed: "+e);
+        }
+    }
+    
+    function cmdDelete(lst:array, line:number, func:string, file:string) {
+        var bp, num, val = lst[1];
+        if (lst.length == 1) {
+            var bps = self.interp.eval('Debugger.info()');
+            for (var i in bps) {
+                self.interp.eval('Debugger.remove('+bps[i]+')');
+            }
+            return;
+        }
+        if (val === undefined || (num=parseInt(val))<=0) {
+            eputs("bad index: "+val);
+            return;
+        }
+        try {
+            self.interp.eval('Debugger.remove('+num+')');
+        } catch(e) {
+            eputs("remove failed: "+e);
+        }
+    }
+    
+    function cmdEnable(lst:array, on:boolean) {
+        var bp, num, val = lst[1];
+        if (lst.length == 1) {
+            var bps = self.interp.eval('Debugger.info()');
+            for (var i in bps) {
+                self.interp.eval('Debugger.enable('+bps[i]+','+on+')');
+            }
+            return;
+        }
+        if (val === undefined || (num=parseInt(val))<=0)
+            return eputs("bad index: "+val);
+        try {
+            self.interp.eval('Debugger.enable('+num+','+on+')');
+        } catch(e) {
+            eputs("enable failed: "+e);
+        }
+    }
+
+    function cmdWhere(lst:array, line:number, func:string, file:string) {
+        var lev = self.curlev;
+        if (!self.curlev)
+            lev = self.interp.eval('Info.level()')-1;
+        while (lev>1) {
+            var r = self.interp.eval('Info.level(' + lev-- + ')');
+            printf("%d : %S:(%S) <in %S:%d>\n", lev, r.funcName, r.scope.join(', '), File.tail(r.fileName), r.line);
+        }
+    }
+    
+    // Change current level.
+    function cmdLevel(lst:array, isUp:boolean) {
+        var amt = 1, nlev;
+        if (!self.curlev)
+            self.curlev = self.toplev = self.interp.eval('Info.level()')-1;
+        if (lst[1] !== undefined) {
+            if (lst[1].substr(0,1) == '#') {
+                nlev = parseInt(lst[1].substr(1));
+            } else {
+                amt = parseInt(lst[1]);
+                if (!amt) {
+                    amt = 1;
+                    eputs("level invalid: "+lst[1]);
+                }
+                nlev = self.curlev+(isUp?-amt:amt);
+            }
+        } else
+            nlev = self.curlev+(isUp?-amt:amt);
+        if (nlev<=1)
+            nlev = 1;
+        else if (nlev>self.toplev)
+            nlev = self.toplev;
+        self.curlev = nlev;
+        var val = self.interp.eval('Info.level('+nlev+')');
+        self.curfile = val.fileName;
+        self.curline = val.line;
+        self.curfunc = val.funcName;
+        //puts("UP: "+amt+' = '+nlev+' top='+self.toplev);
+        //puts("VAL: "+val.toString());
+        showPos(val.fileName, val.line, val.funcName);
+    }
+
+    // Show current position.
+    function showPos(file:string, line:number, func:string) {
+        var linestr = self.filedata[file][line-1];
+        var lev = (self.curlev?self.curlev:self.level);
+        if (func.length)
+            func = '<in function ' + func + '()>';
+        printf("#%d:%S:%d  %S %S\n", lev, file, line, linestr, func);
+    }
+    
+    // Return unique command name match.
+    function getCommand(val:string, cmds:object)//:string 
+    {
+        if (cmds[val] !== undefined)
+            return val;
+        var mat = [];
+        for (var i in cmds)
+            if (i.indexOf(val) === 0)
+                mat.push(i);
+        if (mat.length === 0)
+            eputs("Command '"+val+"' not one of: " + cmds.keys().join(','));
+        else if (mat.length === 1)
+            return mat[0];
+        else
+            eputs("Ambiguous command '"+val+"' matches: "+mat.join(','));
+        return "";
+    }
+    
+    // Add file to cache.
+    function addFile(file:string) {
+        if (file === '')
+            return;
+        var find = self.files.indexOf(file);
+        if (find>=0)
+            return find;
+        find = self.files.length;
+        self.files.push(file);
+        var data = File.read(file);
+        self.filedata[file] = data.split('\n');
+        self.find = find;
+        //puts("pushed "+file);
+        return find;
+    }
+    
+    // Main callback handler for the debugger. 
+    function callback (file:string, line:number, level:number, func:string, opstr:string, bpId:number, emsg:string):boolean
+    {
+        //if (!self.interp) return;
+        //printf("CALLBACK: #%d:%s:%d <%s> %s:%d\n", level, file, line, func, opstr, bpId);
+        if (bpId)
+            puts("Stopped at breakpoint #"+bpId);
+        else if (opstr.substr(0,3) === 'SIG')
+            puts("Stopped by signal: "+opstr);
+        else if (emsg && emsg !== '')
+            puts("MSG: "+emsg);
+        addFile(file);
+        if (self.minLevel>0)
+            self.interp.conf({debugOpts:{minLevel:0}});
+        self.interp.conf({debugOpts:{doContinue:false}});
+        self.minLevel = 0;
+        self.curfile = self.file = file;
+        self.curline = self.line = line;
+        self.level = level;
+        self.curlev = 0;
+        self.stopSig = false;
+        showPos(file, line, func);
+        
+        // Process user commands until done.
+        var done = false;
+        while (!done) {
+            printf("#%d==> ", self.curlev?self.curlev:level);
+            var inp = console.input();
+            update(); // Handle signals.
+            if (self.stopSig) {
+                self.stopSig = false;
+                continue;
+            }
+            if (inp === undefined)
+                inp = '';
+            inp = inp.trim();
+            var echo = self.echoCmd;
+            if (inp === '') {
+                inp = self.lastCmd;
+                echo = false;
+            }
+            self.lastCmd = inp;
+            var inlst = inp.split(' ');
+            var cmd = getCommand(inlst[0], commands);
+            if (cmd === '')
+                continue;
+            self.lastCommand = cmd;
+            if (echo)
+                puts('CMD: '+cmd);
+            switch (cmd) {
+                case 'args':    cmdEval('eval Info.level(0).scope', false); break;
+                case 'break':   cmdBreak(inlst,line,func,file,false); break;
+                case 'continue':done=true; self.interp.conf({debugOpts:{doContinue:true}}); break;
+                case 'delete':  cmdDelete(inlst,line,func,file); break;
+                case 'disable': cmdEnable(inlst,false); break;
+                case 'down':    cmdLevel(inlst, false); break;
+                case 'enable':  cmdEnable(inlst,true); break;
+                case 'eval':    cmdEval(inp,false); break;
+                case 'finish':  done=true; self.interp.conf({debugOpts:{minLevel:level-1}}); self.minLevel = level-1; break;
+                case 'help':    cmdHelp(inlst); break;
+                case 'info':    cmdInfo(inlst); break;
+                case 'list':    cmdList(inlst); break;
+                case 'locals':  cmdEval('eval Info.level(0).locals', false); break;
+                case 'next':    done=true; self.interp.conf({debugOpts:{minLevel:level}}); self.minLevel = level; break;
+                case 'print':   cmdPrint(inlst); break;
+                case 'quit':    exit(0); break;
+                case 'step':    done=true; break;
+                case 'tbreak':  cmdBreak(inlst,line,func,file,true); break;
+                case 'up':      cmdLevel(inlst, true); break;
+                case 'where':   cmdWhere(inlst,line,func,file); break;
+                case 'xeval':   cmdEval(inlst, true); break;
+                default: eputs("ERROR '"+cmd+"' not one of: " + commands.keys().join(','));
+            }
+        }
+        return true;
+    };
+    
+    function sigint() {
+        self.stopSig = true;
+        if (!self.stopped)
+            self.interp.conf({debugOpts:{doContinue:false, minLevel:0}});
+    }
+
+    function main() {
+        self.done = 0;
+        if (!self.rootdir)
+            self.rootdir=Info.scriptDir();
+        self.args = null;
+        self.dbfile = fileargs[0];
+        self.args = fileargs.splice(1);
+
+        if (!File.exists(self.dbfile)) {
+            throw("script file required: "+(self.dbfile?self.dbfile:''));
+            return(1);
+        }
+        if (Signal) {
+            try {
+                Signal.callback(sigint, 'SIGINT');
+            } catch(e) {}
+        }
+
+
+        var dopts = {
+            debugOpts:{debugCallback:'callback'},
+            args:self.args,
+            scriptFile:self.dbfile,
+            isSafe:self.safe,
+            name:'debugProg'
+        };        
+        self.interp = new Interp(dopts);
+        puts("Running in debugger: "+self.dbfile+' '+self.args.toString());
+        var rc;
+        if (!self.safe)
+            rc = self.interp.source(self.dbfile);
+        else
+            rc = self.interp.eval(File.read(self.dbfile));
+        puts("JSI DEBUGGER EXIT: "+(rc===undefined?"":rc));
+        return 0;
+    }
+    LogDebug('Starting');
+    return main();
+}
+
+provide(Debug, 1.0);
+
+if (isMain())
+    exit( runModule(Debug) );

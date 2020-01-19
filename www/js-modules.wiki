@@ -1,0 +1,182 @@
+<title>Modules</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#overview|Overview]</li>
+<li>[#sys|Sys]</li>
+<li>[#parseOpts|parseOpts]</li>
+<li>[#object|Programatic]</li>
+<li>[#parts|Sections]</li>
+<li>[#help|Help]</li>
+<li>[#helplimits|Help Limitations]</li>
+</ul>
+</div>
+
+<h3 id=overview>Overview</h3>
+
+A Jsi module is code that:
+
+  *  can be invoked from the command-line, accepting arguments and switches, or
+  *  can be called programatically by other modules as a [./packages.wiki|package].
+  *  can display it's available options when called with <b>-h</b>.
+
+Here is an example module <a href=../js-demos/fileSize.jsi>./fileSize.jsi</a>:
+
+    <nowiki><pre class=verbatim>
+#!/usr/bin/env jsish
+<b>require</b>(<i>'Sys'</i>); <i>// Optional</i>
+<b>function fileSize(fargs:array|string=void, conf:object=void)</b> {
+
+    <b>var options =</b> { <i>// Count bytes in files</i>
+        debug       :false, <i>// Debug output</i>
+        max         :10     <i>// Max number of files</i>
+    };
+    <b>var self =</b> {
+        cnt:0
+    };
+    
+    <b>function</b> getLength(fargs:array|string) {
+        if (typeof fargs === <i>'string'</i>)
+            fargs = [fargs];
+            
+        for (var i in fargs) {
+            if (i>=self.max) break;
+            if (self.debug)
+                puts('Count: '+fargs[i]);
+            self.cnt += File.size(fargs[i]);
+        }
+        <b>return</b> self.cnt;
+    }
+
+    <b>parseOpts(self, options, conf)</b>;
+    
+    if (fargs)
+        <b>return</b> getLength(fargs);
+        
+    self.getLength = getLength; <i>// Return object-command</i>
+    <b>return</b> self;
+}
+
+<b>provide</b>(<i>'fileSize'</i>);
+
+if (<b>isMain</b>()) {
+    puts(<b>runModule</b>(<i>fileSize</i>));
+}
+
+</pre></nowiki>
+
+
+Invoked as:
+
+    <nowiki><pre class=verbatim>
+./fileSize.jsi -debug true file1 file2 file3
+</pre></nowiki>
+
+Leading switches are passed in <b>conf</b> with
+the remaining arguments in <b>fargs</b>.
+
+Note that options coming in from the command-line must
+be primitives.
+
+<hr>
+
+<h3 id=sys>Jsish</h3>
+
+The <b>Jsish</b> package comprises the scripts zipped to the end of the <b>jsish</b>
+executable that implement command-line option/utilities such as the debugger
+and <b>parseOpts</b>.
+
+<b>Jsish</b> may be explicitly loaded with:
+
+    <nowiki><pre class=verbatim>
+<b>require</b>(<i>'Jsish'</i>);
+</pre></nowiki>
+
+However, this is completely optional as the code therein implicitly
+loads on-demand.
+
+
+<hr>
+
+<h3 id=parseOpts>parseOpts</h3>
+
+<b>parseOpts</b> processes options from <b>conf</b>,
+validating them against <b>options</b>, and assigning them to <b>self</b>.
+
+Note that the following special boolean options are always accepted
+to control [./js-logging.wiki|logging]: <b>Debug</b>, <b>Trace</b>, <b>Test</b>.
+
+From the command-line <b>runModule</b> does the marshalling of arguments.
+
+<hr>
+
+<h3 id=object>Programmatic</h3>
+
+Calling a module with no arguments causes it to just return <b>self</b>.
+This allows the it to be called programmatically:
+
+    <nowiki><pre class=verbatim>
+<b>require</b>(<i>'fileSize'</i>);
+<b>var</b> fcmd = fileSize();
+fcmd.getLength(<i>'Makefile'</i>);
+fcmd.getLength([<i>'a','b'</i>]);
+puts(fcmd.cnt);
+</pre></nowiki>
+
+
+<hr>
+<h3 id=parts>Sections</h3>
+
+The 7 parts of a module are:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Section</th> <th>Description</th> </tr>
+<tr><td>function</td> <td>
+All code is wrapped in a function with the same name as the file basename, providing
+bindings for incoming arguments.
+</td><tr>
+<tr><td>options</td> <td>The <b>var options =</b> object itemizes the all options that can come in via
+the <b>opts</b> parameter.</td><tr>
+<tr><td>self</td> <td>Local object state is stored in the <b>self</b> object.
+All defined and incoming options will be copied into <b>self</b>.</td><tr>
+<tr><td>parseOpts</td><td>The call <b>parseOpts(self, options, opts)</b> performs option parsing
+as well as implementing <b>-h</b> help output</td><tr>
+<tr><td>provide</td><td>The <b>provide</b> statement makes the module available as a package.</td><tr>
+<tr><td>Info.isMain</td> <td>The <b>isMain()</b> command returns true if the current file was the
+one invoked from the command-line.</td><tr>
+<tr><td>runModule</td> <td>
+The <b>runModule()</b> command parses command-line options and then invokes the current module.</td><tr>
+</table>
+
+<hr>
+
+<h3 id=help>Help</h3>
+
+Help is available for a module by calling it with the single argument <b>-h</b>
+
+    <nowiki><pre class=verbatim>
+/fileSize.jsi <b>-h</b>
+/home/user/fileSize.jsi:121: error: ... 
+OPTIONS FOR 'fileSize.jsi': // Count bytes in files
+    -Debug      false   // LogDebug output
+    -max        10      // Max number of files
+
+ERROR
+</pre></nowiki>
+
+<hr>
+
+<h3 id=helplimits>Help Limitations</h3>
+
+Help information gets extracted from <b>options</b> by <b>parseOpts</b>, with the following limitations:
+
+  *  The package name will be extracted from the file base name, except when:
+  *  All comments must use the <b>//</b> form.
+  *  The first comment (which must be after the opening <b>{</b>) is the help title.
+  *  There can be no closing <b>}</b> anywhere in the body of the options or comments.
+  

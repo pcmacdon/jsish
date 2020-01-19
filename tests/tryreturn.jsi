@@ -1,0 +1,44 @@
+#!/usr/local/bin/jsish -u %s
+
+function f(n) {
+  try {
+     if (n==1) return n;
+     puts('TRY');
+     if (n!=0)
+        throw(9);
+  } catch(e) {
+     puts("CATCH");
+     if (n==2) return n;
+     puts("ERR: "+e);
+  } finally {
+    puts("FINALLY");
+    if (n==3)
+      return n;
+
+  }
+  puts("OK");
+  return 1;
+}
+;f(0);
+;f(1);
+;f(2);
+;f(3);
+
+/*
+=!EXPECTSTART!=
+f(0) ==> TRY
+FINALLY
+OK
+1
+f(1) ==> 1
+f(2) ==> TRY
+CATCH
+2
+f(3) ==> TRY
+CATCH
+ERR: 9
+FINALLY
+3
+=!EXPECTEND!=
+*/
+

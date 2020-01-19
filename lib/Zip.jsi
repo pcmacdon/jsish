@@ -1,0 +1,166 @@
+#!/usr/bin/env jsish
+
+// Utility for creating and managing zip files, especially when appended to a jsish executable-archive.
+
+function Zip(args:string|array, conf:object=void) {
+
+    var options = { // Implements zip functionality
+        userDir     :'',        // User directory to add to zip (zvfs)
+        outfile     :'',        // Output file for zvfs instead of appending "sh"
+        indir       :'',        // Input directory
+        verbose     :false      // Echo file name of unzip.
+    };
+    var self = {
+    };
+    
+    parseOpts(self, options, conf);
+
+    function usage(str) {
+        if (str != '')
+            console.puts(str);
+        console.puts("usage: list file|truncate file|unzip File.zip ?dir?|zip File.zip dir|fuse File.zip|zvfs file|create ...");
+        return 1;
+    }
+
+    function zvfs(fname:string) {
+        var zdest = self.outfile;
+        if (zdest == '')
+            zdest = fname+'sh';
+        if (File.exists(zdest))
+            return usage('target file already exists: '+zdest);
+        var tdir = File.tempfile('DIR_XXXXXX');
+        File.remove(tdir);
+        File.mkdir(tdir);
+        Zip(['unzip', Info.executable(), tdir]);
+        if (self.userDir !== '') {
+            if (!File.isdir(self.userDir)) throw('userDir not found: '+self.userDir);
+            File.link(File.realpath(self.userDir), tdir+'/lib/user');
+        }
+        File.copy(fname, zdest);
+        Zip(['create',zdest,tdir]);
+        File.remove(tdir, true);
+    }
+    
+    function fuse(fname:string) {
+        var zdest = File.rootname(fname);
+        if (File.exists(zdest))
+            return usage('target file already exists: '+zdest);
+        var tdir = File.tempfile('DIR_XXXXXX');
+        File.remove(tdir);
+        File.mkdir(tdir);
+        Zip(['unzip', Info.executable(), tdir]);
+        Zip(['unzip', fname, tdir]);
+        File.copy(fname, zdest);
+        Zvfs.truncate(fname, true);
+        Zip(['create',zdest,tdir]);
+        File.remove(tdir, true);
+    }
+    
+    function list(fname:string) {
+        fname = File.realpath(fname);
+        if (fname === Info.executable())
+            zdir = '/zvfs';
+        else
+            zdir = Zvfs.mount(fname);
+        puts(File.glob('*', {dir:zdir,recurse:true}));
+        return 0;
+    }
+
+    function truncate(fname:string) {   // Truncate zip files off of executable.
+        zvfs.truncate(fname);
+        return 0;
+    }
+    
+    function unzip(fname:string, ddir='') {
+        fname = File.realpath(fname);
+        if (fname === Info.executable())
+            zdir = '/zvfs';
+        else
+            zdir = Zvfs.mount(fname);
+        if (ddir !== '' && ddir.substr(-1,1) != '/')
+            ddir += '/';
+            
+        var flist = File.glob('*', {dir:zdir,recurse:true}).sort();
+        for (var i in flist) {
+            var fn = flist[i];
+            var fdst = fn.substr(zdir.length+1);
+            var ftyp = File.type(zdir+'/'+fn);
+            if (ftyp === 'directory') continue;
+            if (self.verbose)
+                puts(""+fn);
+            var fdir = File.dirname(ddir+fn);
+            if (fdir !== '.' && !File.isdir(fdir))
+                File.mkdir(fdir, true);
+            File.write(ddir+fn, File.read(zdir+'/'+fn));
+        }
+        return 0;
+    }
+
+    function create(fname:string, zdir:string, ...) {
+        if (!File.isdir(zdir))
+            return usage("must give a directory to zip: " + zdir);
+        var i = 0, zargs = [];
+        zargs[i++] = File.realpath(fname);
+        zargs[i++] = File.glob('*', {dir:zdir, recurse:true});
+        zargs[i++] = zdir;
+        for (var n = 3; n<args.length; n++) {
+            var ldir = args[n];
+            zargs[i++] = File.glob(ldir, {recurse:true});
+            zargs[i-1].push(ldir);
+            zargs[i++] = null;
+        }
+        Zvfs.create.apply({},zargs);
+        return 0;
+    }
+            
+    function zip(fname:string, indir:string, ...) {
+        if (argc < 3)
+            return usage("too few arguments");
+        else if (argc > 3)
+            return usage("too many arguments");
+        if (File.extension(fname) !== '.zip')
+            return usage("must give a .zip file name");
+        if (File.isfile(fname))
+            File.remove(fname);
+        return create.apply(null, args);
+    }
+    
+    var cmdList = [
+        ["create",  create,  "Create standalone executable"],
+        ["fuse",    fuse,    "Use .zip file to produce a standalone executable"],
+        ["list",    list,    "List files in zip"],
+        ["trunc",   trunc,   "Truncate zip files off of executable"],
+        ["unzip",   unzip,   "Unpack files from zip archive, optionally into dest dir"],
+        ["zip",     zip,     "Create zip File"],
+        ["zvfs",    zvfs,    "Add zvfs files from jsish to a standalone executable"]
+    ];
+    var zdir, rc = 0;
+    if (!args || args.length < 1) {
+        usage('');
+        throw 'first arg must be a cmd';
+    }
+
+    var fname = args[1];
+    if (args[0] !== 'zip' && fname && !File.exists(fname))
+        throw 'file does not exist: ' + fname;
+    
+    if (args.length > 0) {
+        for (var i of cmdList) {
+            if (i[0] == args[0]) {
+                return i[1].apply(null, args.slice(1));
+            }
+        }
+    }
+    var emsg = 'Arg 1 must be one of:\n';
+    for (i of cmdList) {
+        emsg += '  ' + i[0] + '      \t: ' + i[2] + '\n';
+    }
+    throw(emsg); 
+}
+
+provide(Zip, 1.0);
+
+if (Info.isMain()) {
+    //exit(Zip(console.args));
+    runModule(Zip);
+}

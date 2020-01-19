@@ -1,0 +1,60 @@
+#!/usr/local/bin/jsish -c -compile true %s
+// Baker: Interp-private struct data.
+
+enum LoafType = {
+    SandwichLoaf,
+    ViennaLoaf,
+    PlainLoaf
+};
+
+struct Baker = {
+    int max;
+    int cnt;
+    int kneedCnt;
+    int kneedMins;
+};
+
+struct Baker_kneed = { // Options used just for kneed()
+    int restTime; // Time to rest between kneeds.
+    int minutes;  // Minutes to kneed.
+    LoafType type;
+};
+
+struct Baker_slice = { // Options used just for slice()
+    int coolTime; // Time to cool before slicing.
+    LoafType type;
+};
+
+vars Baker_Vars = {
+    //Baker_kneed Baker_kneed_Data;
+};
+
+extension Baker = { // Baker command.
+
+    function conf(options:object|string=void):any { // Function to configure Baker options
+        /* No C code is required for "conf()". */
+    }
+
+    function kneed(name:string, options:object=void):void { // Kneed the dough
+        /* C code. */
+        cmdPtr->kneedCnt++;
+        cmdPtr->kneedMins += options->minutes;
+        RETURN();
+    }
+
+    function slice(loafType:number, options:object=void):number { // Function to add values
+        /* C code. */
+        Jsi_Number n = loafType+100;
+        RETURN(n);
+    }
+
+    function label(pref:string, end:number):string { // Label bags of baked goods
+        /* C code. */
+        char buf[BUFSIZ];
+        snprintf(buf, sizeof(buf), "%s_%g", pref, end);
+        RETURN(buf);
+    }
+
+        
+};
+

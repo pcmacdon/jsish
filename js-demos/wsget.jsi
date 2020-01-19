@@ -1,0 +1,9 @@
+#!/usr/bin/env jsish
+// Test overriding Wget to return data.  FYI, could now just use instead {O:'.'}
+var response = '';
+function WsRecv(ws:userobj, id:number, str:string) { response += str; }
+var w = Wget(console.args, {nowait:true, O:'-', wsOpts:{onRecv:WsRecv}});
+while (!w.done)
+    update(200);
+printf('%s', response);
+        

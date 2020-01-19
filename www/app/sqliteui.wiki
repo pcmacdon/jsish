@@ -1,0 +1,9 @@
+<title>SqliteUI</title>
+
+<h4>A GUI for Sqlite</h4>
+
+SqliteUI is a simple web based user interace for Sqlite that comes built-in to <b>jsish</b>, eg.
+
+ jsish -S mytest.db
+  
+This should open the UI in a web browser window, allowing you to examine and modify the database.

@@ -1,0 +1,36 @@
+#!/usr/local/bin/jsish -u %s
+
+function Person(name, gender){
+
+    this.name = name;
+    this.gender = gender;
+}
+
+Person.prototype = { spake: function() { return this.name; } };
+Person.prototype.speak = function(){ return "Howdy, my name is " + this.name; };
+
+
+var person = new Person("Bob", "M");
+
+;person.speak();
+;person.spake();
+;typeof person;
+;person.hasOwnProperty('toString');
+;person.hasOwnProperty('name');
+
+var y = [1,2,3];
+var x = typeof(y);
+;x;
+;typeof((9));
+
+/*
+=!EXPECTSTART!=
+person.speak() ==> Howdy, my name is Bob
+person.spake() ==> Bob
+typeof person ==> object
+person.hasOwnProperty('toString') ==> false
+person.hasOwnProperty('name') ==> true
+x ==> array
+typeof((9)) ==> number
+=!EXPECTEND!=
+*/

@@ -1,0 +1,100 @@
+<title>Home</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+</div>
+
+<b>Jsi</b> is a <b>C</b> ([./language.wiki#compat|+/-]) embeddable [./background.wiki#ecma|JavaScript] interpreter
+(like Python, Lua, Tcl, etc) that:
+
+  *  can use typed functions,
+  *  has builtin support for web and database,
+  *  is easier to learn because the syntax is javascript.
+
+A Jsi [./functions.wiki|function] may have parameters with <b>types</b>
+and <b>default values</b>, eg:
+
+    <nowiki><pre class=verbatim>
+function foo (n<b>:number</b>, str<b>:string</b>=<i>''</i>)<b>:number</b> { return n+str.length; }
+</pre></nowiki>
+
+Types are also used in the generation of C extensions.
+<hr>
+
+<ul><li><b>Start</b>:
+[./download.wiki|Download],
+[./build.wiki|Build],
+[./usingjsi.wiki|Use],
+[./license.wiki|License],
+</li>
+<li><b>Development</b>:
+[./debug.wiki#strict|Strict Mode],
+[./functions.wiki|Type Checking],
+[./debug.wiki#debugui|Debugging],
+[./js-errors.wiki|Errors],
+[./js-logging.wiki|Logging],
+</li>
+<li><b>Core</b>:
+[./js-system.wiki|System],
+[./js-info.wiki|Info],
+[./js-interp.wiki|Interp],
+[./js-format.wiki|Format],
+[./js-filesystem.wiki|File-System],
+[./js-events.wiki|Events],
+</li>
+<li><b>Integration</b>:
+[./js-modules.wiki|Modules],
+[./packages.wiki|Packages],
+[./packages.wiki#autoload|Auto-Load],
+</li>
+<li><b>Web</b>:
+[web.wiki|Pre-processors],
+[./markdown.wiki|Markup],
+[./js-json.wiki|JSON],
+</li>
+<li><b>Miscellaneous</b>:
+[./js-cdata.wiki|Cdata],
+[./js-threads.wiki|Threads],
+[./js-signal.wiki|Signal],
+[./js-sqilte.wiki|Sqlite],
+[./js-mysql.wiki|MySQL],
+[./js-zvfs.wiki|Zvfs],
+[./js-socket.wiki|Socket],
+[./js-websocket.wiki|WebSocket],
+[./language.wiki|Language],
+</li>
+<li><b>Tools</b>:
+[./profiler.wiki#tracing|Tracing],
+[./profiler.wiki#profile|Profiling],
+[./profiler.wiki#coverage|Coverage],
+[./testing.wiki|Unit Test],
+</li>
+<li><b>C/C++</b>:
+[./c-jsi_lite.wiki|Jsi-Lite],
+[./c-extensions.wiki|C Extension],
+[./c-dstring.wiki|DString],
+[./c-cdata.wiki|Cdata],
+[./c-options.wiki|Options],
+[./c-dbquery.wiki|Sqlite-C],
+[./c-json.wiki|JSON-C],
+</li>
+<li><b>Applications</b>
+[./app/ledgerjs.wiki|Ledger],
+[./app/sqliteui.wiki|SqliteUI],
+[./app/websrv.wiki|Web Server],
+</li>
+</ul>
+
+
+
+Welcome to the <b>Jsish</b> fossil repository!
+
+To join the community, you can create a userid at the login.
+
+  *  To receive email notifications, see [https://jsish.org/fossil/jsi/subscribe].
+  *  For the sitemap, see [https://jsish.org/fossil/jsi/sitemap].
+
+<b>NOTE, EMBEDDED DOCS ARE CHANGING: see [../md/Home.md|new docs].</b>

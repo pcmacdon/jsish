@@ -1,0 +1,55 @@
+<title>Download</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#zip|Download Source]</li>
+<li>[#fossil|Version Control]</li>
+<li>[#archive|Snapshots]</li>
+<li>[#bin|Binaries]</li>
+</ul>
+</div>
+
+<h2 id=zip>Download Source</h2>
+
+Go to [https://jsish.org/jsi/download|downloads] for the latest source (or see Tags above for releases).
+
+Then follow the directions in [./build.wiki|Build].
+
+<hr>
+<h2 id=fossil>Version Control</h2>
+
+Jsi is version-controlled using [http://www.fossil-scm.org|fossil].
+
+The simplest way to keep updated is by pulling down the Jsi fossil repository:
+
+    <nowiki><pre class=verbatim>
+fossil clone https://jsish.org/jsi jsi.fossil
+mkdir jsi
+cd jsi
+fossil open jsi.fossil
+./configure
+make
+</pre></nowiki>
+
+To get fossil: 
+
+  *  On Ubuntu: <b>"apt-get install fossil"</b>, or
+  *  Get it from [http://www.fossil-scm.org/index.html/uv/download.html]
+
+
+<hr>
+
+<h2 id=bin>Binaries</h2>
+
+You can download a binary for Linux or Windows from [http://sourceforge.net/projects/jsish/files/].
+
+Binaries are unsupported,
+but they are the fastest way to give <b>jsish</b> a test drive without having to build anything.
+
+
+

@@ -1,0 +1,79 @@
+#!/usr/bin/env jsish
+// Call all jsi functions with random arguments, ie. to detect crashes.
+// Use with sanitize to detect memory leaks, etc.
+// TODO: call with varying numbers of args.
+
+function randTest() {
+
+    var pargs = [-1, 'a', null, false];
+    
+    function foo() {}
+    
+    function DumpCmd(cnam:string, cinf:object) {
+        if (cinf.name === 'exit' || cinf.name === '' || !cinf.name) return;
+        var cmd = cnam +'(undefined,1,'+1+')';
+        puts(cmd);
+        try { eval(cmd); } catch(e) {}
+        var maxArgs = (cinf.maxArgs<0?10:cinf.maxArgs);
+        var alst = ["undefined", "null", "1", "'x'", "false","{}", "[]", 'foo'];
+        for (var j of alst) {
+            for (var i=0; i<=maxArgs; i++) {
+                cmd = cinf.name+'(';
+                for (var k=0; k<i; k++)
+                    cmd += (k?',':'')+j;
+                cmd += ')';
+                puts(cmd);
+                try { eval(cmd); } catch(e) {}
+            }
+        }
+    }
+
+    function DumpObj(cnam:string, tinf:object):string {
+        var hasconf, ro = '', rv = '', ci, cmds = Info.cmds(tinf.name+'.*');
+        if (cmds !== undefined) {
+            for (var cmd in cmds) {
+                var nam = cmds[cmd].split('.')[0];
+                if (nam === 'exit' || nam === 'kill' || nam === 'signal' || nam === 'input' || nam === '' || !nam) continue;
+                var nnam = cnam+'.'+nam;
+                puts(nam);
+                if (nam == cnam)
+                    continue;
+                ci = Info.cmds(nnam);
+                DumpCmd(ci.name, ci);
+            }
+        }
+        if (tinf.constructor) {
+            cmd = 'new '+cnam+'('+')';
+            try { var cc = eval(cmd); DumpCmd(cc, ci); delete cc;} catch(e) {}
+                
+        }
+        return rv;
+    }
+
+    //*************** BEGIN MAIN **************
+    var lst = Info.cmds();
+
+    for (var i in lst) {
+        if (lst[i]==='Signal') continue;
+        var tinf = Info.cmds(lst[i]);
+        switch (tinf.type) {
+        case 'object':
+            DumpObj(tinf.name, tinf);
+            break;
+        case 'command':
+            DumpCmd(tinf.name, tinf);
+            break;
+        default:
+            throw("bad id");
+            continue;
+        }
+    }
+    tinf = Info.cmds('Signal');
+    DumpObj(tinf.name, tinf);
+    puts('DONE***************************');
+    return;
+}
+
+if (Info.isMain()) {
+    puts(randTest());
+}

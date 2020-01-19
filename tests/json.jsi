@@ -1,0 +1,31 @@
+#!/usr/local/bin/jsish -u %s
+
+var d = '
+{
+    "count": 422, 
+    "umask": "0422", 
+    "watch-dir": "/tmp/ready",
+    "gonogo" : true,
+    "done" : null
+}
+';
+var j = JSON.parse(d);
+;j.toString();
+;j.umask;
+;j['watch-dir'];
+;j.toString();
+;JSON.stringify(j);
+
+var x = JSON.stringify(j);
+puts(x);
+
+/*
+=!EXPECTSTART!=
+j.toString() ==> { count:422, done:null, gonogo:true, umask:"0422", "watch-dir":"/tmp/ready" }
+j.umask ==> 0422
+j['watch-dir'] ==> /tmp/ready
+j.toString() ==> { count:422, done:null, gonogo:true, umask:"0422", "watch-dir":"/tmp/ready" }
+JSON.stringify(j) ==> { "count":422, "done":null, "gonogo":true, "umask":"0422", "watch-dir":"/tmp/ready" }
+{ "count":422, "done":null, "gonogo":true, "umask":"0422", "watch-dir":"/tmp/ready" }
+=!EXPECTEND!=
+*/

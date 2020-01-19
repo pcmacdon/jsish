@@ -1,0 +1,778 @@
+#!/usr/bin/env jsish
+"use strict,!error";
+// DebugUI: A jsi debugger with a web user interface.
+// This module combines code from Debug and Websrv.
+
+require('Jsish');
+require('Sqlite');
+require('WebSocket', '2');
+
+function DebugUI(fileargs:array, conf:object=void)
+{
+
+    var options = { // A web-based debugger for Jsi scripts
+        browser     :null,      // Browser program to use.
+        closeTimeout:10000,     // When last client exits, grace time after before exiting (in ms).
+        debug       :false,     // Debugging output
+        echoCmd     :false,     // Echo user cmds.
+        local       :true,      // Connection listens only on localhost.
+        minLevel    :0,         // Minimum level for up/down.
+        noCheck     :false,     // Disable typechecking.
+        noGui       :false,     // Disable starting local browser, and the exit timeout.
+        noPuts      :false,     // Do not redirect puts, log, etc to the web.
+        noUpdate    :false,     // Caller will provide update calls.
+        noXeval     :false,     // Disable the xeval command, even for local==true.
+        port        :0,         // Port for web server.
+        wsdebug     :0,         // Websocket debugging mask.
+        wsopts      :{}         // Websocket options.
+    };
+    
+    var self = {
+        curline:0,
+        curfile:null,
+        curlev:0,
+        curfunc:null,
+        curfunc:null, curlevel:0, optstr:'', bpId:0,
+        done:false,
+        fsent:[], // File name cache
+        files:[],
+        filedata:{},
+        file:null,
+        id:-1,
+        isSafe:false,   // Debug program in a safe interp
+        lastCmd:'',     // Previous cmd, empty string repeats.
+        lastCommand:'',  // Full command name (unaliased)
+        lastPrintArg:null,
+        level:0,
+        line:0,
+        optdbfile: '~/.debugui.db',   // Store options, etc.
+        prevLevel:0,
+        rootdir: null,  // Root for application files.
+        stopped:false,
+        toplev:0,
+        version:1.0,
+
+        browsers: {                     // Not used, yet.
+            unix:[ "xdg-open", "gnome-open", "firefox", "google-chrome" ],
+            win: [ "start" ],
+            mac: [ "open" ]
+        }
+        
+    };
+    
+    var commands = {
+        "break":"Break execution at a named function, line or file", 
+        "continue":"Continue execution", 
+        "delete":"Delete one or all breakpoints", 
+        "disable":"Disable one or all breakpoints", 
+        "down":"Move down one or more stack levels", 
+        "enable":"Enable one or all breakpoints", 
+        "eval":"Evaluate expression in program context", 
+        "finish":"Run till return of current function", 
+        "help":"Display command usage", 
+        "info":"Info subcommands: bp args locals var", 
+        "list":"List file lines args can be: startLine|func numLines file", 
+        "next":"Single-step over function calls", 
+        "print":"Print value of a simple variable", 
+        "quit":"Quit debugging current program and exit", 
+        "step":"Single-step into function calls", 
+        "halt":"Stop execution", 
+        "tbreak":"Sets a temporary breakpoint", 
+        "up":"Move up one or more stack levels", 
+        "where":"Display current location",
+        "xeval":"Eval expression in debugger, rather than the app" 
+    };
+
+    parseOpts(self, options, conf);
+    
+    function webDoExit(n=0)   // Notify all going down, then exit.
+    {
+        webSend(self.id, 'exit', {rc:n});
+        setTimeout(function () {exit(n); }, 3000); 
+    }
+    
+    function webCloseNow()
+    {
+        self.closeId = null;
+        if (self.ws.conf('stats.connectCnt')>0)
+            return;
+        LogDebug("Last client has closed");
+        self.ws.conf({noUpdate:true});
+        self.done = 1;
+        exit(0);
+    }
+    
+    function webCloseLast(ws:userobj|null)
+    {
+        // Wait around for a while for refresh or new clients before exiting
+        if (self.closeId)
+            clearInterval(self.closeId);
+        self.closeId = null;
+        if (self.closeTimeout>0)
+            self.closeId = setTimeout(function () { webCloseNow(); }, self.closeTimeout);
+        return true;
+    }
+    
+    function webFileBrowse(id:number, d:object)
+    {
+       var e, req = {success:true, did:'files', msg:''}, fn = d.files_dir;
+        fn = fn.trim(' ');
+        if (fn.length<=0) {
+            req.success = false;
+            req.msg = 'empty dir name';
+        } else if (!File.isdir(fn)) {
+            req.success = false;
+            req.msg = 'can not find db file';
+        } else {
+            try {
+                req.files = File.glob('*', {dir:fn, types:'f'}).sort();
+                req.dirs = File.glob('*', {dir:fn, types:'d'}).sort();
+                req.dir = fn;
+            }
+            catch (e) {
+                req.msg = e;
+                req.success = false;
+            }
+        }
+        webSend(id, 'fileBrowse', req);
+    }
+
+    function webGotFile(id:number, d:object) {
+        LogDebug("GOTFILE: "+d.fname);
+        self.fsent.push(d.fname);
+    }
+
+    function webStopped() {
+        LogDebug("webStopped: "+self.curline);
+        var msg = {fname:self.curfile, line:self.curline, func:self.curfunc};
+        if (self.fsent.indexOf(self.curfile)<0) {
+            msg.fdata = File.read(self.curfile);
+        }
+        webSend(self.id, 'stopped', msg);
+    }
+    
+    /**********************/
+    
+    function webSendRaw (id,cmd,data,type)
+    {
+        if (type === undefined)
+            type = "";
+        data = '{"type":"'+type+'", "cmd":"'+cmd+'", "data" : '+ data +'}';
+        //puts("RAWSEND: "+data);
+        self.ws.send(id, data);
+    }
+    
+    function webSend (id:number, cmd:string, data:object, type:string='')
+    {
+        var dat = {type: type, cmd:cmd, data:data };
+        dat = JSON.stringify(dat);
+        LogTrace("SEND:", dat);
+        self.ws.send(id, dat);
+    }
+
+    function loadFile() {
+        var rc = {};
+        var fd = File.read(self.dbfile);
+        rc.file = self.dbfile;
+        rc.data = fd;
+        return rc;
+    }
+    
+    function webLoadAll(id:number)
+    {
+        LogDebug("LOADALL");
+        self.id = id;
+        webSend(id, "webLoadAll", {file:self.dbfile, args:self.args});
+        webStopped();
+        //webSend(id,'webLoadAll',loadFile());
+    }
+    
+    function webRecv(ws:userobj, id:number, data:string)
+    {
+        var buf, buf0, buf1, buf2;
+        LogDebug("DBG SERVER GOT: "+ id +": "+data);
+        var dat = JSON.parse(data);
+        LogDebug("JSON: "+dat.toString());
+        switch (dat.cmd) {
+            case 'webLoadAll':  return webLoadAll(id);
+            case 'uistack':     return webUiStack(id,dat.data);
+            case 'fileBrowse':  return webFileBrowse(id,dat.data);
+            case 'getfile':     return webGetFile(id, dat.data);
+            case 'gotfile':     return webGotFile(id, dat.data);
+            case 'command':     return webCommand(id, dat.data);
+            case 'varget':      return webVarGet(id, dat.data);
+            case 'exit':        webDoExit(); break;
+                
+            default: LogDebug("unknown webmsg: "+dat.cmd); break;
+        }
+    }
+        
+    function eputs(str:string) {
+        LogDebug(str);
+        webSend(self.id, "errorMsg", {msg:str});
+    }
+
+    function wputs(str:string) {
+        LogDebug(str);
+        webSend(self.id, "textMsg", {msg:str});
+    }
+    
+    function cmdPrint(lst:array) {
+        var val = lst[1];
+        if (lst.length === 1 && self.lastPrintArg !== null) {
+            val = self.lastPrintArg;
+        } else if (lst.length != 2 || val === '') {
+            eputs("first print requires one argument");
+            return;
+        }
+        self.lastPrintArg = val;
+        try {
+            var rc = self.interp.value(val, self.curlev);
+            if (rc === undefined)
+                rc = 'undefined';
+            else if (rc === null)
+                rc = 'null';
+            wputs(val + " = " + JSON.stringify(rc));
+        } catch(e) {
+            eputs("ERROR: "+e);
+        }
+    }
+    
+    function cmdEval(inval:string, myinterp:boolean) {
+        var ofs = inval.indexOf(' ');
+        var val;
+        if (ofs<0 || ((val=inval.substr(ofs+1).trim()) === ''))
+            return eputs("eval requires an argument: "+inval);
+
+        var rc, err=false;
+        if (myinterp)  {
+            if (!self.local || self.noXeval)
+                rc = 'xeval is disabled when not local';
+            else
+                rc = eval(val);
+        } else {
+            try {
+                rc = self.interp.uplevel(val, self.curlev);
+            } catch(e) {
+                eputs("ERROR: "+e);
+                err=true;
+            }
+        }
+        if (!err) {
+            if (rc === undefined)
+                rc = 'undefined';
+            else if (rc === null)
+                rc = 'null';
+            wputs(val+" : " + JSON.stringify(rc));
+        }
+    }
+    
+    function cmdHelp(lst:array) {
+        var val = lst[1], rc = '';
+        if (commands[val] !== undefined)
+            rc = commands[val];
+        else {
+            for (var i in commands)
+                rc += format("%-10s: %s\n", i, commands[i]);
+        }
+        wputs(rc);
+    }
+
+    function getFunc(func:string) {
+        var fstr = null;
+        try {
+            fstr = self.interp.eval('Info.funcs("'+func+'")');
+        } catch (e) {
+        }
+        return fstr;
+    }
+    
+    // Print lines of file
+    function cmdList(lst:array) {
+        var file = self.curfile;
+        var line = self.curline;
+        var num = 10;
+        if (lst.length > 1) {
+            var lstr = lst[1];
+            if (lstr.match(/^[0-9]+$/))
+                line = parseInt(lstr);
+            else {
+                fstr = getFunc(lstr);
+                if (typeof fstr !== "object") {
+                    eputs("unknown func: "+lstr);
+                    return;
+                }
+                file = fstr.script;
+                line = fstr.lineStart;
+            }
+        }
+        if (lst.length > 2)
+            num = parseInt(lst[2]);
+        if (lst.length > 3) {
+            file = File.realpath(lst[3]);
+            if (!File.exists(file))
+                return eputs("bad file name: "+lst[3]);
+        }
+        if (!line)
+            return eputs("Error: expected line number: "+line);
+        if (!num)
+            return eputs("Error: expected count: "+num);
+        if (line<1)
+            line = 1;
+        listFile(file, line, num);
+    }
+    
+    function listFile(file:string, line:number, num:number) {
+        var find = addFile(file);
+        var data = self.filedata[file];
+        printf("FILE: %s:%d\n", file, line);
+        for (var i=line; i<line+num && data[i-1] !== undefined; i++)
+                printf("%-5d: %s\n", i, data[i-1]);
+    }
+    
+    var infoCmds = { "bp":"Show breakpoints", "var":"Show variables",
+        "args":"Show function args", "locals":"Show function local vars" };
+    
+    function cmdInfo(lst:array) {
+        var val = lst[1], oval, lev = self.curlev;
+        if (!lev)
+            lev = self.interp.eval('Info.level()')-1;
+        if (lst.length != 2)
+            return eputs("expected 1 arg: "+JSON.stringify(lst));
+        var cmd = getCommand(val, infoCmds);
+        if (cmd === '')
+            return;
+        switch (cmd) {
+            case 'bp':
+                var blst = self.interp.eval('Debugger.info()');
+                if ((!blst) || blst.length<=0)
+                    return;
+                for (var i in blst.sort()) {
+                    var bp = self.interp.eval('Debugger.info('+blst[i]+')');
+                    str = format("#%-5d: enabled=%s hits=%d, ", bp.id, bp.enabled?"true, ":"false,", bp.hits);
+                    switch (bp.type) {
+                        case 'line': str += format("file=%s:%d", bp.file, bp.line); break;
+                        case 'func': str += format("func=%s", bp.func); break;
+                        default: eputs("ERROR: bad breakpoint type: "+bp.type); return;
+                    }
+                    if (bp.temporary)
+                        str += ", temp=true";
+                    wputs(str);
+                }
+                break;
+            case 'var':
+                wputs(JSON.stringify(self.interp.eval('Interp.uplevel("Info.vars()", '+lev+')')));
+                break;
+            case 'args':
+                wputs(self.interp.eval('JSON.stringify(Info.level('+lev+').scope)'));
+                break;
+            case 'locals':
+                oval = self.interp.eval('Info.level('+lev+').locals.join(", ")');
+                wputs(oval);
+                break;
+            case 'help': // TODO: detect dup case.
+                break;
+            default:
+                break;
+        }
+    }
+
+    function webBPUpdate() {
+        var bps = [], blst = self.interp.eval('Debugger.info()');
+        if (blst && blst.length) {
+            for (var i in blst.sort()) {
+                var bp = self.interp.eval('Debugger.info('+blst[i]+')');
+                bps.push(bp);
+            }
+        }
+        webSend(self.id, 'breakList', {bps:bps});
+    }   
+    
+    function cmdBreak(lst:array, line:number, func:string, file:string, temp:boolean=false) {
+        var bp, val;
+        if (lst.length > 2) {
+            eputs("too many arguments");
+            return;
+        }
+        if (lst.length === 2) {
+            var ofs, nline;
+            val = lst[1];
+            if ((ofs=val.indexOf(':'))>0) {
+                nline=parseInt(val.substr(ofs+1));
+                if (nline<=0) {
+                    eputs("invalid line number: "+val);
+                    return;
+                }
+                file = val.substr(0,ofs);
+                file = File.realpath(file);
+                if (!File.exists(file)) {
+                    eputs("unknown file: "+file);
+                    return;
+                }
+                bp = file+':'+nline;
+            } else if ((nline=parseInt(val)) && !isNaN(nline) && nline>0) {
+                bp = file+':'+nline;
+            } else {
+                bp = val;
+                var fstr = getFunc(val);
+                //if (typeof fstr !== "object")
+                 //   eputs("Note: function '"+val+"' is not yet defined");
+            }
+        } else {
+             bp = file+':'+line;
+        }
+        //printf("BP: %s\n", bp);
+        var done = false;
+        try {
+            var b = self.interp.eval('Debugger.add("'+bp+'", '+(temp?"true":"false")+')');
+            wputs((temp?"temporary ":"") +"breakpoint #"+b+" set: "+bp);
+            done = true;
+        } catch(e) {
+            eputs("add failed: "+e);
+        }
+        if (done) {
+            LogDebug("DONE BP");
+            update();
+            webBPUpdate();
+        }
+    }
+    
+    function cmdDelete(lst:array, line:number, func:string, file:string) {
+        var bp, num, val = lst[1];
+        if (lst.length == 1) {
+            var bps = self.interp.eval('Debugger.info()');
+            for (var i in bps) {
+                self.interp.eval('Debugger.remove('+bps[i]+')');
+            }
+        } else {
+            if (val === undefined || (num=parseInt(val))<=0) {
+                eputs("bad index: "+val);
+                return;
+            }
+            try {
+                self.interp.eval('Debugger.remove('+num+')');
+            } catch(e) {
+                eputs("remove failed: "+e);
+            }
+        }
+        webBPUpdate();
+    }
+    
+    function cmdEnable(lst:array, on:boolean) {
+        var bp, num, val = lst[1];
+        if (lst.length == 1) {
+            var bps = self.interp.eval('Debugger.info()');
+            for (var i in bps) {
+                self.interp.eval('Debugger.enable('+bps[i]+','+on+')');
+            }
+        } else {
+            if (val === undefined || (num=parseInt(val))<=0)
+                return eputs("bad index: "+val);
+            try {
+                self.interp.eval('Debugger.enable('+num+','+on+')');
+            } catch(e) {
+                return eputs("enable failed: "+e);
+            }
+        }
+        webBPUpdate();
+    }
+
+    function webUiStack(id, m) {
+        var stks = [], lev = self.interp.eval('Info.level()')-1;
+        while (lev>0) {
+            var rs = self.interp.eval('Info.level(' + lev-- + ')');
+            rs.file = File.tail(rs.fileName);
+            rs.dir = File.dirname(rs.fileName);
+            stks.push(rs);
+        }
+        webSend(self.id, 'stackList', {stks:stks});
+    }
+    
+    function cmdWhere(lst:array, line:number, func:string, file:string) {
+        var rs = '', lev = self.curlev;
+        if (!self.curlev)
+            lev = self.interp.eval('Info.level()')-1;
+        while (lev>1) {
+            if (rs !== '')
+                rs += '\n';
+            var r = self.interp.eval('Info.level(' + lev-- + ')');
+            rs += format("%d : %S:(%S) <in %S:%d>", lev, r.funcName, r.scope.join(', '), File.tail(r.fileName), r.line);
+        }
+        wputs(rs);
+    }
+    
+    // Change current level.
+    function cmdLevel(lst:array, isUp:boolean) {
+        var amt = 1, nlev;
+        if (!self.curlev)
+            self.curlev = self.toplev = self.interp.eval('Info.level()')-1;
+        if (lst[1] !== undefined) {
+            if (lst[1].substr(0,1) == '#') {
+                nlev = parseInt(lst[1].substr(1));
+            } else {
+                amt = parseInt(lst[1]);
+                if (!amt) {
+                    amt = 1;
+                    eputs("level invalid: "+lst[1]);
+                }
+                nlev = self.curlev+(isUp?-amt:amt);
+            }
+        } else
+            nlev = self.curlev+(isUp?-amt:amt);
+        if (nlev<=0)
+            nlev = 1;
+        else if (nlev>self.toplev)
+            nlev = self.toplev;
+        self.curlev = nlev;
+        var val = self.interp.eval('Info.level('+nlev+')');
+        self.curfile = val.fileName;
+        self.curline = val.line;
+        self.curfunc = val.funcName;
+    }
+    
+    // Return unique command name match.
+    function getCommand(val:string, cmds:object)//:string 
+    {
+        if (cmds[val] !== undefined)
+            return val;
+        var mat = [];
+        for (var i in cmds)
+            if (i.indexOf(val) === 0)
+                mat.push(i);
+        if (mat.length === 0)
+            eputs("Command '"+val+"' not one of: " + cmds.keys().join(','));
+        else if (mat.length === 1)
+            return mat[0];
+        else
+            eputs("Ambiguous command '"+val+"' matches: "+mat.join(','));
+        return "";
+    }
+    
+    // Add file to data-cache.
+    function addFile(file:string) {
+        if (file === '')
+            return;
+        var find = self.files.indexOf(file);
+        if (find>=0)
+            return find;
+        find = self.files.length;
+        self.files.push(file);
+        var data = File.read(file);
+        self.filedata[file] = data.split('\n');
+        self.find = find;
+        //puts("pushed "+file);
+        return find;
+    }
+
+    function webVarGet(id:number, d:object) {
+        var rc;
+        try {
+            rc = self.interp.value(d.name, self.curlev);
+        } catch (e) {};
+        if (rc !== undefined) {
+            var msg = {name:d.name, value:rc};
+            webSend(id, 'varget', msg);
+        }
+    }
+    
+    function webGetFile(id:number, d:object) {
+        var fnam = d.fname;
+        var msg = {fname:fnam, fdata:File.read(fnam)};
+        webSend(id, 'fileData', msg);
+    }
+    
+    function logCallback(msg:string, type:string, file:string, line:number, col:number) {
+        webSend(self.id, "errorMsg", {msg:msg, file:file, line:line, type:type, col:col});
+    }
+    
+
+    function putsCallback(msg:string, isStderr:number) {
+        webSend(self.id, "putsMsg", {msg:msg, isStderr:isStderr});    
+    }
+
+    function webCommand(id:number, d:object) {        
+        // Process a user command from web.
+        //printf("#%d==> ", self.curlev?self.curlev:level);
+        //var inp = console.input();
+        //update(); // Handle signals.
+
+        var file = self.curfile,
+            line = self.curline,
+            func = self.curfunc,
+            level = self.curlevel,
+            opstr = self.opstr,
+            bpId = self.bpId,
+            level = self.level;
+        
+        var inp = d.cmd;
+        if (inp === undefined)
+            inp = '';
+        inp = inp.trim();
+        var echo = self.echoCmd;
+        if (inp === '') {
+            inp = self.lastCmd;
+            echo = false;
+        }
+        self.lastCmd = inp;
+        var inlst = inp.split(' ');
+        var cmd = getCommand(inlst[0], commands);
+        if (cmd === '')
+            return;
+        self.lastCommand = cmd;
+        if (echo)
+            puts('CMD: '+cmd);
+        switch (cmd) {
+            case 'break':   cmdBreak(inlst,line,func,file,false); break;
+            case 'continue':self.stopped=false; self.interp.conf({debugOpts:{doContinue:true}}); break;
+            case 'delete':  cmdDelete(inlst,line,func,file); break;
+            case 'disable': cmdEnable(inlst,false); break;
+            case 'down':    cmdLevel(inlst, false); break;
+            case 'enable':  cmdEnable(inlst,true); break;
+            case 'eval':    cmdEval(inp,false); break;
+            case 'finish':  self.stopped=false; self.interp.conf({debugOpts:{minLevel:(self.minLevel = --self.level)}}); break;
+            case 'help':    cmdHelp(inlst); break;
+            case 'info':    cmdInfo(inlst); break;
+            case 'list':    cmdList(inlst); break;
+            case 'next':    self.stopped=false; self.interp.conf({debugOpts:{minLevel:(self.minLevel = self.level)}}); break;
+            case 'print':   cmdPrint(inlst); break;
+            case 'quit':    webDoExit(); break;
+            case 'step':    self.stopped=false; break;
+            case 'halt':    self.interp.conf({debugOpts:{doContinue:false, minLevel:(self.minLevel = 0)}}); break;
+            case 'tbreak':  cmdBreak(inlst,line,func,file,true); break;
+            case 'up':      cmdLevel(inlst, true); break;
+            case 'where':   cmdWhere(inlst,line,func,file); break;
+            case 'xeval':   cmdEval(inp, true); break;
+            default: eputs("ERROR '"+cmd+"' not one of: " + commands.keys().join(','));
+        }
+        if (self.stopped)
+            webStopped();
+        else
+            webSend(self.id, 'running', {msg:''});
+    }
+    
+
+    // Main callback handler for the debugger. 
+    function debugCallback (file:string, line:number, level:number, func:string, opstr:string, bpId:number, emsg:string)
+    {
+        if (self.debug)
+            printf("PROGRAM STOPPED: #%d:%s:%d <%s> %s:%d\n", level, file, line, func, opstr, bpId);
+        if (bpId)
+            wputs("Stopped at breakpoint #"+bpId);
+        else if (opstr.substr(0,3) === 'SIG')
+            wputs("Stopped by signal: "+opstr);
+        else if (emsg && emsg !== '')
+            wputs("MSG: "+emsg);
+        addFile(file);
+        if (self.minLevel>0)
+            self.interp.conf({debugOpts:{minLevel:0}});
+        self.interp.conf({debugOpts:{doContinue:false}});
+        self.minLevel = 0;
+        self.curfile = self.file = file;
+        self.curline = self.line = line;
+        self.curfunc = func;
+        self.curlevel = level;
+        self.opstr = opstr;
+        self.bpId = bpId;
+        self.prevLevel = self.level = level;
+        self.curlev = 0;
+        
+        self.stopped = true;
+        if (self.id>=0)
+            webStopped();
+        
+        while (self.stopped && Event.update(100) ) {} // Loop processing events.
+        if (self.debug)
+            LogDebug("PROGRAM RUNNING");
+        return true;
+    };
+
+    function main() {
+        debugger;
+        var req = require("DebugUI", 1.0);
+        if (!self.rootdir)
+            self.rootdir=File.dirname(req.loadFile);
+        self.args = null;
+        if (typeof(fileargs) !== 'array')
+            self.dbfile = fileargs;
+        else {
+            self.dbfile = fileargs[0];
+            self.args = fileargs.splice(1);
+        }
+        if (!File.exists(self.dbfile)) {
+            throw("script file required: "+self.dbfile);
+            return(1);
+        }
+       
+        var i;
+        var defws = {
+            local       :self.local,
+            urlRedirect :'/DebugUI/html/main.htmli',
+            port        :self.port, 
+            rootdir     :self.rootdir, 
+            onRecv      :webRecv, 
+            onCloseLast :webCloseLast, 
+            debug       :self.wsdebug,
+            extHandlers :true,      // Sets up preprocess handlers for .htmli, .cssi, and .jsi files
+            urlPrefix   :'/DebugUI'
+        };
+        if (self.local)
+            defws.noCompress = true;
+        for (i in defws)
+            if (self.wsopts[i] === undefined)
+                self.wsopts[i] = defws[i];
+        
+        self.ws = new WebSocket(self.wsopts);
+        self.wsopts.port = self.ws.conf('port');
+                    
+        /* Setup options. */
+        if (self.optdbfile && self.optdbfile != '') {
+            self.optdb = new Sqlite(self.optdbfile);
+        }
+        
+        LogDebug("Listen on "+self.wsopts.port);
+        if (!self.noGui) {
+            if (self.browser === null) {
+                switch (Info.platform().os) {
+                    case 'win': self.browser = 'start';     break;
+                    default:    self.browser = "xdg-open";  break;
+                }
+            }
+            exec(self.browser + " http://127.0.0.1:"+self.wsopts.port+self.wsopts.urlRedirect+" &");
+        }
+
+        var interpOpts = {
+            debugOpts:{debugCallback:'debugCallback', msgCallback:'logCallback'},
+            args:self.args,
+            scriptFile:self.dbfile,
+            name:'debugProg',
+            busyCallback:'noOp', // Same as "update"
+            busyInterval:100
+        };
+        if (!self.noPuts)
+            interpOpts.debugOpts.putsCallback = 'putsCallback';
+        self.interp = new Interp(interpOpts);
+        LogDebug("Running in debugger: "+self.dbfile+' '+self.args.toString());
+        var rc = self.interp.source(self.dbfile);
+        if (rc===undefined) rc = 0;
+        LogDebug("JSI DEBUGGER EXIT: "+rc);
+        webDoExit(rc);
+        Event.update(3000);
+
+        LogDebug("Done!");
+        if (self.optdbfile)
+            delete self.optdb;
+        delete self.db;
+        delete self.ws;
+        //self.interp.conf({debugOpts:{putsCallback:null}});
+        delete self.interp;
+        return 0;
+    }
+    
+    return main();
+}
+
+provide(DebugUI, 1.0);
+
+if (isMain())
+    exit(runModule(DebugUI));
+

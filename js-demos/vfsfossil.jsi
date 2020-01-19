@@ -1,0 +1,104 @@
+#!/usr/local/bin/jsish --U %s
+// Note: if was a real unit test it would fail as info changes in fossil, but we show output below anyways.
+
+
+var target = '../jsi.fossil';
+File.size(target);
+
+var mnt, mnt2, mnt3, mnt4, mnt5, fn, fp, stat, x;
+;mnt=Vfs.mount('fossil', target);
+;File.glob(mnt+'/lib/*');
+x = File.read(mnt+'/lib/SqliteUI/html/sqlite.jsi');
+;fn = mnt+'/README.md';
+;File.read(fn);
+;File.size(fn);
+;File.mtime(fn);
+;stat=File.lstat(fn);
+;format('%#o', stat.mode);
+;File.readable(fn);
+;File.executable(fn);
+var conf = Vfs.conf(mnt);
+;conf.keys();
+conf.fileList=null;
+;conf;
+;Vfs.conf(mnt,'file');
+;Vfs.fileconf(mnt, 'README.md');
+;Vfs.fileconf(mnt, 'README.md', 'size');
+;fp = new Channel(fn);
+;fp.gets();
+delete fp;
+
+;mnt2=Vfs.mount('fossil', target, {subDir:'tests'});
+;File.glob(mnt2+'/*');
+
+;mnt3 = Vfs.mount('fossil', target);
+;File.glob(mnt3+'/*');
+
+;Vfs.list();
+;Vfs.type();
+;Vfs.type('fossil');
+;Vfs.unmount(mnt);
+
+mnt4 = Vfs.mount('fossil', target, {version:'Release 2.4'});
+;File.size(mnt4+'/src/jsi.h');
+
+;mnt5=Vfs.vmount({type:'fossil', file:target, mount:'/zvfs'});
+;File.glob(mnt5+'/lib/*');
+/*
+=!EXPECTSTART!=
+mnt=Vfs.mount('fossil', target) ==>  /vfs1
+File.glob(mnt+'/jsi/*') ==>  [ "/vfs1/jsi/js-demos", "/vfs1/jsi/jsiZvfs.c", "/vfs1/jsi/tests", "/vfs1/jsi/jsiCData.c", "/vfs1/jsi/miniz", "/vfs1/jsi/jsiInterp.c", "/vfs1/jsi/jsiSqlite.c", "/vfs1/jsi/jsiValue.c", "/vfs1/jsi/websocket", "/vfs1/jsi/jsiInt.h", "/vfs1/jsi/BUILD", "/vfs1/jsi/jsiNumber.c", "/vfs1/jsi/jsiOne.c", "/vfs1/jsi/jsiFormat.c", "/vfs1/jsi/jsiBool.c", "/vfs1/jsi/parser.y", "/vfs1/jsi/jsiVfs.c", "/vfs1/jsi/jsiJSON.c", "/vfs1/jsi/README", "/vfs1/jsi/jsiTree.c", "/vfs1/jsi/jsiCode.c", "/vfs1/jsi/Makefile", "/vfs1/jsi/jsiParser.y", "/vfs1/jsi/jsiWebSocket.c", "/vfs1/jsi/jsiRegexp.c", "/vfs1/jsi/sqlite", "/vfs1/jsi/win", "/vfs1/jsi/jsiLoad.c", "/vfs1/jsi/jsiString.c", "/vfs1/jsi/zipdir", "/vfs1/jsi/jsiLexer.c", "/vfs1/jsi/linenoise.c", "/vfs1/jsi/jsiUserObj.c", "/vfs1/jsi/jsiHash.c", "/vfs1/jsi/regex", "/vfs1/jsi/linenoise.h", "/vfs1/jsi/jsiChar.c", "/vfs1/jsi/jsiCmds.c", "/vfs1/jsi/jsiSignal.c", "/vfs1/jsi/jsiSocket.c", "/vfs1/jsi/jsiObj.c", "/vfs1/jsi/COPYING", "/vfs1/jsi/jsiMySql.c", "/vfs1/jsi/TODO", "/vfs1/jsi/jsiCrypto.c", "/vfs1/jsi/jsiMath.c", "/vfs1/jsi/jsiUtils.c", "/vfs1/jsi/jsmn.c", "/vfs1/jsi/configure", "/vfs1/jsi/jsiEval.c", "/vfs1/jsi/jsiDString.c", "/vfs1/jsi/jsiArray.c", "/vfs1/jsi/c-demos", "/vfs1/jsi/Configs", "/vfs1/jsi/jsiUtf8.c", "/vfs1/jsi/jsiPstate.c", "/vfs1/jsi/jsiStubs.c", "/vfs1/jsi/jsiOptions.c", "/vfs1/jsi/jsiStubs.h", "/vfs1/jsi/jsiFileCmds.c", "/vfs1/jsi/lib", "/vfs1/jsi/jsiMarkdown.c", "/vfs1/jsi/CMakeLists.txt", "/vfs1/jsi/jsiFunc.c", "/vfs1/jsi/jsiProto.c", "/vfs1/jsi/www", "/vfs1/jsi/jsiFilesys.c", "/vfs1/jsi/main.c", "/vfs1/jsi/jsi.c", "/vfs1/jsi/jsi.h", "/vfs1/jsi/tools" ]
+fn = mnt+'/README.md' ==>  /vfs1/README.md
+File.read(fn) ==>  # Readme
+
+## http://jsish.org
+
+Jsi is a javascript interpreter with:
+
++ Tight C integration with extensive C-API.
++ Extensions for Filesystem, OS, WebSocket, Sqlite, MySql, etc.
++ Integrated debugging (command-line or optional GUI-web).
++ Web framework, with example applications.
++ Sub-interpreters and introspection (modelled after Tcl).
++ Easy embedding within C applications.
+
+Jsi implements an extended Ecmascript with functions supporting types and default values:
+
+> __function foo (a:number, b:string=''):number {}__
+
+These functions can also be preprocessed to javascript, ie. for use in Web Browsers.
+
+
+## Building Jsi
+
+To build:
+
+    cd jsi
+    ./configure
+    make
+File.size(fn) ==>  677
+File.mtime(fn) ==>  1491728710
+stat=File.lstat(fn) ==>  { atime:1491728710, blksize:0, blocks:0, ctime:1491728710, dev:0, gid:0, ino:0, mode:33060, mtime:1491728710, nlink:0, rdev:0, size:677, uid:0 }
+format('%#o', stat.mode) ==>  0100444
+File.readable(fn) ==>  true
+File.executable(fn) ==>  false
+conf.keys() ==>  [ "callback", "extra", "fileList", "info", "mount", "noAddDirs", "param", "target", "type", "user" ]
+conf ==>  { callback:"function Fossil(op:string, mount:string, arg:string|object|null) {...}", extra:null, fileList:null, info:{ UUID:"e3e238de1e120ea4c52082a8b1f127689d04a64e", comment:"Release 2.4.50 rename -debug to -Debug, etc and parseOpts accept implicitly. All FS functions now take interp argument (mostly). Cleanup docs to match. (user: pmacdona)", parent:"999330ee402c86ca6f3465f5385e0552f7b29871 2018-06-23 03:37:30 UTC", subDir:"", tags:[ "Release 1.0.0", "Release 1.1.0", "Release 2.0.0", "Release 2.1.0", "Release 2.2.0", "Release 2.3", "Release 2.4", "trunk" ], uuid:"e3e238de1e120ea4c52082a8b1f127689d04a64e 2018-06-23 17:14:22 UTC", version:"tip" }, mount:"/vfs1", noAddDirs:false, param:null, target:"../../../jsi.fossil", type:"fossil", user:null }
+Vfs.conf(mnt,'target') ==>  ../../../jsi.fossil
+Vfs.fileconf(mnt, 'README.md') ==>  { data:"# Readme\n\n## http://jsish.org\n\nJsi is a javascript interpreter with:\n\n+ Tight C integration with extensive C-API.\n+ Extensions for Filesystem, OS, WebSocket, Sqlite, MySql, etc.\n+ Integrated debugging (command-line or optional GUI-web).\n+ Web framework, with example applications.\n+ Sub-interpreters and introspection (modelled after Tcl).\n+ Easy embedding within C applications.\n\nJsi implements an extended Ecmascript with functions supporting types and default values:\n\n> __function foo (a:number, b:string=\'\'):number {}__\n\nThese functions can also be preprocessed to javascript, ie. for use in Web Browsers.\n\n\n## Building Jsi\n\nTo build:\n\n    cd jsi\n    ./configure\n    make", file:"README.md", perms:292, size:677, timestamp:"2017-04-09 02:05:10" }
+Vfs.fileconf(mnt, 'README.md', 'size') ==>  677
+fp = new Channel(fn) ==>  "#Channel_1"
+fp.gets() ==>  
+mnt2=Vfs.mount('fossil', target, {subDir:'jsi'}) ==>  /vfs2
+File.glob(mnt2+'/tests/*') ==>  [ "/vfs2/tests/inherit.jsi", "/vfs2/tests/bind.jsi", "/vfs2/tests/yhsj.jsi", "/vfs2/tests/prob", "/vfs2/tests/in.jsi", "/vfs2/tests/instance.jsi", "/vfs2/tests/proto3.jsi", "/vfs2/tests/scope.jsi", "/vfs2/tests/util.jsi", "/vfs2/tests/array.jsi", "/vfs2/tests/test.jsi", "/vfs2/tests/eval.jsi", "/vfs2/tests/labeled.jsi", "/vfs2/tests/forinstack.jsi", "/vfs2/tests/while.jsi", "/vfs2/tests/math.jsi", "/vfs2/tests/json.jsi", "/vfs2/tests/arg.jsi", "/vfs2/tests/local.jsi", "/vfs2/tests/interp2.jsi", "/vfs2/tests/prototypes.jsi", "/vfs2/tests/ffi.jsi", "/vfs2/tests/file.jsi", "/vfs2/tests/eval3.jsi", "/vfs2/tests/badfunc.jsi", "/vfs2/tests/array2.jsi", "/vfs2/tests/switch2.jsi", "/vfs2/tests/property.jsi", "/vfs2/tests/forin.jsi", "/vfs2/tests/big", "/vfs2/tests/excpt3.jsi", "/vfs2/tests/logging.jsi", "/vfs2/tests/do.jsi", "/vfs2/tests/trim.jsi", "/vfs2/tests/value.jsi", "/vfs2/tests/syntax.jsi", "/vfs2/tests/number.jsi", "/vfs2/tests/lambda.jsi", "/vfs2/tests/simple.jsi", "/vfs2/tests/with.jsi", "/vfs2/tests/b64.jsi", "/vfs2/tests/proto2.jsi", "/vfs2/tests/strict.jsi", "/vfs2/tests/file2.jsi", "/vfs2/tests/grep.jsi", "/vfs2/tests/construct.jsi", "/vfs2/tests/time.jsi", "/vfs2/tests/apply.jsi", "/vfs2/tests/string.jsi", "/vfs2/tests/99bottles.jsi", "/vfs2/tests/person2.jsi", "/vfs2/tests/delete.jsi", "/vfs2/tests/float.jsi", "/vfs2/tests/excpt5.jsi", "/vfs2/tests/this3.jsi", "/vfs2/tests/func.jsi", "/vfs2/tests/excpt.jsi", "/vfs2/tests/inherit2.jsi", "/vfs2/tests/test2.jsi", "/vfs2/tests/eval2.jsi", "/vfs2/tests/foreach.jsi", "/vfs2/tests/sqlite.jsi", "/vfs2/tests/interp.jsi", "/vfs2/tests/update.jsi", "/vfs2/tests/module.jsi", "/vfs2/tests/io.jsi", "/vfs2/tests/redefine.jsi", "/vfs2/tests/assert.jsi", "/vfs2/tests/obj.jsi", "/vfs2/tests/info.jsi", "/vfs2/tests/call.jsi", "/vfs2/tests/excpt2.jsi", "/vfs2/tests/utf.jsi", "/vfs2/tests/expr.jsi", "/vfs2/tests/49.jsi", "/vfs2/tests/arguments.jsi", "/vfs2/tests/this.jsi", "/vfs2/tests/invoketime.jsi", "/vfs2/tests/switch.jsi", "/vfs2/tests/prime.jsi", "/vfs2/tests/fib.jsi", "/vfs2/tests/signal.jsi", "/vfs2/tests/evalthrow.jsi", "/vfs2/tests/brainfuck.jsi", "/vfs2/tests/callee2.jsi", "/vfs2/tests/class.jsi", "/vfs2/tests/map.jsi", "/vfs2/tests/person1.jsi", "/vfs2/tests/format.jsi", "/vfs2/tests/while2.jsi", "/vfs2/tests/regex.jsi", "/vfs2/tests/tryreturn.jsi", "/vfs2/tests/excpt4.jsi", "/vfs2/tests/hexnames.jsi", "/vfs2/tests/this2.jsi", "/vfs2/tests/argumentshared.jsi", "/vfs2/tests/json2.jsi", "/vfs2/tests/arg2.jsi", "/vfs2/tests/ref.jsi", "/vfs2/tests/exec.jsi", "/vfs2/tests/recurse.jsi", "/vfs2/tests/filetest.txt", "/vfs2/tests/alias.jsi" ]
+mnt3 = Vfs.mount('fossil', target) ==>  /vfs3
+File.glob(mnt3+'/jsi/*') ==>  [ "/vfs3/jsi/jsiFilesys.c", "/vfs3/jsi/jsiMath.c", "/vfs3/jsi/parser.y", "/vfs3/jsi/jsiVfs.c", "/vfs3/jsi/jsiMySql.c", "/vfs3/jsi/jsiWebSocket.c", "/vfs3/jsi/jsi.c", "/vfs3/jsi/configure", "/vfs3/jsi/jsi.h", "/vfs3/jsi/jsiEval.c", "/vfs3/jsi/jsiUtils.c", "/vfs3/jsi/tools", "/vfs3/jsi/jsiInterp.c", "/vfs3/jsi/jsiSqlite.c", "/vfs3/jsi/main.c", "/vfs3/jsi/Makefile", "/vfs3/jsi/jsiNumber.c", "/vfs3/jsi/tests", "/vfs3/jsi/TODO", "/vfs3/jsi/jsiArray.c", "/vfs3/jsi/jsiUtf8.c", "/vfs3/jsi/jsiFormat.c", "/vfs3/jsi/miniz", "/vfs3/jsi/BUILD", "/vfs3/jsi/jsiStubs.c", "/vfs3/jsi/jsiFunc.c", "/vfs3/jsi/jsiStubs.h", "/vfs3/jsi/COPYING", "/vfs3/jsi/jsiParser.y", "/vfs3/jsi/jsiProto.c", "/vfs3/jsi/lib", "/vfs3/jsi/jsiObj.c", "/vfs3/jsi/jsiRegexp.c", "/vfs3/jsi/jsiZvfs.c", "/vfs3/jsi/www", "/vfs3/jsi/jsiString.c", "/vfs3/jsi/README", "/vfs3/jsi/linenoise.c", "/vfs3/jsi/linenoise.h", "/vfs3/jsi/jsiFileCmds.c", "/vfs3/jsi/c-demos", "/vfs3/jsi/jsiMarkdown.c", "/vfs3/jsi/jsiCData.c", "/vfs3/jsi/jsiSignal.c", "/vfs3/jsi/websocket", "/vfs3/jsi/Configs", "/vfs3/jsi/jsiUserObj.c", "/vfs3/jsi/jsiSocket.c", "/vfs3/jsi/sqlite", "/vfs3/jsi/jsiBool.c", "/vfs3/jsi/jsiValue.c", "/vfs3/jsi/CMakeLists.txt", "/vfs3/jsi/regex", "/vfs3/jsi/jsiCrypto.c", "/vfs3/jsi/jsiJSON.c", "/vfs3/jsi/zipdir", "/vfs3/jsi/jsiTree.c", "/vfs3/jsi/jsiCode.c", "/vfs3/jsi/jsiLoad.c", "/vfs3/jsi/jsiDString.c", "/vfs3/jsi/jsiPstate.c", "/vfs3/jsi/js-demos", "/vfs3/jsi/jsmn.c", "/vfs3/jsi/jsiHash.c", "/vfs3/jsi/jsiChar.c", "/vfs3/jsi/jsiCmds.c", "/vfs3/jsi/win", "/vfs3/jsi/jsiLexer.c", "/vfs3/jsi/jsiOptions.c", "/vfs3/jsi/jsiInt.h", "/vfs3/jsi/jsiOne.c" ]
+Vfs.list() ==>  [ "/vfs1", "/vfs2", "/vfs3" ]
+Vfs.type() ==>  [ "fossil" ]
+Vfs.type('fossil') ==>  { callback:"function Fossil(op:string, mount:string, arg:string|object|null) {...}", extra:null, noAddDirs:false }
+Vfs.unmount(mnt) ==>  undefined
+File.size(mnt4+'/jsi/jsi.h') ==>  76330
+mnt5=Vfs.vmount({type:'fossil', target:target, mount:'/zvfs/jsi'}) ==>  /zvfs/jsi
+File.glob(mnt5+'/Ledger/*') ==>  [ "/zvfs/jsi/Ledger/main.jsi", "/zvfs/jsi/Ledger/html", "/zvfs/jsi/Ledger/schema.sql", "/zvfs/jsi/Ledger/Ledger.jsi" ]
+=!EXPECTEND!=
+*/

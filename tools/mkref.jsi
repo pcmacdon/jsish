@@ -1,0 +1,229 @@
+#!/usr/bin/env jsish
+
+function jsi_mkref(files:array|string=null, conf:object=undefined) {
+
+    var options = { // Generate documentation for Jsi builtin cmd.
+        md       :false         // Generate for markdown
+    };
+    var self = {
+    };
+    parseOpts(self, options, conf);
+    
+    var optsDumped = [];
+   
+    function DumpOpts(opts:array, hlp:string, nam:string, nam2:string=void) {
+        //if (cnam.indexOf('.')<0) cnam=cnam+'.conf';
+        var rv = '';//, opts = Info.cmds(cnam).options;
+        rv += '\n\n<a name="'+nam+'Options"></a>\n';
+        if (nam2)
+            rv += '<a name="'+nam2+'Options"></a>\n';
+        rv += '<h2>Options for "'+nam+'"</h2>\n'; //+hlp;
+        rv += '<table border="1" class="optstbl table">\n';
+        rv += "<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>\n";
+        //puts(opts);
+        var srv = '', cnt = 0;
+        for (var o in opts) {
+            var ci = opts[o];
+            if (isconf && ci.initOnly) continue;
+            cnt++;
+            var help = (ci.help?ci.help+'.':'');
+            var flags = '';
+            if (ci.readOnly)
+                flags += 'readOnly';
+            if (ci.initOnly)
+                flags += (flags===''?'':'|')+'initOnly';
+            if (ci.required)
+                flags += (flags===''?'':'|')+'required';
+            if (ci.noCase)
+                flags += (flags===''?'':'|')+'noCase';
+            var type = ci.type;
+            if (ci.customArg) {
+                if (ci.customArg.subSpec) {
+                    var nsrv = DumpOpts(ci.customArg.subSpec, ci.customArgHelp, ci.name);
+                    if (nsrv !== '') {
+                        type="<a href='#"+ci.name+"Options'>options</a>";
+                        srv += nsrv;
+                    }
+                }
+                else if (ci.customArg.enumList) {
+                    help += " (one of: <b>"+ci.customArg.enumList.join("</b>, <b>")+"</b>)";
+                    type="STRKEY";
+                }
+                else if (ci.customArg.bitSet) {
+                    help += " (zero or more of: <b>"+ci.customArg.bitSet.join("</b>, <b>")+"</b>)";
+                    type="ARRAY";
+                }
+            }
+            if (ci.args !== undefined && ci.type === 'FUNC')
+                help += " @function("+ci.args+")";
+            rv += "<tr><td>"+ci.name+"</td><td><i>"+type+"</i></td><td>"+ help +"</td><td><i>"+flags+"</i></td></tr>\n";
+        }
+        if (!cnt) return '';
+        rv += "</table>\n";
+        if (srv !== '') {
+            if (optsDumped.indexOf(srv)>=0)
+                srv = '';
+            optsDumped.push(srv);
+        }
+        return rv + srv;
+    }
+
+    function DumpCmd(cinf:object) {
+        var rv = '', ret = '';
+        if (cinf.retType != "any")
+            ret = ':'+cinf.retType;
+        var cnam = format("%s(%s)%s", cinf.name, cinf.args, ret);
+        if (cinf.name.indexOf('.')<0)
+            index += "<a href='#"+cinf.name+"'>"+cinf.name+"</a>\n";
+        rv += '<a name="'+cinf.name+'"></a>\n';
+        rv += '\n<hr>\n';
+        rv += '\n\n<h1>'+cinf.name+'</h1>\n\n';
+        var casb = cinf.args.replace('|','&verbar;');
+        rv += format("<font color=red>Synopsis: %s(%s)%s</font><p>\n\n", cinf.name, casb, ret);
+        if (cinf.help)
+            rv += cinf.help+".\n\n";
+        if (cinf.info)
+            rv += cinf.info+'\n\n';
+        if (cinf.options) {
+            rv += DumpOpts(cinf.options, cinf.optHelp, cinf.name);
+        }
+        rv += '<a name="'+cinf.name+'end"></a>\n';
+        rv += '\n<p><a href="#TOC">Return to top</a>\n';
+       return rv+'\n';
+    }
+    function LinkOpts(astr:string, name:string) {
+        var ii;
+        if ((ii=astr.indexOf('options'))<0)
+            return astr;
+        var ss = '';
+        if (ii>0)
+            ss += astr.slice(0, ii);
+        ss += "<a href='#"+name+"Options'>options</a>";
+        ss += astr.slice(ii+7);
+        return ss;
+    }
+
+    function DumpObj(tinf:object) {
+        var hasconf, ro = '', rv = '', ci, cnam = tinf.name, subs=[], ret = '', cmds;
+        var re1 = new RegExp('^'+cnam+'.[_a-zA-Z0-9]+$');
+        cmds = Info.cmds(re1,{constructor:true,full:true});
+        if (tinf.name.indexOf('.')<0)
+            index += "<a href='#"+tinf.name+"'>"+cnam+"</a>\n";
+        rv += '<a name="'+tinf.name+'"></a>\n';
+        rv += '\n<hr>\n';
+        rv += '\n\n<h1>'+cnam+'</h1>\n\n';
+        rv += "<font color=red>Synopsis:";
+        if (tinf.constructor) {
+            if (tinf.retType != "any")
+                ret = ':'+tinf.retType;
+            var casb = tinf.args.replace('|','&verbar;');
+            rv += 'new '+cnam+"("+casb+")"+ret+"\n\n";
+        } else {
+            rv += cnam+".method(...)\n\n";
+        }
+        rv += "</font><p>";
+        if (tinf.help)
+            rv += tinf.help+".\n\n";
+        if (tinf.info)
+            rv += tinf.info+'\n\n';
+        rv += "\n<h2>Methods for \""+cnam+"\"</h2>\n";
+        rv += '<table border="1"class="cmdstbl table">\n';
+        rv += '<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>\n';
+        var clnknam = null;
+        if (tinf.constructor) {
+            ci = Info.cmds(cnam+'.'+cnam,{constructor:true});
+            var conhelp = (ci.help?ci.help+'.':''), aastr, tret = '';
+            if (ci.retType != "any")
+                tret = ':'+ci.retType;
+            if (ci.info) conhelp += ci.info;
+            aastr = tinf.args;
+            if (tinf.options)
+                aastr = LinkOpts(aastr, "new "+cnam);
+            rv += "<tr><td>"+cnam+"</td><td>new "+cnam+"("+aastr+")"+tret+" </td><td>"+conhelp+'</td></tr>\n';
+        }
+        if (cmds !== undefined) {
+            for (var cmd of cmds) {
+                var namspl = cmd.split('.'), nam = namspl[namspl.length-1];
+                tret = '';
+                if (nam == cnam)
+                    continue;
+                ci = Info.cmds(cnam+'.'+nam);
+                if (ci.retType !== "any")
+                    tret = ':'+ci.retType;
+                conhelp = (ci.help?ci.help+'.':'');
+                if (ci.info) conhelp += ' '+ci.info;
+                if (ci.options) {
+                    if (!clnknam) clnknam=nam;
+                    if (!tinf.constructor || nam !== 'conf')
+                        ro += DumpOpts(ci.options, ci.optHelp, cnam+'.'+nam, cnam+'.conf');
+                    aastr = LinkOpts(ci.args, cnam+'.'+nam);
+                } else {
+                    aastr = ci.args;
+                }
+                //if (nam == 'conf') hasconf = ci.options;
+               // if (!aastr) aastr='';
+                rv += "<tr><td>"+nam+"</td><td>"+nam+"("+aastr+")"+tret+" </td><td>"+conhelp+'</td></tr>\n';
+                if (ci.flags && ci.flags&8)
+                    subs.push(ci);
+            }
+        }
+        rv += "</table>\n";
+        if (tinf.options && nam !== 'conf')
+            rv += DumpOpts(tinf.options, tinf.optHelp, 'new '+cnam, cnam+'.'+'conf');
+        rv += ro;
+        rv += '<a name="'+tinf.name+'end"></a>\n';
+        rv += '<p><a href="#TOC">Return to top</a>\n';
+        for (ci of subs)
+            rv += DumpObj(ci);
+        return rv;
+    }
+    
+    
+    //*************** BEGIN MAIN **************
+    var extlst = ['Sqlite', 'WebSocket', 'MySql', 'Socket'];
+    for (var i in extlst) {
+        try { require(extlst[i]); } catch(e) { }
+    }
+    var rv = '', tinf, lst = Info.cmds();
+    var vv = Info.version(true);
+    var ver = vv.major+'.'+vv.minor+'.'+vv.release;
+
+    puts("<title>Reference</title>\n<p>");
+    var index = "";
+
+    for (i in lst) {
+        tinf = Info.cmds(lst[i]);
+        switch (tinf.type) {
+        case 'object':
+            rv += DumpObj(tinf);
+            break;
+        case 'command':
+            //rv += DumpCmd(tinf);
+            break;
+        default:
+            throw("bad id");
+            continue;
+        }
+    }
+    index + "\n";
+    var rlnks = '', resfx = '', repre = '<div id="sectmenu" data-opts="closed:false"></div><B>JSI REFERENCE</B>: <a href="#System">System</a> contains global methods\n';
+    if (self.md) {
+        //rlnks = '(Related: [Functions](functions.wiki), [Syntax](language.wiki)).\n';
+        //repre = '<a name="TOC"></a>\n(insert mainmenu.md.html here)\n'+repre;
+        index = '';
+        //rv = rv.map(['$', '\\$']);
+        //resfx = '\n<!-- Markdeep: --><style class="fallback">body{visibility:hidden;}</style>';
+           // + '<script>window.markdeepOptions={tocStyle:"medium"}</script>'
+           // + '<script src="markdeep.min.js"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>';
+    } else {
+        rlnks = '(Related: [./functions.wiki|Functions], [./language.wiki|Syntax]).\n'
+            + '<p>\n<a name="TOC"></a>\n';
+        index += '<nowiki>\n';
+        rv += "</nowiki>";
+    }
+    return repre + rlnks + index + rv + "<p>" + resfx;
+}
+
+if (Info.isMain()) {
+    runModule(jsi_mkref);
+}

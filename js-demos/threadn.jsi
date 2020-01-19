@@ -1,0 +1,40 @@
+#!/usr/local/bin/jsish --U
+"use strict";
+// Threaded interp with call, eval and alias.
+
+function MySuper(x,y) {
+;'  MySuper';
+    return ['MySuper',x,y];
+}
+
+var cnt=0, I = [];
+
+for (var m=0; m<4; m++) {
+    var i = new Interp({subthread:true, name:'Sub'+m, scriptStr: "
+
+    function Sub(s) {
+       puts('Sub: ',s);
+       Super(s);
+       return {x:8, y:s.AA};
+    };
+
+    puts('Child starting:', Info.interp().name);
+
+    while (1) {
+        puts('Child-loop');
+        update(1000);
+        Super(1);
+    };
+"});
+
+    i.alias('Super', MySuper, [m]);
+    I.push(i);
+}
+
+var obj = {AA:0,BB:2};
+while (cnt++<(12*m)) {
+  obj.AA++;
+  update(10);
+; I[cnt%m].call('Sub',[obj], true);
+}
+

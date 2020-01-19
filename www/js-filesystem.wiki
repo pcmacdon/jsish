@@ -1,0 +1,245 @@
+<title>Files</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#overview|Overview]</li>
+<li>[#channel|Channel]</li>
+<li>[#file|File]</li>
+<ul>
+<li>[#fileglob|glob]</li>
+</ul>
+<li>[#exec|exec]</li>
+<li>[#console|console]</li>
+<ul>
+<li>[#conslog|log]</li>
+<li>[#puts|puts]</li>
+<li>[#consinput|input]</li>
+<li>[#consargs|args]</li>
+</ul>
+<li>[#zvfs|Zvfs]</li>
+<li>[#source|source]</li>
+</ul>
+</div>
+
+<h2 id=overview>Overview</h2>
+
+Jsi provides several groups of <b>file-system</b> related functions:
+
+  *  <b>File:</b> provides a set of methods for file-system manipulation.
+  *  <b>Channel:</b> reads and writes individual files.
+  *  <b>Zvfs:</b> zip files and self-hosting VFS.
+  *  <b>exec:</b> allows running programs with input or output.
+  *  <b>console:</b> basic stdin, stdout, and stderr functions.
+  *  <b>source:</b> include <b>.js</b> or <b>.jsi</b> javascript source files.
+
+Note that when running in a [./js-interp.wiki#safe|Safe Interp], many of the above may be
+limited or disabled.
+
+<hr>
+<h2 id=channel>Channel</h2>
+
+A <b>Channel</b> object can be created for reading and/or writing individual files. 
+Generally an object is instantiated to open the file and then read/write operations are performed.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> f = <b>new Channel</b>(<i>'tests/filetest.txt'</i>);
+<b>if</b> (!f) 
+    <b>puts</b>(<i>'Can not open tests/filetest.txt'</i>);
+<b>else</b> {
+    <b>while</b>((n = f.gets())!=<b>undefined</b>) {
+        <b>puts</b>(n);
+    }
+}
+</pre></nowiki>
+
+
+For more details see [./reference.wiki#Channel|Reference].
+
+<hr>
+<h2 id=file>File</h2>
+
+The <b>File</b> sub-methods are used for accessing various attributes and information on files where just basic IO is not necessarily the goal.
+
+    <nowiki><pre class=verbatim>
+<b>File.mkdir</b>(<i>'XX1'</i>);
+<b>File.mkdir</b>(<i>'XX1/AA'</i>);
+<b>File.mkdir</b>(<i>'XX1/BB'</i>);
+<b>File.rename</b>(<i>'XX1/BB'</i>,<i>'XX1/CC.txt'</i>);
+<b>puts</b>(<b>File.glob</b>(null,<i>'XX1'</i>).sort());
+<b>puts</b>(<b>File.dirname</b>(<i>'XX1/AA'</i>));
+<b>puts</b>(<b>File.rootname</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.tail</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.type</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.extension</b>(<i>'XX1/CC.txt'</i>));
+//<b>puts</b>(<b>File.realpath</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.writable</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.readable</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.exists</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.isdir</b>(<i>'XX1/CC.txt'</i>));
+<b>puts</b>(<b>File.isfile</b>(<i>'XX1/CC.txt'</i>));
+<b>File.remove</b>(<i>'XX1',true);
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+[ "AA", "CC.txt" ]
+XX1
+XX1/CC
+CC.txt
+directory
+.txt
+true
+true
+true
+true
+false
+file
+</pre></nowiki>
+
+
+<h3 id=fileglob>glob</h3>
+
+The File glob method returns an array of matching files according to the rules:
+
+  *  With no arguments (or null) returns all files/directories in current directory.
+  *  If first argument is a pattern (either a glob or regexp) just files are returned.
+  *  If second argument is a string, it denotes the directory to search in.
+  *  If second argument is a function, this function is called with each path.
+  *  Otherwise second argument is a set of options.
+
+    <nowiki><pre class=verbatim>
+<b>File.glob</b>();
+<b>File.glob</b>(<i>"*.c"</i>);
+<b>File.glob</b>(/^jsi.*\.c$/);
+<b>File.glob</b>(<i>'*'</i>,<i>'tests'</i>);
+<b>File.glob</b>(<i>'*.js'</i>,{dir:<i>'tests'</i>, recurse:true});
+</pre></nowiki>
+
+
+The following options are available for <b>File.glob</b>:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Option</th> <th>Type</th> <th>Description</th> <th>Default</th></tr>
+<tr><td>dir</td><td>VALUE</td><td>Directory.</td><td> </td><tr>
+<tr><td>maxDepth</td><td>INT</td><td>Max depth to recurse to.</td><td> </td><tr>
+<tr><td>dirfunc</td><td>FUNC</td><td>Returns true to recurse into dir.</td><td> </td><tr>
+<tr><td>func</td><td>FUNC</td><td>Function that returns true to keep.</td><td> </td><tr>
+<tr><td>max</td><td>INT</td><td>Max results to return.</td><td> </td><tr>
+<tr><td>notypes</td><td>VALUE</td><td>File types to exclude, one or more of chars 'fdlpsbc' for file, directory, link, etc.</td><td> </td><tr>
+<tr><td>prefix</td><td>STRKEY</td><td>String prefix to add to each file in list.</td><td> </td><tr>
+<tr><td>recurse</td><td>BOOL</td><td>Recurse into directories.</td><td> </td><tr>
+<tr><td>tails</td><td>BOOL</td><td>Return only the tails.</td><td> </td><tr>
+<tr><td>types</td><td>VALUE</td><td>File types to include, one or more of chars 'fdlpsbc' for file, directory, link, etc.</td><td> </td><tr>
+</table>
+
+For more details see [./reference.wiki#File|Reference].
+
+<hr>
+<h2 id=exec>exec</h2>
+
+<b>function exec(val:string, options:null|string|object=void)</b>
+
+The <b>exec()</b> command is used to execute operating system commands:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> a = <b>exec</b>(<i>'ls -d /tmp'</i>);
+</pre></nowiki>
+
+
+A second argument may be given with the following options:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Option</th> <th>Type</th> <th>Description</th> <th>Default</th></tr>
+<tr><td>bg</td><td>BOOL</td><td>Run command in background using system() and return OS code.</td><td> </td><tr>
+<tr><td>inputStr</td><td>STRING</td><td>Use string as input and return OS code.</td><td> </td><tr>
+<tr><td>noError</td><td>BOOL</td><td>Suppress OS errors.</td><td> </td><tr>
+<tr><td>noTrim</td><td>BOOL</td><td>Do not trim trailing whitespace from output.</td><td> </td><tr>
+<tr><td>retAll</td><td>BOOL</td><td>Return the OS return code and data as an object.</td><td> </td><tr>
+<tr><td>retCode</td><td>BOOL</td><td>Return only the OS return code.</td><td> </td><tr>
+</table>
+
+The first argument is treated as follows:
+
+  *  If the command ends with '&', set the 'bg' option to true.
+  *  If the second argument is null, set the 'noError' option to true.
+  *  If the second argument is a string, the 'inputStr' option is set.
+  *  By default, returns the string output, unless the 'bg', 'inputStr', 'retAll' or 'retCode' options are used
+
+In <b>C</b>, when the <b>bg</b> option is true, <b>system()</b> is called, otherwise <b>popen()</b> is used.
+
+For more details see <b>exec</b> in the [./reference.wiki#exec|System Reference] and the [../tests/exec.js|exec test].
+
+
+<hr>
+
+<h2 id=console>console</h2>
+
+<h3 id=conslog>log</h3>
+
+Same as <b>puts</b>, except
+prints arguments to stderr. 
+
+Each argument is quoted (unlike the builtin string concatenation).
+If called with 0 or 1 argument, a newline is output, otherwise stderr is flushed.
+
+<h3 id=puts>puts</h3>
+
+Same as <b>console.log</b>, except
+prints arguments to stdout. 
+Also, available in [./js-system.wiki|System] (and therefore the toplevel).
+
+The <b>puts</b> method outputs a string to stdout.
+With 1 or 0 arguments a newline is appended.
+
+    <nowiki><pre class=verbatim>
+<b>puts</b>(<i>"Hello World"</i>);
+<b>puts</b>(<i>"Hello"," World\n"</i>);
+</pre></nowiki>
+
+Scripts also used in web browsers can add the following for compatibility:
+
+    <nowiki><pre class=verbatim>
+<b>if</b> (<b>puts</b> === <b>undefined</b>)
+    <b>var puts = console.log.bind(console);</b>
+</pre></nowiki>
+
+<hr>
+<h3 id=consinput>input</h3>
+
+User input can be obtained using <b>console.input</b>():
+
+    <nowiki><pre class=verbatim>
+<b>puts</b>(<i>"Enter your name: "</i>, <i>""</i>);
+<b>var</b> str = <b>console.input</b>();
+</pre></nowiki>
+
+
+<h3 id=consargs>args</h3>
+
+Program arguments are available using <b>console.args</b>:
+
+    <nowiki><pre class=verbatim>
+<b>for</b> (<b>var</b> i <b>in console.args</b>) {
+   <b>puts</b>(<b>console.args</b>[i]);
+}
+</pre></nowiki>
+
+For more details see [./reference.wiki#console|Reference].
+
+<hr>
+<h2 id=zvfs>Zvfs</h2>
+
+Jsi uses Zvfs for reading and writing zip archives.
+Zvfs stands for Zip Virtual File System.
+
+For more details see [./js-zvfs.wiki|Zvfs].
+
+<hr>
+<h2 id=source>source</h2>
+
+Include files of javascript inline.
+
+For more details see [./js-modules.wiki#source|source].

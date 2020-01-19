@@ -1,0 +1,280 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+
+// Create a websocket-capabled proxy web server.(UNFINISHED)
+
+require('WebSocket');
+require('Jsi_Vfs');
+
+function Proxy(args:array, conf:object=void):void
+{
+    //var LogTrace = function(...) {}; // Comment out for debugging.
+    var self = {
+        wsOpts:{}
+    };
+    var options = { // Run a proxy web server.
+        closeTimeout:0,         // Milliseconds til we exit after close of final client websocket.
+        browser     :'',        // The browser to exec, eg. "chrome-browser"
+        fossil      :'',        // Fossil repo to mount.
+        ignoreExit  :false,     // Ignore exit request.
+        isFile      :false,     // Url is a file, so throw if not exists.
+        local       :true,      // Accept only local connections.
+        noCheck     :false,     // Disable function type-checking for .jsi files in browser.
+        noGui       :false,     // Do not start local browser on listener.
+        noWait      :false,     // Just return object: caller will provide an update() loop;
+        port        :0,         // Port.
+        rootdir     :null,      // Base directory.
+        timeout     :0,         // Set timeout to shutdown (ms).
+        url         :"./main.htmli",// The file to serve out.
+        wsdebug     :0,         // Debug option for websockets.
+        wsOptStr    :''         // Websocket options to add in JSON
+    };
+    parseOpts(self, options, conf);
+     
+    function DoExit()   // Notify all going down, then exit.
+    {
+        if (self.ignoreExit) return;
+        WebSend(-1, 'exit');
+        setTimeout(function () {self.done = 1; }, 1000); 
+    }
+
+    function CloseNow()
+    {
+        self.closeId = null;
+        if (self.ws.conf('stats.connectCnt')>0) {
+            puts("Still open...");
+            return;
+        }
+        LogTrace("Last client has closed");
+        //self.ws.conf({noUpdate:true});
+        //self.done = 1;
+    }
+    
+    function WsClose(ws:userobj|null, id:number)
+    {
+        LogTrace("Closing WS: "+id);
+    }
+    
+    function WsCloseLast(ws:userobj|null) // Wait around for a while for reconnect or new clients before exiting
+    {
+        LogTrace("Close last");
+        if (self.closeId)
+            clearInterval(self.closeId);
+        if (self.closeTimeout>0)
+            self.closeId = setTimeout(function () { CloseNow(); }, self.closeTimeout);
+        return true;
+    }
+    
+    function WebSend (id:number, cmd:string, msg:any=void)
+    {
+        var dat = {cmd:cmd, data:msg };
+        dat = JSON.stringify(dat);
+        LogTrace("SEND: "+dat);
+        self.ws.send(id, dat);
+    }
+
+    function WsRecv(id:number, data:string) {
+        puts("PROXY SERVER GOT: "+ id +": "+data);
+    }
+    
+/*    function WsRecv(id:number, data:string)
+    {
+        var buf, buf0, buf1, buf2, msg;
+        LogTrace("SERVER GOT: "+ id +": "+data);
+        var dat;
+        try {
+            dat = JSON.parse(data);
+            LogTrace("JSON: "+dat.toString());
+            switch (dat.cmd) {
+                case 'init':
+                    msg = {ws:self.ws.conf()};
+                    WebSend(id, 'init', msg);
+                    break;
+                case 'process':     WebSend(id, 'process'); break;
+                case 'exit':        DoExit(); break;
+                    
+                default: LogTrace("unknown cmd: "+dat.cmd); break;
+            }
+        } catch (e) {
+          LogTrace("ERROR: "+e);
+        }
+    }*/
+
+    self.css = "<STYLE>" +
+        "table.cmdstbl { background-color: #f5f5f5; border-collapse: collapse; padding: 3px; }"+
+        "table.cmdstbl th { background-color: #558195; color: #FFFFFF; padding: 3px; }"+
+        "table.cmdstbl td { padding: 3px; }"+
+        "table.cmdstbl td:first-child { font-weight: bold; }"+
+        "</STYLE>";
+
+    function tablifyObj(cv:object, all:boolean=false) {
+        var rv = '<TR><TH>Name</TH><TH>Value</TH></TR>';
+        for (var i in cv) {
+            rv += '<TR><TD>'+i+'</TD><TD>'+JSON.stringify(cv[i])+'</TD></TR>';
+        }
+        if (all)
+            rv = '<TABLE border=1 class=cmdstbl>'+rv+'</TABLE>';
+        return rv;        
+    }
+    
+    function DumpCons() {
+        var cv = self.ws.conf();
+        var rv = '<HEAD>'+self.css+'</HEAD>' + tablifyObj(cv, true);
+        var rids = self.ws.ids();
+        puts('RIDS: '+id+' '+rids.toString());
+        for (var nid of rids) {
+            cv = self.ws.idconf(nid);
+            var cur = (id === nid?' (CURRENT)':'');
+            rv += '<H3> Conn #'+nid+cur+'</H3>'+tablifyObj(cv, true);
+        }
+        var pv = '<A href="http://127.0.0.1:'+self.port+'/jsi/web/wsadmin.htmli">Admin</A><P>';
+        return "<H2>Proxy Admin</H2>"+pv+rv;
+    }
+
+    var Reqs = {};
+    
+    function WsGet(id:number, url:string, query:array) {
+        puts("GET: "+url);
+        var req, dir, u = url.split('/');
+        puts('uu: ', u.length+' ',u);
+        if (u.length<=2 || u[2]==='') {
+            puts("retmenu");
+            return '<ul>'
+                + '<li><a href="/zvfs/sqliteui/main.htmli" target="_blank">Sqlite</li>'
+                + '<li><a href="/zvfs/jsifs/Ledger/html/main.htmli" target="_blank">Ledger</li>'
+                + '</ul>';
+        }
+        if (u[1] === 'jsi') {
+            self.ws.idconf(id, {rootdir:'/zvfs/lib'});
+            return '!!!'+'/'+u.slice(2).join('/');
+        }
+        if (u[1] === 'zvfs' && u[2] === 'jsifs') {
+            self.ws.idconf(id, {rootdir:'/zvfs/jsifs'});
+            return '!!!'+'/'+u.slice(3).join('/');
+        }
+        var nid = u[2];
+        switch (nid) {
+            case 'sqliteui':
+                if (!Reqs[nid])
+                    Reqs[nid] = require('SqliteUI', 0);
+                req = Reqs[nid];
+                dir = File.dirname(req.loadFile) + '/html';
+                self.ws.idconf(id, {rootdir:dir});
+                return '!!!'+'/'+u.slice(3).join('/');
+        }
+    }
+    
+    function WsOpen(id:number)
+    {
+        LogTrace("Opening WS: "+id);
+        var url =  self.ws.header(id,'get'),
+            u = url.split('/');
+        puts('OPEN:', url);
+        switch (u[2]) {
+            case 'sqliteui':
+                var nobj = SqliteUI("~/tmp/test2.db", {wsObj:self.ws, wsId:id, Debug:true});
+                break;
+            case 'jsifs':
+                require('Ledger');
+                nobj = Ledger([], {wsObj:self.ws, wsId:id, Debug:true});
+                break;
+            default:
+                puts("UNKNOWN WSOPEN "+u[2]);
+        }
+    }
+    
+    function onFilter(id:number, urlprot:string, ishttp:boolean) {
+        printf("onFilter: %d %s %S\n", id, urlprot, ishttp);
+        return true;
+    }
+
+    function OpenBrowser(url:string) {
+        var prog = self.browser;
+        var browsers = {
+            unix: "xdg-open",
+            win:  "start",
+            mac:  "open"
+        };
+        if (!prog.length)
+            prog = browsers[Info.platform().os];
+        if (!prog)
+            prog = "xdg-open";
+        // Display page in browser.
+        var surl = " http://127.0.0.1:"+self.wsopts.port+'/'+self.url;
+        LogTrace("URL: "+surl);
+        exec(prog + surl +" &");
+    }
+    
+    function main() {
+        //self.url = args[0];
+        
+        if (!self.rootdir && self.url) {
+            self.rootdir = File.dirname(self.url);
+            if (!self.rootdir.length)
+                self.rootdir = Info.scriptDir();
+            var rlen = self.rootdir.length;
+            if (self.url.substr(0, rlen) === self.rootdir)
+                self.url = self.url.substr(rlen);
+        }
+        
+        if (self.url && self.url.length)
+            if ((self.isFile || self.url.substr(0,2) === './') && !File.isfile(self.url))
+                throw("file not found: "+ufn);
+                
+        // Provide default values for websocket.
+        self.wsopts = {
+            local:self.local,
+            debug:self.wsdebug,
+            //getRegexp:/^\/[a-zA-Z0-9_]+$/,
+            onGet:WsGet,
+            onOpen:WsOpen,
+            onClose:WsClose,
+            onCloseLast:WsCloseLast,
+            onFilter:onFilter,
+            onRecv:WsRecv, 
+            port:self.port,
+            rootdir:self.rootdir,
+            extHandlers:true,
+            urlPrefix:'/Proxy'
+        };
+        if (self.wsOptStr.length)
+            self.wsOpts = JSON.parse(self.wsOptStr);
+        for (var i in self.wsOpts)
+            self.wsopts[i] = self.wsOpts[i];
+
+        self.ws = new WebSocket(self.wsopts);
+        self.wsopts.port = self.ws.conf('port');
+
+        LogTrace("Listening on port: "+self.wsopts.port);
+
+        if (self.noWait) {
+            self.openWebsock = OpenWebsock;
+            return self;
+        }
+        
+        if (self.fossil.length) {
+            var mnt = Vfs.vmount({type:'fossil', file:self.fossil, mount:'/zvfs/jsifs'});
+            var dirs = Interp.conf('pkgDirs');
+            dirs.push(mnt);
+            Interp.conf({pkgDirs:dirs});
+        }
+        if (!self.noGui && self.url && self.url.length)
+            OpenBrowser(self.url);
+            
+        self.done = 0;
+        if (self.timeout)
+            setTimeout(function () { self.done = 1; }, self.timeout);
+        while (self.done == 0 && Event.update(100) ) ;
+        delete self.ws;
+    }
+    
+    main();
+    
+}
+
+provide(Proxy, 0.1);
+
+if (isMain()) 
+    runModule(Proxy);
+

@@ -1,0 +1,91 @@
+#!/usr/local/bin/jsish -u %s
+
+var a, s, res;
+;a = 'the original string';
+
+;a.substr();
+;a.substr(1);
+;a.substr(-1, 1);
+
+;a.substr(2, -1);
+;a.substr(-5, 3);
+;a.substr(100, 0);
+;a.substr(10, 1);
+;a.substring(10, 11);
+
+;a.indexOf('ori');
+;a.indexOf('swer');
+;a.indexOf('i');
+;a.indexOf('i', 9);
+;Util.fromCharCode(65);
+;s = 'abcdabcd';
+;s.charAt(3);
+;s.indexOf('cd');
+;s.lastIndexOf('cd');
+
+;'abc'.slice(0);
+;'abc'.slice(0, 1);
+;'abc'.slice(0, 2);
+;'abc'.slice(0, 3);
+;'abc'.slice(0, 4);
+;'a'.slice(0);
+;'abc'.slice(1);
+;'abc'.slice(1,1);
+;'abc'.slice(-1);
+;'abc'.slice(-2);
+
+;'NOTE: String.map is non-standard';
+;res = 'There is a BLUE and white CAR by my BLUE HOUSE';
+;res.map(['BLUE','RED','HOUSE','SHACK' ]);
+;res.map(['blue','Red','house','Shack' ], true);
+
+;'a\tb  c d'.split(null);
+;'abc'.split('');
+;'abc'.split();
+
+;String.fromCharCode(0x21,0x21,0x21);
+
+s = `a b $c \` e " d ' h`;
+;s;
+
+/*
+=!EXPECTSTART!=
+a = 'the original string' ==> the original string
+a.substr() ==> the original string
+a.substr(1) ==> he original string
+a.substr(-1, 1) ==> g
+a.substr(2, -1) ==> 
+a.substr(-5, 3) ==> tri
+a.substr(100, 0) ==> 
+a.substr(10, 1) ==> a
+a.substring(10, 11) ==> al
+a.indexOf('ori') ==> 4
+a.indexOf('swer') ==> -1
+a.indexOf('i') ==> 6
+a.indexOf('i', 9) ==> 16
+Util.fromCharCode(65) ==> A
+s = 'abcdabcd' ==> abcdabcd
+s.charAt(3) ==> d
+s.indexOf('cd') ==> 2
+s.lastIndexOf('cd') ==> 6
+'abc'.slice(0) ==> abc
+'abc'.slice(0, 1) ==> a
+'abc'.slice(0, 2) ==> ab
+'abc'.slice(0, 3) ==> abc
+'abc'.slice(0, 4) ==> abc
+'a'.slice(0) ==> a
+'abc'.slice(1) ==> bc
+'abc'.slice(1,1) ==> b
+'abc'.slice(-1) ==> c
+'abc'.slice(-2) ==> bc
+'NOTE: String.map is non-standard'
+res = 'There is a BLUE and white CAR by my BLUE HOUSE' ==> There is a BLUE and white CAR by my BLUE HOUSE
+res.map(['BLUE','RED','HOUSE','SHACK' ]) ==> There is a RED and white CAR by my RED SHACK
+res.map(['blue','Red','house','Shack' ], true) ==> There is a Red and white CAR by my Red Shack
+'a	b  c d'.split(null) ==> [ "a", "b", "c", "d" ]
+'abc'.split('') ==> [ "a", "b", "c" ]
+'abc'.split() ==> [ "abc" ]
+String.fromCharCode(0x21,0x21,0x21) ==> !!!
+s ==> a b $c ` e " d ' h
+=!EXPECTEND!=
+*/

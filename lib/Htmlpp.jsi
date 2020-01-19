@@ -1,0 +1,282 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+
+/*
+ * Preprocess html, css and js within the webserver. Evaluates javascript between  <? ?> tags (like php).
+ * Evaluation occurs within a subinterp to which defines 2 new commands: include(file,inline) and output(str).
+ */
+
+var JsiHtmlpp_callback = null;
+
+function Htmlpp(files:array|string=null, conf:object=undefined):string|object
+{
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    
+    var options = { // Preprocess html evaluating Jsi code between  <? ?> tags (like php).
+        delInterp   :true,      // Delete interp when done.
+        incsMax     :1000,      // Maximum number of includes
+        interpOptStr:'',        // Options for subinterp as JSON string.
+        interp      :null,      // Interp to use (instead of creating one)
+        maxOpCnt    :10000000,  // Max opcnt in subinterp (to prevent infinite loop)
+        noCatch     :true,      // Do not use try/catch for includes
+        noCheck     :false,     // Disable typechecking for jsi functions.
+        noMark      :false,     // Do not insert comments delimiting included files.
+        wsName      :''         // Name of ws object
+    };
+    var self = {
+        package:"Htmlpp",
+        intOpts:{},
+        rc:'', files:[], files:[], chpos:0, rootdir:'', curdir:'', data:'', errs:'', dir:'',
+        jsifiles:[], cssfiles:[], mdfiles:[]
+    };
+    var ws;
+    
+    self.rootdir = File.pwd();
+    parseOpts(self, options, conf);
+    
+    if (self.interpOptStr.length)
+        self.intOpts = JSON.parse(self.interpOptStr);
+    self.intOpts.maxOpCnt = self.maxOptCnt;
+    
+    function callback(iname:string, cnt:number) {
+        //puts('callback: '+iname+' '+cnt);
+        Event.update();
+    }
+    
+    if (!JsiHtmlpp_callback)
+        JsiHtmlpp_callback = callback;
+
+    function output(s:string)    // Append string to output.
+    {
+        self.rc += s;
+    }
+    
+    function error(s)   // Format an error with file/line number.
+    {
+        var fn = self.files[self.files.length-1];
+        var line = self.data.split('\n').length;
+        return 'Error in '+(fn?fn:'')+':'+line+': '+ s;
+    }
+
+    function reMethod(str:string) {
+        var nstr = '', code = str.substr(2, str.length-4);
+        code = code.trim();
+        if (code !== '') {
+            var odata = self.rc;
+            self.rc = '';
+            try {
+                self.interp.eval(code);
+            } catch(e) {;
+                puts(error('while evaling code:'+code+'\n'+e));
+            }
+            nstr = self.rc;
+            self.rc = odata;
+        }
+        return nstr;
+    }
+    
+    function Fileread(fname) {
+        var ret = File.read(fname);
+        if (ws)
+            ws.file(fname);
+        return ret;
+    }
+    
+    function include(args:array|string, iconf:object=void)  // Include and evaluate files, recusively.
+    {
+        var ioptions = {
+            inline:false,   // Put css and js inline, ie. Single Page Application.
+            noSubs:false,   // Do not preprocess.
+            ifExists:false  // Quietly ignore files that don't exist.
+        };
+        var iself = {};
+        parseOpts(iself, ioptions, iconf);
+        LogTrace('INCLUDE:', args); 
+        var ai, fn;
+        var odata = self.data, oargs = args;
+        var pfd, pfn= self.files[self.files.length-1];
+        if (pfn)
+            pfd = File.dirname(pfn);
+        if (typeof(args) === 'string' && pfd && args.indexOf('*')>=0) {
+            args = File.glob(File.join(pfd, args));
+            if (!args.length && !iself.ifExists)
+                LogWarn('GLOB ARGS WAS EMPTY:',oargs);
+        }
+        else
+            args = Util.argArray(args);
+        self.data = '';
+        for (ai=0; ai<args.length; ai++) {
+            if (self.files.length > self.incsMax)
+                throw error("recursive include");
+            var tfn = fn = args[ai];
+            LogTrace('FILEN:', fn); 
+
+            if (pfd)
+                fn = File.join(pfd, fn);
+            else
+                fn = File.realpath(fn);
+
+            if (!File.exists(fn) && fn.substr(0,9) === '/jsi/web/') 
+                fn = '/zvfs/lib/' + fn.substr(5);
+            else
+                fn = File.realpath(fn);
+            if (0 && !File.exists(fn)) {
+                if (iself.ifExists) continue;
+                if (self.badfnmsg)
+                    puts("FN NOT FOUND: ",fn);
+                self.badfnmsg = 1;
+                self.data = odata;
+                LogTrace('FILE NOT FOUND:', fn); 
+                throw error("file not found: "+fn);
+            }
+            
+            var pre = '';
+            var extn = File.extension(fn).toLowerCase();
+            var tft = File.tail(fn)+' : '+File.dirname(fn);
+            var ispp = false, afn;
+            var x = null;
+            var begin = "\n/*:BEGIN: "+tft+" */\n";
+            var end = "\n/*:END: "+tft+" */\n";
+            if (self.noMark)
+                begin = end = '';
+            var notMarked = false, nofmt = false;
+            switch (extn) {
+                //case '.html': nofmt = true; notMarked = true; break;
+                case '.jsi': 
+                    // Preprocess typed function in standard javascript for use within browsers.
+                    ispp = true;
+                    self.jsifiles.push(fn);
+                case '.js': 
+                    if (!iself.inline) {
+                        if (ws && (afn=ws.unalias(fn))) tfn = afn;
+                        output('<script src="'+tfn+'"></script>\n');
+                        continue;
+                    }
+                    pre += "<script>"+begin;
+                    if (!ispp) 
+                        pre += Fileread(fn);
+                    else {
+                        if (self.jsifiles.length==1 && self.noCheck) {
+                            pre += Fileread(self.dir+'/web/jsi.js');
+                            if (self.noCheck)
+                                pre += '$jsi.conf({disabled:true});\n';
+                        }
+                        pre += Jspp([fn]);
+                    }
+                    pre += end + "</script>\n";
+                    output(pre);
+                    continue;
+                    
+                case '.cssi':
+                    ispp = true;
+                case '.css':
+                    self.cssfiles.push(fn);
+                    if (!iself.inline) {
+                        if (ws && (afn=ws.unalias(fn))) tfn = afn;
+                        output('<link rel="stylesheet" type="text/css" href="'+tfn+'">\n');
+                        continue;
+                    }
+                    pre += "<style>"+begin;
+                    if (!ispp)
+                        pre += Fileread(fn);
+                    else {
+                        if (!self.cssipp)
+                            self.cssipp = Jsi_Csspp();
+                        pre += self.cssipp.parse([fn]);
+                    }
+                    pre += end+"\n</style>\n";
+                    if (ispp===false || pre.indexOf('<?')<0) {
+                        output(pre);
+                        continue;
+                    }
+                    x = pre; // .cssi file contains a <? tags so preprocess it.
+                    break;
+                    
+                default:
+                    notMarked = true;
+            }
+            if (x===null) {
+                x = Fileread(fn);
+                if (x.length<=0)
+                    puts("Empty read for file:", fn);
+                LogTrace('FREAD:', fn, x.length); 
+            }
+            //LogTrace('XXX:', x); 
+
+            var reg = /<\?(\?[^>]|[^?])*\?>/g;
+            self.files.push(fn);
+            if (notMarked && !self.noMark)
+                self.rc += "\n<!-- :BEGIN: "+tft+" -->\n";
+            var noSubs = (iself.noSubs || nofmt);
+            self.rc += (noSubs?x:x.replace(reg, reMethod));                
+            if (notMarked && !self.noMark)
+                self.rc += "\n<!-- :END: "+tft+" -->\n";
+            self.files.pop();
+        }
+        self.data = odata;
+    }
+    
+    function config(name:string=void) {
+        var lst = ['curdir', 'curfile', 'files'];
+        if (!name) return lst;
+        switch (name) {
+            case 'curdir': return File.dirname(self.files[self.files.length-1]);
+            case 'curfile': return self.files[self.files.length-1];
+            case 'files': return self.files;
+            default: throw('expect name: '+lst.join(','));
+        }
+    }
+    
+    function parse(files:array|string) {
+        //debugger;
+        LogTrace('PARSE:', files); 
+        var oint = self.interp;
+        self.dir = File.dirname(require("Htmlpp", 0).loadFile);
+        
+        if (!self.intOpts.busyCallback)
+            self.intOpts.busyCallback = "JsiHtmlpp_callback";
+        if (!self.interp)
+            self.interp = new Interp(self.intOpts);
+            
+        if (!self.interp.alias('echo'))
+            self.interp.alias('echo', output, null);
+        if (!self.interp.alias('output'))
+            self.interp.alias('output', output, null);
+        if (!self.interp.alias('include'))
+            self.interp.alias('include', include, null);
+        if (!self.interp.alias('config'))
+            self.interp.alias('config', config, null);
+
+        if (self.noCatch)
+            include(files);
+        else {
+            try {
+                include(files);
+            } catch(e) {
+                console.puts("include failed: "+e);
+                self.rc = "<h1 style='color:red'>JSI ERROR</h1><pre>";
+                    self.rc += e;
+                self.rc += '\n\n'+self.errs+"</pre>";
+            }
+        }
+        if (self.delInterp) {
+            delete self.interp;
+            self.interp = null;
+        }
+        return self.rc;
+    }
+    if (self.wsName.length)
+        ws = Info.named(self.wsName);
+
+    if (files && files.length)
+        return parse(files);
+    self.parse = parse;
+    return self;
+};
+
+provide(Htmlpp, 1);
+
+if (isMain())
+    runModule(Htmlpp);
+

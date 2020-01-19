@@ -1,0 +1,48 @@
+#!/usr/local/bin/jsish -u %s
+
+// Generate a list of 8 char hex names composed of actual words.
+var slst = '
+a
+ad be ed
+ada aba bad bed bee cab cad dad fad fed
+aced babe beef bead cafe case cede dead deaf face fade feed
+beded aface eface faded
+';
+
+var lst = [];
+var cnt = 0;
+for (var i of slst.trim().map(['\n',' ']).split()) {
+    lst.push(i);
+    //puts(i);
+}
+
+function output(str) {
+    if (console.args.length===0)
+        puts(str);
+    cnt++;
+}
+
+function mkname(str) {
+    for (var i of lst) {
+        var nstr = str+i;
+        if (nstr.length==8)
+            output(nstr);
+        else if (nstr.length<8)
+            mkname(nstr);
+    }
+
+}
+
+mkname('');
+puts('OUTPUT '+cnt+' HEX NAMES');
+
+/*
+=!ARGSTART!=
+g 2 3
+=!ARGEND!=
+
+=!EXPECTSTART!=
+OUTPUT 5596 HEX NAMES
+=!EXPECTEND!=
+*/
+

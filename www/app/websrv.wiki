@@ -1,0 +1,36 @@
+<title>websrv</title>
+
+<h4>Embedded Web Server</h4>
+
+<b>websrv</b> provides a simple web server for embedded applications
+using [../js-websocket.wiki|libwebsockets].
+
+It simply creates a websocket server
+on an available port, and starts a web browser locally to point back at it.  The file name
+given as an argument is farmed out as well as any other requested files.
+It also supports switching to websockets mode,
+wherein <b>callback</b> is called to receive messages (default: WebRecv()).
+
+When the last connection is dropped, the websrv delete itself, after the <b>timeout</b> delay (default: 10 seconds).
+
+<h4>Invocation</h4>
+
+<b>websrv</b> can be invoked directly by calling the [../js-autoload.wiki|autoload]
+function <b>jsi_websrv(files,opts)</b>.
+<p><nowiki>
+<table border='1' class='cmdstbl'><tr><th align='center'>Option</th><th align='center'>Default</th><th align='center'>Description</th></tr>
+<tr ><td >port</td><td >8765</td><td >Port to listen on</td></tr>
+</table>
+</nowiki>
+
+<h4>Implementation Details</h4>
+
+<b>websrv</b> is implemented entirely in javascript.
+
+You can find the source for <b>websrv</b> in the <b>jsi/lib</b> subdirectory.
+For convenience, here is a link to the [42ce24f6574c88ea|websrv source from jsish 1.0.6].
+
+Although <b>websrv</b> is not actually used by the demo applications [./ledger.wiki|ledger]
+and [./sqliteui.wiki|sqliteui], it did serve as the model.
+
+The source: [../lib/Websrv.jsi]

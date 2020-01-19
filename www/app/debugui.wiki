@@ -1,0 +1,16 @@
+<title>DebugUI</title>
+
+<div id=wikitoc>
+</div>
+
+<h2 id=help>Debugger (GUI)</h2>
+
+The Jsi debugger Gui user interface runs in a web browser
+(this requires Jsi be built with [./js-websocket.wiki]).
+
+    <nowiki><pre class=verbatim>
+<b>jsish DebugUI.zip </b> simple.jsi
+</pre></nowiki>
+
+The DebugUI is the same as Jsi)Debug, but adds Gui features such as 
+double-clicking to set breakpoints.

@@ -1,0 +1,475 @@
+<title>Testing</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#unittest|Unit-Test]</li>
+<li>[#update|Updating]</li>
+<li>[#implicits|Implicit puts()]</li>
+<li>[#results|Test Results]</li>
+<li>[#multi|Multiple Tests]</li>
+<li>[#input|Script Input]</li>
+<li>[#args|Script Arguments]</li>
+<li>[#options|Options]</li>
+<li>[#trace|Tracing]</li>
+<li>[#tests|Builtin Tests]</li>
+<li>[#failures|Failure In Testing Jsi Itself]</li>
+</ul>
+</div>
+
+
+<h2 id=unittest>Unit-Test</h2>
+
+The builtin unit-testing feature is enabled with <b>-u</b>:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -u</b> <i>tests/test.js</i> 
+[PASS] tests/test.js
+</pre></nowiki>
+
+For a test
+script to pass, output simply needs to match the expected <b>puts</b> output (contained in an <b>EXPECT*</b> comment),
+[../tests/test.jsi?mimetype=application/javascript|eg]:
+
+    <nowiki><pre class=verbatim>
+<i>#!/usr/local/bin/jsish -u %s</i>
+
+function foo(n) {
+    return <b><i>"FOO"</i>+n</b>;
+}
+
+<b>puts</b>(foo(1));
+<b>puts</b>(foo(2));
+
+<i>/*
+=!EXPECTSTART!=
+<b>FOO1</b>
+<b>FOO2</b>
+=!EXPECTEND!=
+*/</i>
+</pre></nowiki>
+
+Scripts not having an
+<b>EXPECT*</b> comment will pass testing as long as they are error-free.
+
+We can also provide expected output from the command-line using <b>-expectFile</b>.
+
+<h2 id=update>Updating</h2>
+
+An <b>EXPECT*</b> comment can be updated/inserted in-place using:
+
+    <nowiki><pre class=verbatim>
+jsish <b>-u -update true</b> <i>DIRORFILES</i>
+</pre></nowiki>
+
+
+<h2 id=implicits>Implicit puts()</h2>
+
+In Jsi test-mode (<b>jsish -u</b>) a special reformat is applied to lines
+starting and ending with '<b>;</b>':
+
+  <b>"printf(\"%%s ==> \",\"%s\"),puts(%s);\n"</b>
+
+This echos the expression, then evaluates it and echos the result to stdout:
+
+    <nowiki><pre class=verbatim>
+<i>#!/usr/local/bin/jsish -u %s</i>
+
+function a(n) {
+    var sum = 0;
+    for (var i = 0; i < n; i++)
+        sum = sum + i;
+    return sum;
+};
+
+<b>;'===Begin Test===';
+;a(10);
+;a(100);
+;a(1000);</b>
+
+<i>/*
+=!EXPECTSTART!=
+'===Begin Test==='
+a(10) ==>  45
+a(100) ==>  4950
+a(1000) ==>  499500
+=!EXPECTEND!=
+*/</i>
+</pre></nowiki>
+
+The transformed code becomes:
+
+    <nowiki><pre class=verbatim>
+puts("'===Begin Test==='");
+puts("a(10) ==> ", a(10));
+puts("a(100) ==> ", a(100));
+puts("a(1000) ==> ", a(1000));
+</pre></nowiki>
+
+<i>(Note the special case are lines of the form "<b>;'</b>...<b>';</b>", which are output verbatim)</i>
+
+To see this output we can use the <b>-U</b> option:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -U tests/func.js</b>
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+'===Begin Test==='
+a(10) ==>  45
+a(100) ==>  4950
+a(1000) ==>  499500
+</pre></nowiki>
+
+Implicit and explicit puts can freely be intermixed.
+
+    <nowiki><pre class=verbatim>
+<i>#!/usr/local/bin/jsish -u %s</i>
+
+function foo() { return true; }
+function bar() { return true; }
+
+;bar();
+puts('foo() ==> ', foo());
+puts('DONE');
+
+<i>/*
+=!EXPECTSTART!=
+bar() ==>  true
+foo() ==>  true
+DONE
+=!EXPECTEND!=
+*/</i>
+</pre></nowiki>
+
+The following rules apply to implicit <b>puts</b>:
+  *  Double-quotes are illegal.
+  *  An expression starting and ending with a single-quote is output verbatim (unevaluated).
+  *  Leading spaces after the first '<b>;</b>'  are stripped from the expression ([../tests/call.jsi?mimetype=application/javascript|eg]).
+  *  Functions definitions will be scoped within the <b>puts</b> argument.
+  *  Side-effect output may appear prior to the <b>"==>"</b> line (eg. from function calls).
+
+<h2 id=results>Test Results</h2>
+
+By default, a test result is either <b>PASS</b> (when output matches)
+else a <b>FAIL</b> followed by a description of the differences:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -u prob/testfail.js</b>
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+<b>[FAIL]</b> prob/testfail.js
+at line 2 of output:
+    output: <bar failed>
+    expect: <bar passed>
+<i>====================DIFFSTART
+ foo passed
+-bar passed
++bar failed
+ baz passed
+ 
+====================DIFFEND</i>
+</pre></nowiki>
+
+The return code is zero if the test did not failed.
+
+
+<h2 id=multi>Multiple Tests</h2>
+
+Arguments to <b>jsish -u</b> can either be one or more files, or a single directory in which to look for <b>.js</b> or <b>.jsi</b>
+files:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -u tests/</b>
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+[<b>PASS</b>] tests/49.js
+[<b>PASS</b>] tests/99bottles.js
+[<b>PASS</b>] tests/alias.js
+[<b>PASS</b>] tests/apply.js
+[<b>FAIL</b>] tests/arg.js
+at line 9 of output:
+    output: <4>
+    expect: <5>
+[<b>FAIL</b>] tests/arg2.js
+at line 9 of output:
+    output: <1>
+    expect: <2>
+[<b>PASS</b>] tests/alias.js
+Test tests/array.js
+...
+[<b>PASS</b>] tests/yhsj.js
+<b>2 FAIL, 97 PASS: runtime 21551 ms</b>
+</pre></nowiki>
+    <nowiki><pre class=verbatim>
+echo $?
+2
+</pre></nowiki>
+
+The return code is the number of failed tests (up to a maximum of 127).
+There is a summary when multiple test are run, but no <b>DIFF</b> (unless context>3).
+
+
+<h2 id=input>Script Input</h2>
+
+A scripts requiring test input (to read from stdin) it can be specified as follows:
+
+    <nowiki><pre class=verbatim>
+/*
+=!INPUTSTART!=
+45
+4950
+=!INPUTEND!=
+*/
+</pre></nowiki>
+
+This can also be provided from the command-line using <b>-inStr</b> or <b>-inFile</b>.
+The default is no input.
+
+<h2 id=input>Script Arguments</h2>
+
+A may script may specify arguments with:
+
+    <nowiki><pre class=verbatim>
+/*
+=!ARGSSTART!=
+-debug 1 able baker charlie
+=!ARGSEND!=
+*/
+</pre></nowiki>
+
+This should be on a single line: newlines will be stripped.
+
+This can also be provided from the command-line using <b>-args</b>.
+The default is no arguments.
+
+<h2 id=assert>Assert</h2>
+
+During unit-testing <b>Interp.assert</b> is set to <b>true</b>, which means asserts are enabled.
+
+This can result in test scripts failing when assert throws an uncaught error.
+
+There are various ways to adjust the behaviour of assert when working with test scripts, 
+eg. [../tests/assert.jsi?mimetype=application/javascript|assert.jsi]:
+
+    <nowiki><pre class=verbatim>
+#!/usr/local/bin/jsish -u %s
+"use asserts";
+
+assert(true,'true');
+assert(2*3 == 6,'math');
+try {
+    assert(false,'false');
+} catch(e) {
+    puts('caught error');
+}
+;Interp.conf({asserts:false});
+var x = 1;
+;x;
+;assert(false,'false2');
+;assert(false===true);
+;Interp.conf({asserts:true});
+
+var i=1, j=2;
+;assert(function () { return (i<j); },'fail');
+
+try {
+    assert(false==true);
+} catch(e) {
+    puts('caught error2: '+e);
+}
+try {
+;   assert(false,'false');
+} catch(e) {
+    puts('caught error2: '+e);
+}
+
+;assert(false,'this assert failed',{mode:'puts', noStderr:true});
+
+;Interp.conf({assertMode:'puts', noStderr:true});
+
+;assert(true===false);
+;assert(false,'assert also failed');
+</pre></nowiki>
+
+<h2 id=options>Options</h2>
+
+Option help can be dump with:
+    <nowiki><pre class=verbatim>
+ <b>jsish -u -h</b>:
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+Run script(s) as unit-tests setting return code to number of failed tests.
+
+Options/defaults:
+	<b>-args</b>	 	""		// Argument string to call script with
+	<b>-context</b> 	3		// Number of context lines for DIFF (>3 forces dir diff).
+	<b>-debug</b>	 	false		// Enable debugging messages.
+	<b>-echo</b>	 	false		// Run with puts/assert output showing file:line number, but don't test.
+	<b>-evalFile</b> 	""		// File to source in subinterp before test.
+	<b>-exec</b>	 	false		// Use exec instead of running test in a sub-interp.
+	<b>-expectFile</b> 	null		// File to use for expected output.
+	<b>-failMax</b> 	0		// Quit after this many failed tests.
+	<b>-inFile</b>	 	null		// File to use for stdin input.
+	<b>-silent</b>	 	false		// Run quietly, showing only failures.
+	<b>-update</b>	 	false		// In-place update or create of EXPECT* from a run of test file(s).
+	<b>-verbose</b> 	false		// Show gory detail: inputs/outputs/args.
+</pre></nowiki>
+
+A script can detect unit-test mode using:
+    <nowiki><pre class=verbatim>
+if (Interp.conf('unitTest') > 0)
+    puts("We are testing...");
+</pre></nowiki>
+
+
+<h2 id=trace>Tracing</h2>
+
+When a test fails, <b>-echo</b> can show the source line associated with output:
+
+    <nowiki><pre class=verbatim>
+<b>jsish -u -echo true prob/testfail.js</b>
+</pre></nowiki>
+    <nowiki><pre class=verbatim_out>
+jsish -u -echo true prob/testfail.js 
+Test prob/testfail.js 
+/home/user/src/jsi/jsi/tests/prob/testfail.js:7:   "foo passed", 
+/home/user/src/jsi/jsi/tests/prob/testfail.js:8:   "bar failed", 
+/home/user/src/jsi/jsi/tests/prob/testfail.js:9:   "baz passed", 
+</pre></nowiki>
+
+Edit the script as follows to run from Geany with F9, so as to click-to-navigate the output:
+
+    <nowiki><pre class=verbatim>
+<i>#!/usr/local/bin/jsish -u -echo true %s</i>
+</pre></nowiki>
+
+You can also try <b>-verbose</b> for even more detail.
+
+<h2 id=tests>Builtin Tests</h2>
+
+Following are links to the javascript test-files.<p>
+[../tests/49.jsi?mimetype=application/javascript|49.jsi]
+[../tests/99bottles.jsi?mimetype=application/javascript|99bottles.jsi]
+[../tests/alias.jsi?mimetype=application/javascript|alias.jsi]
+[../tests/apply.jsi?mimetype=application/javascript|apply.jsi]
+[../tests/arg.jsi?mimetype=application/javascript|arg.jsi]
+[../tests/arg2.jsi?mimetype=application/javascript|arg2.jsi]
+[../tests/arguments.jsi?mimetype=application/javascript|arguments.jsi]
+[../tests/argumentshared.jsi?mimetype=application/javascript|argumentshared.jsi]
+[../tests/array.jsi?mimetype=application/javascript|array.jsi]
+[../tests/array2.jsi?mimetype=application/javascript|array2.jsi]
+[../tests/assert.jsi?mimetype=application/javascript|assert.jsi]
+[../tests/b64.jsi?mimetype=application/javascript|b64.jsi]
+[../tests/badfunc.jsi?mimetype=application/javascript|badfunc.jsi]
+[../tests/bind.jsi?mimetype=application/javascript|bind.jsi]
+[../tests/brainfuck.jsi?mimetype=application/javascript|brainfuck.jsi]
+[../tests/call.jsi?mimetype=application/javascript|call.jsi]
+[../tests/callee2.jsi?mimetype=application/javascript|callee2.jsi]
+[../tests/class.jsi?mimetype=application/javascript|class.jsi]
+[../tests/construct.jsi?mimetype=application/javascript|construct.jsi]
+[../tests/delete.jsi?mimetype=application/javascript|delete.jsi]
+[../tests/do.jsi?mimetype=application/javascript|do.jsi]
+[../tests/eval.jsi?mimetype=application/javascript|eval.jsi]
+[../tests/eval2.jsi?mimetype=application/javascript|eval2.jsi]
+[../tests/eval3.jsi?mimetype=application/javascript|eval3.jsi]
+[../tests/evalthrow.jsi?mimetype=application/javascript|evalthrow.jsi]
+[../tests/excpt.jsi?mimetype=application/javascript|excpt.jsi]
+[../tests/excpt2.jsi?mimetype=application/javascript|excpt2.jsi]
+[../tests/excpt3.jsi?mimetype=application/javascript|excpt3.jsi]
+[../tests/excpt4.jsi?mimetype=application/javascript|excpt4.jsi]
+[../tests/excpt5.jsi?mimetype=application/javascript|excpt5.jsi]
+[../tests/exec.jsi?mimetype=application/javascript|exec.jsi]
+[../tests/expr.jsi?mimetype=application/javascript|expr.jsi]
+[../tests/ffi.jsi?mimetype=application/javascript|ffi.jsi]
+[../tests/fib.jsi?mimetype=application/javascript|fib.jsi]
+[../tests/file.jsi?mimetype=application/javascript|file.jsi]
+[../tests/file2.jsi?mimetype=application/javascript|file2.jsi]
+[../tests/float.jsi?mimetype=application/javascript|float.jsi]
+[../tests/foreach.jsi?mimetype=application/javascript|foreach.jsi]
+[../tests/forin.jsi?mimetype=application/javascript|forin.jsi]
+[../tests/forinstack.jsi?mimetype=application/javascript|forinstack.jsi]
+[../tests/format.jsi?mimetype=application/javascript|format.jsi]
+[../tests/func.jsi?mimetype=application/javascript|func.jsi]
+[../tests/grep.jsi?mimetype=application/javascript|grep.jsi]
+[../tests/hexnames.jsi?mimetype=application/javascript|hexnames.jsi]
+[../tests/in.jsi?mimetype=application/javascript|in.jsi]
+[../tests/info.jsi?mimetype=application/javascript|info.jsi]
+[../tests/inherit.jsi?mimetype=application/javascript|inherit.jsi]
+[../tests/inherit2.jsi?mimetype=application/javascript|inherit2.jsi]
+[../tests/instance.jsi?mimetype=application/javascript|instance.jsi]
+[../tests/interp.jsi?mimetype=application/javascript|interp.jsi]
+[../tests/interp2.jsi?mimetype=application/javascript|interp2.jsi]
+[../tests/invoketime.jsi?mimetype=application/javascript|invoketime.jsi]
+[../tests/io.jsi?mimetype=application/javascript|io.jsi]
+[../tests/json.jsi?mimetype=application/javascript|json.jsi]
+[../tests/json2.jsi?mimetype=application/javascript|json2.jsi]
+[../tests/labeled.jsi?mimetype=application/javascript|labeled.jsi]
+[../tests/lambda.jsi?mimetype=application/javascript|lambda.jsi]
+[../tests/local.jsi?mimetype=application/javascript|local.jsi]
+[../tests/logging.jsi?mimetype=application/javascript|logging.jsi]
+[../tests/map.jsi?mimetype=application/javascript|map.jsi]
+[../tests/math.jsi?mimetype=application/javascript|math.jsi]
+[../tests/module.jsi?mimetype=application/javascript|module.jsi]
+[../tests/number.jsi?mimetype=application/javascript|number.jsi]
+[../tests/obj.jsi?mimetype=application/javascript|obj.jsi]
+[../tests/person1.jsi?mimetype=application/javascript|person1.jsi]
+[../tests/person2.jsi?mimetype=application/javascript|person2.jsi]
+[../tests/prime.jsi?mimetype=application/javascript|prime.jsi]
+[../tests/property.jsi?mimetype=application/javascript|property.jsi]
+[../tests/proto2.jsi?mimetype=application/javascript|proto2.jsi]
+[../tests/proto3.jsi?mimetype=application/javascript|proto3.jsi]
+[../tests/prototypes.jsi?mimetype=application/javascript|prototypes.jsi]
+[../tests/recurse.jsi?mimetype=application/javascript|recurse.jsi]
+[../tests/redefine.jsi?mimetype=application/javascript|redefine.jsi]
+[../tests/ref.jsi?mimetype=application/javascript|ref.jsi]
+[../tests/regex.jsi?mimetype=application/javascript|regex.jsi]
+[../tests/scope.jsi?mimetype=application/javascript|scope.jsi]
+[../tests/signal.jsi?mimetype=application/javascript|signal.jsi]
+[../tests/simple.jsi?mimetype=application/javascript|simple.jsi]
+[../tests/sqlite.jsi?mimetype=application/javascript|sqlite.jsi]
+[../tests/strict.jsi?mimetype=application/javascript|strict.jsi]
+[../tests/string.jsi?mimetype=application/javascript|string.jsi]
+[../tests/switch.jsi?mimetype=application/javascript|switch.jsi]
+[../tests/switch2.jsi?mimetype=application/javascript|switch2.jsi]
+[../tests/syntax.jsi?mimetype=application/javascript|syntax.jsi]
+[../tests/test.jsi?mimetype=application/javascript|test.jsi]
+[../tests/test2.jsi?mimetype=application/javascript|test2.jsi]
+[../tests/this.jsi?mimetype=application/javascript|this.jsi]
+[../tests/this2.jsi?mimetype=application/javascript|this2.jsi]
+[../tests/this3.jsi?mimetype=application/javascript|this3.jsi]
+[../tests/time.jsi?mimetype=application/javascript|time.jsi]
+[../tests/trim.jsi?mimetype=application/javascript|trim.jsi]
+[../tests/tryreturn.jsi?mimetype=application/javascript|tryreturn.jsi]
+[../tests/update.jsi?mimetype=application/javascript|update.jsi]
+[../tests/util.jsi?mimetype=application/javascript|util.jsi]
+[../tests/value.jsi?mimetype=application/javascript|value.jsi]
+[../tests/while.jsi?mimetype=application/javascript|while.jsi]
+[../tests/while2.jsi?mimetype=application/javascript|while2.jsi]
+[../tests/with.jsi?mimetype=application/javascript|with.jsi]
+[../tests/yhsj.jsi?mimetype=application/javascript|yhsj.jsi]
+
+
+Note: the self-test run by <b>make test</b> in Jsi uses a bash script
+[../tools/testjs.sh?mimetype=application/javascript|testjs.sh], not <b>jsish -u</b>:
+
+<h2 id=failures>Failure In Testing Jsi Itself</h2>
+
+There are 4 basic types of failures (in decreasing order of preference) in Jsi:
+
+  *  Seg Fault.
+  *  Abort, due to assert failure.
+  *  Hang, incorrect or unexpected result.
+  *  Memory leak.
+  
+
+Following in  given to failures in Jsi (in decreasing order of preference):
+
+  #  Nominal script execution.
+  #  Interactive mode.
+  #  Errors not in try/catch that result in program termination.
+
+Note, the script tools/randtest.jsi calls all functions with various arguments.

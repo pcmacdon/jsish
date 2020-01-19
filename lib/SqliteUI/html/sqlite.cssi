@@ -1,0 +1,151 @@
+$maincolor = {lightblue}
+$tablelistbg = {background-color: #558195; color: #FFFFFF; padding: 3px;}
+
+table th {
+    $tablelistbg
+}
+
+table.tlisttbl {
+  background-color: #f5f5f5;
+  border-collapse: collapse;
+  font-weight: bold;
+  padding: 3px;
+}
+
+table.tlisttbl th {
+  $tablelistbg;
+}
+
+table.tlisttbl td {
+  padding: 3px;
+}
+
+tr.tlisttbl_hide {
+    display:none;
+}
+tr.qlisttbl_hide {
+    display:none;
+}
+
+table.tvalstbl {
+    background-color: #e5e5e5;
+    border-collapse: collapse;
+    font-weight: bold;
+    padding: 3px;
+}
+
+.conf_spacepre {
+    white-space:pre;
+}
+
+table.tvalstbl th {
+    background-color: #2F4F4F;
+    color: #FFFFFF;
+    padding: 3px;
+}
+
+table.tvalstbl td {
+    padding: 3px;
+}
+
+table.dlgtbl {
+    border-collapse: collapse;
+}
+
+.tvalstbl tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.tlisttbl tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
+.tlisttbl tr.rowsel {
+    background-color: $maincolor;
+}
+
+.tvalstbl tr.rowsel {
+    background-color: skyblue;
+}
+
+.butok { float:left; width:80px; margin:10px; padding:4px }
+.butcancel { float:right; width:80px; margin:10px; padding:4px  }
+
+.dlg {
+    margin: 0 auto;
+    position: fixed;
+    top: 5%;
+    left: 5%;
+    max-width:90%;
+    max-height:90%;
+    background-color: $maincolor;
+    border: 5px ridge;
+    border-radius:10px;
+    box-shadow:0 0 10px #333;
+    padding: 5px;
+    overflow:auto;
+}
+.dlgfile {
+    margin: 0 auto;
+    position: fixed;
+    top: 5%;
+    left: 5%;
+    width:600px;
+    height:600px;
+    background-color: white;
+    border: 5px ridge;
+    border-radius:10px;
+    box-shadow:0 0 10px #333;
+    padding: 5px;
+}
+
+.dlgbuts { width:100%;}
+table.dlgbuts td { text-align: center }
+table.dlgbuts button { padding:1px 5px 3px 5px; font-size:15px; box-shadow:0 0 3px #333;}
+table.dlgtbl th { border: 2px inset; }
+input { border-radius: 4px; padding:1px 5px 3px 5px; font-size:15px; box-shadow:0 0 3px #333; }
+
+textarea:focus, input:focus {
+    border: 2px solid #009;
+}
+.right { text-align:right; }
+
+.tblconf { border: 2px ridge; background-color: #eeeeee; }
+
+button {
+  border-radius: 4px;
+  background:#A5C5E2;
+}
+button:disabled {
+  background:lightgray;
+}
+.mainbuts, #tvals_parm button {
+  font-weight: bold;
+}
+h3 { margin: 3px }
+
+::selection { background-color: $maincolor }
+
+.shade {
+    background:silver;
+    opacity:0.5;
+    filter:alpha'(opacity=50)';
+    pointer-events:none;
+    overflow:hidden;
+}
+
+.close-icon
+{
+  display:block;
+  box-sizing:border-box;
+  width:20px;
+  height:20px;
+  border-width:3px;
+  border-style: solid;
+  border-color:red;
+  border-radius:100%;
+  background: -webkit-linear-gradient(-45deg, transparent 0%, transparent 46%, white 46%,  white 56%,transparent 56%, transparent 100%), -webkit-linear-gradient(45deg, transparent 0%, transparent 46%, white 46%,  white 56%,transparent 56%, transparent 100%);
+  background-color:red;
+  box-shadow:0px 0px 5px 2px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+}

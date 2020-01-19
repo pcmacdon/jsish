@@ -1,0 +1,38 @@
+#!/usr/bin/env jsish
+
+// File generated using: "jsish -m -create other"
+require('mycall');
+
+function other(args:array|string=void, conf:object=void) {
+    var options = { // Module description.
+        rootdir      :''      // Root directory.
+    };
+    var self = {
+    };
+    parseOpts(self, options, conf);
+    
+    function main() {
+        LogTest('Starting', args);
+        args = Util.argArray(args);
+        if (self.rootdir === '')
+            self.rootdir=Info.scriptDir();
+        debugger;
+        mycall(args);
+        LogDebug('Done');
+    }
+    
+    return main();
+}
+
+provide(other, 1);
+
+if (isMain()) {
+    if (!Interp.conf('unitTest'))
+        return runModule(other);
+    
+;'  other unit-test';
+;   other();
+;// other('',{badArg:0});
+
+}
+

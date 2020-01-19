@@ -1,0 +1,351 @@
+#!/usr/local/bin/jsish
+
+function Make(files:array|string=null, opts:object=undefined):number
+{
+    //var LogTrace = function(...) {}; // Comment out for debugging.
+    var options = {
+        debug:false,     // Debugging level.
+        file:'Make.jsi', // File to use as the make file.
+        nocache:false,   // Disable caching of dependancies.
+        noimplicit:false,// Disable implicit rules.
+        trace:false,     // Tracing level.
+        verbose:false    // Show executed steps during make execution.
+    };
+    
+    var that = {
+        target:'all',
+        firstTarget:null,
+        phony:'',
+        CC:'cc', CXX:'g++', AR:'ar', LD:'ld', RANLIB:'ranlib', MAKE:'make', YACC:'yacc', LEX:'lex',
+        RANLIB:'ranlib', CFLAGS:'', CXXFLAGS:'', LDFLAGS:''
+    };
+
+    var RULE={},
+        RULESDONE={},
+        DEP={},
+        DEPSCACHE={},
+        IMPLICITS={},
+        EXTMAP={'.o':['.c', '.cpp'], '':['.o']};
+
+    function run(cmd:string, noErr=false) {
+        puts(cmd);
+        if (!noErr)
+            return exec(cmd);
+        var rv;
+        try {
+            rv = exec(cmd);
+        } catch(e) {};
+    }
+    
+    function which(fn:string) {
+        var rv = exec('which '+fn, {noError:true});
+        if (rv !== '')
+            return rv;
+    }
+
+    function readDepends(fn:string) {
+        var idat = File.read(fn).trim();
+        idat = idat.map(['\\\n', '']);
+        var lst=[], rlst = idat.split('\n');
+        debugger;
+        for (var i of rlst) {
+            i = i.trim();
+            if (i === '') continue;
+            var ilst = i.split(':');
+            if (ilst.length != 2)
+                throw('Invalid depend in '+fn+': '+i);
+            var i1 = ilst[0].trim(), i2 = ilst[1].trim();
+            if (DEP[i1]) console.puts('duplicate depend in '+fn+': '+i);
+            DEP[i1] = i2.split(null);
+        }
+    }
+    
+    function readConf(fn:string) {
+        if (!File.exists(fn)) return '';
+        var str = '', s = File.read(fn);
+        var lst = s.split('\n');
+        for (var i of lst) {
+            i = i.trim();
+            if (i === '' || i[0] == '#') continue;
+            var sl = i.indexOf('=');
+            if (sl<0) throw('missing = in: '+i);
+            var mi = 'var '+i.substr(0, sl+1);
+            var ii = i.substr(sl+1).trim();
+            var pi = parseFloat(ii);
+            if (!isNaN(pi) && ii !== '')
+                mi += pi;
+            else
+                mi += '\''+ii+'\'';
+            str += mi+';\n';
+        }
+        return str;
+    }
+    
+    function subMake(target:string) {
+        var cmd = Info.executable();
+        if (File.isdir('/zvfs/lib/Make.jsi'))
+            Run(cmd+' -M '+target);
+        else
+            Run(cmd+' lib/Make.jsi '+target);    
+    }
+    
+    // Add dependancy for each target.
+    function makePushDep(target:string, dep:string|array) {
+        var name = target.trim();
+        LogTrace('TARGET: ',target, 'DEP: ',dep);
+        if (DEP[name]) console.puts('target redefined: '+name);
+        if (name.substr(0,1)==='%' && dep.substr(0,1)==='%') {
+            return;
+        }
+        if (dep === '') dep = [];
+        else if (typeof(dep) !== 'array')
+            dep = dep.trim().split(null);
+        DEP[name] = dep;
+    }
+    
+    // Preprocess handler for targets and deps of the form ":X:Y:"
+    function makePPLine(str:string) {
+        LogTrace('DEFTARGET:', str);
+        str = ':'+str+'{';
+        //var str = ':abc:'def':{';
+        var rm = str.match(/^:([^:]+):([^:]*):([\{]?)$/);
+        var rs = ';';
+        if (!rm) {
+            puts('ignoring malformed rule: '+str);
+            return str;
+        }
+        rm[1] = rm[1].trim();
+        rm[2] = rm[2].trim();
+        rm[3] = rm[3].trim();
+        if (str.indexOf('"')<0 && str.indexOf("'")<0) {
+            if (rm[1] !== '') rm[1] = '"'+rm[1]+'"';
+            if (rm[2] !== '')rm[2] = '"'+rm[2]+'"';
+        }
+        if (rm[1] === '') {
+            puts('ignoring empty target: '+str);
+            return str;
+        }
+        if (rm[1] === '.PHONY' || rm[1].trim('\'" ') === '.PHONY') {
+            that.phony=rm[2].trim('\'" ');
+            return '';
+        }
+        var rq1 = rm[1], rq2 = rm[2];
+        if (rq1 === '') rq1 = "''";
+        if (rq2 === '') rq2 = "''";
+        rs += '$.makePushDep('+rq1+', '+rq2+');';
+        if (rm[3] !== '') {
+            if (str.indexOf('%')<0)
+                rs += '$.RULE['+rq1+']';
+            else
+                rs += '$.IMPLICITS["'+rm[1]+','+rm[2]+'"]';
+            rs += '=function(DST:string, SRC:string|void, DEPS:array){';
+        }
+        if (that.firstTarget===null) {
+            var ft = eval(rm[1]);
+            that.firstTarget=(ft?ft:rm[1]);
+        }
+        //puts(rs);
+        LogTrace('JSPP:', rs);
+        return rs;
+    };
+
+    function checkRules() {
+        var phony = that.phony;
+        if (typeof(phony) !== 'array')
+            phony = phony.trim('\': ').split();
+        var rules = RULE.keys();
+        for (var i in DEP) {
+            for (var j of DEP[i]) {
+                if (RULE[j] !== undefined) continue;
+                if (i !== j && DEP[j] !== undefined) continue;
+                if (phony.indexOf(j)>=0) continue;
+                if (File.exists(j)) continue;
+                var ext = File.extension(j);
+//                if (IMPLICIT[ext] !== undefined) continue;
+                console.puts('Unknown target "'+j+'" in rule "'+i+'"');
+            }
+        }
+    }
+    
+    // Return true if dirty.
+    function subDepends(dst:string, lst:array, sublevel) {
+        if (that.verbose) {
+            printf("%*SDEPENDS(%S,%S)\n", sublevel*2, ' ', dst, lst);
+        }
+        if (!lst.length) // No deps means always dirty.
+            return true;
+        var m, un = 0, cnt = 0;
+        for (var src of lst) {
+            src = src.trim();
+            if (src === '') continue;
+            cnt++;
+            m = makeTarget(dst, src, sublevel+1);
+            if (that.verbose)
+                printf("%*s%S <== TARGET(%S,%S)\n", sublevel*2+4, ' ', m, dst, src);
+            if (!m)
+                un++;
+        }
+        return (un !== cnt);
+    }
+
+    function fileDirty(target:string, src:string) {
+        if (!File.exists(target))
+            return true;
+        return File.mtime(target)<File.mtime(src);
+    }
+    
+    // Return true if dirty.
+    function makeTarget(target:string|null, tdeps:string, level=0) {
+        if (that.verbose) {
+            printf("%*STARGET(%S, %S)\n", level*2, ' ', target, tdeps);
+        }
+        var m, match = 0, rc = false, ntarget=target, dsrc = null, adeps = [], dnam=null,
+          deps = DEP[tdeps], dlst=tdeps.split();
+        if (dlst.length==1)
+            dnam = dlst[0];
+        if (!deps && !that.noimplicit && dnam) {
+            var nexts=EXTMAP[File.extension(dnam)];
+            if (nexts) {
+                for (var next of nexts) {
+                    var tbn = File.rootname(dnam)+next;
+                    if (File.exists(tbn)) {
+                        deps = [tbn];
+                        break;
+                    }
+                }
+            }
+        }
+        if (deps) {
+            adeps = deps;
+            dsrc = deps[0];
+            if (!dsrc) dsrc='';
+            if (!that.nocache) {
+                if (DEPSCACHE[tdeps])
+                    return true;
+            }
+            DEPSCACHE[tdeps] = 1;
+            match++;
+            m = subDepends(tdeps, deps, level+1);
+            if (that.verbose)
+                printf("%*s%S <== DEPENDS(%S)\n", level*2+2, ' ', m, tdeps);
+            if (m)
+                rc = true;
+            else if (dnam && target && !fileDirty(target, dnam))
+                return false;
+            else if (target)
+                rc = true;
+        }
+        if (!target)
+            return rc;
+        var rule = RULE[tdeps];
+        
+        if (rule) {
+            if (RULESDONE[tdeps] !== undefined && !that.nocache)
+                return true;
+            RULESDONE[tdeps] = target;
+        } else if (!DEP[tdeps]) { // Implicits
+            next = File.extension(target), bn = File.rootname(target), text, iext;
+            if (text=EXTMAP[next]) {
+                for (var ifnam of text) {
+                    if (File.exists(bn+ifnam)) {
+                        iext=ifnam;
+                        break;
+                    }
+                }
+            }
+            if (iext) {
+                dsrc = bn+iext;
+                if (File.exists(dsrc) && fileDirty(target, dsrc)) {
+                    if (that.verbose)
+                        printf("%*SDIRTY(%S, %S)\n", level*2, ' ', ntarget, dsrc);
+                } else
+                    return false;
+                if (that.noimplicit)
+                    return false;
+                rule=IMPLICITS['%'+next+':%'+iext];
+                //dsrc = ntarget;
+                if (that.verbose)
+                    printf("%*sIMPLICIT(%S,%S)\n", level*2, ' ', ntarget, dsrc);
+            }
+        }
+        if (rule) {
+            if (that.verbose)
+                printf("%*sRULE(%S,%S,%S)\n", level*2, ' ', tdeps, dsrc, adeps);
+            match++;
+            rule(target, dsrc, adeps);
+            return true;
+        }
+    
+        if (target) {
+            if (File.exists(dnam) && fileDirty(target, dnam)) {
+                if (that.verbose)
+                    printf("%*SDIRTY(%S, %S)\n", level*2, ' ', target, tdeps);
+                return true;
+            }
+        }
+        return rc;
+    }
+    
+    function main() {
+        if (that.unittest)
+            Interp.conf({unitTest:1});
+        Interp.conf({jsppChars:':{', jsppCallback:makePPLine});
+        var fn = File.join(File.pwd(), that.file);
+        if (!File.exists(fn))
+            throw("make file not found: "+fn);
+        Interp.uplevel('source("'+fn+'");',0);
+        var tsrc = that.target = (files.length>0?files[0]:that.firstTarget);
+        checkRules();
+        if (!RULE[tsrc] && !DEP[tsrc])
+            throw("No rule for target: "+tsrc);
+        debugger;
+        puts("Making target: "+tsrc);
+        if (!makeTarget(null, tsrc))
+            printf("Nothing to do for target '%S'\n", tsrc);
+        return 0;
+    }
+    
+    parseOpts(that, options, opts);
+
+    that.makePPLine=makePPLine;
+    that.makePushDep=makePushDep;
+    that.readDepends=readDepends;
+    that.readConf=readConf;
+    that.run=run;
+    that.which=which;
+    that.subMake=subMake;
+
+
+    IMPLICITS['%.o:%.c'] = function(DST:string, SRC:string, DEPS:array) {
+        $.run($.CC+' -c -o '+DST+' '+SRC+' '+$.CFLAGS);
+        return true;
+    };
+    
+    IMPLICITS['%.o:%.cpp'] = function(DST:string, SRC:string, DEPS:array) {
+        $.run($.CXX+' -c -o '+DST+' '+SRC+' '+$.CXXFLAGS);
+        return true;
+    };
+    
+    IMPLICITS['%:%.o'] = function(DST:string, SRC:string, DEPS:array) {
+        $.run($.CC+' -o '+DST+' '+SRC+' '+$.CFLAGS+' '+$.LDFLAGS);
+        return true;
+    };
+
+    that.RULE = RULE;
+    that.DEP = DEP;
+    that.IMPLICITS = IMPLICITS;
+    $ = that;
+    
+    return main();
+}
+
+var $; // Global state
+
+provide('Make');
+
+if (Info.isMain()) {
+    runModule(Make);
+}
+
+
+

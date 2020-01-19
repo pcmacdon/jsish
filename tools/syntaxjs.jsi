@@ -1,0 +1,71 @@
+#!/usr/bin/env jsish
+// Add simple syntax highlighting to javascript.
+
+function syntaxjs(args:array, conf:object=void) {
+    var self = {
+        count: 0
+    };
+    var options = { // Here is my test.
+        debug       :false,     // Debugging output.
+        trace       :false,     // Tracing output.
+        test        :false,     // Testing output.
+        entities    :false,
+        lines       :false,
+        linenumbers :false      // Some other argument.
+    };
+    
+    parseOpts(self, options, conf);
+    
+    function htmlEntities(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    
+    // Generate html for the source code view.
+    function codeMarkup(instr) {
+        if (!instr)
+            return '';
+        var n = 0, rc = '';
+        var str = (self.entities?htmlEntities(instr):instr);
+        var lst = str.split('\n');
+        var visi = (self.lineNumbers?"":" invisible");
+        var fnlst = [];
+        for (var i=0; i<lst.length; i++) {
+            n++;
+            var pre = '';
+            if (self.lines)
+                pre += '<span id="fline_'+n+'"><span class="flineno'+visi+'">' + n;
+            var plen = n.toString().length;
+            while (plen<4) {
+                pre += ' ';
+                plen++;
+            }
+            var lstr = lst[i];
+            var lstrt = lstr.trim();
+            var re;
+            if ((re=lstrt.match(/function\s+([_a-zA-Z0-9$]+)/)))
+                fnlst.push([re[1], n]);
+            var cios = lstr.indexOf('//');
+            if (cios >= 0 && (cios==0 || lstr[cios-1] !== ':')) // Highlight comments: avoids urls
+                lstr = lstr.substr(0, cios)+'<cite>'+lstr.substr(cios)+'</cite>';
+            if (self.lines)
+                rc += pre+': </span>' + lstr+'</span>\n';
+            else
+                rc += lstr+'\n';
+        }
+        self.fnlst = fnlst;
+        rc = rc.replace(/\b(debugger|require|provide|delete|var|for|function|while|if|else|return|try|catch|finally|throw|exit|in|of|with|switch|case|default|new|with|typeof|instanceOf|continue|break|do)\b/g, function(str) { return "<b>"+str+"</b>"; });
+        rc = rc.replace(/\b(true|false|null|undefined|void|this|self|arguments|number|object|array|boolean|any|regexp|string|userobj|puts)\b/g, function(str) { return "<i>"+str+"</i>"; });
+        return rc;
+    }
+    var str = File.read(args[0]);
+    var rc = '';
+    for (var s of args)
+        rc += codeMarkup(str);
+    return rc;
+}
+
+provide('syntaxjs');
+
+if (Info.isMain())
+    puts(Jsi_Main('syntaxjs'));
+    

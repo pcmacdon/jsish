@@ -1,0 +1,63 @@
+#!/usr/local/bin/jsish -u %s
+
+var i = new Interp({subthread:false});
+//var i = new Interp();
+function myAlias(interp,name,arg1,...) {
+    //puts('myAlias: '+interp+' '+name+' '+arg1+' '+arg2);
+;   'myAlias:',arguments;
+}
+
+function myAlias2(arg1,arg2) {
+;'myAlias2: ',arguments;
+}
+
+i.alias('foo', myAlias, [i, 'foo']);
+i.alias('bar', myAlias2,null);
+
+;i.alias();
+;[i.alias('foo')];
+;i.alias('foo', null);
+
+;i.eval('bar(1,2);');
+
+;i.eval('var bb = {x:1};');
+;i.alias('bb.fig', myAlias, [i, 'bb.fig']);
+;i.eval('bb.fig(1)');
+
+/*i.alias('bb.fig', myAlias, [i, 'bb.FIG']);
+i.eval('bb.fig(1)');*/
+
+;i.alias();
+//i.alias('bb.fig', null, null); //Leaks memory.
+i.alias('foo', null, null);
+;i.alias();
+
+
+// Set alias on Interp
+function foo(a,b) {
+;   'A='+a+' B='+b;
+}
+foo(1,2);
+
+Interp.alias('bar', foo, [3]);
+bar(4);
+
+//try { i.eval('bb.fig(1)'); } catch(e) { puts("CAUGHT ERROR: "+e); };
+
+/*
+=!EXPECTSTART!=
+i.alias() ==> [ "foo", "bar" ]
+[i.alias('foo')] ==> [ "function myAlias(interp, name, arg1) {...}" ]
+i.alias('foo', null) ==> [ "#Interp_1", "foo" ]
+i.eval('bar(1,2);') ==> 'myAlias2: ',arguments ==> myAlias2:  [ 1, 2 ]
+undefined
+i.eval('var bb = {x:1};') ==> undefined
+i.alias('bb.fig', myAlias, [i, 'bb.fig']) ==> undefined
+i.eval('bb.fig(1)') ==> 'myAlias:',arguments ==> myAlias: [ "#Interp_1", "bb.fig", 1 ]
+undefined
+i.alias() ==> [ "bb.fig", "foo", "bar" ]
+i.alias() ==> [ "bb.fig", "bar" ]
+'A='+a+' B='+b ==> A=1 B=2
+'A='+a+' B='+b ==> A=3 B=4
+=!EXPECTEND!=
+*/

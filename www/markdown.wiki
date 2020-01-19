@@ -1,0 +1,14 @@
+<title>Markdown</title>
+
+<b>Markdown</b> provides a wiki-style markup language.
+It is available as the <b>markdown </b> subcommand in [./reference.wiki#Util|Util].
+
+Files ending in the suffix ".md" are
+supported in [../lib/Websrv.jsi].
+
+The [../lib/SqliteUI/SqliteUI.jsi] application uses markdown.
+
+The markdown code was extraced from <b>fossil</b>.
+
+Here is the [./markdown.md|markdown specification].
+

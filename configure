@@ -1,0 +1,27 @@
+#!/bin/sh
+# Wrapper to run configure.js with jsimin, which is built first if required.
+set -x
+BUILDSYS=`uname -o`
+if [ ${BUILDSYS} = "FreeBSD" ]; then
+    MAKE=gmake
+    CC=cc
+else
+    CC=gcc
+    MAKE=make
+    LDL=-ldl
+fi
+
+if [ -x jsimin ]; then
+    JSIMINVER=`./jsimin -v | cut -d' ' -f1`
+    JSICURVER=`fgrep 'define JSI_VERSION_' src/jsi.h | cut -b29- | xargs | sed 's/ /./g'`
+    if [ "$JSIMINVER" != "$JSICURVER" ]; then
+        rm -f jsimin
+    fi
+fi
+
+if [ ! -x jsimin ]; then
+    ${CC} -g -o jsimin src/jsi.c -Iminiz -DJSI__JSIMIN=1 -DJSI__MAIN=1 -DJSI__MINIZ -lm -lpthread ${LDL}
+    echo "Created jsimin"
+fi
+./jsimin tools/configure.js $*
+

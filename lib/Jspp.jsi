@@ -1,0 +1,178 @@
+#!/usr/bin/env jsish
+
+require('Jsish');
+
+/* JS preprocessor converting "typed" functions into web-browser compatible form, eg.
+ * 
+ *    function foo(s:string='', n:number=1) {
+ * 
+ * becomes
+ * 
+ *    function foo(s, n) { $jsig("s:string,n:number",arguments)();
+ * 
+ * Code to perform type checking/default values is provided by:
+ * 
+ *    include("/jsi/jsi.js");
+ * 
+ * Limitation: Comments within function signatures are not supported.
+ *             Returned types should generally be avoided.
+ */
+
+function Jspp(files:array|string=null, conf:object=undefined):string|object
+{
+    var options = { // A JS preprocessor to convert "typed" functions out to web-browser compatible form
+        checkRet    :false,     // Support return-type by creating a wrapper function
+        disable     :false,     // Preprocess to vanilla JS. WARNING: callers using default values may break.
+        listFuncs   :false,     // Echo function list.
+        inline      :false,      // Inline signature parse.
+        noCheck     :false,     // Disable argument type checking.
+        wsName      :''         // Name of ws object
+    };
+    var self = {
+        funcLst:[],         // List of functions
+        funcIdx:0,          // Func idx.
+        curFile:'',         // Current file being processed.
+        tail:''             // Basename of file.
+    };
+    var ws;
+ 
+    parseOpts(self, options, conf);
+
+    self.typeNameStr = "number string boolean array function object regexp any userobj void null undefined";
+    self.typeNameList = self.typeNameStr.split(' ');
+    
+    function typeValidate(typ) {
+        if (typ === '') return [];
+        var tlst = typ.split('|');
+        var i = -1;
+        for (i = 0; i<tlst.length; i++)
+            if (self.typeNameList.indexOf(tlst[i]) < 0)
+                throw "type unknown '"+tlst[i]+'" not one of: '+self.typeNameStr;
+        return tlst;
+    }
+
+    function Fileread(fname) {
+        var ret = File.read(fname);
+        if (ws)
+            ws.file(fname);
+        return ret;
+    }
+
+    function reMethod(str:string) {
+        var reg = /^function\s*([a-zA-Z0-9_]*)\s*\(([^)]*)\)(:[\|a-z]+|)(\s*)\{$/;
+        var vals = reg.exec(str);
+        if (!vals)
+            throw "invalid method: "+str;
+        //puts(vals);
+        var fnam = vals[1];
+        if (fnam !== '' && fnam[0] !== '_')
+            self.funcLst.push(fnam);
+        var someDflt = str.indexOf('=')>=0;
+        if (str.indexOf(':')<0 && !someDflt) // Skip functions with no types or defaults
+            return str;
+        var res = 'function '+fnam+'(';
+    
+        var astr = vals[2].trim();
+        var rettyp = vals[3].substr(1);
+        var cres = '', ncres = '';
+        cres += '$jsig("'+astr+'", arguments )(); ';
+        //res += '/* Fn('+astr+') */ ';
+        var acall = [];
+        if (astr !== '') {
+            var alst = astr.split(',');
+            var minargs = alst.length, maxargs = minargs;
+            var last = alst.length-1;
+            var acres = [];
+            for (var i = 0; i<=last; i++) {
+                var aval = alst[i].trim();
+                if (aval === '...') {
+                    if (i != last)
+                        throw "expected ... to be at end";
+                    maxargs = -1;
+                    continue;
+                }
+                var rega = /^([a-zA-Z0-9_]+)(:[|a-z]+|)(=.+|)$/;
+                var avals = rega.exec(aval);
+                if (!avals)
+                    throw "invalid argument: "+aval;
+                //puts(avals);
+                if (i)
+                    res += ', ';
+                var afnam = avals[1];
+                if (afnam === '' || avals.length<3)
+                    afnam = aval;
+                res += afnam;
+                acall.push(afnam);
+                var defval = 'undefined', atyp = '';
+                if (avals.length>2)
+                    atyp = avals[2].substr(1);
+                atyp = typeValidate(atyp);
+ 
+                if (someDflt) {
+                    var hasDef = (avals[3] && avals[3] !== '');
+                    if (hasDef) { // Default value
+                        if (avals[3] === '=void') 
+                            defval = 'undefined';
+                        else
+                            defval = avals[3].substr(1);
+                        if (hasDef)
+                            ncres += ' if (arguments.length<='+i+') '+afnam+'='+defval+';';
+                            
+                        if (minargs===alst.length)
+                            minargs = i;
+                    }
+                    else if (minargs!==alst.length)
+                        throw "non-default value follows default: "+aval+' in: '+str;
+                }
+                acres.push('{name:"'+afnam+'", type:'+JSON.stringify(atyp)+', def:'+defval+'}');
+            }
+            //if (self.inline)
+            //    cres += '  $jsig({name:"'+fnam+'",astr:"'+astr+'",args:['+acres.join(',')+'],min:'+minargs+',max:'+maxargs+',rettyp:"'+rettyp+'"}, arguments); ';
+        }
+        cres += ncres;
+        res += ')'+vals[4]+' { ';
+        if (fnam !== '' && rettyp !== '' && rettyp !== 'any' && self.checkRet) {
+            typeValidate(rettyp);
+            var wfn = '__Jsi_WrapRet_'+self.tail+'_'+fnam+'_'+ ++self.funcIdx;
+            cres += '  var __ret = '+wfn+'('+acall.join(',')+');\n';
+            cres += '  Jsi.RetCheck("'+fnam+'",'+' __ret,"'+rettyp+'");\n  return __ret;\n}\n';
+            cres += 'function '+wfn+'('+acall.join(', ')+') {';
+        }
+        if (!self.disable)
+            res += cres;
+        return res;
+    }
+
+    function parse(files:array|string, wsn:string=void, arg:string=void) {
+        //debugger;
+        var rc = '';
+        files = Util.argArray(files);
+        var reg = /function\s*[a-zA-Z0-9_]*\s*\([^)]*\)(:[\|a-z]+|)\s*\{/g;
+        for (var i in files) {
+            self.curFile = files[i];
+            self.tail = File.tail(File.rootname(self.curFile));
+            var s = Fileread(self.curFile);
+            rc += s.replace(reg, reMethod);
+        }
+        if (self.listFuncs) {
+            rc = '';
+            var n = 0;
+            for (i of self.funcLst.sort())
+                rc += i + ':' + i + (++n === self.funcLst.length ? '' : ',') + '\n';
+        }
+        return rc + '\n<!--JSIG GEN-->';
+    }
+    if (self.wsName.length)
+        ws = Info.named(self.wsName);
+    if (files && files.length)
+        return parse(files);
+
+    self.parse = parse;
+    return self;
+}
+
+provide(Jspp, 1);
+
+if (isMain()) 
+    runModule(Jspp);
+

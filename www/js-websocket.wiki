@@ -1,0 +1,68 @@
+<title>WebSocket</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#jswebsock|WebSocket Javascript Interface]</li>
+<ul>
+<li>[#example|Example]</li>
+</ul>
+</ul>
+</div>
+
+<h2 id=jswebsock>WebSocket Javascript Interface</h2>
+
+The WebSocket extension uses libwebsockets to implement
+bidirectional socket communication with a web browser.
+
+When used in conjunction with [./js-sqlite.wiki|Sqlite] and [./js-json.wiki|JSON],
+it is a simple matter to implement browser based applications.
+
+<h3 id=example>Example</h3>
+
+The following creates a minimal client and server using WebSockets.
+
+First the server file <b>ws.js</b>:
+
+    <nowiki><pre class=verbatim>
+<b>function</b> ws_input(data, id) {
+    <b>puts</b>(<i>"ws_input: "</i> + id + <i>": "</i> + data);
+};
+
+<b>var</b> ws = <b>new WebSocket</b>({callback:ws_input});
+<b>var</b> msg = { str:<i>"whos there?"</i>, cnt:0 };
+<b>while</b> (true) {
+    <b>update</b>(1);
+    if ((msg.cnt++ % 10) == 0)
+       <b>ws.send</b>(<b>JSON.stringify</b>(msg));
+}
+</pre></nowiki>
+
+Next the client file: <b>wsc.js</b>:
+
+    <nowiki><pre class=verbatim>
+<b>function</b> wsc_input(data) {
+    <b>puts</b>(<i>"wsc_input: "</i> + data);
+};
+
+<b>var</b> ws = <b>new WebSocket</b>({client:true, callback:wsc_input});
+<b>var</b> msg = { str:<i>"knock knock"</i>, cnt:0 };
+
+<b>while</b> (true) {
+    msg.cnt++;
+    <b>ws.send</b>(<b>JSON.stringify</b>(msg));
+    <b>update</b>(1);
+}
+</pre></nowiki>
+
+Which we run with:
+
+    <nowiki><pre class=verbatim>
+<b>jsish</b> ws.js &
+<b>jsish</b> wsc.js
+</pre></nowiki>
+
+For more concrete working examples, see the [./usingjsi.wiki#examples|example apps].

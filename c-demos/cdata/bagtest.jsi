@@ -1,0 +1,27 @@
+#!/usr/bin/env jsish
+
+require('Bag');
+;Bag.range();
+;Bag.range(20,10);
+;Bag.range(20,0,2);
+
+;Bag.ranger();
+;Bag.ranger({size:20,start:10});
+;Bag.ranger({size:20,start:0,step:2});
+
+;Util.times(function() {Bag.range(10000,0,2);});
+;Util.times(function() {Bag.ranger({size:10000,step:2});});
+
+
+function range(n=20, start=0, step=1) {
+    return Array(n).fill(0).map(function(v,i,o) { return start+i*step; });
+}
+function range1(n=20, start=0, step=1) {
+   var a = Array(n).fill(0);
+   for (var i in a)
+      a[i] = start+i*step;
+   return a;
+}
+
+;Util.times(function() {range(10000,0,2);});
+;Util.times(function() {range1(10000,0,2);});

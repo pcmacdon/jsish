@@ -1,0 +1,4 @@
+function bark(s:string, n:number) {
+   puts("BARK: "+s);
+}
+

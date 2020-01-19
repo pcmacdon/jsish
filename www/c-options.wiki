@@ -1,0 +1,219 @@
+<title>C-API: Options</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#overview|Overview]</li>
+<li>[#example|Example Usage]</li>
+<li>[#fields|Field Specification]</li>
+<ul>
+<li>[#opttypes|Option Types]</li>
+<li>[#flags|Flags]</li>
+<li>[#custtype|Custom Types]</li>
+<li>[#specfields|OptionSpec Fields]</li>
+</ul>
+<li>[#parseflags|Parse Flags]</li>
+<li>[#compvalid|Compile-time Validation]</li>
+<li>[#isspec|Is Specified]</li>
+</ul>
+</div>
+
+<h2 id=overview>Overview</h2>
+A Jsi_OptionSpec array provides details of fields in a <b>struct</b>. This information is used for
+translating values to/from and from C struct fields, both for Javascript and
+by the [c-sqlite.wiki|Sqlite C-API].
+
+A Jsi_OptionSpec array specifies for a struct field the
+name, type, offset, help string, etc.  This specification is passed, along with a pointer
+to the actual data,
+to <i>Jsi_OptionProcess()</i> and <i>Jsi_OptionConf()</i>.
+
+<h2 id=example>Example Usage</h2>
+
+The following example is a subset of the Jsi Sqlite command:
+
+    <nowiki><pre class=verbatim>
+enum { MUTEX_DEFAULT, MUTEX_NONE, MUTEX_FULL };
+static const char *mtxStrs[] = { "default", "none", "full", 0 };
+
+static <b>Jsi_OptionSpec</b> Options[] =
+{
+    <b>JSI_OPT</b>(<b>INT</b>,    SqliteDb, debug,    .help="Set debugging level"),
+    <b>JSI_OPT</b>(<b>CUSTOM</b>, SqliteDb, execOpts, .help="Default options for exec", .custom=&<b>Jsi_OptSwitchSuboption</b>, .data=ExecFmtOptions),
+
+    <b>JSI_OPT</b>(<b>INT</b>,    SqliteDb, maxStmts, .help="Max cache size for compiled statements"),
+    <b>JSI_OPT</b>(<b>BOOL</b>,   SqliteDb, readonly, .help="Database is readonly", .flags=<b>JSI_OPT_INIT_ONLY</b> ),
+    <b>JSI_OPT</b>(<b>VALUE</b>,  SqliteDb, vfs,      .help="VFS to use", .flags=<b>JSI_OPT_INIT_ONLY</b>),
+    <b>JSI_OPT</b>(<b>CUSTOM</b>, SqliteDb, mutex,    .help="Mutex type to use", .custom=&<b>Jsi_OptSwitchEnum</b>, .data=mtxStrs),
+    <b>JSI_OPT_END</b>(SqliteDb)
+};
+
+  //...
+if (<b>Jsi_OptionsProcess</b>(interp, Options, optObj, &opts, 0) < 0) {
+     return <b>JSI_ERROR</b>;
+}
+if (opts.debug)
+    <b>puts</b>("Sqlite created");
+</pre></nowiki>
+
+<h2 id=fields>Field Specification</h2>
+Options are specified using the JSI_OPT() macro. The first 3 arguments are TYPE,STRUCT,NAME,
+where the NAME is a field name in STRUCT.  Additional attributes can be specified using ".name=value" form.
+
+<h3 id=opttypes>Option Types</h3>
+
+The option TYPE is one of:
+
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr ><th  >Name</th><th>C-Type</th><th  >Description</th></tr>
+<tr ><td >BOOL</td><td >bool</td><td >Boolean (stored in a "char" variable).</td></tr>
+<tr ><td >INT</td><td >int</td><td >An integer.</td></tr>
+<tr ><td >UINT</td><td >uint</td><td >An unsigned integer.</td></tr>
+<tr ><td >LONG</td><td >long</td><td >An long integer.</td></tr>
+<tr ><td >ULONG</td><td >ulong</td><td >An long unsigned integer.</td></tr>
+<tr ><td >SHORT</td><td >short</td><td >An short integer.</td></tr>
+<tr ><td >USHORT</td><td >ushort</td><td >An short unsigned integer.</td></tr>
+<tr ><td >INT8</td><td >int8_t</td><td >An 8-bit integer.</td></tr>
+<tr ><td >INT16</td><td >int16_t</td><td >A 16-bit integer.</td></tr>
+<tr ><td >INT32</td><td >int32_t</td><td >A 32-bit integer.</td></tr>
+<tr ><td >INT64</td><td >int64_t</td><td >A 64-bit integer.</td></tr>
+<tr ><td >UINT8</td><td >uint8_t</td><td >An unsigned 8-bit integer.</td></tr>
+<tr ><td >UINT16</td><td >uint16_t</td><td >An unsigned 16-bit integer.</td></tr>
+<tr ><td >UINT32</td><td >uint32_t</td><td >An unsigned 32-bit integer.</td></tr>
+<tr ><td >UINT64</td><td >uint64_t</td><td >An unsigned 64-bit integer.</td></tr>
+<tr ><td >SIZE_T</td><td >size_t</td><td >An size_t integer.</td></tr>
+<tr ><td >INTPTR_T</td><td >intptr_t</td><td >An pointer sized integer.</td></tr>
+<tr ><td >UINTPTR_T</td><td >uintptr_t</td><td >An pointer sized unsigned integer.</td></tr>
+<tr ><td >FLOAT</td><td >floag</td><td >A floating point.</td></tr>
+<tr ><td >DOUBLE</td><td >double</td><td >Double floating point.</td></tr>
+<tr ><td >LDOUBLE</td><td >ldouble</td><td >Long double floating point.</td></tr>
+<tr ><td >DSTRING</td><td >Jsi_DString</td><td >A Jsi_DString value.</td></tr>
+<tr ><td >STRKEY</td><td >const char*</td><td >A char* string key.</td></tr>
+<tr ><td >STRBUF</td><td >char[]</td><td >A fixed size char string buffer.</td></tr>
+<tr ><td >VALUE</td><td >Jsi_Value*</td><td >A Jsi_Value.</td></tr>
+<tr ><td >STRING</td><td >Jsi_Value*</td><td >A Jsi_Value referring to a string.</td></tr>
+<tr ><td >VAR</td><td >Jsi_Value*</td><td >A Jsi_Value referring to a variable.</td></tr>
+<tr ><td >OBJ</td><td >Jsi_Value*</td><td >A Jsi_Value referring to an object.</td></tr>
+<tr ><td >ARRAY</td><td >Jsi_Value*</td><td >A Jsi_Value referring to an array.</td></tr>
+<tr ><td >FUNC</td><td >Jsi_Value*</td><td >A Jsi_Value referring to a function.</td></tr>
+<tr ><td >TIME_T</td><td >time_t</td><td >A date variable, milliseconds since 1970 stored in a time_t/long.</td></tr>
+<tr ><td >TIME_D</td><td >double</td><td >A date variable, milliseconds since 1970 stored in a Jsi_Number/double.</td></tr>
+<tr ><td >TIME_W</td><td >int64_t</td><td >A date variable, milliseconds since 1970 stored in a Jsi_Wide/64 bit integer.</td></tr>
+<tr ><td >CUSTOM</td><td >void*</td><td >Custom parsed value.</td></tr>
+</table></nowiki>
+
+<h3 id=flags>Flags</h3>
+
+The following flags are predefined for individual items in an OptionSpec:
+
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr ><th  >Name</th><th  >Description</th></tr>
+<tr ><td>JSI_OPT_INIT_ONLY</td><td >Allow set only at init, disallow update/conf</td></tr>
+<tr ><td>JSI_OPT_NO_DUPVALUE</td><td  align='right'>Values/Strings are not to be duped (dangerous)</td></tr>
+<tr ><td>JSI_OPT_READ_ONLY</td><td >Value can never be set.</td></tr>
+<tr ><td>JSI_OPT_DIRTY_FIELD</td><td >Used for DB update.</td></tr>
+<tr ><td>JSI_OPT_IS_SPECIFIED</td><td >User set the option.</td></tr>
+<tr ><td>JSI_OPT_DB_IGNORE</td><td >Field is not to be used for DB.</td></tr>
+<tr ><td>JSI_OPT_CUST_NOCASE</td><td >Ignore case (eg. for ENUM and BITSET)</td></tr>
+<tr ><td>JSI_OPT_CUST_FLAG2</td><td >Reserved for custom flags</td></tr>
+<tr ><td>JSI_OPT_CUST_FLAG2</td><td >Reserved for custom flags</td></tr>
+<tr ><td>JSI_OPT_CUST_FLAG2</td><td >Reserved for custom flags</td></tr>
+</table></nowiki>
+
+<h3 id=custtype>Custom Types</h3>
+
+Custom types provide parsing/formatting functions to interpret javascript data to/from a C struct-field.
+Again, the best example is the Jsi source itself.
+
+The following predefined custom types come builtin:
+
+    <table border='1' class='cmdstbl' ><tr ><th  >Name</th><th  >Description</th><th >.data</th></tr>
+<tr ><td >Jsi_OptSwitchEnum</td><td >Enum match</td><td>stringlist</td></tr>
+<tr ><td >Jsi_OptSwitchBitset</td><td >Set of zero or more enum match</td><td>stringlist</td></tr>
+<tr ><td >Jsi_OptSwitchValueVerify</td><td >Provide callback to verify Jsi_Value* is correct</td><td>&lt;Callback&gt;</td></tr>
+<tr ><td >Jsi_OptSwitchSuboption</td><td >Recursive sub-option support</td><td>&lt;sub-Option&gt;</td></tr>
+</table>
+
+Refer to the Jsi source for example usage and declarations.
+
+<h3 id=specfields>OptionSpec Fields</h3>
+
+The following fields are defined in Jsi_OptionSpec:
+     
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr ><th  >Field</th><th  >Type</th><th  >Description</th></tr>
+<tr ><td >type</td><td >enum</td><td >Field type (from above)</td></tr>
+<tr ><td >name</td><td >char*</td><td >Name of field</td></tr>
+<tr ><td >offset</td><td >int</td><td >Offset in array</td></tr>
+<tr ><td >size</td><td >const char*</td><td >Sizeof of field.</td></tr>
+<tr ><td >iniVal</td><td >union</td><td >Used for compile-time validation</td></tr>
+<tr ><td >flags</td><td >int</td><td >Flags (from above)</td></tr>
+<tr ><td >custom</td><td >Jsi_OptionCustom*</td><td >Custom parsing struct</td></tr>
+<tr ><td >data</td><td >void*</td><td >User data for custom options.</td></tr>
+<tr ><td >help</td><td >char*</td><td >Short 1 line help string.</td></tr>
+<tr ><td >info</td><td >char*</td><td >Longer command description: re-define JSI_DETAIL macro to compile-out.</td></tr>
+<tr ><td >init</td><td >const char*</td><td >Initial string value (used by info.cmds).</td></tr>
+<tr ><td >extName</td><td >const char*</td><td >External name: used by the DB interface.</td></tr>
+</table></nowiki>
+
+The first five fields are implicitly set by the <b>JSI_OPT()</b> macro. 
+The <b>JSI_END()</b> macro also sets <b>extName</b>.
+
+All others are available for setting by the user with <b>.FIELD=VALUE</b> notation.
+
+
+<h2 id=parseflags>Parse Flags</h2>
+
+The following flags are available for use with Jsi_OptionProcess/Jsi_OptionConf:
+
+    <p><nowiki>
+<table border='1' class='cmdstbl' ><tr ><th  >Name</th><th  >Description</th></tr>
+<tr ><td >JSI_OPTS_IS_UPDATE</td><td >This is an update/conf (do not reset the specified flags)</td></tr>
+<tr ><td >JSI_OPTS_IGNORE_EXTRA</td><td >Ignore extra members not found in spec</td></tr>
+<tr ><td >JSI_OPTS_FORCE_STRICT</td><td >Complain about unknown options, even when noStrict is used.</td></tr>
+<tr ><td >JSI_OPTS_PREFIX</td><td >Allow matching unique prefix of object members.</td></tr>
+<tr ><td >JSI_OPTS_VERBOSE</td><td >Dump verbose options</td></tr>
+</table></nowiki>
+
+
+<h2 id=compvalid>Compile-time Validation</h2>
+
+Compile-time validation checks option values to ensure that stated type and the field
+type actually match.  If they don't, the program will likely crash at runtime.
+The implementation uses an implicit assignment to <b>iniVal</b> which should
+generate a compiler warning if there is a type mismatch.
+
+Here is an example:
+
+    <nowiki><pre class=verbatim>
+<b>typedef struct</b> {
+    int val;
+    //...
+} MyData;
+
+<b>Jsi_OptionSpec</b> opts[] = {
+    <b>JSI_OPT(STRING</b>, MyData, val),
+    <b>JSI_OPT_END</b>(    MyData)
+};
+</pre></nowiki>
+
+which should generate:
+
+    <nowiki><pre class=verbatim_out>
+test.c:7:6: warning: initialization from incompatible pointer type [enabled by default]
+test.c:7:6: warning: (near initialization for ‘opts[0].iniVal.ini_STRING’) [enabled by default]
+</pre></nowiki>
+
+<h2 id=isspec>Is Specified</h2>
+
+When a user provides a value for an option, the flag JSI_OPT_IS_SPECIFIED is set in the option flags.
+Call <i>Jsi_OptionChanged</i> to determine if an option was specified.
+<i>(Note: there are known concurrency issues with this feature).</i>
+
+
+Note: The Jsi header file [../jsi.h#Jsi_OptionSpec|jsi.h] and source are
+best consulted for complete examples.

@@ -1,0 +1,50 @@
+#!/usr/local/bin/jsish -u
+var a, b, c, d, x, y, z;
+;b = '♥';
+;b.length;
+;b+'a';
+;encodeURI(b);
+
+;c = '\u2764';
+;c.length;
+;c+'a';
+
+// ;x = { 'face': '\ud83d\ude02' }; //UTF-16
+
+;x = { 'face': 'Bj\u00c3\u00b6rn XYZe\u00c3\u009fle' };
+;y = JSON.stringify(x);
+;z = JSON.parse(y);
+;a = JSON.stringify(z);
+;x.toString();
+;x.toString() === z.toString();
+;a === y;
+
+;d = 'a♥c';
+;d[0];
+;d[1];
+;d[2];
+;d[3];
+;d[9];
+
+/*
+=!EXPECTSTART!=
+b = '♥' ==> ♥
+b.length ==> 1
+b+'a' ==> ♥a
+encodeURI(b) ==> %e2%99%a5
+c = '❤' ==> ❤
+c.length ==> 1
+c+'a' ==> ❤a
+x = { 'face': 'BjÃ¶rn XYZeÃle' } ==> { face:"BjÃ¶rn XYZeÃle" }
+y = JSON.stringify(x) ==> { "face":"Bj\u00c3\u00b6rn XYZe\u00c3\u009fle" }
+z = JSON.parse(y) ==> { face:"BjÃ¶rn XYZeÃle" }
+a = JSON.stringify(z) ==> { "face":"Bj\u00c3\u00b6rn XYZe\u00c3\u009fle" }
+x.toString() ==> { face:"BjÃ¶rn XYZeÃle" }
+x.toString() === z.toString() ==> true
+a === y ==> true
+d = 'a♥c' ==> a♥c
+d[0] ==> a
+d[1] ==> ♥
+d[2] ==> c
+d[3] ==> undefined
+d[9] ==> undefined

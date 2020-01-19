@@ -1,0 +1,30 @@
+#!/usr/bin/env jsish 
+"use strict";
+// Threaded interp with call, eval and alias.
+
+function MySuper(x,y) { puts('MySuper', x,y); }
+
+var cnt=0, i = new Interp({subthread:true, name:'Subby', scriptStr: "
+    function Sub(s) { puts('Sub: ',s); Super(s); return {x:8, y:s.AA}; };
+
+    puts('Child starting:', Info.interp().name);
+
+    while (1) {
+        update(100);
+        Super(1);
+        puts('Child-loop');
+    };
+"});
+
+;i.alias('Super', MySuper, [1]);
+
+var obj = {AA:0,BB:2};
+;i.call('Sub',[obj]);
+while (cnt<10) {
+    obj.AA++;
+    update(100);
+;'  Main-loop';
+    if (((cnt++)%3)==0)
+        i.eval("puts('A sub-interp eval');");
+;       i.call('Sub',[obj], true);
+}

@@ -1,0 +1,157 @@
+body {
+    max-width:1100px;
+}
+div.content {
+    font-family:Palatino,Georgia,"Times New Roman",serif;
+    font-size:90%;
+    color:#222;
+    line-height:140%;
+    -webkit-font-smoothing: antialiased;
+}
+
+.content .markdown pre {
+    margin:10px 0 10px 0; background:#FCFCFC; padding:5px 0 5px 20px;
+    border-top:1px solid #CCC; border-bottom:1px solid #CCC;
+}
+.content .markdown table { border-collapse:collapse; margin-left:2em; margin-right:none; width:auto; }
+.content .markdown table th{color:#FFF;background-color:#111;border:1px solid #888;padding:8px 15px 8px 15px}
+.content .markdown table td{padding:5px 15px 5px 15px;border:1px solid #888}
+.content .markdown table tr:nth-child(even){background:#444}
+.content .markdown h1 { border-bottom:3px solid #000; padding:15px 0 3px;}
+.content .markdown h2 { border-bottom:2px solid #999; padding:15px 0 3px;}
+.content .markdown h3 { text-decoration: underline;}
+.content .markdown h4 { color:purple;}
+.content .markdown h5 { color:chocolate;}
+.content .markdown h5 { color:darkgreen;}
+.content .markdown svg.diagram{display:block;font-family:Menlo,Consolas,monospace;
+   font-size:13.101793589999144px;text-align:center;stroke-linecap:round;stroke-width:2px;
+   page-break-inside:avoid;stroke:#bbb;fill:#bbb}
+.content .markdown svg.diagram .opendot{fill:#FFF}
+.content .markdown svg.diagram text{stroke:none}
+
+img.spinimg {
+  border-radius: 20%;
+  -webkit-transition: -webkit-transform .8s ease-in-out;
+          transition:         transform .8s ease-in-out;
+}
+img.spinimg:hover {
+  -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+}
+
+@media print{@page{margin:1in 5mm;transform: scale(150%)}}
+@media print{.content .markdown .pagebreak{page-break-after:always;visibility:hidden}}
+
+
+#sectmenu {
+    float: right;
+    /*padding-top:0px;
+     position: fixed;
+    right:1px;*/
+  
+    /*clear:both; top:0px;  */
+    margin: 1em 0;
+    padding: 4px;
+    background: #f0f0fa;
+    border: 2px solid #E0D8B7;
+    border-radius: 1em;
+    font-size: 11px;
+}
+#sectmenu ul {
+    margin:0 0 0 0;
+    list-style-type:none;
+    padding:4px;
+    line-height:140%;
+}
+#sectmenu ol {
+    margin:0 0 0 0;
+    padding-left:15px;
+    line-height:140%;
+}
+#sectmenu hr {
+    margin: 0;
+    //padding: 0 0 0 30px;
+}
+
+.hidden {
+    display:none;
+}
+
+pre {
+   line-height:140%;
+}
+
+/* Dark style overrides */
+#sectmenu {
+    background: #0a0a19;
+}
+div.content {
+    color:#ddd;
+}
+body {
+  margin:0 auto;
+}
+textarea {
+  height:300px;
+}
+input, div.forumSel {
+   background:gray;
+}
+
+/* Hamburger */
+
+div#hbdrop {
+    background-color: #333;
+    border: 1px solid black;
+    border-top: white;
+    border-radius: 0 0 0.5em 0.5em;
+    display: none;
+    font-size: 80%;
+    left: 2em;
+    width: 90%;
+    padding-right: 1em;
+    position: absolute;
+    z-index: 20;  /* just below mainmenu, but above timeline bubbles */
+}
+
+.submenu {
+    font-size: .7em;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.submenu a, .submenu label {
+    padding: 10px 11px;
+    text-decoration:none;
+    color: #777;
+}
+
+.submenu a:hover, .submenu label:hover {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    color: #000;
+}
+
+#sitemap {
+    background:#333;
+}
+
+.content .markdown pre {
+    background:#222;
+    border-top:0;
+    border-bottom:0;
+}
+.footer { padding:0; }
+
+@media screen and (min-width: 1000px) {
+  body {
+    zoom: 120%;
+  }
+}
+
+@media screen and (min-width: 1600px) {
+  body {
+    zoom: 150%;
+  }
+}

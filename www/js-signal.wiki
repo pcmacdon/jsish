@@ -1,0 +1,24 @@
+<title>Signal</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+</ul>
+</div>
+
+Signal is used to send signals to processes, or setup handlers
+for receiving signals.  It is currently only supported on unix.
+
+The following signal commands are available:
+
+    <table border='1' class='cmdstbl' ><tr ><th  align='center'>Method</th><th  align='center'>Description</th></tr>
+<tr ><td>alarm(secs)</td><td >Setup alarm in seconds</td></tr>
+<tr ><td>callback(func,sig)</td><td >Setup callback handler for signal</td></tr>
+<tr ><td>default(?sig,sig,...?)</td><td >Set named signals to default action</td></tr>
+<tr ><td>handle(?sig,sig,...?)</td><td >Set named signals to handle action</td></tr>
+<tr ><td>ignore(?sig,sig,...?)</td><td >Set named signals to ignore action</td></tr>
+<tr ><td>kill(pid?,sig?)</td><td >Send signal to process id (default SIGTERM)</td></tr>
+<tr ><td>names()</td><td >Return names of all signals</td></tr>
+</table>

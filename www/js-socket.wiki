@@ -1,0 +1,29 @@
+<title>Socket</title>
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+</ul>
+</div>
+
+The Socket extension provides access to <b>TCP</b> and <b>UDP</b> sockets, both client and server.
+
+Following is a simple example.  First we run a server:
+
+    <nowiki><pre class=verbatim>
+<b>var</b> s = <b>new Socket</b>({server:true,onRecv:puts});
+while (1) <b>update()</b>;
+</pre></nowiki>
+
+and in another terminial, a client.
+
+    <nowiki><pre class=verbatim>
+<b>var</b> s = <b>new Socket</b>({noAsync:true});
+<b>s.send</b>(<i>'hello world\n'</i>);
+</pre></nowiki>
+
+For another socket example see [../js-demos/sockdemo.jsi?mimetype=application/javascript|sockdemo.jsi].
+
+For more details see [./reference.wiki#Socket|Reference]

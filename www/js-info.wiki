@@ -1,0 +1,28 @@
+<title>Info</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#info|The "Info" Command]</li>
+</ul>
+</div>
+
+<h3 id=info>The "Info" Command</h3>
+
+The info sub-methods are used for accessing various internal attributes and information about Jsi.
+
+    <nowiki><pre class=verbatim>
+Info.vars('*');
+Info.funcs('*');
+</pre></nowiki>
+
+This internal self-inspection capability is referred to as <b>Introspection</b>.
+
+Documentation for Jsi in [./reference.wiki|Reference] is generated using <b>Info</b>
+
+For more details see [./reference.wiki#Info|Reference].
+

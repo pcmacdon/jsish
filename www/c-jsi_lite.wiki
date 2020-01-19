@@ -1,0 +1,100 @@
+<title>Jsi-Lite</title>
+
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#code|Demo Code]</li>
+<li>[#dstring|Jsi_DString]</li>
+<li>[#hash|Jsi_Hash]</li>
+<li>[#tree|Jsi_Tree]</li>
+<li>[#list|Jsi_List]</li>
+<li>[#map|Jsi_Map]</li>
+<li>[#dbquery|Jsi_DbCarray]</li>
+<li>[#optspec|Jsi_OptionSpec]</li>
+</ul>
+</div>
+
+A subset of the C functions for use without the script engine.
+This is made use of as follows:
+
+    <nowiki><pre class=verbatim>
+#define JSI_LITE_ONLY
+#include "jsi.c"
+//Your code goes here.
+</pre></nowiki>
+
+<h2 id=code>Demo Code</h2>
+
+Following is some demo code:
+
+  *  a minimal demo of Jsi-Lite: [../c-demos/litedemo.c].
+  *  a demo of Jsi_List: [../c-demos/listdemo.c].
+  *  a more comprehensive database demo: [../c-demos/dbdemo.c].
+  
+<hr>
+<h2 id=dstring>Jsi_DString</h2>
+
+Jsi_DString provides a dynamic string implementation where
+heap memory allocation is avoid for short strings.
+
+Jsi_DString is documented [./c-dstring.wiki|here].
+
+<hr>
+
+<h2 id=hash>Jsi_Hash</h2>
+This pages describes how to use Jsi_Hash.
+Search for Jsi_Hash in [../jsi.h#Jsi_Hash|jsi.h] for details.
+
+Hash provides simple hash table functionality.
+
+    <nowiki><pre class=verbatim>
+int isNew;
+<b>Jsi_Hash</b> *tbl = <b>Jsi_HashNew</b>(interp, <b>JSI_KEYS_STRING</b>, NULL);
+hPtr = <b>Jsi_HashEntryNew</b>(tbl, <i>"foo"</i>, &isNew);
+<b>Jsi_HashEntrySet</b>(hPtr, 99);
+<b>Jsi_HashSet</b>(tbl, <i>"bar"</i>, 100);
+<b>Jsi_HashSearch</b> search;
+for (hPtr = <b>Jsi_HashEntryFirst</b>(tbl, &search);
+    hPtr != NULL; hPtr = <b>Jsi_HashEntryNext</b>(&search)) {
+    key = <b>Jsi_HashKeyGet</b>(hPtr);
+    int n = <b>Jsi_HashValueGet</b>(hPtr);
+}
+</pre></nowiki>
+
+There are plenty of examples using Hash in the Jsi source code.
+
+<hr>
+
+<h2 id=tree>Jsi_Tree</h2>
+
+The underlying data structure for objects in JSI is a tree Red-Black trees with invariant node
+pointers: nodes are allocated using a single malloc, including space for the key.
+This introduces a problem in that varying string keys can not be copied between nodes,
+which is required when re-balancing the tree. Although tree supports swapping node positions
+instead of keys, objects instead use a key of type STRINGPTR, a combination Hash table and and Tree,
+which is fairly efficient because objects often share keys.
+
+<hr>
+
+<h2 id=list>Jsi_List</h2>
+
+Jsi_List implements a double linked list.
+
+<h2 id=map>Jsi_Map</h2>
+
+Jsi_Map encapsulates Hash/Tree/List.
+
+<hr>
+
+<h2 id=dbquery>Jsi_DbCarray</h2>
+
+  *  [./c-sqlite.wiki|Jsi_DbCarray]: Sqlite database abstraction.
+
+<h2 id=optspec>Jsi_OptionSpec</h2>
+
+  *  [./c-options.wiki|Jsi_OptionSpec] : Struct specification descriptors.

@@ -1,0 +1,244 @@
+#!/usr/bin/env jsish
+
+function Jsi_Vfs(args:array=void, conf:object=void):void
+{
+    var LogTrace = function(...) {}; // Comment out for debugging.
+    var options = { // Mount a zip, sqlar, or fossil repository as Virtual File System
+        dumpVers    :false,     // Dump version info.
+        quiet       :false,     // Suppress info msgs.
+        safe        :false,     // Forces use of Vfs.exec (which is always used by Safe-interps).
+        version     :''         // Version to mount.
+    };
+
+    var self = {
+        exec:System.exec
+    };
+
+    parseOpts(self, options, conf);
+    LogTrace('Starting');
+    
+    if (Interp.conf('isSafe') || self.safe)
+        self.exec = Vfs.exec;
+    
+    function tagsMatch(lst:array, pat:regexp, noPatches=false) {
+        var rv=[];
+        for (var i of lst) {
+            if (!i.match(pat)) continue;
+            if (noPatches) {
+                var vn = i.substr(i.indexOf('.')+1);
+                if (vn.length>2) continue;
+            }
+            rv.push(i);
+        }
+        return rv.sort();
+    }
+    
+    function Fossil(op:string, mount:string, arg:string|object|null) {
+        
+        function Fossil_Init() {
+            // Query fossil and return info.
+            function dosplit(str:string, obj:object=void) {
+                if (!obj) obj = {};
+                for (var ti of str.trim().split('\n')) {
+                    var rr = ti.match(/^([a-zA-Z0-9_]+):(.*)$/);
+                    if (rr) {
+                        var r1 = rr[1].trim(), r2 = rr[2].trim();
+                        if (!obj[r1])
+                            obj[r1] = r2;
+                        else 
+                            obj[r1] = [obj[r1]].push(r2);
+                    }
+                }
+                return obj;
+            }
+            
+            var info = {
+                tags:'',
+                UUID:''
+            };
+            info = info.merge(self); // To get Debug/Trace/Test..
+            var moptions = {
+                subDir  :'',     // Subdirectory to mount
+                version :''
+            };
+
+            parseOpts(info, moptions, mnt.param);
+            if (self.version === '')
+                self.version = mnt.version;
+            
+            var ver = self.version;
+            var sfx = ' -R '+repoFile;
+            var noPatches = mnt.noPatches;
+            info.subDir = info.subDir.trim('/');
+            info = dosplit(self.exec('fossil info -v' + sfx), info);
+            var tags = self.exec('fossil tag list' + sfx);
+            info.tags = tags.trim().split('\n');
+            if (ver === '') {
+                var vtags = tagsMatch(info.tags, /^ver-[0-9]+\.[0-9]+$/, noPatches);
+                var prtags = tagsMatch(info.tags, /^jsireq-[0-9]+\.[0-9]+$/);
+                if (!prtags.length) {
+                    if (vtags)
+                        ver = vtags[vtags.length-1];
+                } else if (!vtags.length) {
+                    LogWarn('ignoring',prtags,': missing ver- tags');
+                } else {
+                    var vn = -1, vnn, idx = -1, mat=false, down=false, vi = null, jsiver = require('Jsish'),
+                    jsivern = parseInt(0.1+jsiver*10000), vlst = [];
+                    for (vi of prtags) { // Find index if prereq
+                        idx++;
+                        vn = parseFloat(vi.substr(7));
+                        if (!vn) { LogWarn('ignored',vi,': bad version number'); continue; }
+                        vnn = parseInt(0.1+vn*10000);
+                        if (jsivern === vnn && (idx != (prtags.length-1))) {
+                            LogTrace('Prereq exact match:', vi);
+                            mat=true;
+                            break;
+                        }
+                        if (jsivern < vnn) {
+                            LogTrace('Prereq downlevel:', jsiver,'<', vn, jsivern, vnn);
+                            down=true;
+                            break;
+                        }
+                    }
+                    if (mat || down) {
+                        vi = prtags[idx]; // Get tags at current prereq.
+                        var ntags = self.exec('fossil tag list "' + vi + '" ' + sfx);
+                        ntags = ntags.trim().split('\n');
+                        var vstags = tagsMatch(ntags, /^ver-[0-9]+\.[0-9]+$/, noPatches);
+                        if (!vstags.length)
+                            LogWarn('ignored',vi,': missing ver- tags');
+                        else if (vstags.length != 1)
+                            LogWarn('ignored',vi,'duplicate ver- tags:', vstags);
+                        else {
+                            var vss = vstags[0];
+                            if (mat)
+                                ver = vss;
+                            else {
+                                var vsi = vtags.indexOf(vss),
+                                    vsn = vtags[vsi-1];
+                                if (!vsn)
+                                    LogWarn('ignored ',vi, ': missing preceeding ver- tags');
+                                else {
+                                    LogTrace('Downlevel, choose preceeding tagged version:', vsn);
+                                    ver = vsn;
+                                }
+                            }
+                        }
+                    } else {
+                        ver = vtags[vtags.length-1];
+                        LogTrace('Set to last version:', ver);
+                    }
+                    
+                }
+            }
+            if (!ver || ver === '') ver = 'tip';
+            if (!self.quiet && ver !== '')
+                puts('mounting version:', ver);
+            info = dosplit(self.exec('fossil info "' + ver + '" ' + sfx), info);
+            info.mntTag = ver;
+            if (ver.match(/^ver-[0-9]+\.[0-9]+$/))
+                info.mntVer = parseFloat(ver.substr(4));
+            info.UUID = (info.uuid?info.uuid.split()[0]:info.version);
+
+            return info;
+        }
+        
+        function Fossil_List() {
+            var info = mnt.info;
+            
+            var commit = info.UUID;
+            var sfx = ' -r ' + commit + ' -R '+repoFile;
+            var scmd = 'fossil ls -v --age ' + info.subDir+sfx;
+            var files = self.exec(scmd);
+            var sdLen = info.subDir.length;
+            var lst = [];
+            for (var line of files.trim().split('\n')) {
+                //2012-08-21 20:38:19  123 dir/file
+                var it = line.split(null);
+                if (it.length<3) break;
+                var file = it[3];
+                if (sdLen)
+                    file = file.substr(sdLen+1);
+                lst.push({file:file, size:parseInt(it[2]), timestamp:it[0]+' '+it[1], perms:0444});
+            }
+            return lst;
+        }
+        
+        function Fossil_ReadFile(file:string) {
+            var info = mnt.info;
+            var commit = info.UUID;
+            var sfx = ' -r '+commit+' -R '+repoFile;
+            if (info.subDir !== '')
+                file = info.subDir+'/'+file;
+            var val = self.exec('fossil cat "'+file+'"'+sfx);
+            return val;
+        }
+        
+        function Fossil_Done() {}
+        
+        var mnt = Vfs.conf(mount);
+        var repoFile = File.realpath(mnt.file);
+        
+        switch (op) {
+            case 'init': return Fossil_Init();
+            case 'list': return Fossil_List();
+            case 'file': return Fossil_ReadFile(arg);
+            case 'done': return Fossil_Done();
+            default: throw('unhandled msg: '+op);
+        }
+    }
+
+
+    function Sqlar(op:string, mount:string, arg:string|object|null) {
+        
+        function Sqlar_Init() {
+            var info = {};
+            info.db = new Sqlite(dbFile, {readonly:true});
+            return info;
+        }
+        
+        function Sqlar_List() {
+            var info = mnt.info;
+            var flst = info.db.query("SELECT name,mode,sz,datetime(mtime,'unixepoch') as mtime FROM sqlar");
+            var lst = [];
+            for (var i of flst)
+                lst.push({file:i.name, size:i.sz, timestamp:i.mtime, perms:parseInt(i.mode)});
+            return lst;
+        }
+        
+        function Sqlar_ReadFile(file:string) {
+            var info = mnt.info;
+            var dat = info.db.query("SELECT data FROM sqlar where name = @file LIMIT 1");
+            if (dat.length<=0)
+                return '';
+            var fdat = Zvfs.inflate(dat[0].data);
+            return fdat;
+        }
+        
+        function Sqlar_Done() {
+            var info = mnt.info;
+            delete info.db;
+        }
+                
+        var mnt = Vfs.conf(mount);
+        var dbFile = File.realpath(mnt.file);
+        
+        switch (op) {
+            case 'init': return Sqlar_Init();
+            case 'list': return Sqlar_List();
+            case 'file': return Sqlar_ReadFile(arg);
+            case 'done': return Sqlar_Done();
+            default: throw('unhandled msg: '+op);
+        }
+    }
+
+    Vfs.type('fossil', {callback:Fossil});
+    Vfs.type('sqlar',  {callback:Sqlar});
+}
+
+provide(Jsi_Vfs, 1);
+
+if (isMain())
+    runModule(Jsi_Vfs);
+else
+    Jsi_Vfs();

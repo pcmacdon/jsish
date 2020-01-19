@@ -1,0 +1,36 @@
+#!/usr/bin/env jsish
+
+// File generated using: "jsish -m -create module"
+
+function module(args:array|string=void, conf:object=void) {
+    var options = { // Module description.
+        rootdir      :''      // Root directory.
+    };
+    var self = {
+    };
+    parseOpts(self, options, conf);
+    
+    function main() {
+        LogTest('Starting', args);
+        args = Util.argArray(args);
+        if (self.rootdir === '')
+            self.rootdir=Info.scriptDir();
+        debugger;
+        LogDebug('Done');
+    }
+    
+    return main();
+}
+
+provide(module, 1);
+
+if (isMain()) {
+    if (!Interp.conf('unitTest'))
+        return runModule(module);
+    
+;'  module unit-test';
+;   module();
+;// module('',{badArg:0});
+
+}
+

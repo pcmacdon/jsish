@@ -1,0 +1,49 @@
+// File autoload.jsi: Sourced first time an unknown function call occurs
+// which sets-up Jsi_Auto with entries for loading code on-demand.
+if (Jsi_Auto.__autoloaded__)
+    return;
+Jsi_Auto.LogTrace       =
+Jsi_Auto.LogDebug       =
+Jsi_Auto.LogTest        =
+Jsi_Auto.LogInfo        =
+Jsi_Auto.LogWarn        =
+Jsi_Auto.LogError       =
+Jsi_Auto.Jsi_AutoMake   =
+Jsi_Auto.Jsi_AutoPkg    =
+Jsi_Auto.Jsi_Main       =
+Jsi_Auto.Jsi_Run        =
+Jsi_Auto.Jsi_LogFile    =
+Jsi_Auto.Jsi_Opts       =
+Jsi_Auto.Jsi_SqlValues  =
+Jsi_Auto.Jsi_SchemaUpdate =
+Jsi_Auto.Jsi_Conf       = 'source("'+Info.scriptDir()+'/Jsish.jsi")';
+Jsi_Auto.Htmlpp     = 'source("'+Info.scriptDir()+'/Htmlpp.jsi")';
+Jsi_Auto.Csspp      = 'source("'+Info.scriptDir()+'/Csspp.jsi")';
+Jsi_Auto.Jspp       = 'source("'+Info.scriptDir()+'/Jspp.jsi")';
+Jsi_Auto.Cdata      = 'source("'+Info.scriptDir()+'/Cdata.jsi")';
+Jsi_Auto.Websrv     = 'source("'+Info.scriptDir()+'/Websrv.jsi")';
+Jsi_Auto.Wget       = 'source("'+Info.scriptDir()+'/Wget.jsi")';
+Jsi_Auto.Debug      = 'source("'+Info.scriptDir()+'/Debug.jsi")';
+Jsi_Auto.Safe       = 'source("'+Info.scriptDir()+'/Safe.jsi")';
+Jsi_Auto.Zip        = 'source("'+Info.scriptDir()+'/Zip.jsi")';
+Jsi_Auto.UnitTest   = 'source("'+Info.scriptDir()+'/UnitTest.jsi")';
+Jsi_Auto.Make       = 'source("'+Info.scriptDir()+'/Make.jsi")';
+Jsi_Auto.Vfs        = 'source("'+Info.scriptDir()+'/Jsi_VFS.jsi")';
+Jsi_Auto.Archive    = 'source("'+Info.scriptDir()+'/Archive.jsi")';
+Jsi_Auto.Module     = 'source("'+Info.scriptDir()+'/Module.jsi")';
+Jsi_Auto.Help       = 'source("'+Info.scriptDir()+'/Help.jsi")';
+Jsi_Auto.GenDeep    = 'source("'+Info.scriptDir()+'/GenDeep.jsi")';
+Jsi_Auto.DebugUI        = 'source("'+Info.scriptDir()+'/DebugUI/DebugUI.jsi")';
+Jsi_Auto.SqliteUI       = 'source("'+Info.scriptDir()+'/SqliteUI/SqliteUI.jsi")';
+
+Jsi_Auto.Sqlite         = 'require("Sqlite");';
+Jsi_Auto.MySql          = 'require("MySql");';
+Jsi_Auto.Websocket      = 'require("WebSocket");';
+Jsi_Auto.Socket         = 'require("Socket");';
+Jsi_Auto.DebugUI        = 'require("DebugUI");';
+
+source(Info.scriptDir()+'/user/autoload.jsi', {exists:true, once:true});
+source(File.pwd()+'/autoload.jsi', {exists:true, once:true});
+
+Jsi_Auto.__autoloaded__ =true;
+

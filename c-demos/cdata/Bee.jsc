@@ -1,0 +1,53 @@
+#!/usr/local/bin/jsish -c -test true %s
+// Bee uses a global data struct.
+
+enum BeeType = {
+    Drone,
+    Worker,
+    Queen
+};
+
+struct Bee = {
+    int max;
+    int buzzCnt;
+    int stingCnt;
+    int pollinateCnt;
+    BeeType type;
+    STRING32 flower;
+};
+
+vars MyVars = {
+    Bee Bee_Data;
+};
+
+
+extension Bee = { // Extension to create Bee commands.
+
+    function conf(options:object|string=void):any { // Function to configure Bee options
+        /* C code. */
+    }
+
+    function buzz(n1:number):number { // Buzz
+        /* C-code. */
+        Bee_Data.buzzCnt += n1;
+        Jsi_Number n = Bee_Data.buzzCnt;
+        RETURN(n);
+    }
+
+    function sting(victim:string, times:number):string { // Sting
+        /* C-code. */
+        char buf[BUFSIZ];
+        Bee_Data.stingCnt += times;
+        snprintf(buf, sizeof(buf), "stung %s %g times", victim, times);
+        RETURN(buf); //:string
+    }
+
+    function pollinate(flower:string='daisy', times:number=1):void { // Pollinate
+        /* C-code. */
+        Bee_Data.pollinateCnt += times;
+        Jsi_Stzcpy(Bee_Data.flower, flower);
+        RETURN(); //:undefined
+    }
+    
+};
+

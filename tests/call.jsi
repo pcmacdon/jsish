@@ -1,0 +1,57 @@
+#!/usr/local/bin/jsish -u %s
+
+this.a = 1;
+puts(this);
+
+function f(x, y, z) {
+    var a = arguments[0] + arguments[1];
+;   this;
+;   x;
+;   y;
+;   z;
+;   a;
+    var ff = function (a) {
+;        x;
+;        z;
+;        this;
+    };
+    return ff;
+};
+
+var fn = f(1, 2,3);
+
+var fm = f.call({fock:32}, 4,5,6);
+
+fn(456);
+fm(789);
+
+fn.call({fn:4}, 456);
+fm.call({fm:8}, 55667);
+
+/*
+=!EXPECTSTART!=
+{ Jsi_Auto:{}, a:1 }
+this ==> { Jsi_Auto:{}, a:1 }
+x ==> 1
+y ==> 2
+z ==> 3
+a ==> 3
+this ==> { fock:32 }
+x ==> 4
+y ==> 5
+z ==> 6
+a ==> 9
+x ==> 1
+z ==> 3
+this ==> { Jsi_Auto:{}, a:1 }
+x ==> 4
+z ==> 6
+this ==> { Jsi_Auto:{}, a:1 }
+x ==> 1
+z ==> 3
+this ==> { fn:4 }
+x ==> 4
+z ==> 6
+this ==> { fm:8 }
+=!EXPECTEND!=
+*/

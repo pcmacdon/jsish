@@ -1,0 +1,150 @@
+#!/usr/bin/env jsish
+
+function GenDeep(args:array=void, opts:object=void) {
+
+    var self = {
+        query   :'export=save',
+        onRecv  :DeepFileSave,
+        fileList:[]
+    };
+    var options = { // Load markdeep and export (via websocket) to local file.
+        create  :false,             // Creates include.shtml and md dir and exits.
+        inDir   :'md',              // Input directory.
+        incFile :'include.shtml',   // Template file.
+        extn    :'.html',           // File extension.
+        force   :false,             // Do all files, even if unchanged.
+        outDir  :'html',             // Output directory.
+        strip   :false              // Strip trailing script.
+    };
+    var links = [];
+    parseOpts(self, options, opts);
+
+    function checkLinks() {
+        for (var i of links) {
+            var fh = i[0];
+            if (!File.exists(fh))
+                puts('link to unknown file',fh+' from '+i[2]+' in', i[1]);
+        }
+    }
+    
+    function repHref(str:string) {
+        var reg = /^<a href="([-a-zA-Z1-9_]+)(#[-a-zA-Z1-9_\/]+)?">$/;
+        var vals = reg.exec(str);
+        var fnam = vals[1];
+        var fh = self.outDir+'/'+fnam+'.html';
+        if (!File.exists(fh))
+            links.push([fh, str, self.curFile]);
+        var sfx = vals[2];
+        if (!sfx) sfx = '';
+        return '<a href="'+fh+sfx+'">';
+    }
+
+    function repHref2(str:string) {
+        var reg = /^<a href="(#[-a-zA-Z1-9_\/]+)"$/;
+        var vals = reg.exec(str);
+        var fnam = vals[1];
+        return '<a href="'+self.outDir+'/'+self.curFile +fnam+'"';
+    }
+    
+    function DeepFileSave(ws:userobj, id:number, data:object) {
+        if (data.cmd === 'save') {
+            var file = File.tail(data.url);
+            file = file.split('?')[0];
+            file = File.rootname(file)+self.extn;
+            var ndat = data.data;
+            //ndat = ndat.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ');
+            ndat = ndat.map(['<script', '<scriptO style="display:none"', '</script>', '</scriptO>']);
+            // Old 1.03 nuked newlines as it used <code> (instead of <pre>).
+            //ndat = ndat.map([' <span class="line"', ' \n<span class="line"',
+            //    '<script src="dumpdeep.js"></script>', '']);
+            if (self.strip) {
+                var nend = ndat.lastIndexOf('<script>window.alreadyProcessedMarkdeep|');
+                if (nend>0)
+                    ndat = ndat.substr(0,nend-1)+'</div></div><p></p>&nbsp;<p></p>';
+            }
+            ndat += '<style>body{visibility:visible;}</style>';
+            self.curFile = file;
+            var base = '';
+            if (self.outDir != '.')
+                base = '<base href="..">';
+            ndat = base+ndat.replace(/<a href="[-a-zA-Z1-9_]+(#[-a-zA-Z1-9_\/]+)?">/gm, repHref);
+            if (self.outDir != '.')
+                ndat = ndat.replace(/<a href="#[-a-zA-Z1-9_\/]+"/gm, repHref2);
+            File.write(self.outDir+'/'+file, ndat);
+            puts('Saved file',file);
+            if (!self.fileList.length) {
+                ws.send(id, 'DONE!!!');
+                checkLinks();
+                setTimeout(function () { puts('DONE!!!'); exit(0); }, 1000);
+                return;
+            }
+            file = self.fileList[0];
+            self.fileList = self.fileList.slice(1);
+            puts('Request file',file);
+            ws.send(id, file);
+        }
+    }
+
+    function main() {
+        if (self.create) {
+            File.copy('/zvfs/lib/web/markdeep/include.shtml', 'include.shtml');
+            File.copy('/zvfs/lib/web/markdeep/nginx_deepdoc.conf', 'nginx_deepdoc.conf');
+            File.copy('/zvfs/lib/web/markdeep/jsistyle.css', 'jsistyle.css');
+            File.copy('/zvfs/lib/web/dumpdeep.js', 'dumpdeep.js');
+            File.copy('/zvfs/lib/web/jsi.js', 'jsi.js');
+            File.copy('/zvfs/lib/web/markdeep.min.js', 'markdeep.min.js');
+            File.mkdir('md');
+            File.copy('/zvfs/lib/web/markdeep/DeepDoc.md', 'md/DeepDoc.md');
+            puts("DeepDoc created. View with 'jsish -W -url Deepdoc'");
+            return;
+        }
+        var fl = [];
+        if (args.length == 1 && File.isdir(args[0]))
+            self.inDir = args[0];
+        else
+            for (var i of args)
+                fl.push(i);
+        if (!File.exists(self.outDir))
+            File.mkdir('html');
+            //throw('output directory does not exits: ' + self.outDir);
+        if (!fl.length) {
+            if (!File.isdir(self.inDir))
+                throw('directory not found: '+self.inDir);
+            if (!File.exists(self.incFile))
+                throw('template not found: '+self.incFile);            
+            for (i of File.glob('*.md', {dir:self.inDir})) {
+                LogTrace('I',i);
+                var fn = self.inDir + '/' + i,
+                    fr = File.rootname(i), fo = self.outDir + '/' + fr + '.html';
+                if (!self.force) { // Skip if unmodified.
+                    if (File.exists(fo)
+                        && File.mtime(fn) < File.mtime(fo)
+                        && File.mtime(self.incFile) < File.mtime(fo)) {
+                        LogDebug("Skip ",fo);
+                        continue;
+                    }
+                }
+                LogTrace('FF',fr);
+                fl.push(fr);
+            }
+        }
+        if (!fl.length)
+            return puts("No changed files (try -force)");
+        self.fileList = fl.slice(1);
+        var wsopts = {
+             onRecv  :DeepFileSave,
+             query   :self.query,
+             wsOpts  : {extOpts :{mdi:'{dumpScript:"dumpdeep.js"}'}}
+             // htmlPrefix : '<p>',
+             // htmlSuffix : '<p>',
+         };
+        wsopts.url = fl[0];
+        Websrv([], wsopts);
+        return;
+    }
+    return main();
+}
+
+if (Info.isMain()) {
+    runModule(GenDeep);
+}

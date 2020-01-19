@@ -1,0 +1,30 @@
+#!/usr/local/bin/jsish -u %s
+
+var i = 0;
+var result = 0; 
+while (i<3) {
+    var j = 0; 
+    while (j<50) {
+        var k = 0; 
+        while (k<100) {
+            ++k; 
+            ++result; 
+        }
+        ++j; 
+    }
+;   ++i;
+}
+;result;
+;j;
+;k;
+
+/*
+=!EXPECTSTART!=
+++i ==> 1
+++i ==> 2
+++i ==> 3
+result ==> 15000
+j ==> 50
+k ==> 100
+=!EXPECTEND!=
+*/

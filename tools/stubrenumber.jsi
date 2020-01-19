@@ -1,0 +1,22 @@
+#!/usr/bin/env jsish
+// Renumber stubs.
+
+function jsi_stubrenumber(args:array|string, opts:object) {
+    var rc = '', i = 1, sp, ep;
+    var fname = (typeof(args)==='array'?args[0]:args);
+    if (!fname)
+        throw("expected filename");
+    var s, fp = new Channel(fname);
+    while ((s=fp.gets()) !== undefined) {
+        sp = s.indexOf('/*STUB = ');
+        if (sp<0) { rc += s + '\n'; continue; }
+        ep = s.indexOf('*/', sp);
+        if (ep<0) throw("missing end");
+        rc += s.substr(0, sp) + '/*STUB = ' + i++ + '*/' + s.substr(ep+2) + '\n';
+    }
+    return rc;
+}
+
+if (Info.isMain()) {
+    puts(Jsi_Main('jsi_stubrenumber'));
+}

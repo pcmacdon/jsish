@@ -1,0 +1,43 @@
+#!/usr/local/bin/jsish -c -compile true %s
+// Demo of CAPI with structs, enums, vars and extension.
+
+struct Vimy = {
+    int max = 10;        //
+    int cnt;
+    int sum;
+};
+
+vars MyVars = {
+    Vimy Vimy_Data;
+};
+
+extension Vimy = { // A C Extension
+    // C code starts after the last comment.
+    #include <stdio.h>
+    
+    function conf(options:string|object=void):any { // Configure options
+        /* C-code. */
+    }
+    
+
+    function add(n1:number, n2:number):number { // Add two numbers
+        /* C-code. */
+        Jsi_Number n = n1+n2;
+        RETURN(n);
+    }
+
+    function addall(n1:number, n2:number=2, ...):number { // Add all numbers
+        /* C-code. */
+        Jsi_Number n = n1+n2;
+        RETURN(n);
+    }
+
+    function storm(ridge:string='Arras', times:number=2):string { // Storm the ridge
+        /* C-code. */
+        char buf[BUFSIZ];
+        snprintf(buf, sizeof(buf), "Stormed %s * %g", ridge, (double)times);
+        RETURN(buf);
+    }
+   
+};
+

@@ -1,0 +1,101 @@
+#!/usr/local/bin/jsish -c -compile true %s
+
+// Car object.  Created with "new Car()"
+// Note: leading #! and comments get stripped.
+
+enum LoadType = {
+    Light,
+    Medium,
+    Heavy
+};
+
+struct Car_ = { // Module struct (optional), will be per-interp if no Car_Data var.
+    bool loaded;
+    int activeCnt; // Count of active objects.
+    int newCnt;  // Total number of new.
+};
+
+struct Car = { // Per-object struct
+    Jsi_Interp* _interp; // Note: must add _interp field for object command.
+    int maxSpeed=120;
+    int gear;
+    int shiftCnt;
+    uchar* _myPtr; // Stuff
+    FUNC callback;
+    Car_* _;    // Ptr to Car_ defined above
+};
+
+
+struct Car_fix = {
+    double Max;
+    int Cnt;
+};
+
+vars CarVars = {
+    Car_fix Car_fix_Data;
+    Car_ Car_Data; // ie. Module struct is not per-interp.
+};
+
+extension Car = { // Extension to create a Car object command.
+
+    // Outside "function" definition is C-code.
+    #include <stdio.h>
+
+    static int CarInitDone(Jsi_Interp *interp, int isRelease, Car_* _) {
+        _->loaded = !isRelease;
+        if (isRelease) {
+            puts("Unloading Car");
+        } else {
+            puts("Loading Car");
+        }
+        return JSI_OK;
+    }
+    
+    function _() {
+        /* C code for Init/Done */
+        if (CarInitDone(interp, isRelease, _) != JSI_OK)
+            return JSI_ERROR;
+    }
+    
+    function ~() { // Cleanup
+        /* C code for Object free */
+        cmdPtr->_->activeCnt--;
+        if (cmdPtr->_myPtr)
+            Jsi_Free(cmdPtr->_myPtr);
+    }
+    
+    function Car(options:object=void):userobj { // Car constructor
+        /* C code. */
+        cmdPtr->_myPtr = (uchar*)Jsi_Calloc(1, 100);
+        cmdPtr->_->newCnt++;
+        cmdPtr->_->activeCnt++;
+        return JSI_OK;
+    }
+
+    function conf(options:object|string=void):any { // Function to configure Car options
+        /* C code. */
+    }
+
+    function shift(gear:number):number { // Shift car into gear
+        /* C-code. */
+        Jsi_Number n = gear;
+        cmdPtr->gear = n;
+        cmdPtr->shiftCnt++;
+        RETURN(n);
+    }
+
+    function setSpeed(pref:string, times:number):string { // Set speed
+        /* C-code. */
+        char buf[BUFSIZ];
+        snprintf(buf, sizeof(buf), "accel %s %g times", pref, times);
+        RETURN(buf); //:string
+    }
+
+    function fix(str:string, options:object=void):void { // Fix car: function-local options
+        /* C-code. */
+        //return options; //:object
+        RETURN(); //:undefined
+    }
+    
+};
+

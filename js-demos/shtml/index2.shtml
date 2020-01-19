@@ -1,0 +1,14 @@
+<!-- File: index.shtml -->
+<!--#include file="header.html"-->
+<!--#include file="body.shtml"-->
+
+<!--#if expr="${!NOPLUGIN}"-->
+<B>Inc Plugins</B>
+
+<!--#elif expr="${*ALTPLUGIN}"-->
+<B>Inc Atl-Plugins</B>
+
+<!--#else-->
+<B>No Plugins</B>
+<!--#endif-->
+END

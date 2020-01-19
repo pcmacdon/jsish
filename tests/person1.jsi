@@ -1,0 +1,40 @@
+#!/usr/local/bin/jsish -u %s
+
+function Person(name, sex) {
+   this.name = name;
+   this.sex = sex;
+};
+Person.prototype = {
+   getName: function() {
+       return this.name;
+   },
+   getSex: function() {
+       return this.sex;
+   },
+   age: 18
+};
+;Person.prototype;
+var chun, zhang;
+;zhang = new Person('ZhangSan', 'man');
+;zhang.getName();
+;chun = new Person('ChunHua', 'woman');
+;chun.getName();
+;zhang.age;
+;zhang.age = 20;
+;zhang.age;
+delete zhang.age;
+;zhang.age;
+
+/*
+=!EXPECTSTART!=
+Person.prototype ==> { age:18, getName:"function () {...}", getSex:"function () {...}" }
+zhang = new Person('ZhangSan', 'man') ==> { name:"ZhangSan", sex:"man" }
+zhang.getName() ==> ZhangSan
+chun = new Person('ChunHua', 'woman') ==> { name:"ChunHua", sex:"woman" }
+chun.getName() ==> ChunHua
+zhang.age ==> 18
+zhang.age = 20 ==> 20
+zhang.age ==> 20
+zhang.age ==> 18
+=!EXPECTEND!=
+*/

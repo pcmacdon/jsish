@@ -1,0 +1,23 @@
+#!/usr/local/bin/jsish -u %s
+
+this.top = 'top';
+
+function a(...) {
+;   this;
+;   arguments;
+};
+
+a.apply({a:'a'});
+a.apply({b:'b'}, [1,2]);
+a.apply({c:'c'}, [1,2,3,4]);
+
+/*
+=!EXPECTSTART!=
+this ==> { a:"a" }
+arguments ==> []
+this ==> { b:"b" }
+arguments ==> [ 1, 2 ]
+this ==> { c:"c" }
+arguments ==> [ 1, 2, 3, 4 ]
+=!EXPECTEND!=
+*/

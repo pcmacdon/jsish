@@ -1,0 +1,254 @@
+<title>Packages</title>
+
+<div id=wikitoc>
+<ul>
+<li>[./index.wiki|Index]</li>
+<li>[./reference.wiki|Reference]</li>
+</ul>
+<hr style="border-style:solid">
+<ul>
+<li>[#packages|Packages]</li>
+<ul>
+<li>[#provide|Provide]</li>
+<li>[#require|Require]</li>
+<li>[#libpaths|PkgDirs]</li>
+</ul>
+<li>[#load|Load]</li>
+<li>[#source|Source]</li>
+<li>[#autoload|Autoload]</li>
+<ul>
+<li>[#autojsi|AutoFiles]</li>
+<li>[#modfunc|Object Functions]</li>
+</ul>
+</ul>
+</div>
+
+<h2 id=packages>Packages</h2>
+
+A package is software (javascript or compiled extension) containing a [#provide|provide()].
+
+Packages are loaded using [#require|require()].
+
+Here is a javascript example:
+
+    <nowiki><pre class=verbatim>
+<i>//File: simple.jsi</i>
+function simple(n) { return n+1; }
+
+<b>provide</b>(<i>'simple'</i>);
+</nowiki></pre>
+
+and this is loaded with:
+
+    <nowiki><pre class=verbatim>
+<b>require</b>(<i>'simple'</i>);
+
+simple(2);
+</nowiki></pre>
+
+Note, javascript packages are typically deployed as [./js-modules.wiki|modules].
+
+<h3 id=provide>Provide</h3>
+
+<b>function provide(name:string, version:number=1):void</b>
+
+<b>provide</b> indicates that the current file supplies <b>name</b> for a <b>require</b>.
+
+A package file is of the form <b>name.EXT</b> or <b>name/name.EXT</b>;
+<b>name</b> may contain only the characters <b>_ 0-9 a-z A-Z</b>.
+
+This file is either a Jsi script (<b>.jsi</b>) containing a <b>provide(name)</b> call,
+or shared library (<b>.so</b>/<b>.dll</b>)
+containing a <b>Jsi_PkgProvide()</b>.
+
+<h3 id=require>Require</h3>
+
+<b>function require(name:string=void, version:number=1):number|array|object</b>
+
+Require is used to load/query packages:
+
+  *  zero arguments: returns the list of all loaded package names. 
+  *  one argument: loads package code (if necessary) and returns its version.
+  *  two arguments: as above but checks the version and returns the version and loadFile in an object.
+  
+If a version argument is given, and it is greater than package version, a warning is generated.
+
+Package files are searched for in the following paths:
+
+  #  Any directory in the [#libpaths|pkgDirs] Interp option.
+  #  The executable directory of jsish.
+  #  The directory of the current script.
+
+<h3 id=libpaths>PkgDirs</h3>
+
+Packages are searched for are specified by <b>pkgDirs</b>, which can be set <b>pkgDirs</b> using:
+
+    <nowiki><pre class=verbatim>
+Interp.conf({<b>pkgDirs</b>:[<i>'/usr/local/lib', '/usr/share'</i>]});
+</nowiki></pre>
+
+When a package is not found in <b>pkgDirs</b>, the executable and main script directories are checked.
+
+<b>Note:</b> sub-interps inherit <b>pkgDirs</b> from the parent.
+
+<hr>
+<h2 id=load>Load</h2>
+
+<b>function load(shlib:string):void</b>
+
+The <b>load</b> command is used to load shared library extension into memory.
+
+    <nowiki><pre class=verbatim>
+<b>load</b>(<i>'libsqlitejs.so'</i>);
+</pre></nowiki>
+
+On Windows, the extensions <b>.dll</b> is used instead of <b>.so</b>.
+
+For more details see [./c-extensions.wiki|Extensions].
+
+<hr>
+
+<h2 id=source>Source</h2>
+
+<b>function source(val:string|array, options:object=void):void</b>
+
+<b>source</b> is used to include javascript files, eg.
+
+    <pre class=verbatim>
+<b>source</b>(<i>'scripts/foo.js'</i>);
+</pre>
+
+<b>source</b> will also accept an array of files, as in:
+
+    <nowiki><pre class=verbatim>
+<b>source</b>([<i>'foo.js'</i>,<i>'bar.js'</i>]);
+</nowiki></pre>
+
+
+A second parameter may be used for setting the following options:
+
+    <table border='1' class=cmdstbl>
+<tr><th>Option</th> <th>Type</th> <th>Description</th> </tr>
+<tr><td>debug</td><td>INT</td><td>Debug level.</td> </tr>
+<tr><td>auto</td><td>BOOL</td><td>Setup for load of autoload.jsi files.</td></tr>
+<tr><td>isMain</td><td>BOOL</td><td>Force isMain() to true.</td></tr>
+</table>
+
+
+Various source related options can be configured/examined in the usual way:
+
+    <nowiki><pre class=verbatim>
+<b>Interp.conf</b>({<b>maxIncDepth</b>:10});
+<b>var</b> cur = <b>Info.script</b>();
+<b>var</b> dir = <b>Info.scriptDir</b>();
+</nowiki></pre>
+
+The above changes the recursive maximum depth of <b>source</b> from it's default of 100.
+<hr>
+
+<h2 id=autoload>Autoload</h2>
+
+Because it is sometimes desirable to defer loading code until first invocation,
+Jsi provides a mechanism 
+using  member values in the object <b>Jsi_Auto</b> to evaluate.
+For example, given the file <i>myfunc.js</i>:
+
+    <nowiki><pre class=verbatim>
+<i>// File myfunc.js</i>
+provide(<i>'myfunc'</i>);
+<b>function</b> double(n) { return n*2; };
+<b>function</b> half(n)   { return n/2; };
+</pre></nowiki>
+
+We can arrange for dynamic sourcing with:
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_Auto</b>.double =
+<b>Jsi_Auto</b>.half   = <i>'require("myfunc");'</i>;
+
+double(4); <i>// Load is triggered!</i>
+half(4);
+</pre></nowiki>
+
+This also works for object commands:
+
+    <nowiki><pre class=verbatim>
+<b>Jsi_Auto</b>.MySql = <i>"require('MySql')"</i>;
+
+//...
+<b>var</b> db = <b>new MySql</b>({user:<i>'root'</i>, database:<i>'jsitest'</i>});
+</pre></nowiki>
+
+
+<h3 id=autojsi>AutoFiles</h3>
+
+<b>Jsi_Auto</b> can be dynamically setup.
+
+When Jsi first tries to invoke an undefined function, it first
+traverses a list of files given in the interp option <b>autoFiles</b>.
+
+The default <b>jsish</b> value is:
+
+    <nowiki><pre class=verbatim>
+# <b>Interp.conf</b>(<i>'autoFiles'</i>);
+[ <i>"/zvfs/lib/autoload.jsi"</i> ]
+</pre></nowiki>
+ 
+Which means it loads the file [../lib/autoload.jsi], usually from the self-mounted [b ./js-zvfs.wiki|Zip-FS] on <b>/zvfs</b>.
+
+After this <b>Jsi_Auto</b> members are accessed to load the function.
+
+Additionally, if an application is run from a [../usingjsi.wiki#zeroinstall|.zip file], it's <b>autoload.jsi</b>
+file gets added to <b>autoFiles</b> automatically.
+
+This 2-stage approach results in no overhead, until a function call fails.
+
+<h3 id=modfunc>Object Functions</h3>
+
+Autoloading non-constructor object functions can use the following approach
+(the example ignores the fact that JSON is not actually loadable):
+
+    <nowiki><pre class=verbatim>
+<b>var JSON</b> = { 
+   parse:     <b>function</b>() { <b>require</b>(<i>'JSON'</i>); <b>return</b> JSON.parse.apply(this,arguments); },
+   stringify: <b>function</b>() { <b>require</b>(<i>'JSON'</i>); <b>return</b> JSON.stringify.apply(this,arguments); }
+   //...
+}
+<b>JSON.parse</b>(str); <i>// Load is triggered!</i>
+</pre></nowiki>
+
+Although that works, it suffers from one problem: the first call will not type-check functions.
+
+We could fix this shortcoming with:
+
+    <nowiki><pre class=verbatim>
+<b>var JSON</b> = {
+    check: <b>function</b>(str:string, strict:boolean=false):boolean { <b>require</b>(<i>'JSON'</i>); <b>return</b> JSON.check.apply(this,arguments); },
+    //...
+};
+</pre></nowiki>
+
+But correctly transcribing function signatures is more complicated.
+
+Fortunately there is a helper function:
+
+    <b>function Jsi_AutoMake(objName:string):string</b>
+
+which can be used to generate the auto file:
+
+    <nowiki><pre class=verbatim>
+File.write( <b>Jsi_AutoMake</b>(<i>'JSON'</i>), <i>'autoload.jsi'</i>);
+</pre></nowiki>
+
+The file <b>autoload.jsi</b> now contains calls and load and type-check correctly:
+
+    <nowiki><pre class=verbatim>
+<b>var JSON</b> = {
+    check: <b>function</b>(str:string, strict:boolean=true):boolean { require(<i>'JSON'</i>); <b>return</b> JSON.check.apply(this,arguments); },
+    parse: <b>function</b>(str:string, strict:boolean=true):any { require(<i>'JSON'</i>); <b>return</b> JSON.parse.apply(this,arguments); },
+    stringify: <b>function</b>(obj:object, strict:boolean=true):string { require(<i>'JSON'</i>); <b>return</b> JSON.stringify.apply(this,arguments); },
+};
+</pre></nowiki>
+
+
+

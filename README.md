@@ -1,4 +1,4 @@
-**Jsi** is a small, C-embeddable javascript interpreter with tightly woven Web support.
+**Jsi** is a small, C-embeddable javascript interpreter with tightly woven Web and DB support.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
     unzip jsi.zip && cd jsi && make
@@ -22,7 +22,7 @@
 | [Debug](https://jsish.org/doc/Debug.md)         | Debugging in Jsi               | [Web](https://jsish.org/doc/Web.md)             | Web and WebSocket support      |
 | [Demos](https://jsish.org/doc/Demos.md)         | Demo applications              | [Sqlite](https://jsish.org/doc/Sqlite.md)       | Sqlite database API            |
 | [Deploy](https://jsish.org/doc/Deploy.md)       | Deploying Jsi apps             | [Testing](https://jsish.org/doc/Testing.md)     | Testing facility for scripts   |
-| [Download](https://jsish.org/doc/Download.md)   | Downloading and building       | [Types](https://jsish.org/doc/Types.md)         | Function parameter types       |
+| [Download](https://jsish.org/doc/Download.md)   | Download, build and use        | [Types](https://jsish.org/doc/Types.md)         | Function parameter types       |
 
 ### Notes
 

@@ -2,11 +2,10 @@ Home
 =====
 <div id="sectmenu"></div>
 
-**Jsi** is a small, C-embeddable javascript interpreter with tightly woven Web support.
+**Jsi** is a small, C-embeddable javascript interpreter with tightly woven Web and DB support.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
     unzip jsi.zip && cd jsi && make
-
 
     jsish -u tests
     jsish -W js-demos/wspage.html   # Websocket demo.
@@ -27,7 +26,7 @@ Home
 | [Debug](Debug.md)         | Debugging in Jsi               | [Web](Web.md)             | Web and WebSocket support      |
 | [Demos](Demos.md)         | Demo applications              | [Sqlite](Sqlite.md)       | Sqlite database API            |
 | [Deploy](Deploy.md)       | Deploying Jsi apps             | [Testing](Testing.md)     | Testing facility for scripts   |
-| [Download](Download.md)   | Downloading and building       | [Types](Types.md)         | Function parameter types       |
+| [Download](Download.md)   | Download, build and use        | [Types](Types.md)         | Function parameter types       |
 
 ### Notes  
 

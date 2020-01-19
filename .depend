@@ -1,0 +1,44 @@
+src/jsiLexer.o: src/jsiLexer.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiFunc.o: src/jsiFunc.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiValue.o: src/jsiValue.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiRegexp.o: src/jsiRegexp.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiPstate.o: src/jsiPstate.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiInterp.o: src/jsiInterp.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiUtils.o: src/jsiUtils.c src/jsiInt.h src/jsi.h src/parser.h \
+ src/linenoise.h
+src/jsiProto.o: src/jsiProto.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiFilesys.o: src/jsiFilesys.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiChar.o: src/jsiChar.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiString.o: src/jsiString.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiBool.o: src/jsiBool.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiNumber.o: src/jsiNumber.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiArray.o: src/jsiArray.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiLoad.o: src/jsiLoad.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiHash.o: src/jsiHash.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiOptions.o: src/jsiOptions.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiStubs.o: src/jsiStubs.c src/jsiInt.h src/jsi.h src/parser.h \
+ src/jsiStubs.h
+src/jsiFormat.o: src/jsiFormat.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiJSON.o: src/jsiJSON.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiCmds.o: src/jsiCmds.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiFileCmds.o: src/jsiFileCmds.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiObj.o: src/jsiObj.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiSignal.o: src/jsiSignal.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiTree.o: src/jsiTree.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiCrypto.o: src/jsiCrypto.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiDString.o: src/jsiDString.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiMath.o: src/jsiMath.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsmn.o: src/jsmn.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiZvfs.o: src/jsiZvfs.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiUtf8.o: src/jsiUtf8.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiUserObj.o: src/jsiUserObj.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiSocket.o: src/jsiSocket.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiSqlite.o: src/jsiSqlite.c src/jsi.h sqlite/src/sqlite3.h
+src/jsiWebSocket.o: src/jsiWebSocket.c src/jsiInt.h src/jsi.h src/parser.h \
+ websocket/src/lib/libwebsockets.h websocket/unix/lws_config.h
+src/jsiMySql.o: src/jsiMySql.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiCData.o: src/jsiCData.c src/jsiInt.h src/jsi.h src/parser.h
+src/jsiVfs.o: src/jsiVfs.c src/jsiInt.h src/jsi.h src/parser.h
+src/parser.o: src/parser.c src/jsiInt.h src/jsi.h src/parser.h src/jsiCode.c
+src/linenoise.o: src/linenoise.c src/linenoise.h
+src/jsiEval.o: src/jsiEval.c src/jsiInt.h src/jsi.h src/parser.h

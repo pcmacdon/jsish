@@ -1,6 +1,7 @@
 #!/bin/sh
 # Wrapper to run configure.js with jsimin, which is built first if required.
 set -x
+make src/jsi.c
 BUILDSYS=`uname -o`
 if [ ${BUILDSYS} = "FreeBSD" ]; then
     MAKE=gmake

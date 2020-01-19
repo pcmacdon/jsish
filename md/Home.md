@@ -1,19 +1,21 @@
 Home
 =====
+<div id="sectmenu"></div>
+
+**Jsi** is a small, C-embeddable javascript interpreter with tightly woven Web support.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
     unzip jsi.zip && cd jsi && make
 
 
-    jsish -u tests          # Run builtin tests.
-    jsish -W index.html     # View html in browser.
-    jsish -S mysqlite.db    # Sqlite web GUI.
+    jsish -u tests
+    jsish -W js-demos/wspage.html   # Websocket demo.
+    jsish -S mysqlite.db            # Web GUI for Sqlite.
     
     jsish -c -jsc "function add(n1:number, n2:number=1):number { n1+=n2; \nRETURN(n1);\n }" Sum 
-    jsish -e 'require("Sum".0); return Sum.add(9,3);'   # Simple extension.
+    jsish -e 'require("Sum".0); return Sum.add(9,3);'   # Simple C-extension.
 
-**Jsi** is a small, C-embeddable javascript interpreter with tightly woven support for Web development.
-
+### Docs
 
 | NAME                      | DESCRIPTION                    | NAME                      | DESCRIPTION                    |
 |---------------------------|--------------------------------|---------------------------|--------------------------------|
@@ -27,9 +29,9 @@ Home
 | [Deploy](Deploy.md)       | Deploying Jsi apps             | [Testing](Testing.md)     | Testing facility for scripts   |
 | [Download](Download.md)   | Downloading and building       | [Types](Types.md)         | Function parameter types       |
 
-**NOTES:**  
+### Notes  
 
- - The github mirror is here: [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish)
- - The repository for Jsi-2 was moved to: [https://jsish.org/jsi2/](https://jsish.org/jsi2/)
+ - The main fossil-repository and docs are here: [https://jsish.org//](https://jsish.org/)
+ - A github mirror is here: [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish)
  
  

@@ -474,3 +474,5 @@ ifneq ($(CURCONFVER), $(JSICURVER))
 	@echo "NOTE: version changed since last run of configure: $(CURCONFVER) != $(JSICURVER)"
 endif
 
+check:
+

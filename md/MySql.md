@@ -14,7 +14,7 @@ A simple session might look like:
     db.query('INSERT INTO players VALUES(?,?);', {values:["Barry",44]});
     var age = db.onecolumn('SELECT age FROM players WHERE name = "Barry";');
 
-A more complete example is [mysql.jsi](../js-demos/mysql.jsi?mimetype=application/javascript).
+A more complete example is [mysql.jsi](https://jsish.org/jsi/file/js-demos/mysql.jsi).
 
 Options passed in the object argument to new MySql(), may specify any of the following:
 

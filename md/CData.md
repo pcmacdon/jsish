@@ -165,12 +165,12 @@ Applicability
 ----
 There are 4 different situations where option structs may be applied:
 
-- [Bag.jsi](../c-demos/cdata/Bee.jsc?mimetype=application/javascript): Struct private to a single method (as above).
-- [Bee.jsc](../c-demos/cdata/Bee.jsc?mimetype=application/javascript): A global data struct visible from script.
-- [Baker.jsc](../c-demos/cdata/Baker.jsc?mimetype=application/javascript): An interp-private data struct.
-- [Car.jsc](../c-demos/cdata/Car.jsc?mimetype=application/javascript): A constructor, eg. **new Car()**.
+- [Bag.jsi](https://jsish.org/jsi/file/c-demos/cdata/Bee.jsc): Struct private to a single method (as above).
+- [Bee.jsc](https://jsish.org/jsi/file/c-demos/cdata/Bee.jsc): A global data struct visible from script.
+- [Baker.jsc](https://jsish.org/jsi/file/c-demos/cdata/Baker.jsc): An interp-private data struct.
+- [Car.jsc](https://jsish.org/jsi/file/c-demos/cdata/Car.jsc): A constructor, eg. **new Car()**.
 
-Here is a test script: [ext_test.jsi](../c-demos/cdata/ext_test.jsi?mimetype=application/javascript).
+Here is a test script: [ext_test.jsi](https://jsish.org/jsi/file/c-demos/cdata/ext_test.jsi).
 
 
 Conventions
@@ -247,7 +247,7 @@ Plus *char arrays* and **STRING**n for powers-of-2 up to 64k.
 
 
 ### Example
-Test output is show from [cdatatest.jsi](../c-demos/cdata/cdatatest.jsi?mimetype=application/javascript).
+Test output is show from [cdatatest.jsi](https://jsish.org/jsi/file/c-demos/cdata/cdatatest.jsi).
 
 Here are an excerpt:
 
@@ -278,7 +278,7 @@ Variables
 ----
 Many types of variables are available.
 
-Here, an example from [c-demos/cdata/demo0.jsc](../c-demos/cdata/demo0.jsc?mimetype=application/javascript)
+Here, an example from [c-demos/cdata/demo0.jsc](https://jsish.org/jsi/file/c-demos/cdata/demo0.jsc)
 defines a number of vars using two structs: **Foo** and **Bar**:
 
     vars MyVars = {

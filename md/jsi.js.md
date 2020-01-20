@@ -3,7 +3,7 @@ jsi.js
 
 <div id="sectmenu"></div>
 
-[jsi.js](/file/lib/web/jsi.js) provides provdes global commands: **$**, **$jsig**, **puts**.
+[jsi.js](https://jsish.org/jsi/file/lib/web/jsi.js) provides provdes global commands: **$**, **$jsig**, **puts**.
 
 Typed Functions
 ====

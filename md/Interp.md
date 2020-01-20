@@ -83,7 +83,7 @@ Sub-interpreters use **alias** to relay calls to the parent:
     ;i.eval('foo(1,2,3)');
     ;i.eval('bar(99)');
 
-See test [alias2.jsi](/file/tests/alias2.jsi) for more examples and output.
+See test [alias2.jsi](https://jsish.org/jsi/file/tests/alias2.jsi) for more examples and output.
 
 Safe-Mode
 ----
@@ -156,7 +156,7 @@ If a sub-interp is threaded, it must be given either *scriptFile* or *scriptStr*
     var interp1 = new Interp({subthread:true, scriptFile:'mythrd.js'});
 
 Function-calls between threaded interps use **call** and **alias**, as in this
-[example](/file/js-demos/thread.jsi):
+[example](https://jsish.org/jsi/file/js-demos/thread.jsi):
 
     #!/usr/bin/env jsish
     "use strict";
@@ -189,7 +189,7 @@ Function-calls between threaded interps use **call** and **alias**, as in this
       puts('RET=', i.call('Sub',[obj], true));
     }
 
-Also see [threadn.jsi](/file/js-demos/threadn.jsi).
+Also see [threadn.jsi](https://jsish.org/jsi/file/js-demos/threadn.jsi).
 
 JSON
 ----

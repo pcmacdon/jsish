@@ -1,7 +1,7 @@
 C-API
 ====
 <div id="sectmenu"></div>
-Jsi has a sizeable C-API, best documented by the header file [jsi.h](../src/jsi.h).
+Jsi has a sizeable C-API, best documented by the header file [jsi.h](https://jsish.org/jsi/file/src/jsi.h).
 
 A portion of which can be used without the interpreter code by C programmers (Jsi-Lite).
 
@@ -278,7 +278,7 @@ Jsi-Lite is a subset of the Jsi C source code which can be used without the scri
 
 ### Jsi_Hash
 This pages describes how to use Jsi_Hash.
-Search for Jsi_Hash in [jsi.h](../jsi.h#Jsi_Hash) for details.
+Search for Jsi_Hash in [jsi.h](https://jsish.org/jsi/file/jsi.h#Jsi_Hash) for details.
 
 Hash provides simple hash table functionality.
 
@@ -326,9 +326,9 @@ We use Jsi-Lite as follows:
 
 Following is some demo code:
 
-- a minimal demo of Jsi-Lite: [litedemo.c](../c-demos/litedemo.c).
-- a demo of Jsi_List: [litedemo.c](../c-demos/listdemo.c).
-- a more comprehensive database demo: [dbdemo.c](../c-demos/dbdemo.c).
+- a minimal demo of Jsi-Lite: [litedemo.c](https://jsish.org/jsi/file/c-demos/litedemo.c).
+- a demo of Jsi_List: [litedemo.c](https://jsish.org/jsi/file/c-demos/listdemo.c).
+- a more comprehensive database demo: [dbdemo.c](https://jsish.org/jsi/file/c-demos/dbdemo.c).
 
 
 Options
@@ -514,7 +514,7 @@ When a user provides a value for an option, the flag `JSI_OPT_IS_SPECIFIED` is s
 Call Jsi_OptionChanged to determine if an option was specified.
 
 **Note**:
-    The Jsi header file [jsi.h](../jsi.h#Jsi_OptionSpec) and source are best consulted for complete examples.
+    The Jsi header file [jsi.h](https://jsish.org/jsi/file/jsi.h#Jsi_OptionSpec) and source are best consulted for complete examples.
 
 **Warning**:
     There are known concurrency issues with this feature.

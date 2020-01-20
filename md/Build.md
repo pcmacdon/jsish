@@ -45,7 +45,7 @@ To build the Linux target there are are two steps:
 
     ./configure
 
-Do not be surprised to see comiler output from [./configure](../tools/configure.js):
+Do not be surprised to see comiler output from [./configure](https://jsish.org/jsi/file/tools/configure.js):
 it compiles the stripped down shell "jsimin".
 
 Next, run "make" to build the actual "jsish" executable.
@@ -103,7 +103,7 @@ This is useful when you need an executable with no external dependancies.
 
 
 ### Embedding
-Amalgamated source with [jsi.c](../src/jsi.c) is the easiest way to incorporate Jsi into an existing application, eg:
+Amalgamated source with [jsi.c](https://jsish.org/jsi/file/src/jsi.c) is the easiest way to incorporate Jsi into an existing application, eg:
 
     #include "jsi.c"
     
@@ -120,9 +120,9 @@ Then compile with:
     gcc  myfile.c -o myfile -lm -lz -ldl -lpthread
     
 
-More extensive examples are in [c-demos](/file/c-demos).
+More extensive examples are in [c-demos](https://jsish.org/jsi/file/c-demos).
 
-In particular [minimal.c](/file/c-demos/minimal.c), used to create **minimalsh** that
+In particular [minimal.c](https://jsish.org/jsi/file/c-demos/minimal.c), used to create **minimalsh** that
 handles Jsi arguments then returns control to application:
 
     $ make -C c-demos minimalsh
@@ -286,7 +286,7 @@ This lets you run scripts from the command line with default arguments:
 From geany you can now run the script with F9, and step through
 warnings and errors.
 
-This also works for [logging](Logging.md) messages: [mytest2](../js-demos/log/mytest2.jsi)
+This also works for [logging](Logging.md) messages: [mytest2](https://jsish.org/jsi/file/js-demos/log/mytest2.jsi)
 
 
 Editors

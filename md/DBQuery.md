@@ -57,7 +57,7 @@ To incorporate Jsi_DbCarray into an application,
     }
 
 - For a simple but complete Jsi_DbCarray example see [Jsi-Lite demo](../c-demos/litedemo.c).
-- For a complete working example see [../c-demos/dbdemo.c]*.
+- For a complete working example see [https://jsish.org/jsi/file/c-demos/dbdemo.c]*.
 
 
 Example

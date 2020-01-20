@@ -253,7 +253,7 @@ and in another terminial, a client.
     var s = new Socket({noAsync:true});
     s.send('hello world\n');
 
-For another socket example see [sockdemo.jsi](../js-demos/sockdemo.jsi?mimetype=application/javascript).
+For another socket example see [sockdemo.jsi](https://jsish.org/jsi/file/js-demos/sockdemo.jsi).
 
 [Sqlite](Reference.md#Sqlite)
 ----
@@ -292,7 +292,7 @@ The first argument is treated as follows:
 
 In C, when the bg option is true, system() is called, otherwise popen() is used.
 
-For more examples see [exec test](../tests/exec.jsi?mimetype=application/javascript).
+For more examples see [exec test](https://jsish.org/jsi/file/tests/exec.jsi).
 
 
 ### format

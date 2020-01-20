@@ -27,5 +27,5 @@ a small javascript interpreter integrating DB, Web, and C-embeddability.
 Links
 ----
 
+ - [https://jsish.org](https://jsish.org):  Fossil repository and docs. 
  - [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish): Github repository and issues.
- - [https://jsish.org](https://jsish.org):  Fossil repository. 

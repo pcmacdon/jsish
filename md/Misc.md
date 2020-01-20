@@ -313,7 +313,7 @@ Doc Index
 ----
 
 - **Start**: [Download](Build.md), [Building](Build.md#Building), [Using](Build.md#Using), [Embedding](Build.md#Embedding)
-- **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [FAQ](../../../wiki/FAQ), [Index](Docs.md), [License](Misc.md#License), [Language](Misc.md#Language Comparisons), [ECMA](Misc.md#ECMA Compatibilty)
+- **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Docs.md), [License](Misc.md#License), [Language](Misc.md#Language Comparisons), [ECMA](Misc.md#ECMA Compatibilty)
 - **Development**: [Types](Types.md), [Strict Mode](Types.md#Strict Mode), [Type Checking](Types.md#Checking), [Debugging](Debug.md), [Errors](Testing.md#Errors), [Logging](Logging.md)
 - **Core**: [System](Builtins.md#System), [Info](Builtins.md#Info), [Interp](Interp.md), [Format](Logging.md#format), [File-System](Builtins.md#File), [Events](Builtins.md#Event)
 - **Integration**: [Modules](Coding.md#Modules), [Packages](Coding.md#Packages), [Auto-Load](Coding.md#Auto-Load)

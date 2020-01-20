@@ -453,11 +453,13 @@ clean:
 	rm -rf src/*.o *.a jsish $(MINIZDIR)/*.o win/*.o regex/*.o
 	$(MAKE) -C sqlite clean
 	$(MAKE) -C websocket clean
+	$(MAKE) -C c-demos clean
 
 cleanall: clean
 	rm -f $(ACFILES) $(PROGBINA) core src/parser.c src/parser.h src/parser.tab.c jsimin jsish *.so $(PROGBINMIN)
 	$(MAKE) -C sqlite cleanall
 	$(MAKE) -C websocket cleanall
+	$(MAKE) -C c-demos cleanall
 
 JSIMINVER=$(shell test -x ./jsimin && ./jsimin -v | cut -d' ' -f2)
 JSICURVER=$(shell fgrep 'define JSI_VERSION_' src/jsi.h | cut -b29- | xargs | sed 's/ /./g')

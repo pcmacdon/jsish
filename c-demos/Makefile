@@ -59,9 +59,12 @@ test: all
 	./dyn.js
 	#echo 'demo(1,2);exit(0)' | ./demo1
 	echo 'demos.foo(1,2);exit(0)' | ./demo2
-	make -C stubs
-	make -C stubs test
+	$(MAKE) -C stubs
+	$(MAKE) -C stubs test
 
 clean:
-	rm -rf *.so *.o simple listdemo litedemo dbdemo cmds demo1 demo2
+	rm -rf *.so *.o simple listdemo litedemo dbdemo cmds demo1 demo2 minimal minimalsh treedemo
+	$(MAKE) -C stubs clean
+	$(MAKE) -C cdata clean
 
+cleanall:

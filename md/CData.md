@@ -11,7 +11,7 @@ The CData interface provides:
 C-Code
 ====
 
-**FYI**, the following presumes you have a current, and active [download/build](Download.md) of Jsi.
+**FYI**, the following presumes you have a current, and active [download/build](Build.md) of Jsi.
 
 Module
 ----

@@ -1,9 +1,8 @@
 Builtins
 ====
 <div id="sectmenu"></div>
-This page provides information and examples for built-in commands.
-
-**Note**: clicking on each section header goes to the auto-generated Reference.
+Builtins expands on the [generated reference](./Reference.md),
+which each section header points to.
 
 [Channel](Reference.md#Channel)
 ----

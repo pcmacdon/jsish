@@ -264,7 +264,7 @@ For example:
 
 The file and line number is reported, as well as an enumeration of known commands
 in the given scope.
-This allows errors to be [parsable by IDE's](Download.md#Editors).
+This allows errors to be [parsable by IDE's](Build.md#Editors).
 
 
 ### Method Introspection

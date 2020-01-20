@@ -275,7 +275,7 @@ Following are principle goals  Jsi:
 - But should also be compilable by **native GNU g++**, without use of *"extern C"*.
 - Have as few dependencies as possible.
 - Be generally free of value/object/memory leaks (verified with -fsanitize).
-- Provide amalgamated source for simplified [application integration](Download.md#Embedding) .
+- Provide amalgamated source for simplified [application integration](Build.md#Embedding) .
 - Low-level C-functions available in a **C-only** [Lite](C-API.md#jsi-lite) version.
 - Come with a [Debugger](Debug.md).
 - Support Web applications, particularly with database and websockets.
@@ -312,7 +312,7 @@ Rational
 Doc Index
 ----
 
-- **Start**: [Download](Download.md), [Building](Download.md#Building), [Using](Download.md#Using), [Embedding](Download.md#Embedding)
+- **Start**: [Download](Build.md), [Building](Build.md#Building), [Using](Build.md#Using), [Embedding](Build.md#Embedding)
 - **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [FAQ](../../../wiki/FAQ), [Index](Docs.md), [License](Misc.md#License), [Language](Misc.md#Language Comparisons), [ECMA](Misc.md#ECMA Compatibilty)
 - **Development**: [Types](Types.md), [Strict Mode](Types.md#Strict Mode), [Type Checking](Types.md#Checking), [Debugging](Debug.md), [Errors](Testing.md#Errors), [Logging](Logging.md)
 - **Core**: [System](Builtins.md#System), [Info](Builtins.md#Info), [Interp](Interp.md), [Format](Logging.md#format), [File-System](Builtins.md#File), [Events](Builtins.md#Event)
@@ -321,7 +321,7 @@ Doc Index
 - **Miscellaneous**: [CData](CData.md), [Threads](Interp.md#Thread-Interps), [Signal](Builtins.md#Signal), [Sqlite](Sqlite.md), [MySQL](MySql.md), [Zvfs](Builtins.md#Zvfs), [Socket](Builtins.md#Socket), [WebSocket](Builtins.md#WebSocket)
 - **Tools**: [Testing](Testing.md), [Tracing](Coding.md#Execution Trace), [Profiling](Coding.md#Code Profile), [Code-Coverage](Coding.md#Code Coverage)
 - **C/C++**: [Jsi-Lite](C-API.md#Jsi-Lite), [C Extension](CData.md), [DString](C-API.md#DString), [CData](CData.md), [Options](C-API.md#Options), [Sqlite-C](DBQuery.md), [JSON-C](C-API.md#JSON)
-- **Applications**: [Ledger](Ledger.md), [SqliteUI](Download.md#Apps), [Web Server](Coding.md#Server)
+- **Applications**: [Ledger](Ledger.md), [SqliteUI](Build.md#Apps), [Web Server](Coding.md#Server)
 
 
 Packaging
@@ -438,6 +438,513 @@ which is of particular importance for embedded applications.
 
 The C coding aspect of Jsi however is purely optional. [Ledger](Ledger.md) and the
 other demo applications neither use nor require it.
+
+
+
+Wiki Dump
+====
+
+Nginx
+====
+
+Although Jsi can serve web content directly, on the Internet
+it is more common to reverse proxy to a web-server via localhost:
+
+Following config is for setting up jsish as a reverse proxy under Nginx
+
+    location /App00/Ledger { proxy_pass http://localhost:8800; include proxy_params; }
+
+And jsish might be invoked as:
+
+    jsish -a jsi-app.fossil Ledger -port 8800 -urlPrefix /App00/Ledger -noGui true
+
+Or run via chroot/su.
+
+Wget
+====
+Jsi_Wget used for in memory download.
+
+What already worked was:
+
+    jsish -w -O - http://jsish.org/ii.html
+    hello
+
+But report uncovered omissions in [Patch](info/d26981662c), which now supports:
+
+    jsish -w -O . http://jsish.org/ii.html
+    hello
+
+BTW: note the new [js-demos/wsget.jsi](doc/tip/js-demos/wsget.jsi?mimetype=text/plain), that demonstrates overrides.
+
+
+Keys
+====
+
+Jsi provides limited support for iterators,
+in the form of **for** loops and the method **keys()**:
+
+    cat > keys.jsi<EOF
+    var x = {a:1, b:2};
+    ;x.keys();
+    var y = [1,2];
+    ;y.keys();
+    EOF
+    jsish --U keys.jsi
+
+which outputs:
+
+    x.keys() ==> [ "a", "b" ]
+    y.keys() ==> [ 0, 1 ]
+
+However this doesn't really buy you much.
+
+    var y = [1, 2];
+    for (var i in y) { puts(i); }
+    for (var i of y.keys()) { puts(i); } // Same as above
+
+Moreover in ECMA **keys())** works very differently, eg:
+
+    var k = Object.keys(x);
+
+And this works only for Objects: Array does not support **keys()**.
+
+In summary, iterators, other than **for**, are not really supported.
+
+See [Iterators on Stackoverflow.com](https://stackoverflow.com/questions/14379274/how-to-iterate-over-a-javascript-object)
+ 
+
+Undefined
+====
+
+Bugs due to **undefined** vars are one of the most annoying things about JS:
+code thought to be working suddenly starts throwing errors.
+
+Below are some of the things you can do to minimise this in Jsi.
+
+Strict Mode
+----
+To reduce coding errors and enable maximal checking,
+use [strict mode](doc/tip/md/Debug.md#Strict Mode) by starting with:
+ 
+    "use strict";
+    //...
+
+or
+
+    #!/usr/bin/env jsish
+    "use strict";
+    //...
+
+
+Expressions
+----
+Expression checking should be as simple as possible, eg:
+
+    if (x) ...
+
+is often preferred to:
+
+    if (x != '') ...
+    if (x != 0) ...
+
+because it handles the case where x may be undefined.
+
+Conditionals
+----
+Jsi will check for undefined vars used on the left-hand side (LHS) of conditional expressions.  To such avoid errors, put the var on the RHS. 
+
+    "use strict";
+    var x;
+    if ('' === x) puts('x empty'); //OK.
+    if (x === '') puts('x empty');
+    /tmp/us.jsi:4: error: lhs value undefined in ===/!==
+    ERROR
+
+For Loop
+====
+For loops are not always as simple as they seem.
+
+for...of
+----
+Use **for of** only for Arrays, not Objects, eg:
+
+    var x = [1,2];
+    for (var i of x) {}; // OK
+    var y = {a:1};
+    for (var i of y) puts(i);
+    error: operand not an array    (at or near "a")
+
+However, if web-portability of code is desired, using it can break older browsers.
+
+for...in
+----
+For web-portability one might think that it is safe to use **for...in** instead of **for of** for Arrays, but there are some gotchas in some browsers:
+
+- Indexes are not guaranteed to be in numerical order.
+- Sometimes it will iterate over properties like **length**. 
+
+Thus the safest way is using **for (;;)**.
+
+
+for (;;)
+----
+Use **for (;;)** for Arrays if you care about portability.
+
+Chroot Setup
+====
+
+Given it's small size, jsish is well suited for chroot deployments.
+
+On the jsish.org site the user **jsiusr00** was created with directory contents:
+
+    ls -RF jsiusr00
+    
+    jsiusr00:
+    bin/  dev/  etc/  ledgerjs.db  tmp/  usr/
+    
+    jsiusr00/bin:
+    fossil*  jsish*
+    
+    jsiusr00/dev:
+    null  random  urandom
+    
+    jsiusr00/etc:
+    hosts  resolv.conf
+    
+    jsiusr00/tmp:
+    
+    jsiusr00/usr:
+    jsi-app.fossil  jsi-app.sqlar  jsi-app.zip  ledgerjs.db
+
+To scale this up while saving space, multiple users "jsiusrNN" are created with readonly files hard-linked to "jsiusr00".
+
+Finally "chattr +i" is used make them immutable.
+
+Thus incremental size for each additional
+user is really only the data file "ledgerjs.db".
+
+     du -s jsiusr*
+     12468   jsiusr00
+     980 jsiusr01
+     960 jsiusr02
+     960 jsiusr03
+     ...
+     1224    jsiusr10
+     960 jsiuser11
+     ...
+     960 jsiuser19
+
+All previous directories have no shell, so with the addition of quotas and ulimits we end up with a
+deployment that is simple but secure.
+
+**NOTE:** The slight bump in "jsiusr10" is due to the addition of "sh", to allow execing fossil in a chroot.
+
+
+Function Callbacks
+----
+When writing code in Jsi be aware that function callbacks are slower than **for** loops. For example, in:
+
+    x = [1,2,3], sum=0;
+    x.forEach(function(n) {sum+=n;});
+    for (var n of x) sum+=n;
+
+the **forEach** function call is slower.
+
+Speed Comparison
+----
+The following shows just how much slower:
+
+    var x = new Array(10000).fill(1);
+    
+    function loop() {
+       var sum=0;
+       for (var n of x) sum+=n;
+       return sum;
+    }
+    
+    function func() {
+       var sum=0;
+       x.forEach(function(n) {sum+=n;});
+       return sum;
+    }
+    
+    function noop() {
+       var sum=0;
+       x.forEach(noOp);
+       return sum;
+    }
+    
+    ;Util.times(loop);
+    ;Util.times(func);
+    ;Util.times(noop);
+
+which outputs:
+
+    Util.times(loop) ==> 49892
+    Util.times(func) ==> 206804
+    Util.times(noop) ==> 144220
+
+As can be seen, even **noOp** call is slower due to overhead from function call setup.
+
+Case Study
+----
+Here is an example that considers the best way to implement a **range** function like:
+
+    function range(size, start, step) {
+        var foo = [];
+        for (var i = start; i <= size; i+=step)
+           foo.push(i);
+        return foo;
+    }
+    range(10,1,1);
+
+
+### Conventional JS
+A quick look on Stackoverflow.com shows results for
+[range](https://stackoverflow.com/questions/3895478/does-javascript-have-a-method-like-range-to-generate-a-range-within-the-supp)
+and [sequence](https://stackoverflow.com/questions/3746725/create-a-javascript-array-containing-1-n).
+Note the mind-bending ways of trying to accomplish this seemingly simple task.
+
+A popular answer was:
+
+    var N = 10; 
+    Array.apply(null, {length: N}).map(Number.call, Number)
+
+### Jsi Solution
+Unfortunately the above doesn't work in Jsi and:
+
+- It needs a large **EXPLANATION** section, even though it is only 1 line!
+- Most other answers require ES6, which Jsi does not have.
+- Many correctly observed you are probably better off using a for loop.
+
+Here are 2 implementations that work in both Jsi and ECMA:
+
+    cat > /tmp/range.jsi <<EOF
+    function range(n=20, start=0, step=1) {
+        return Array(n).fill(0).map(function(v,i,o) { return start+i*step; });
+    }
+    function range1(n=20, start=0, step=1) {
+       var a = Array(n).fill(0);
+       for (var i in a)
+          a[i] = start+i*step;
+       return a;
+    }
+    
+    ;range();
+    ;Util.times(range);
+    
+    ;range1();
+    ;Util.times(range1);
+    EOF
+    
+    jsish --U /tmp/range.jsi
+
+Output:
+
+    range() ==> [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+    Util.times(range) ==> 1136
+    range1() ==> [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+    Util.times(range1) ==> 358
+
+Both work, but the for loop is easier to read and 3-times faster.
+
+### Conclusion
+Callbacks may seem more elegant, but they are just not very efficient in Jsi.
+And code ends up being harder to read.
+
+
+Building SSL
+====
+
+How do you build-in SSL support to jsish? *(question asked in a [Forum post](forumpost/ea4abb2ab1))*
+
+Currently SSL build is not supported by configure.
+
+I *(pmacdona)* have built jsish with SSL before, 2 different ways:
+
+- Linking in the Ubuntu built WebSockets (doesn't work anymore), and
+- Build WebSockets with CMAKE and enable SSL there.
+
+This second way should still work, and involves (from memory) editing the jsi Makefile and setting **USECMAKE=1**.  Then edit websockets/Makefile and set the various `*SSL*` flags to 1.  Note the result will not be static as it becomes dependent upon **gnutls** and/or **openssl** shared libs.
+
+Note there is a side project to fix this by [forking Libwebsocket](info/d8fd524dcf)
+
+Notes
+-----
+*bwtiffin*  First up, it was mostly flailing and failing.
+
+Trying to get the first build, from the initial instructions above, and a make clean in jsi and jsi/websocket dirs.
+
+src/jsiWebSocket.c:2763 missing a semi-colon
+ 
+Then tried `make Websocket.so` in jsi/  that seemed to work, but symbols are probably not in place.
+
+Added -lssl, -lcrypto to PROGLDFLAGS in jsi/Makefile, got further but `lws_dump_json_context` needed to be commented out in src/jsiWebSocket.c:2523 and line 2714, the libwebsockets I have in /usr/lib64 does not have the lws_dump_json_context symbols (or this is a sign that I've blended the make/build).
+
+In case there is a hint here; last compile line completed with:
+
+    gcc -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
+    -g -Og -O0 -Iwebsocket/src/lib  -Iwebsocket/src/build -Iwebsocket/unix
+    -Iwebsocket/build/unix -Isqlite/src -frecord-gcc-switches -fpic
+    -DJSI__BASE64=1 -DJSI__CDATA=1 -DJSI__DEBUG=1 -DJSI__ENCRYPT=1 -DJSI__EVENT=1
+    -DJSI__FILESYS=1 -DJSI__INFO=1 -DJSI__LOAD=1 -DJSI__MARKDOWN=1 -DJSI__MATH=1
+    -DJSI__MD5=1 -DJSI__READLINE=1 -DJSI__SHA1=1 -DJSI__SHA256=1 -DJSI__SIGNAL=1
+    -DJSI__STUBS=1 -DJSI__THREADS=1 -DJSI__ZVFS=1 -DJSI__MEMDEBUG=0 -DJSI__MINIZ=0
+    -DJSI__REGEX=0 -DJSI__SANITIZE=0 -DJSI__SOCKET=1 -DJSI__SQLITE=1
+    -DJSI__WEBSOCKET=1 -DJSI__WEBSOCKET=1 -DJSI__SQLITE=1
+    -DJSI_PKG_DIRS=\""/home/btiffin/inst/langs/jsi/jsi/lib,/usr/local/lib/jsi"\"
+    -DJSI_CONF_ARGS=\"\" src/jsiLexer.o src/jsiFunc.o src/jsiValue.o
+    src/jsiRegexp.o src/jsiPstate.o src/jsiInterp.o src/jsiUtils.o src/jsiProto.o
+    src/jsiFilesys.o src/jsiChar.o src/jsiString.o src/jsiBool.o src/jsiNumber.o
+    src/jsiArray.o src/jsiLoad.o src/jsiHash.o src/jsiOptions.o src/jsiStubs.o
+    src/jsiFormat.o src/jsiJSON.o src/jsiCmds.o src/jsiFileCmds.o src/jsiObj.o
+    src/jsiSignal.o src/jsiTree.o src/jsiCrypto.o src/jsiDString.o src/jsiMath.o
+    src/jsmn.o src/jsiZvfs.o src/jsiUtf8.o src/jsiUserObj.o src/jsiSocket.o
+    src/jsiSqlite.o src/jsiWebSocket.o src/jsiMySql.o src/jsiCData.o
+    src/jsiMarkdown.o src/jsiVfs.o src/parser.o src/linenoise.o src/jsiEval.o
+    sqlite/build/unix/libsqlite3.a src/main.o -rdynamic -o jsish_ -lm -lssl
+    -lcrypto websocket/build/unix/libwebsockets.a -ldl -lpthread -lz
+
+(all one line, edited in Vim with word wrap and code block indent)
+
+Completed, but jsish `Interp.conf('hasOpenSSL')` is still false.  Fairly lost in the forest.  Build passes all tests, but still not right somewhere.
+
+Was unsure if this build is supposed to be EXT_WEBSOCKET or MOD_WEBSOCKET and kinda gave up for now.  Will require more reading through the build system first, as flailing can only get you so far.  I'm pretty sure I have a blendo set of make rules now.  Unsure if the goal is LWS in jsish or LWS from a loadable module.
+
+*Feel free to remove this part of the wiki page after reading.  I'll try and make a better report after a read through with proper notes on steps taken, starting fresh.*
+
+Todo
+----
+Find a way to build-in SSL support statically with lib musl.
+
+*bwtiffin*, might I suggest looking at mbedTLS?  It's our fave here for embedded work, and seems well supported in libwebsockets.
+
+Alternatives
+----
+Use an SSL web server that supports [Reverse Proxy](wiki/Web Reverse-Proxy).
+
+
+Building Jsi on Linux
+====
+
+Jsi is written in C, but can be compiled as either native C, or native C++ (does not use **extern C**).
+
+On Debian a few packages are required:
+
+    sudo apt-get install build-essential bison libreadline-dev libsqlite3-dev libwebsockets-dev libncurses-dev cmake libmysqlclient-dev
+
+**Note:** Some packages (eg. **cmake**) are required only for specific configurations.
+
+To build the Linux target there are are two steps:
+
+    ./configure
+
+Do not be surprised to see comiler output from configure:
+
+it compiles the stripped down shell "jsimin".
+
+Next, run "make" to build the actual "jsish" executable.
+
+    make
+
+If you want, you can see other available options using:
+
+    ./configure --help
+
+**Note:** The directory **Configs/**, which contains a number of predefined configurations which can be copied to **make.conf**
+
+The last step is to run the test suite (optional):
+
+    make test
+
+
+Debian
+----
+If you are on a debian system, you can build then install as a package:
+
+    cd tools
+    ./makedep.sh
+    sudo dpkg -i jsish-*
+
+
+FreeBSD
+----
+On FreeBSD use "gmake" instead of "make" and:
+
+    pkg install fetch gmake bison
+
+
+
+Windows
+----
+Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
+
+    sudo apt-get install gcc-mingw-w64
+
+The [sqlite](https://sqlite.org/download.html) and
+[libwebsockets](https://libwebsockets.org/) source needs to be downloaded and unpacked in "../sqlite"
+and "../websockets".  This now happens automatically.
+
+Then configure using:
+
+    ./configure --config=win
+
+**WARNING:** Certain features (eg. signals) are disabled in the 
+Windows build. There are also differences in some of the file-system 
+access functions.
+
+
+Standalone
+----
+The **standalone** build produces a static binary that contains no external library references.
+This is useful when you need a standalone executable with no external dependancies.
+
+To create a static image, Jsi uses the Musl library.
+
+The first step is to download [Musl](http://www.musl-libc.org) and unpack it.
+Then change to the **musl** dir and run configure/make, eg:
+
+     ./configure --prefix=$HOME/usr && make install
+
+Ensure that *~/usr/bin* is in your path with export PATH=$PATH:$HOME/usr/bin.
+Then back in the **jsi** dir do the following:
+
+    echo '#define __P(x) x' > ~/usr/include/sys/cdefs.h
+    echo '#include <miniz/zlib.h>' >  ~/usr/include/zlib.h
+    cp -pr miniz ~/usr/include/
+
+The sqlite and libwebsockets source needs to be downloaded and unpacked in **../sqlite**
+and **../websockets**.
+
+The static jsish can then be built with:
+
+    ./configure --config=musl
+    make
+
+
+Amalgamation
+----
+Amalgamated source is the easiest way to incorporate Jsi into an existing application:
+Here is a simple example:
+
+    #include "jsi.c"
+    
+    int main(int argc, char *argv[])
+    {
+        Jsi_Interp *interp = Jsi_InterpNew(NULL);
+        Jsi_EvalString(interp, "for (var i=1; i<=3; i++)  puts('TEST:',i);", 0);
+        if (argc>1)
+            Jsi_EvalFile(interp, Jsi_ValueNewStringKey(interp, argv[1]), 0);
+    }
+
+which we compile with:
+
+    gcc  myfile.c -lm -lz -ldl -lpthread
+
+
+Another alternative that simplifies debugging Jsi is
+using [jsiOne.c](https://jsish.org/jsi/doc/tip/src/jsiOne.c)
+
 
 
 

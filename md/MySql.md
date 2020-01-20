@@ -361,7 +361,7 @@ Differences include a greater dependance on types, and requiring a user, passwor
 ### Building
 The MySql driver does not (by default) come builtin to Jsi.
 
-However, once you [download the source](Download.md) you can build it in with:
+However, once you [download the source](Build.md) you can build it in with:
 
     make mysql
 

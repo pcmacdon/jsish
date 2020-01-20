@@ -1,6 +1,5 @@
-<div id="sectmenu"></div>
-
-**Jsi** is a small, C-embeddable javascript interpreter with tightly woven Web and DB support.
+![Jsi](www/site/logojsi.png)
+a small javascript interpreter with tightly woven Web and DB support, embeddable in C.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
     unzip jsi.zip && cd jsi && make
@@ -12,21 +11,21 @@
     jsish -c -jsc "function add(n1:number, n2:number=1):number { n1+=n2; \nRETURN(n1);\n }" Sum 
     jsish -e 'require("Sum".0); return Sum.add(9,3);'   # Simple C-extension.
 
-### Docs
 
-| NAME                      | DESCRIPTION                    | NAME                      | DESCRIPTION                    |
-|---------------------------|--------------------------------|---------------------------|--------------------------------|
-| [Builtins](./md/Builtins.md)   | The built-in commands          | [Reference](./md/Reference.md) | Built-in commands (generated)  |
-| [C-API](./md/C-API.md)         | The C API                      | [Interp](./md/Interp.md)       | The Interp API                 |
-| [CData](./md/CData.md)         | Using C structs in Jsi         | [Logging](./md/Logging.md)     | Logging support                |
-| [Coding](./md/Coding.md)       | Developing with Jsi            | [Misc](./md/Misc.md)           | Various topics                 |
-| [DBQuery](./md/DBQuery.md)     | Sqlite database queries from C | [MySql](./md/MySql.md)         | MySql database API             |
-| [Debug](./md/Debug.md)         | Debugging in Jsi               | [Web](./md/Web.md)             | Web and WebSocket support      |
-| [Demos](./md/Demos.md)         | Demo applications              | [Sqlite](./md/Sqlite.md)       | Sqlite database API            |
-| [Deploy](./md/Deploy.md)       | Deploying Jsi apps             | [Testing](./md/Testing.md)     | Testing facility for scripts   |
-| [Download](./md/Download.md)   | Download, build and use        | [Types](./md/Types.md)         | Function parameter types       |
+| NAME                           | DESCRIPTION                    | NAME                           | DESCRIPTION                    |
+|--------------------------------|--------------------------------|--------------------------------|--------------------------------|
+| [Build](./md/Build.md)         | Downloading, building and using| [Reference](./md/Reference.md) | Command reference (generated)  |
+| [Builtins](./md/Builtins.md)   | The built-in commands          | [Interp](./md/Interp.md)       | The Interp API                 |
+| [C-API](./md/C-API.md)         | The C API                      | [Logging](./md/Logging.md)     | Logging support                |
+| [CData](./md/CData.md)         | Using C structs in Jsi         | [Misc](./md/Misc.md)           | Various topics                 |
+| [Coding](./md/Coding.md)       | Developing with Jsi            | [MySql](./md/MySql.md)         | MySql database API             |
+| [DBQuery](./md/DBQuery.md)     | Sqlite database queries from C | [Sqlite](./md/Sqlite.md)       | Sqlite database API            |
+| [Debug](./md/Debug.md)         | Debugging in Jsi               | [Testing](./md/Testing.md)     | Testing facility for scripts   |
+| [Demos](./md/Demos.md)         | Demo applications              | [Types](./md/Types.md)         | Function parameter types       |
+| [Deploy](./md/Deploy.md)       | Deploying Jsi apps             | [Web](./md/Web.md)             | Web and WebSocket support      |
 
-### Links  
+Links
+----
 
- - [https://jsish.org](https://jsish.org):  The main fossil repo and docs. 
- - [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish): The github mirror.
+ - [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish): Github repository and issues.
+ - [https://jsish.org](https://jsish.org):  Fossil repository. 

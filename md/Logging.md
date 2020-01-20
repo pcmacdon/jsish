@@ -216,7 +216,7 @@ The same can be done from the command-line:
 
 
 ### Navigation
-[Geany](Download.md#geany) can navigate
+[Geany](Build.md#geany) can navigate
 through *Log* messages the same as with compiler warnings.
 
 By making your script executable, you can run it directly from Geany with F9.
@@ -227,7 +227,7 @@ with support for arguments:
     #!/usr/local/bin/jsish --T Debug %s --Trace true myinput1.txt
     puts(console.args.join(' '));
 
-See [Shell](Download.md#shell)
+See [Shell](Build.md#shell)
 
 ## assert
 The assert command is used for constraint checking.

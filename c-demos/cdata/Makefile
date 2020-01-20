@@ -6,12 +6,13 @@ JSISH=../../jsish
 CSTRPP=$(JSISH) -c
 CCGET=$(CSTRPP) -cflags true
 DEPS=$(CSTRFN) $(JSIDIR)/jsi.c $(JSIDIR)/jsi.h Makefile
+STATICS=Bee Car Baker
 
 all: shared
 
 shared: Bee.so Car.so Baker.so Bag.so Tiny.so Vimy.so VarTest.so Sum.so
 
-static: Bee Car Baker
+static: $(STATICS)
 
 test: shared
 	$(JSISH) -u ext_test.jsi
@@ -69,8 +70,9 @@ Baker.so: Baker.c $(DEPS)
 	$(CSTRPP) $<
 
 clean:
-	rm -f $(CFILES)
+	rm -f *.c *.so Carsh $(STATICS)
 
+cleanall:
 
 -include .depend
 

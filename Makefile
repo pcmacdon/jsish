@@ -242,7 +242,7 @@ SHLEXT=.so
 
 ZIPDIR=zipdir
 BLDDIR=$(PWD)
-PROGBINMIN = ./jsimin
+PROGBINMIN = $(which ./jsimin)
 PROGBINA   = $(PROGRAM)_$(EXEEXT)
 PROGBIN	   = $(PROGRAM)$(EXEEXT)
 
@@ -252,7 +252,7 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: $(STATICLIBS) $(PROGBIN) checkcfgver
+all: src/jsi.c src/jsiOne.c jsimin $(STATICLIBS) $(PROGBIN) checkcfgver
 
 help:
 	@echo "targets are: mkwin mkmusl shared jsishs stubs ref test testmem release"
@@ -278,6 +278,15 @@ jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
 
 shared: libjsi$(SHLEXT) jsish$(EXEEXT)
 
+jsimin:
+	echo "PPP: $(PROGBINMIN)"
+ifeq ($(PROGBINMIN),)
+	./configure
+	@echo "Need to rerun make due to re-configure"
+	$(MAKE)
+	exit 0
+endif
+
 $(PROGBIN): $(PROGBINA)  .FORCE
 ifneq ($(JSI__ZIPLIB),1)
 	cp -f $(PROGBINA) $(PROGBIN)
@@ -287,7 +296,7 @@ else
 ifneq ($(wildcard .fslckout),) 
 	fossil info | grep ^checkout | cut -b15- > lib/sourceid.txt
 endif
-	$(PROGBINMIN) lib/Zip.jsi create $@ $(ZIPDIR) lib
+	./jsimin lib/Zip.jsi create $@ $(ZIPDIR) lib
 endif
 	@echo "Finished '$(TARGET)' build (IGNORE MYSQL BUILD ERRORS)."
 
@@ -301,7 +310,7 @@ ledger.zip: .FORCE
 
 sqliteui$(EXEEXT):  .FORCE
 	cp $(PROGBINA) $@
-	$(PROGBINMIN) lib/Zip.jsi create  $@ ../sqliteui lib
+	./jsimin lib/Zip.jsi create  $@ ../sqliteui lib
 
 libwebsocket: $(WEBSOCKLIB)
 USECMAKE=0
@@ -356,47 +365,47 @@ src/jsiParser.c: src/jsiParser.y
 
 # Create the single amalgamation file jsi.c
 src/jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE)
-	cat src/jsi.h > $@
-	echo "#ifndef JSI_IN_AMALGAMATION" >> $@
-	echo "#define JSI_IN_AMALGAMATION" >> $@
-	echo "#define _GNU_SOURCE"  >> $@
-	echo "#define JSI_AMALGAMATION" >> $@
-	echo "struct jsi_Pstate;" >> $@
-	cat src/jsiStubs.h $(REFILES) $(HFILES) | grep -v '^#line' >> $@
-	echo "#if JSI__MINIZ" >> $@
-	cat $(MINIZDIR)/miniz.c >> $@
-	echo "#endif //JSI__MINIZ " >> $@
-	echo "#if JSI__READLINE==1" >> $@
-	cat src/linenoise.c >> $@
-	echo "#endif //JSI__READLINE==1" >> $@
-	cat $(WIFILES)  src/jsiCode.c $(PCFILES) | grep -v '^#line' >> $@
-	echo "#ifndef JSI_LITE_ONLY" >> $@
-	grep -v '^#line' $(ACFILES)  >> $@
-	echo "#endif //JSI_LITE_ONLY" >> $@
-	cat $(WFILES) $(EFILES)  >> $@
-	cat src/main.c  >> $@
-	echo "#endif //JSI_IN_AMALGAMATION" >> $@
+	@cat src/jsi.h > $@
+	@echo "#ifndef JSI_IN_AMALGAMATION" >> $@
+	@echo "#define JSI_IN_AMALGAMATION" >> $@
+	@echo "#define _GNU_SOURCE"  >> $@
+	@echo "#define JSI_AMALGAMATION" >> $@
+	@echo "struct jsi_Pstate;" >> $@
+	@cat src/jsiStubs.h $(REFILES) $(HFILES) | grep -v '^#line' >> $@
+	@echo "#if JSI__MINIZ" >> $@
+	@cat $(MINIZDIR)/miniz.c >> $@
+	@echo "#endif //JSI__MINIZ " >> $@
+	@echo "#if JSI__READLINE==1" >> $@
+	@cat src/linenoise.c >> $@
+	@echo "#endif //JSI__READLINE==1" >> $@
+	@cat $(WIFILES)  src/jsiCode.c $(PCFILES) | grep -v '^#line' >> $@
+	@echo "#ifndef JSI_LITE_ONLY" >> $@
+	@grep -v '^#line' $(ACFILES)  >> $@
+	@echo "#endif //JSI_LITE_ONLY" >> $@
+	@cat $(WFILES) $(EFILES)  >> $@
+	@cat src/main.c  >> $@
+	@echo "#endif //JSI_IN_AMALGAMATION" >> $@
     
 # Create the single compile file jsiOne.c
 src/jsiOne.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
-	echo '#include "src/jsi.h"' > $@
-	echo "#ifndef JSI_IN_AMALGAMATION" >> $@
-	echo "#define JSI_AMALGAMATION" >> $@
-	echo "struct jsi_Pstate;" >> $@
-	for ii in src/jsiStubs.h $(REFILES) $(HFILES); do echo '#include "'$$ii'"' >> $@; done
-	echo "#if JSI__MINIZ" >> $@
-	echo '#include "'$(MINIZDIR)/miniz.c'"' >> $@
-	echo "#endif //JSI__MINIZ" >> $@
-	echo "#if JSI__READLINE==1" >> $@
-	echo '#include "'src/linenoise.c'"' >> $@
-	echo "#endif //JSI__READLINE==1" >> $@
-	for ii in  src/jsiCode.c $(PCFILES); do echo '#include "'$$ii'"' >> $@; done
-	echo "#ifndef JSI_LITE_ONLY" >> $@
-	for ii in $(ACFILES); do echo '#include "'$$ii'"' >> $@; done
-	echo "#endif //JSI_LITE_ONLY" >> $@
-	for ii in $(WFILES) $(EFILES); do echo '#include "'$$ii'"' >> $@; done
-	echo '#include "src/main.c"'  >> $@
-	echo "#endif //JSI_IN_AMALGAMATION" >> $@
+	@echo '#include "src/jsi.h"' > $@
+	@echo "#ifndef JSI_IN_AMALGAMATION" >> $@
+	@echo "#define JSI_AMALGAMATION" >> $@
+	@echo "struct jsi_Pstate;" >> $@
+	@for ii in src/jsiStubs.h $(REFILES) $(HFILES); do echo '#include "'$$ii'"' >> $@; done
+	@echo "#if JSI__MINIZ" >> $@
+	@echo '#include "'$(MINIZDIR)/miniz.c'"' >> $@
+	@echo "#endif //JSI__MINIZ" >> $@
+	@echo "#if JSI__READLINE==1" >> $@
+	@echo '#include "'src/linenoise.c'"' >> $@
+	@echo "#endif //JSI__READLINE==1" >> $@
+	@for ii in  src/jsiCode.c $(PCFILES); do echo '#include "'$$ii'"' >> $@; done
+	@echo "#ifndef JSI_LITE_ONLY" >> $@
+	@for ii in $(ACFILES); do echo '#include "'$$ii'"' >> $@; done
+	@echo "#endif //JSI_LITE_ONLY" >> $@
+	@for ii in $(WFILES) $(EFILES); do echo '#include "'$$ii'"' >> $@; done
+	@echo '#include "src/main.c"'  >> $@
+	@echo "#endif //JSI_IN_AMALGAMATION" >> $@
 
 stubs:
 	(cd src && ../$(PROGBIN) ../tools/mkstubs.jsi)
@@ -467,8 +476,9 @@ CURCONFVER=$(shell test -f make.conf && fgrep DEFCONFIG_VER make.conf | cut -d= 
 
 checkjsiminver:
 ifneq ($(JSIMINVER), $(JSICURVER))
-	@echo "jsimin version mismatch"
+	@echo "ERROR: jsimin version mismatch"
 	rm -f jsimin
+	exit 1
 endif
 
 checkcfgver:

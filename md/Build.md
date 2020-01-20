@@ -37,7 +37,7 @@ Building
 ----
 Jsi requires a few packages to build, eg. on **Debian**:
 
-    sudo apt-get install build-essential unzip bison fossil libmysqlclient-dev
+    sudo apt-get install bison build-essential fossil unzip libmysqlclient-dev
 
 
 ### Linux

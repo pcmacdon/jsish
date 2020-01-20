@@ -867,11 +867,12 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             case 'v': {
                 char str[200] = "\n";
                     
-#ifndef JSI__JSIMIN
-                Jsi_Channel chan = Jsi_Open(interp, Jsi_ValueNewStringKey(interp, "/zvfs/lib/sourceid.txt"), "r");
-                if (chan)
-                    Jsi_Read(interp, chan, str, sizeof(str));
-#endif
+                Jsi_Value* fval = Jsi_ValueNewStringKey(interp, "/zvfs/lib/sourceid.txt");
+                if (!Jsi_Access(interp, fval, R_OK)) {
+                    Jsi_Channel chan = Jsi_Open(interp, fval, "r");
+                    if (chan)
+                        Jsi_Read(interp, chan, str, sizeof(str));
+                }
                 if (argc>2)
                     printf("%u.%u.%u\n", JSI_VERSION_MAJOR, JSI_VERSION_MINOR, JSI_VERSION_RELEASE);
                 else 

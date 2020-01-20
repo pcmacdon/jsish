@@ -1,7 +1,11 @@
 #!/bin/sh
 # Wrapper to run configure.js with jsimin, which is built first if required.
+if [ "" = "`which bison`" ]; then
+    echo "ERROR: bison not found.  Try: 'sudo apt install bison build-essential fossil unzip libmysqlclient-dev'"
+    exit 1
+fi
 set -x
-make src/jsi.c
+make src/jsiOne.c
 BUILDSYS=`uname -o`
 if [ ${BUILDSYS} = "FreeBSD" ]; then
     MAKE=gmake
@@ -21,7 +25,7 @@ if [ -x jsimin ]; then
 fi
 
 if [ ! -x jsimin ]; then
-    ${CC} -g -o jsimin src/jsi.c -Iminiz -DJSI__JSIMIN=1 -DJSI__MAIN=1 -DJSI__MINIZ -lm -lpthread ${LDL}
+    ${CC} -g -o jsimin src/jsiOne.c -I. -Iminiz -DJSI__JSIMIN=1 -DJSI__MAIN=1 -DJSI__MINIZ -lm -lpthread ${LDL}
     echo "Created jsimin"
 fi
 ./jsimin tools/configure.js $*

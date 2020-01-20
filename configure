@@ -5,7 +5,7 @@ if [ "" = "`which bison`" ]; then
     exit 1
 fi
 set -x
-make src/jsiOne.c
+make src/parser.c
 BUILDSYS=`uname -o`
 if [ ${BUILDSYS} = "FreeBSD" ]; then
     MAKE=gmake

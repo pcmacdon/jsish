@@ -279,7 +279,6 @@ jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
 shared: libjsi$(SHLEXT) jsish$(EXEEXT)
 
 jsimin:
-	echo "PPP: $(PROGBINMIN)"
 ifeq ($(PROGBINMIN),)
 	./configure
 	@echo "Need to rerun make due to re-configure"

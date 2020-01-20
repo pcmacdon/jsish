@@ -289,7 +289,7 @@ ifneq ($(wildcard .fslckout),)
 endif
 	$(PROGBINMIN) lib/Zip.jsi create $@ $(ZIPDIR) lib
 endif
-	@echo "Finished '$(TARGET)' build (you can ignore MySql build errors)."
+	@echo "Finished '$(TARGET)' build (IGNORE MYSQL BUILD ERRORS)."
 
 apps: ledger.zip
 #apps: sqliteui$(EXEEXT)

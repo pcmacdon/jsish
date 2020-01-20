@@ -11,12 +11,10 @@ Download
 ### Source
 To download the zipped source:
 
-    mkdir jsi
-    cd jsi
-    wget http://jsish.org/jsi/zip -O jsish.zip
-    unzip jsish.zip
+    wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
+    unzip jsi.zip && cd jsi && make
 
-Then follow [build](#Building) directions.
+See [build](#Building) for more directions.
 
 
 ### Fossil
@@ -39,7 +37,7 @@ Building
 ----
 Jsi requires a few packages to build, eg. on **Debian**:
 
-    sudo apt-get install build-essential bison fossil libncurses-dev libmysqlclient-dev
+    sudo apt-get install build-essential unzip bison fossil libmysqlclient-dev
 
 
 ### Linux

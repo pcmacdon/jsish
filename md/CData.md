@@ -1,17 +1,15 @@
 CData
 ====
 <div id="sectmenu"></div>
-The CData interface provides:
+Goals:
 
-- Generation of C-extension modules containing code and data-structs.
-- Script-defined C-structs, accessed via the [CData](Reference.md#CData) commands.
+- C-generated extension code + data-structs, and
+- Emulated structs, for access with [script CData](Reference.md#CData) commands.
 
-**Note**: All examples below that start `"cat XXX <<EOF"` are bash testable with a simple copy+paste. 
 
 C-Code
 ====
-
-**FYI**, the following presumes you have a current, and active [download/build](Build.md) of Jsi.
+Examples below with `"cat XXX <<EOF"` are bash testable with a simple copy+paste. 
 
 Module
 ----
@@ -165,7 +163,7 @@ Applicability
 ----
 There are 4 different situations where option structs may be applied:
 
-- [Bag.jsi](https://jsish.org/jsi/file/c-demos/cdata/Bee.jsc): Struct private to a single method (as above).
+- [Bag.jsc](https://jsish.org/jsi/file/c-demos/cdata/Bag.jsc): Struct private to a single method (as above).
 - [Bee.jsc](https://jsish.org/jsi/file/c-demos/cdata/Bee.jsc): A global data struct visible from script.
 - [Baker.jsc](https://jsish.org/jsi/file/c-demos/cdata/Baker.jsc): An interp-private data struct.
 - [Car.jsc](https://jsish.org/jsi/file/c-demos/cdata/Car.jsc): A constructor, eg. **new Car()**.

@@ -86,10 +86,8 @@ On FreeBSD you will need to use **gmake** instead of **make**:
 Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
 
     sudo apt-get install gcc-mingw-w64
-
-Then configure using:
-
     ./configure --config=win
+    make
 
 **Warning**: Features such as signals are disabled in the Windows build.
 As you would expect, there are also obvious differences in the file-system.
@@ -97,22 +95,9 @@ As you would expect, there are also obvious differences in the file-system.
 
 ### Standalone
 The **standalone** build produces a static binary that contains no external library references.
-This is useful when you need a standalone executable with no external dependancies.
+This is useful when you need an executable with no external dependancies.
 
-To create a static image download/unpack [Musl](https://www.musl-libc.org) then do:
-
-     ./configure --prefix=$HOME/usr
-     make install
-     export PATH=$PATH:$HOME/usr/bin
-
-Next, a few files need to be fixed up:
-
-    echo '#define __P(x) x' > ~/usr/include/sys/cdefs.h
-    echo '#include <miniz/zlib.h>' >  ~/usr/include/zlib.h
-    cp -pr miniz ~/usr/include/
-
-Finally **cd** back to the **jsi** dir and:
-
+    sudo apt-get install musl-tools
     ./configure --config=musl
     make
 

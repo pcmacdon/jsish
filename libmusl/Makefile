@@ -2,23 +2,21 @@
 MUSLVER=1.1.24
 SOURCEP=musl-$(MUSLVER)
 MUSLURL=https://www.musl-libc.org/releases/$(SOURCEP).tar.gz
-BUILDDIR=$(SOURCEP)/build
+BUILDDIR=build
 
 all: mkdirs download $(BUILDDIR)/obj/musl-gcc
 
 mkdirs:
 	mkdir -p $(BUILDDIR)
 
-download: $(SOURCEP).tar.gz:
+download: $(SOURCEP).tar.gz
 
 $(SOURCEP).tar.gz:
 	wget $(MUSLURL) || wget http://jsish.org/download/musl-$(MUSLVER).tar.gz
 	tar -xzpvf musl-$(MUSLVER).tar.gz
 
-$(SOURCEP)/obj/musl-gcc:
-	cd $(SOURCEP)
-	./configure --prefix=../build
-	make
+$(BUILDDIR)/obj/musl-gcc:
+	(cd $(BUILDDIR) && ../$(SOURCEP)/configure --prefix=$PWD && make && make install)
 
 clean:
 

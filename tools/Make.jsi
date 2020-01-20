@@ -1,5 +1,5 @@
 #!/usr/local/bin/jsish -M -file %s
-// Makefile for building jsish: controlled by make.conf from configure.
+// Makefile for building jsish: controlled by make.conf from configure. UNFINISHED
 
 var TARGET='unix',
     PREFIX='/usr/local',

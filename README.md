@@ -1,5 +1,5 @@
 ![Jsi](www/site/logojsi.png)
-a small javascript interpreter with tightly woven Web and DB support, embeddable in C.
+a small javascript interpreter integrating DB, Web, and C-embeddability.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
     unzip jsi.zip && cd jsi && make

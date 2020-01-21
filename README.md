@@ -12,7 +12,7 @@ a small javascript interpreter integrating DB, Web, and C-embeddability.
     jsish -e 'require("Sum".0); return Sum.add(9,3);'   # Simple C-extension.
 
 
-| NAME                           | DESCRIPTION                    | NAME                           | DESCRIPTION                    |
+| DOC                            | DESCRIPTION                    | DOC                             | DESCRIPTION                    |
 |--------------------------------|--------------------------------|--------------------------------|--------------------------------|
 | [Build](./md/Build.md)         | Downloading, building and using| [Reference](./md/Reference.md) | Command reference (generated)  |
 | [Builtins](./md/Builtins.md)   | The built-in commands          | [Interp](./md/Interp.md)       | The Interp API                 |
@@ -27,5 +27,5 @@ a small javascript interpreter integrating DB, Web, and C-embeddability.
 Links
 ----
 
- - [https://jsish.org](https://jsish.org):  Fossil repository and docs. 
+ - [https://jsish.org](https://jsish.org):  Fossil repository and enhanced docs. 
  - [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish): Github repository and issues.

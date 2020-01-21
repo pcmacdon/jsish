@@ -1,8 +1,7 @@
 Builtins
 ====
 <div id="sectmenu"></div>
-Builtins expands on the [generated reference](./Reference.md),
-which each section header points to.
+Builtins expands on, and provides links the [generated reference](./Reference.md).
 
 [Channel](Reference.md#Channel)
 ----

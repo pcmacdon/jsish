@@ -1,9 +1,9 @@
 CData
 ====
 <div id="sectmenu"></div>
-Goals:
+CData is used for:
 
-- C-generated extension code + data-structs, and
+- C-generated extension code + data-structs, or
 - Emulated structs, for access with [script CData](Reference.md#CData) commands.
 
 

@@ -7,12 +7,12 @@
 +#if 0
 +#undef MINIZ_HEADER_FILE_ONLY
 +#include "miniz.c"
-+#include "linenoise.c"
++//#include "linenoise.c"
 +
 +#else
 +#undef MINIZ_HEADER_FILE_ONLY
 +#include "jsi.c"
-+#include "linenoise.c"
++//#include "linenoise.c"
 +#endif
 +
  /*

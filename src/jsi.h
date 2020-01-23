@@ -330,7 +330,6 @@ JSI_EXTERN char* Jsi_StrdupLen(const char *str, int len); /*STUB = 407*/
 JSI_EXTERN char* Jsi_Strrchr(const char *str, int c); /*STUB = 33*/
 JSI_EXTERN char* Jsi_Strstr(const char *str, const char *sub); /*STUB = 34*/
 JSI_EXTERN char* Jsi_Strrstr(const char *str, const char *sub); /*STUB = 233*/ 
-JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
 JSI_EXTERN char* Jsi_Strchr(const char *str, int c); /*STUB = 36*/
 JSI_EXTERN int Jsi_Strpos(const char *str, int start, const char *nid, int nocase); /*STUB = 37*/
 JSI_EXTERN int Jsi_Strrpos(const char *str, int start, const char *nid, int nocase); /*STUB = 38*/
@@ -481,6 +480,7 @@ JSI_EXTERN void    Jsi_ObjFromDS(Jsi_DString *dsPtr, Jsi_Obj *obj);  /*STUB = 96
 JSI_EXTERN Jsi_IterObj* Jsi_IterObjNew(Jsi_Interp *interp, Jsi_IterProc *iterProc); /*STUB = 412*/
 JSI_EXTERN void Jsi_IterObjFree(Jsi_IterObj *iobj); /*STUB = 413*/
 JSI_EXTERN void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth); /*STUB = 414*/
+JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
 
 struct Jsi_IterObj {
     Jsi_Interp *interp;

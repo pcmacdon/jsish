@@ -122,7 +122,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     Jsi_Hash *pssTable, *handlers, *fileHash;
     Jsi_Value *onAuth, *onCloseLast, *onClose, *onFilter, *onOpen, *onRecv,
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
-        *rootdir, *interface, *address, *mimeTypes, *extOpts, *headers;
+        *rootdir, *interface, *address, *mimeTypes, *extOpts, *headers, *ssiExts;
     bool client, noUpdate, noWebsock, noWarn, use_ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
     Jsi_Value* version;
     int idx;
@@ -277,7 +277,7 @@ static Jsi_OptionSpec WPSOptions[] =
     JSI_OPT(STRKEY,     jsi_wsPss, clientIP,    .help="Client IP Address", jsi_IIRO),
     JSI_OPT(STRKEY,     jsi_wsPss, clientName,  .help="Client hostname", jsi_IIRO),
     JSI_OPT(BOOL,       jsi_wsPss, echo,        .help="LogInfo outputs all websock Send/Recv messages"),
-    JSI_OPT(ARRAY,      jsi_wsPss, headers,     .help="Input headers: name/value pairs"),
+    JSI_OPT(ARRAY,      jsi_wsPss, headers,     .help="Headers to send to browser on connection: name/value pairs"),
     JSI_OPT(BOOL,       jsi_wsPss, isWebsock,   .help="Socket has been upgraded to a websocket connection" ),
     JSI_OPT(FUNC,       jsi_wsPss, onClose,     .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number"),
     JSI_OPT(FUNC,       jsi_wsPss, onGet,       .help="Function to call to server handle http-get", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
@@ -306,7 +306,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(OBJ,    jsi_wsCmdObj, extOpts,    .help="Key/value store for extension-handlers options", jsi_IIOF),
     JSI_OPT(REGEXP, jsi_wsCmdObj, getRegexp,  .help="Call onGet() only if Url matches pattern"),
 //    JSI_OPT(CUSTOM, jsi_wsCmdObj, handlersPkg,.help="Handlers use package() to upgrade string to function object"),
-    JSI_OPT(ARRAY,  jsi_wsCmdObj, headers,    .help="Output headers: name/value pairs", jsi_IIOF),
+    JSI_OPT(ARRAY,  jsi_wsCmdObj, headers,    .help="Headers to send to browser: name/value pairs", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, jsiFnPattern,.help="A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsig*.js)", jsi_IIRO),
     JSI_OPT(STRING, jsi_wsCmdObj, interface,  .help="Interface for server to listen on, eg. 'eth0' or 'lo'", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, local,      .help="Limit connections to localhost addresses on the 127 network"),
@@ -314,7 +314,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(INT,    jsi_wsCmdObj, maxConnects,.help="In server mode, max number of client connections accepted"),
     JSI_OPT(INT,    jsi_wsCmdObj, maxDownload,.help="Max size of file download"),
     JSI_OPT(INT,    jsi_wsCmdObj, maxUpload,  .help="Max size of file upload will accept"),
-    JSI_OPT(OBJ,    jsi_wsCmdObj, mimeTypes,  .help="Object providing map of file extensions to mime types (eg. {txt:'text/plain', bb:'text/bb'})", jsi_IIOF),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, mimeTypes,  .help="Object providing map of file extensions to mime types. eg. {txt:'text/plain', bb:'text/bb'}", jsi_IIOF),
     JSI_OPT(UINT,   jsi_wsCmdObj, modifySecs, .help="Seconds between checking for modified files with onModify (2)"),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noConfig,   .help="Disable use of conf() to change options after options after create", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noCompress, .help="Disable per-message-deflate extension which can truncate large msgs"),
@@ -341,6 +341,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(BOOL,   jsi_wsCmdObj, redirMax,   .help="Temporarily disable redirects when see more than this in 10 minutes"),
     JSI_OPT(STRING, jsi_wsCmdObj, rootdir,    .help="Directory to serve html from (\".\")"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, server,     .help="String to send out int the header SERVER (jsiWebSocket)"),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, ssiExts,    .help="Object map of file extensions to apply SSI.  eg. {myext:true, shtml:false} ", jsi_IIOF),
     JSI_OPT(CUSTOM, jsi_wsCmdObj, stats,      .help="Statistical data", jsi_IIRO, .custom=Jsi_Opt_SwitchSuboption, .data=WPSStats),
     JSI_OPT(TIME_T, jsi_wsCmdObj, startTime,  .help="Time of websocket start", jsi_IIRO),
     JSI_OPT(STRKEY, jsi_wsCmdObj, includeFile,.help="Default file when no extension given (include.shtml)"),
@@ -604,9 +605,16 @@ static void jsi_wsDumpHeaders(jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, const char *
     Jsi_Interp *interp = cmdPtr->interp;
     Jsi_Obj *nobj;
     Jsi_Value *nv;
+    if (pss->hdrNum<=0)
+        return;
     if (!name) {
-        nobj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);
+        nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
         Jsi_ValueMakeObject(interp, ret, nobj);
+        int nsiz = Jsi_ObjArraySizer(interp, nobj, pss->hdrNum);
+        if (nsiz < pss->hdrNum) {
+            printf("header failed, %d != %d", nsiz, pss->hdrNum);
+            return;
+        }
     }
     Jsi_DString dStr = {}, vStr = {};
     int i;
@@ -625,7 +633,8 @@ static void jsi_wsDumpHeaders(jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, const char *
             }
         } else {
             nv = Jsi_ValueNewStringDup(interp, val);
-            Jsi_ObjInsert(interp, nobj, nam, nv, 0);
+            Jsi_ObjArraySet(interp, nobj, Jsi_ValueNewStringDup(interp, nam), i);
+            Jsi_ObjArraySet(interp, nobj, nv, i+1);
         }
         cp += (1 + sz2);
     }
@@ -880,6 +889,26 @@ static Jsi_RC jsi_wsFileRead(Jsi_Interp *interp, Jsi_Value *name, Jsi_DString *d
     return rc;
 }
 
+static bool jsi_wsIsSSIExt(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, const char *ext) {
+    if (cmdPtr->ssiExts) {
+        Jsi_Value *mVal = Jsi_ValueObjLookup(interp, cmdPtr->ssiExts, ext, 1);
+        if (mVal) {
+            bool b = 0;
+            if (Jsi_ValueGetBoolean(interp, mVal, &b) != JSI_OK) {
+                Jsi_LogWarn("expected bool for ssiExts '%s': disabling all\n", ext);
+                Jsi_DecrRefCount(interp, cmdPtr->ssiExts);
+                cmdPtr->ssiExts = NULL;
+            }
+            return b;
+        }
+    }
+    if (ext[0]=='s'  && (!Jsi_Strcmp(ext, "shtml")
+        || !Jsi_Strcmp(ext, "scss") || !Jsi_Strcmp(ext, "sjs")))
+        return 1;
+
+    return 0;
+}
+
 // Support the limited nonstandard SSI: #include, #if, #elif#, #else, #endif
 // No expr, just var lookup from query/udata.  And can not nest #if in same file.
 static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value *fn, Jsi_DString *dStr,
@@ -960,7 +989,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                 }
                 fval = Jsi_ValueNewStringConst(interp, fbuf, -1);
                 Jsi_IncrRefCount(interp, fval);
-                if (!ext || Jsi_Strcmp(ext, ".shtml"))
+                if (!ext || ext[0] != '.' || !jsi_wsIsSSIExt(interp, cmdPtr, pss, ext+1))
                     rc = jsi_wsFileRead(interp, fval, dStr, cmdPtr, pss);
                 else
                     rc = jsi_wsEvalSSI(interp, cmdPtr, fval, dStr, lvl+1, pss);
@@ -1310,6 +1339,8 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 "jpg", "image/jpeg", "svg", "image/svg+xml",
                 "json", "application/json", "txt", "text/plain",
                 "jsi", "application/x-javascript", "cssi", "text/css",
+                "shtml", "text/html",  "scss", "text/css",
+                "sjs", "application/x-javascript",
                 0, 0
             };
             mime = "text/html";
@@ -1321,8 +1352,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 }
         }
 
-        if (!Jsi_Strncasecmp(eext,"shtml", -1))
-            isSSI = 1;
+        isSSI = jsi_wsIsSSIExt(interp, cmdPtr, pss, eext);
 
         if ((hPtr = Jsi_HashEntryFind(cmdPtr->handlers, ext)) && !cmdPtr->deleted) {
             /* Use interprete html eg. using jsi_wpp preprocessor */
@@ -2852,7 +2882,7 @@ static Jsi_CmdSpec websockCmds[] = {
         .help="Get/Set handler command for an extension", .retType=(uint)JSI_TT_FUNCTION|JSI_TT_ARRAY|JSI_TT_STRING|JSI_TT_VOID, .flags=0, .info=FN_wshandler },
     { "ids",        WebSocketIdsCmd,      0,  0, "", .help="Return list of ids", .retType=(uint)JSI_TT_ARRAY},
     { "idconf",     WebSocketIdConfCmd,   1,  2, "id:number, options:string|object=void",.help="Configure options for connect id", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=WPSOptions },
-    { "header",     WebSocketHeaderCmd,   1,  2, "id:number, name:string=void",.help="Get one or all input headers for connect id", .retType=(uint)JSI_TT_STRING|JSI_TT_OBJECT|JSI_TT_VOID },
+    { "header",     WebSocketHeaderCmd,   1,  2, "id:number, name:string=void",.help="Get one or all input headers for connect id", .retType=(uint)JSI_TT_STRING|JSI_TT_ARRAY|JSI_TT_VOID },
     { "file",       WebSocketFileCmd,     0,  1, "name:string=void",.help="Add file to hash, or with no args return file hash", .retType=(uint)JSI_TT_ARRAY|JSI_TT_VOID },
     { "query",      WebSocketQueryCmd,    1,  2, "id:number, name:string=void",.help="Get one or all query values for connect id", .retType=(uint)JSI_TT_STRING|JSI_TT_OBJECT|JSI_TT_VOID },
     { "send",       WebSocketSendCmd,     2,  2, "id:number, data:any", .help="Send a websocket message to id", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_wssend },

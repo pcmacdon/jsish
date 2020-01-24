@@ -3733,6 +3733,10 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         Jsi_LogError("option stmtCacheMax value %d is not in range 0..%d", db->stmtCacheMax, MAX_PREPARED_STMTS);
         goto bail;
     }
+    if (!db->udata) {
+        db->udata = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, db->udata);
+    }
     if (db->readonly) {
         flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
         flags |= SQLITE_OPEN_READONLY;

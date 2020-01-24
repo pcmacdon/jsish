@@ -84,6 +84,7 @@ typedef struct SocketPss { /* Per session connection to server */
     bool echo;
     SockAddrAll sa;
     SockAddrAll recvAddr;
+    Jsi_Value *udata;
     uint siLen;
 } SocketPss;
 
@@ -174,6 +175,7 @@ static Jsi_OptionSpec SPSOptions[] =
     JSI_OPT(TIME_T,     SocketPss, sentLast,     .help="Time of last send"),
     JSI_OPT(INT,        SocketPss, sentErrCnt,   .help="Number of sends"),
     JSI_OPT(TIME_T,     SocketPss, sentErrLast,  .help="Time of last sendErr"),
+    JSI_OPT(OBJ,        SocketPss, udata,        .help="User data"),
     JSI_OPT_END(SocketPss, .help="Socket options for per-connection")
 };
 
@@ -315,6 +317,8 @@ sockGetPss(SocketObj *cmdPtr, int fd, int create)
         pss->state = PSS_CONNECTED;
         pss->id = ++cmdPtr->idx;
         pss->stack = Jsi_StackNew();
+        pss->udata = Jsi_ValueNewObj(cmdPtr->interp, NULL);
+        Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
     }
     return pss;
 }
@@ -356,6 +360,8 @@ sockDeletePss(SocketPss *pss)
     }
     Jsi_StackFreeElements(pss->cmdPtr->interp, pss->stack, sockFreeStackPss);
     Jsi_StackFree(pss->stack);
+    if (pss->udata)
+        Jsi_DecrRefCount(pss->cmdPtr->interp, pss->udata);
     pss->cmdPtr->connectCnt--;
     pss->state = PSS_DEAD;
     Jsi_Free(pss);
@@ -1068,6 +1074,10 @@ static Jsi_RC SocketConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     if ((arg != NULL && !Jsi_ValueIsNull(interp,arg))
         && Jsi_OptionsProcess(interp, SockOptions, cmdPtr, arg, 0) < 0) {
         goto bail;
+    }
+    if (!cmdPtr->udata) {
+        cmdPtr->udata = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, cmdPtr->udata);
     }
     cmdPtr->tv.tv_sec = (uint)cmdPtr->timeout;
     cmdPtr->tv.tv_usec = (uint)((cmdPtr->timeout - cmdPtr->tv.tv_sec)*1000000);

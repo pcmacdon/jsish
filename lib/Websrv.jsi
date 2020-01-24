@@ -194,7 +194,7 @@ function Websrv(args:string|array, conf:object=void):void
         chan.write(data);
         if (complete) {
             delete self.chans[id];
-            return "Uploaded file: " + filename;
+            return "Uploaded file: " + File.join(self.uploadDir, File.tail(filename));
         }
     }
     

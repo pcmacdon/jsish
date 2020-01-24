@@ -1427,6 +1427,10 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     }
 
     jsi_InterpConfFiles(interp);
+    if (!interp->udata) {
+        interp->udata = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, interp->udata);
+    }
     if (interp->subthread && !interp->scriptStr && !interp->scriptFile) {
         Jsi_LogError("subthread interp must be specify either scriptFile or scriptStr");
         Jsi_InterpDelete(interp);

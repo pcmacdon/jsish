@@ -195,6 +195,7 @@ typedef struct { /* Per session connection (to each server) */
     jsi_wsStatData stats;
     struct lws *wsi;
     Jsi_HashEntry *hPtr;
+    Jsi_Value* username;
     void *user;
     int cnt;
     //int fd;
@@ -218,7 +219,7 @@ typedef struct { /* Per session connection (to each server) */
     long file_length;
     struct lws_spa *spa;
     Jsi_DString resultStr, paramDS, url;
-    Jsi_Value *query;
+    Jsi_Value *udata, *query;
     Jsi_Value *queryObj;
     Jsi_RC resultCode;
     char **paramv;
@@ -288,7 +289,9 @@ static Jsi_OptionSpec WPSOptions[] =
     JSI_OPT(CUSTOM,     jsi_wsPss, stats,       .help="Statistics for connection", jsi_IIRO, .custom=Jsi_Opt_SwitchSuboption, .data=WPSStats),
     JSI_OPT(ARRAY,      jsi_wsPss, query,       .help="Uri arg values for connection"),
     JSI_OPT(OBJ,        jsi_wsPss, queryObj,    .help="Uri arg values for connection as an object"),
+    JSI_OPT(OBJ,        jsi_wsPss, udata,       .help="User data"),
     JSI_OPT(DSTRING,    jsi_wsPss, url,         .help="Url for connection"),
+    JSI_OPT(STRING,     jsi_wsPss, username,    .help="The login userid for this connection"),
     JSI_OPT_END(jsi_wsPss, .help="Per-connection options")
 };
 
@@ -371,7 +374,9 @@ jsi_wscallback_websock(struct lws *wsi,
       void *user, void *in, size_t len);
       
 static Jsi_RC jsi_wsfreeFile(Jsi_Interp *interp, Jsi_HashEntry* hPtr, void *ptr);
-
+static bool jsi_wsAddHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi, Jsi_Value *hdrs,
+    Jsi_DString *hStr);
+    
 // Allocate per-connection data using file descriptor.
 static jsi_wsPss*
 jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int ishttp)
@@ -410,6 +415,9 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
         pss->cnt = cmdPtr->idx++;
         pss->wid = sid;
         pss->sfd = sfd;
+        pss->udata = Jsi_ValueNewObj(cmdPtr->interp, NULL);
+        Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
+
         if (cmdPtr->debug>2)
             fprintf(stderr, "PSS CREATE: %p (http=%d) = %d\n", pss, ishttp, sfd);
         if (!ishttp) {
@@ -486,6 +494,8 @@ jsi_wsdeletePss(jsi_wsPss *pss)
         Jsi_DecrRefCount(interp, pss->queryObj);
     if (pss->lastData)
         Jsi_Free(pss->lastData);
+    if (pss->udata)
+        Jsi_DecrRefCount(interp, pss->udata);
     pss->lastData = NULL;
     if (pss->spa)
         lws_spa_destroy(pss->spa);
@@ -720,6 +730,9 @@ static Jsi_RC jsi_wsGetCmd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss* 
     if (rstr && tStr && Jsi_Strncmp(rstr, "!!!", 3)==0) {
         Jsi_DSAppend(tStr, rstr+3, NULL);
         jrc = JSI_CONTINUE;
+    } else if (rstr && tStr && Jsi_Strncmp(rstr, ">>>", 3)==0) {
+        Jsi_DSAppend(tStr, rstr+3, NULL);
+        jrc = JSI_SIGNAL;
     } else if (rstr && rstr[0] != 0)
         jsi_wsServeString(pss, wsi, rstr, jrc==JSI_OK?0:404, NULL, NULL);
     else
@@ -816,7 +829,7 @@ static bool jsi_wsAddHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws
     int i, hvl, argc = Jsi_ValueGetLength(interp, hdrs);
     for (i=0; i<argc; i+=2) {
         const char *hn = Jsi_ValueArrayIndexToStr(interp, hdrs, i, NULL),
-            *hv = Jsi_ValueArrayIndexToStr(interp, cmdPtr->headers, i+1, &hvl);
+            *hv = Jsi_ValueArrayIndexToStr(interp, hdrs, i+1, &hvl);
         if (hn && hv) {
             if (lws_add_http_header_by_name(wsi, (const uchar *)hn, (const uchar *)hv, hvl, &p, end))
                 return false;
@@ -1171,6 +1184,27 @@ static Jsi_RC WebSocketUnaliasCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     return JSI_OK;
 }
 
+int
+jsi_ws_http_redirect(struct lws *wsi, int code, Jsi_DString *tStr, 
+                  unsigned char **p, unsigned char *end)
+{
+    char *loc = Jsi_DSValue(tStr);
+    uchar *start = *p;
+    char* cookie = Jsi_Strchr(loc, '|');
+    if (cookie) { *cookie= 0; cookie++; }
+
+    if (lws_add_http_header_status(wsi, code, p, end)
+        || lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_LOCATION, (uchar *)loc, Jsi_Strlen(loc), p, end)
+        || lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,(uchar *)"text/html", 9, p,end)
+        || lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_LENGTH, (uchar *)"0", 1, p, end))
+        return -1;
+    if (cookie && lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_SET_COOKIE, (uchar *)cookie, Jsi_Strlen(cookie), p, end))
+        return -1;
+    if (lws_finalize_http_header(wsi, p, end))
+        return -1;
+    return lws_write(wsi, start, *p - start, LWS_WRITE_HTTP_HEADERS);
+}
+
 // Handle http GET/POST
 static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user,
     struct lws_context *context, const char* inPtr, Jsi_DString *tStr, jsi_wsPss *pss)
@@ -1288,7 +1322,10 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             switch (jrc) {
                 case JSI_ERROR: return -1;
                 case JSI_OK: return 0;
-                case JSI_CONTINUE: inPtr = Jsi_DSValue(tStr); break;
+                case JSI_SIGNAL:
+                    return jsi_ws_http_redirect(wsi, 301, tStr, &p, end);
+                case JSI_CONTINUE:
+                    inPtr = Jsi_DSValue(tStr); break;
                 case JSI_BREAK: break;
                 default: break;
             }
@@ -1548,7 +1585,6 @@ serve:
 
     if (pss->headers && !jsi_wsAddHeader(interp, cmdPtr, wsi, pss->headers, &hStr))
         goto bail;
-    
 
     n = Jsi_DSLength(&hStr);
 
@@ -2947,6 +2983,10 @@ static Jsi_RC WebSocketConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
 bail:
         jsi_wswebsocketObjFree(interp, cmdPtr);
         return JSI_ERROR;
+    }
+    if (!cmdPtr->udata) {
+        cmdPtr->udata = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, cmdPtr->udata);
     }
     Jsi_PathNormalize(interp, &cmdPtr->rootdir);
 

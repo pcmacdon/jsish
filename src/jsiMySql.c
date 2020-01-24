@@ -2399,6 +2399,10 @@ static Jsi_RC MySqlConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         mysqlObjFree(interp, jdb);
         return JSI_ERROR;
     }
+    if (!jdb->udata) {
+        jdb->udata = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, jdb->udata);
+    }
     jdb->db = mysql_init(NULL);
     jdb->version = (MYSQL_VERSION_MAJOR + ((Jsi_Number)MYSQL_VERSION_MINOR/100.0) + ((Jsi_Number)MYSQL_VERSION_PATCH/10000.0));
 

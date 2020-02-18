@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 2.8.55
+//JSI Command Prototypes: version 3.0.1
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -326,9 +326,9 @@ var WebSocket = function(cmd,args) {};
 WebSocket.prototype.conf = function(options:string|object=void):any {};
 WebSocket.prototype.file = function(name:string=void):array|void {};
 WebSocket.prototype.handler = function(extension:string=void, cmd:string|function=void, flags:number=0):string|array|function|void {};
-WebSocket.prototype.header = function(id:number, name:string=void):string|object|void {};
+WebSocket.prototype.header = function(id:number, name:string=void):string|array|void {};
 WebSocket.prototype.idconf = function(id:number, options:string|object=void):any {};
-WebSocket.prototype.ids = function():array {};
+WebSocket.prototype.ids = function(name:string=void):array {};
 WebSocket.prototype.query = function(id:number, name:string=void):string|object|void {};
 WebSocket.prototype.send = function(id:number, data:any):void {};
 WebSocket.prototype.status = function():object|void {};

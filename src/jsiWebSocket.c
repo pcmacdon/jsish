@@ -180,11 +180,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     const char *clientOrigin;
     const char *formParams;
     const char *curRoot;
-    // Preserve headers from http for use in websockets.
     int sfd;        // File descriptor for http.
-    int hdrSz[200]; // Space for up to 100 headers
-    int hdrNum;     // Num of above.
-    Jsi_DString dHdrs; // Store header string here.
     Jsi_DString cName;
 } jsi_wsCmdObj;
 
@@ -226,6 +222,10 @@ typedef struct { /* Per session connection (to each server) */
     int paramc;
 #endif
 } jsi_wsPss;
+
+typedef struct {
+    int unused;
+} jsi_wsUser;
 
 typedef struct {
     Jsi_Value *val, *objVar;
@@ -404,7 +404,6 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
             return NULL;
         pss = (typeof(pss))Jsi_Calloc(1, sizeof(*pss));
         Jsi_HashValueSet(hPtr, pss);
-        pss->isWebsock = !ishttp;
         pss->sig = JWS_SIG_PWS;
         pss->hPtr = hPtr;
         Jsi_HashValueSet(hPtr, pss);
@@ -419,16 +418,12 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
         Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
 
         if (cmdPtr->debug>2)
-            fprintf(stderr, "PSS CREATE: %p (http=%d) = %d\n", pss, ishttp, sfd);
+            fprintf(stderr, "PSS CREATE: %p/%p/%p (http=%d) = %d\n", pss, user, wsi, ishttp, sid);
         if (!ishttp) {
+            pss->isWebsock = 1;
             cmdPtr->stats.connectCnt++;
             cmdPtr->createCnt++;
             cmdPtr->createLast = time(NULL);
-            if (Jsi_DSLength(&cmdPtr->dHdrs)) {
-                Jsi_DSAppend(&pss->dHdrs, Jsi_DSValue(&cmdPtr->dHdrs), NULL);
-                memcpy(pss->hdrSz, cmdPtr->hdrSz, sizeof(cmdPtr->hdrSz));
-            }
-            pss->hdrNum = cmdPtr->hdrNum;
         }
     }
     if (pss) {
@@ -472,12 +467,6 @@ jsi_wsdeletePss(jsi_wsPss *pss)
     }
     jsi_wsCmdObj*cmdPtr = pss->cmdPtr;
     cmdPtr->sfd = pss->sfd;
-    Jsi_DSFree(&cmdPtr->dHdrs);
-    if (Jsi_DSLength(&pss->dHdrs)) {
-        Jsi_DSAppend(&cmdPtr->dHdrs, Jsi_DSValue(&pss->dHdrs), NULL);
-        memcpy(cmdPtr->hdrSz, pss->hdrSz, sizeof(cmdPtr->hdrSz));
-        cmdPtr->hdrNum = pss->hdrNum;
-    }
     pss->clientName = cmdPtr->clientName;
     pss->clientIP = cmdPtr->clientIP;
     Jsi_DSFree(&pss->dHdrs);
@@ -560,7 +549,7 @@ static int jsi_wsServeString(jsi_wsPss *pss, struct lws *wsi,
         rc = jsi_wswrite(pss, wsi, (unsigned char*)vStr, vLen, LWS_WRITE_HTTP);
     }
     Jsi_DSFree(&jStr);
-    return rc;
+    return (rc>=0?1:0);
 }
 
 static const char*
@@ -607,6 +596,7 @@ jsi_wsGetHeaders(jsi_wsPss *pss, struct lws *wsi, Jsi_DString* dStr, int lens[],
             lens[i++] = Jsi_Strlen(buf);
         }
     }
+    //printf("HEE: %d = %s\n", pss->wid, Jsi_DSValue(dStr) );
     return i;
 }
 
@@ -1010,7 +1000,23 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                     rc = JSI_OK;
                 Jsi_DecrRefCount(interp, fval);
             }
-        
+        } else if (!Jsi_Strncmp(cp, "#echo \"${", 9)) {
+            if (cp[llen-1] != '"' || cp[llen-2] != '}') { msg = "missing end quote"; break; }
+            Jsi_DSSetLength(&lStr, llen-2);
+            cp += 9;
+            llen -= 9;
+            if (!Jsi_Strcmp(cp, "#"))
+                Jsi_DSPrintf(dStr, "'%p'", pss);
+            else {
+                Jsi_Value *val = NULL;
+                if (!cmdPtr->udata) {
+                    val = Jsi_ValueObjLookup(interp, cmdPtr->udata, cp, 0);
+                    if (!val) { msg = "udata lookup failure"; break; }
+                    cp = Jsi_ValueString(interp, val, NULL);
+                    Jsi_DSPrintf(dStr, "'%s'", cp);
+                }
+            }
+
         } else if (!Jsi_Strncmp(cp, "#if expr=\"", 10) || !Jsi_Strncmp(cp, "#elif expr=\"", 12)) {
             if (llen<11 || cp[llen-1] != '"' || cp[llen-2] == '=') { msg = "missing end quote"; break; }
             Jsi_DSSetLength(&lStr, llen-1);
@@ -2459,6 +2465,7 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
         return Jsi_LogError("Apply in a non-websock object");
+    const char *val = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     Jsi_DString dStr = {"["};
     jsi_wsPss *pss = NULL;
     Jsi_HashEntry *hPtr;
@@ -2468,9 +2475,13 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         hPtr != NULL; hPtr = Jsi_HashSearchNext(&cursor)) {
         pss = (jsi_wsPss*)Jsi_HashValueGet(hPtr);
         WSSIGASSERT(pss, PWS);
-        if (pss->state != PWS_DEAD) {
-            Jsi_DSPrintf(&dStr, "%s%d", (cnt++?",":""), pss->wid);
+        if (pss->state == PWS_DEAD) continue;
+        if (val) {
+            char buf[100];
+            snprintf(buf, sizeof(buf), "%p", pss);
+            if (Jsi_Strcmp(buf, val)) continue;
         }
+        Jsi_DSPrintf(&dStr, "%s%d", (cnt++?",":""), pss->wid);
     }
     Jsi_DSAppend(&dStr, "]", NULL);
     Jsi_RC rc = Jsi_JSONParse(interp, Jsi_DSValue(&dStr), ret, 0);
@@ -2794,7 +2805,6 @@ static void jsi_wswebsocketObjErase(jsi_wsCmdObj *cmdPtr)
         if (cmdPtr->pssTable)
             Jsi_HashDelete(cmdPtr->pssTable);
         cmdPtr->pssTable = NULL;
-        Jsi_DSFree(&cmdPtr->dHdrs);
         if (cmdPtr->fileHash)
             Jsi_HashDelete(cmdPtr->fileHash);
         cmdPtr->fileHash = NULL;
@@ -2916,7 +2926,7 @@ static Jsi_CmdSpec websockCmds[] = {
     { "conf",       WebSocketConfCmd,     0,  1, "options:string|object=void",.help="Configure options", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=WSOptions },
     { "handler",    WebSocketHandlerCmd,  0,  3, "extension:string=void, cmd:string|function=void, flags:number=0",
         .help="Get/Set handler command for an extension", .retType=(uint)JSI_TT_FUNCTION|JSI_TT_ARRAY|JSI_TT_STRING|JSI_TT_VOID, .flags=0, .info=FN_wshandler },
-    { "ids",        WebSocketIdsCmd,      0,  0, "", .help="Return list of ids", .retType=(uint)JSI_TT_ARRAY},
+    { "ids",        WebSocketIdsCmd,      0,  1, "name:string=void", .help="Return list of ids, or lookup one id", .retType=(uint)JSI_TT_ARRAY},
     { "idconf",     WebSocketIdConfCmd,   1,  2, "id:number, options:string|object=void",.help="Configure options for connect id", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=WPSOptions },
     { "header",     WebSocketHeaderCmd,   1,  2, "id:number, name:string=void",.help="Get one or all input headers for connect id", .retType=(uint)JSI_TT_STRING|JSI_TT_ARRAY|JSI_TT_VOID },
     { "file",       WebSocketFileCmd,     0,  1, "name:string=void",.help="Add file to hash, or with no args return file hash", .retType=(uint)JSI_TT_ARRAY|JSI_TT_VOID },
@@ -3004,10 +3014,10 @@ bail:
         Jsi_LogWarn("empty protocol string: forcing to 'ws'");
     cmdPtr->protocols[JWS_PROTOCOL_HTTP].name="http-only";
     cmdPtr->protocols[JWS_PROTOCOL_HTTP].callback=jsi_wscallback_http;
-    cmdPtr->protocols[JWS_PROTOCOL_HTTP].per_session_data_size=sizeof(jsi_wsPss);
+    cmdPtr->protocols[JWS_PROTOCOL_HTTP].per_session_data_size=sizeof(jsi_wsUser);
     cmdPtr->protocols[JWS_PROTOCOL_WEBSOCK].name=subprot;
     cmdPtr->protocols[JWS_PROTOCOL_WEBSOCK].callback=jsi_wscallback_websock;
-    cmdPtr->protocols[JWS_PROTOCOL_WEBSOCK].per_session_data_size=sizeof(jsi_wsPss);
+    cmdPtr->protocols[JWS_PROTOCOL_WEBSOCK].per_session_data_size=sizeof(jsi_wsUser);
 
     if (cmdPtr->bufferPwr2 == 0)
         cmdPtr->bufferPwr2 = 16;

@@ -1094,6 +1094,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>sentLast</td><td><i>TIME_T</i></td><td>Time of last send.</td><td><i></i></td></tr>
 <tr><td>sentErrCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i></i></td></tr>
 <tr><td>sentErrLast</td><td><i>TIME_T</i></td><td>Time of last sendErr.</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
 </table>
 
 
@@ -1112,6 +1113,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>sentLast</td><td><i>TIME_T</i></td><td>Time of last send.</td><td><i></i></td></tr>
 <tr><td>sentErrCnt</td><td><i>INT</i></td><td>Number of sends.</td><td><i></i></td></tr>
 <tr><td>sentErrLast</td><td><i>TIME_T</i></td><td>Time of last sendErr.</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
 </table>
 
 
@@ -1636,9 +1638,9 @@ which can use javascript to upgrade connection to a bidirectional websocket.</td
 <tr><td>handler</td><td>handler(extension:string=void, cmd:string|function=void, flags:number=0):string|array|function|void </td><td>Get/Set handler command for an extension. With no args, returns list of handlers.  With one arg, returns value for that handler.
 Otherwise, sets the handler. When cmd is a string, the call is via runModule([cmd], arg).
 If a cmd is a function, it is called with a single arg: the file name.</td></tr>
-<tr><td>header</td><td>header(id:number, name:string=void):string|object|void </td><td>Get one or all input headers for connect id.</td></tr>
+<tr><td>header</td><td>header(id:number, name:string=void):string|array|void </td><td>Get one or all input headers for connect id.</td></tr>
 <tr><td>idconf</td><td>idconf(id:number, <a href='#WebSocket.idconfOptions'>options</a>:string|object=void) </td><td>Configure options for connect id.</td></tr>
-<tr><td>ids</td><td>ids():array </td><td>Return list of ids.</td></tr>
+<tr><td>ids</td><td>ids(name:string=void):array </td><td>Return list of ids, or lookup one id.</td></tr>
 <tr><td>query</td><td>query(id:number, name:string=void):string|object|void </td><td>Get one or all query values for connect id.</td></tr>
 <tr><td>send</td><td>send(id:number, data:any):void </td><td>Send a websocket message to id. Send a message to one (or all connections if -1). If not already a string, msg is formatted as JSON prior to the send.</td></tr>
 <tr><td>status</td><td>status():object|void </td><td>Return libwebsocket server status.</td></tr>
@@ -1664,7 +1666,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>extHandlers</td><td><i>BOOL</i></td><td>Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi.</td><td><i>initOnly</i></td></tr>
 <tr><td>extOpts</td><td><i>OBJ</i></td><td>Key/value store for extension-handlers options.</td><td><i>initOnly</i></td></tr>
 <tr><td>getRegexp</td><td><i>REGEXP</i></td><td>Call onGet() only if Url matches pattern.</td><td><i></i></td></tr>
-<tr><td>headers</td><td><i>ARRAY</i></td><td>Output headers: name/value pairs.</td><td><i>initOnly</i></td></tr>
+<tr><td>headers</td><td><i>ARRAY</i></td><td>Headers to send to browser: name/value pairs.</td><td><i>initOnly</i></td></tr>
 <tr><td>jsiFnPattern</td><td><i>STRKEY</i></td><td>A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsig*.js).</td><td><i>readOnly</i></td></tr>
 <tr><td>interface</td><td><i>STRING</i></td><td>Interface for server to listen on, eg. 'eth0' or 'lo'.</td><td><i>initOnly</i></td></tr>
 <tr><td>local</td><td><i>BOOL</i></td><td>Limit connections to localhost addresses on the 127 network.</td><td><i></i></td></tr>
@@ -1672,7 +1674,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>maxConnects</td><td><i>INT</i></td><td>In server mode, max number of client connections accepted.</td><td><i></i></td></tr>
 <tr><td>maxDownload</td><td><i>INT</i></td><td>Max size of file download.</td><td><i></i></td></tr>
 <tr><td>maxUpload</td><td><i>INT</i></td><td>Max size of file upload will accept.</td><td><i></i></td></tr>
-<tr><td>mimeTypes</td><td><i>OBJ</i></td><td>Object providing map of file extensions to mime types (eg. {txt:'text/plain', bb:'text/bb'}).</td><td><i>initOnly</i></td></tr>
+<tr><td>mimeTypes</td><td><i>OBJ</i></td><td>Object providing map of file extensions to mime types. eg. {txt:'text/plain', bb:'text/bb'}.</td><td><i>initOnly</i></td></tr>
 <tr><td>modifySecs</td><td><i>UINT</i></td><td>Seconds between checking for modified files with onModify (2).</td><td><i></i></td></tr>
 <tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of conf() to change options after options after create.</td><td><i>initOnly</i></td></tr>
 <tr><td>noCompress</td><td><i>BOOL</i></td><td>Disable per-message-deflate extension which can truncate large msgs.</td><td><i></i></td></tr>
@@ -1699,6 +1701,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>redirMax</td><td><i>BOOL</i></td><td>Temporarily disable redirects when see more than this in 10 minutes.</td><td><i></i></td></tr>
 <tr><td>rootdir</td><td><i>STRING</i></td><td>Directory to serve html from (".").</td><td><i></i></td></tr>
 <tr><td>server</td><td><i>STRKEY</i></td><td>String to send out int the header SERVER (jsiWebSocket).</td><td><i></i></td></tr>
+<tr><td>ssiExts</td><td><i>OBJ</i></td><td>Object map of file extensions to apply SSI.  eg. {myext:true, shtml:false} .</td><td><i>initOnly</i></td></tr>
 <tr><td>stats</td><td><i><a href='#statsOptions'>options</a></i></td><td>Statistical data.</td><td><i>readOnly</i></td></tr>
 <tr><td>startTime</td><td><i>TIME_T</i></td><td>Time of websocket start.</td><td><i>readOnly</i></td></tr>
 <tr><td>includeFile</td><td><i>STRKEY</i></td><td>Default file when no extension given (include.shtml).</td><td><i></i></td></tr>
@@ -1719,7 +1722,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>clientIP</td><td><i>STRKEY</i></td><td>Client IP Address.</td><td><i>readOnly</i></td></tr>
 <tr><td>clientName</td><td><i>STRKEY</i></td><td>Client hostname.</td><td><i>readOnly</i></td></tr>
 <tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all websock Send/Recv messages.</td><td><i></i></td></tr>
-<tr><td>headers</td><td><i>ARRAY</i></td><td>Input headers: name/value pairs.</td><td><i></i></td></tr>
+<tr><td>headers</td><td><i>ARRAY</i></td><td>Headers to send to browser on connection: name/value pairs.</td><td><i></i></td></tr>
 <tr><td>isWebsock</td><td><i>BOOL</i></td><td>Socket has been upgraded to a websocket connection.</td><td><i></i></td></tr>
 <tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number)</td><td><i></i></td></tr>
 <tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
@@ -1730,7 +1733,9 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>stats</td><td><i><a href='#statsOptions'>options</a></i></td><td>Statistics for connection.</td><td><i>readOnly</i></td></tr>
 <tr><td>query</td><td><i>ARRAY</i></td><td>Uri arg values for connection.</td><td><i></i></td></tr>
 <tr><td>queryObj</td><td><i>OBJ</i></td><td>Uri arg values for connection as an object.</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
 <tr><td>url</td><td><i>DSTRING</i></td><td>Url for connection.</td><td><i></i></td></tr>
+<tr><td>username</td><td><i>STRING</i></td><td>The login userid for this connection.</td><td><i></i></td></tr>
 </table>
 
 

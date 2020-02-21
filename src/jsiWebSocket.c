@@ -104,12 +104,10 @@ static Jsi_OptionSpec wsObjCmd_Specs[] =
 
 typedef struct {
     int sentCnt, recvCnt, recvErrCnt, sentErrCnt, httpCnt, uploadCnt;
-    time_t sentLast, recvLast, recvErrLast, sentErrLast, httpLast;
-    time_t uploadStart, uploadLast, uploadEnd;
+    time_t sentLast, recvLast, recvErrLast, sentErrLast, httpLast,
+        createTime, uploadStart, uploadLast, uploadEnd, redirLast, eventLast;
     int msgQLen;
     int redirCnt;
-    time_t redirLast;
-    time_t eventLast;
     int eventCnt;
     int connectCnt;
     bool isBinary, isFinal;
@@ -203,13 +201,14 @@ typedef struct { /* Per session connection (to each server) */
     const char *clientIP;
     int hdrSz[200]; // Space for up to 100 headers
     int hdrNum;     // Num of above.
-
+    time_t deferDel; // TODO: defer delete if output via SSI echo ${#}.
     // Pointers to reset.
     Jsi_DString dHdrs; // Store header string here.
     Jsi_Stack *stack;
     Jsi_DString recvBuf; // To buffer recv when recvJSON is true.
     Jsi_Value *onClose, *onFilter, *onRecv, *onUpload, *onGet, *onUnknown, *rootdir, *headers;
     char *lastData;
+    char key[100]; // Lookup key.
 #if (LWS_LIBRARY_VERSION_MAJOR>1)
     char filename[PATH_MAX];
     long file_length;
@@ -250,6 +249,7 @@ static const char* jsi_wsparam_str = "text,send,file,upload";
 static Jsi_OptionSpec WPSStats[] =
 {
     JSI_OPT(INT,        jsi_wsStatData, connectCnt,   .help="Number of active connections", jsi_IIRO),
+    JSI_OPT(TIME_T,     jsi_wsStatData, createTime,   .help="Time created"),
     JSI_OPT(INT,        jsi_wsStatData, eventCnt,     .help="Number of events of any type"),
     JSI_OPT(TIME_T,     jsi_wsStatData, eventLast,    .help="Time of last event of any type"),
     JSI_OPT(INT,        jsi_wsStatData, httpCnt,      .help="Number of http reqs"),
@@ -279,7 +279,8 @@ static Jsi_OptionSpec WPSOptions[] =
     JSI_OPT(STRKEY,     jsi_wsPss, clientName,  .help="Client hostname", jsi_IIRO),
     JSI_OPT(BOOL,       jsi_wsPss, echo,        .help="LogInfo outputs all websock Send/Recv messages"),
     JSI_OPT(ARRAY,      jsi_wsPss, headers,     .help="Headers to send to browser on connection: name/value pairs"),
-    JSI_OPT(BOOL,       jsi_wsPss, isWebsock,   .help="Socket has been upgraded to a websocket connection" ),
+    JSI_OPT(BOOL,       jsi_wsPss, isWebsock,   .help="Is a websocket connection" ),
+    JSI_OPT(STRBUF,     jsi_wsPss, key,         .help="String key lookup in ids command for SSI echo ${#}", jsi_IIRO),
     JSI_OPT(FUNC,       jsi_wsPss, onClose,     .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number"),
     JSI_OPT(FUNC,       jsi_wsPss, onGet,       .help="Function to call to server handle http-get", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
     JSI_OPT(FUNC,       jsi_wsPss, onUnknown,   .help="Function to call to server out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, args:array"),
@@ -409,11 +410,13 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
         Jsi_HashValueSet(hPtr, pss);
         pss->cmdPtr = cmdPtr;
         pss->wsi = wsi;
-        pss->user = user; /* Same as pss. */
+        pss->user = user; /* unused. */
         pss->state = PWS_CONNECTED;
+        pss->stats.createTime = time(NULL);
         pss->cnt = cmdPtr->idx++;
         pss->wid = sid;
         pss->sfd = sfd;
+        snprintf(pss->key, sizeof(pss->key), "%d%p%d", sid, pss, (int)cmdPtr->startTime);
         pss->udata = Jsi_ValueNewObj(cmdPtr->interp, NULL);
         Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
 
@@ -1006,7 +1009,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
             cp += 9;
             llen -= 9;
             if (!Jsi_Strcmp(cp, "#"))
-                Jsi_DSPrintf(dStr, "'%p'", pss);
+                Jsi_DSPrintf(dStr, "'%s'", pss->key);
             else {
                 Jsi_Value *val = NULL;
                 if (!cmdPtr->udata) {
@@ -1254,7 +1257,8 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             && difftime(now, cmdPtr->stats.redirLast)<600 && ++cmdPtr->redirAllCnt>cmdPtr->redirMax)
             cmdPtr->redirDisable = 100;
         cmdPtr->stats.redirLast = now;
-        return lws_http_redirect(wsi, 301, (uchar*)inPtr, Jsi_Strlen(inPtr), &p, end);
+        rc = lws_http_redirect(wsi, 301, (uchar*)inPtr, Jsi_Strlen(inPtr), &p, end);
+        return (rc == 100 ? 0 : 1);
     }
     if (!inPtr || !*inPtr)
         inPtr = "/";
@@ -1329,7 +1333,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 case JSI_ERROR: return -1;
                 case JSI_OK: return 0;
                 case JSI_SIGNAL:
-                    return jsi_ws_http_redirect(wsi, 301, tStr, &p, end);
+                    return jsi_ws_http_redirect(wsi, 302, tStr, &p, end);
                 case JSI_CONTINUE:
                     inPtr = Jsi_DSValue(tStr); break;
                 case JSI_BREAK: break;
@@ -1521,7 +1525,7 @@ nofile:
                 goto done;
         }
 
-        if (Jsi_Strstr(buf, "favicon.ico"))
+        if (0 && Jsi_Strstr(buf, "favicon.ico"))
             rc = jsi_wsServeString(pss, wsi, "data:;base64,iVBORw0KGgo=", 200, NULL, "image/icon");
         else {
             const char *cp = Jsi_Strrchr(buf,'/');
@@ -1536,7 +1540,7 @@ nofile:
                     goto serve;
                 }
             }
-            if (cmdPtr->noWarn==0)
+            if (cmdPtr->noWarn==0 && !Jsi_Strstr(buf, "favicon.ico"))
                 fprintf(stderr, "failed open file for read: %s\n", buf);
             rc = jsi_wsServeString(pss, wsi, "<b style='color:red'>ERROR: can not serve file!</b>", 404, NULL, NULL);
         }
@@ -2476,12 +2480,9 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         pss = (jsi_wsPss*)Jsi_HashValueGet(hPtr);
         WSSIGASSERT(pss, PWS);
         if (pss->state == PWS_DEAD) continue;
-        if (val) {
-            char buf[100];
-            snprintf(buf, sizeof(buf), "%p", pss);
-            if (Jsi_Strcmp(buf, val)) continue;
-        }
+        if (val && Jsi_Strcmp(pss->key, val)) continue;
         Jsi_DSPrintf(&dStr, "%s%d", (cnt++?",":""), pss->wid);
+        if (val) break;
     }
     Jsi_DSAppend(&dStr, "]", NULL);
     Jsi_RC rc = Jsi_JSONParse(interp, Jsi_DSValue(&dStr), ret, 0);

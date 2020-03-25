@@ -416,7 +416,6 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
         pss->cnt = cmdPtr->idx++;
         pss->wid = sid;
         pss->sfd = sfd;
-        snprintf(pss->key, sizeof(pss->key), "%d%p%d", sid, pss, (int)cmdPtr->startTime);
         pss->udata = Jsi_ValueNewObj(cmdPtr->interp, NULL);
         Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
 
@@ -1008,9 +1007,11 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
             Jsi_DSSetLength(&lStr, llen-2);
             cp += 9;
             llen -= 9;
-            if (!Jsi_Strcmp(cp, "#"))
+            if (!Jsi_Strcmp(cp, "#")) {
+                if (!pss->key[0])
+                    snprintf(pss->key, sizeof(pss->key), "%d%p%d", pss->wid, pss, (int)cmdPtr->startTime);
                 Jsi_DSPrintf(dStr, "'%s'", pss->key);
-            else {
+            } else {
                 Jsi_Value *val = NULL;
                 if (!cmdPtr->udata) {
                     val = Jsi_ValueObjLookup(interp, cmdPtr->udata, cp, 0);

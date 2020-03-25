@@ -552,6 +552,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>level</td><td>level(level:number=void):number|array|object </td><td>Return current level or details of a call-stack frame. With no arg, returns the number of the current stack frame level.
 Otherwise returns details on the specified level.
 The topmost level is 1, and 0 is the current level, and a negative level translates as relative to the current level.</td></tr>
+<tr><td>locals</td><td>locals(varsOnly:boolean=void):object </td><td>Return functions/vars inside local function.</td></tr>
 <tr><td>lookup</td><td>lookup(name:string) </td><td>Given string name, lookup and return value, eg: function.</td></tr>
 <tr><td>methods</td><td>methods(val:string|regexp):array|object </td><td>Return functions and commands.</td></tr>
 <tr><td>named</td><td>named(name:string=void):array|userobj </td><td>Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object.</td></tr>
@@ -1723,7 +1724,8 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>clientName</td><td><i>STRKEY</i></td><td>Client hostname.</td><td><i>readOnly</i></td></tr>
 <tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all websock Send/Recv messages.</td><td><i></i></td></tr>
 <tr><td>headers</td><td><i>ARRAY</i></td><td>Headers to send to browser on connection: name/value pairs.</td><td><i></i></td></tr>
-<tr><td>isWebsock</td><td><i>BOOL</i></td><td>Socket has been upgraded to a websocket connection.</td><td><i></i></td></tr>
+<tr><td>isWebsock</td><td><i>BOOL</i></td><td>Is a websocket connection.</td><td><i></i></td></tr>
+<tr><td>key</td><td><i>STRBUF</i></td><td>String key lookup in ids command for SSI echo ${#}.</td><td><i>readOnly</i></td></tr>
 <tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number)</td><td><i></i></td></tr>
 <tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
 <tr><td>onUnknown</td><td><i>FUNC</i></td><td>Function to call to server out content when no file exists. @function(ws:userobj, id:number, url:string, args:array)</td><td><i></i></td></tr>
@@ -1744,6 +1746,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <table border="1" class="optstbl table">
 <tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
 <tr><td>connectCnt</td><td><i>INT</i></td><td>Number of active connections.</td><td><i>readOnly</i></td></tr>
+<tr><td>createTime</td><td><i>TIME_T</i></td><td>Time created.</td><td><i></i></td></tr>
 <tr><td>eventCnt</td><td><i>INT</i></td><td>Number of events of any type.</td><td><i></i></td></tr>
 <tr><td>eventLast</td><td><i>TIME_T</i></td><td>Time of last event of any type.</td><td><i></i></td></tr>
 <tr><td>httpCnt</td><td><i>INT</i></td><td>Number of http reqs.</td><td><i></i></td></tr>

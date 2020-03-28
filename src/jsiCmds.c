@@ -138,6 +138,8 @@ static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         }
     }
 done:
+    if (rc == JSI_OK)
+        Jsi_ValueCopy(interp, *ret, interp->retValue);
     interp->isMain = oisi;
     interp->includeDepth--;
     return rc;
@@ -3423,8 +3425,8 @@ static Jsi_RC InfoMethodsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
 static Jsi_RC InfoLocalsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    if (!interp->framePtr->funcName)
-        return Jsi_LogError("Not in function");
+   // if (!interp->framePtr->funcName)
+   //     return Jsi_LogError("Not in function");
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
     bool varsOnly = 0;
     if (arg)
@@ -4867,7 +4869,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "setInterval",setIntervalCmd,  2,  2, "callback:function, ms:number", .help="Setup recurring function to run every given millisecs", .retType=(uint)JSI_TT_NUMBER },
     { "setTimeout", setTimeoutCmd,   2,  2, "callback:function, ms:number", .help="Setup function to run after given millisecs", .retType=(uint)JSI_TT_NUMBER },
 #endif
-    { "source",     SysSourceCmd,    1,  2, "val:string|array, options:object=void",  .help="Load and evaluate source files: trailing '/' appends PARENTDIR.jsi", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=SourceOptions},
+    { "source",     SysSourceCmd,    1,  2, "val:string|array, options:object=void",  .help="Load and evaluate source files: trailing '/' appends PARENTDIR.jsi", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
     { "strftime",   DateStrftimeCmd, 0,  2, "num:number=null, options:string|object=void",  .help="Format numeric time (in ms) to a string", .retType=(uint)JSI_TT_STRING, .flags=0, .info=FN_strftime, .opts=DateOptions },
     { "strptime",   DateStrptimeCmd, 0,  2, "val:string=void, options:string|object=void",  .help="Parse time from string and return ms time since 1970-01-01 in UTC, or NaN", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=0, .opts=DateOptions },
     { "times",      SysTimesCmd,     1,  2, "callback:function|boolean, count:number=1", .help="Call function count times and return execution time in microseconds", .retType=(uint)JSI_TT_NUMBER },

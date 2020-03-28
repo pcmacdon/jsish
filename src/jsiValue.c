@@ -92,19 +92,24 @@ Jsi_Value *Jsi_ValueDup(Jsi_Interp *interp, Jsi_Value *v) {
     return ValueDup(interp, v);
 }
 #else
-// Debugging functions: set breakpoint with "cond B v == 0xNNN"
-void jsi_DebugValue(Jsi_Value* v, const char *reason, uint idx, Jsi_Interp *interp)
-{
-    return;
-}
-void jsi_DebugObj(Jsi_Obj* o, const char *reason, uint idx, Jsi_Interp *interp)
-{
-    return;
-}
-
 static uint jsi_memDebugBreakIdx = 0;  // Debug memory by setting this, and adding BP on following func.
 void jsi_memDebugBreak() {
 }
+
+// Debugging functions: set breakpoint with "cond B v == 0xNNN"
+void jsi_DebugValue(Jsi_Value* v, const char *reason, uint cidx, Jsi_Interp *interp)
+{
+    if (jsi_memDebugBreakIdx && jsi_memDebugBreakIdx == v->VD.Idx)
+        jsi_memDebugBreak();
+    return;
+}
+void jsi_DebugObj(Jsi_Obj* o, const char *reason, uint cidx, Jsi_Interp *interp)
+{
+    if (jsi_memDebugBreakIdx && jsi_memDebugBreakIdx == o->VD.Idx)
+        jsi_memDebugBreak();
+    return;
+}
+
 
 void jsi_ValueDebugUpdate_(Jsi_Interp *interp, jsi_ValueDebug *vd, void *v, Jsi_Hash* tbl, const char *fname, int line, const char *func)
 {
@@ -121,7 +126,7 @@ void jsi_ValueDebugUpdate_(Jsi_Interp *interp, jsi_ValueDebug *vd, void *v, Jsi_
         vd->ipFname = vd->ip->fname;
     }
     vd->interp = interp;
-    if (jsi_memDebugBreakIdx == vd->Idx)
+    if (jsi_memDebugBreakIdx && jsi_memDebugBreakIdx == vd->Idx)
         jsi_memDebugBreak();
 }
 

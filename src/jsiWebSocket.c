@@ -469,8 +469,8 @@ jsi_wsdeletePss(jsi_wsPss *pss)
     }
     jsi_wsCmdObj*cmdPtr = pss->cmdPtr;
     cmdPtr->sfd = pss->sfd;
-    pss->clientName = cmdPtr->clientName;
-    pss->clientIP = cmdPtr->clientIP;
+    //pss->clientName = cmdPtr->clientName;
+    //pss->clientIP = cmdPtr->clientIP;
     Jsi_DSFree(&pss->dHdrs);
     if (pss->isWebsock)
         pss->cmdPtr->stats.connectCnt--;
@@ -478,18 +478,12 @@ jsi_wsdeletePss(jsi_wsPss *pss)
     pss->state = PWS_DEAD;
     Jsi_DSFree(&pss->resultStr);
     Jsi_DSFree(&pss->paramDS);
-    Jsi_DSFree(&pss->url);
-    if (pss->query)
-        Jsi_DecrRefCount(interp, pss->query);
-    if (pss->queryObj)
-        Jsi_DecrRefCount(interp, pss->queryObj);
     if (pss->lastData)
         Jsi_Free(pss->lastData);
-    if (pss->udata)
-        Jsi_DecrRefCount(interp, pss->udata);
     pss->lastData = NULL;
     if (pss->spa)
         lws_spa_destroy(pss->spa);
+    Jsi_OptionsFree(cmdPtr->interp, WPSOptions, pss, 0);
     Jsi_Free(pss);
 }
 
@@ -1682,9 +1676,7 @@ static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_
     Jsi_IncrRefCount(interp, vpargs);
 
     Jsi_Value *ret = Jsi_ValueNew1(interp);
-    Jsi_ValueMakeUndef(interp, &ret);
-    Jsi_RC rc;
-        rc = Jsi_FunctionInvoke(interp, func, vpargs, &ret, NULL);
+    Jsi_RC rc = Jsi_FunctionInvoke(interp, func, vpargs, &ret, NULL);
     if (rc == JSI_OK && Jsi_ValueIsUndef(interp, ret)==0 && !isClose) {
         /* TODO: should we handle callback return data??? */
     }
@@ -2409,10 +2401,11 @@ static Jsi_RC WebSocketConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 static Jsi_RC WebSocketIdCmdOp(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr, int op)
 {
+    Jsi_RC rc = JSI_OK;
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
         return Jsi_LogError("Apply in a non-websock object");
-    Jsi_Value *valPtr = Jsi_ValueArrayIndex(interp, args, 0);
+    Jsi_Value *v, *valPtr = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Number vid;
     if (Jsi_ValueGetNumber(interp, valPtr, &vid) != JSI_OK || vid < 0)
         return Jsi_LogError("Expected connection number id");
@@ -2433,7 +2426,10 @@ static Jsi_RC WebSocketIdCmdOp(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     if (!pss)
         return Jsi_LogError("No such id: %d", id);
     switch (op) {
-        case 0: return Jsi_OptionsConf(interp, WPSOptions, pss, Jsi_ValueArrayIndex(interp, args, 1), ret, 0);
+        case 0:
+            v = Jsi_ValueArrayIndex(interp, args, 1);
+            rc = Jsi_OptionsConf(interp, WPSOptions, pss, v, ret, 0);
+            break;
         case 1:
             jsi_wsDumpHeaders(cmdPtr, pss, Jsi_ValueArrayIndexToStr(interp, args, 1, NULL), ret);
             break;
@@ -2442,7 +2438,7 @@ static Jsi_RC WebSocketIdCmdOp(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             jsi_wsDumpQuery(cmdPtr, pss, Jsi_ValueArrayIndexToStr(interp, args, 1, NULL), ret);
             break;
     }
-    return JSI_OK;
+    return rc;
 }
 
 static Jsi_RC WebSocketIdConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,

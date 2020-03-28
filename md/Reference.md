@@ -1332,7 +1332,7 @@ Note an error is thrown if requested version is greater than actual version.</td
 <tr><td>setInterval</td><td>setInterval(callback:function, ms:number):number </td><td>Setup recurring function to run every given millisecs.</td></tr>
 <tr><td>setTimeout</td><td>setTimeout(callback:function, ms:number):number </td><td>Setup function to run after given millisecs.</td></tr>
 <tr><td>sleep</td><td>sleep(secs:number=1.0):void </td><td>sleep for N milliseconds, minimum .001.</td></tr>
-<tr><td>source</td><td>source(val:string|array, <a href='#System.sourceOptions'>options</a>:object=void):void </td><td>Load and evaluate source files: trailing '/' appends PARENTDIR.jsi.</td></tr>
+<tr><td>source</td><td>source(val:string|array, <a href='#System.sourceOptions'>options</a>:object=void) </td><td>Load and evaluate source files: trailing '/' appends PARENTDIR.jsi.</td></tr>
 <tr><td>strftime</td><td>strftime(num:number=null, <a href='#System.strftimeOptions'>options</a>:string|object=void):string </td><td>Format numeric time (in ms) to a string. Null or no value will use current time.</td></tr>
 <tr><td>strptime</td><td>strptime(val:string=void, <a href='#System.strptimeOptions'>options</a>:string|object=void):number </td><td>Parse time from string and return ms time since 1970-01-01 in UTC, or NaN.</td></tr>
 <tr><td>times</td><td>times(callback:function|boolean, count:number=1):number </td><td>Call function count times and return execution time in microseconds.</td></tr>

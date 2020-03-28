@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.2
+//JSI Command Prototypes: version 3.0.3
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -184,6 +184,22 @@ Math.prototype.sin = function(num:number):number {};
 Math.prototype.sqrt = function(num:number):number {};
 Math.prototype.srand = function(seed:number):number {};
 Math.prototype.tan = function(num:number):number {};
+var MySql = function(cmd,args) {};
+MySql.prototype.affectedRows = function():number {};
+MySql.prototype.complete = function(sql:string):boolean {};
+MySql.prototype.conf = function(options:string|object=void):any {};
+MySql.prototype.errorNo = function():number {};
+MySql.prototype.errorState = function():string {};
+MySql.prototype.eval = function(sql:string):number {};
+MySql.prototype.exists = function(sql:string):boolean {};
+MySql.prototype.info = function():object {};
+MySql.prototype.lastQuery = function():string {};
+MySql.prototype.lastRowid = function():number {};
+MySql.prototype.onecolumn = function(sql:string):any {};
+MySql.prototype.ping = function(noError:boolean=false):number {};
+MySql.prototype.query = function(sql:string, options:function|string|array|object=void):any {};
+MySql.prototype.reconnect = function():void {};
+MySql.prototype.reset = function():number {};
 var Number = function(cmd,args) {};
 Number.prototype.isFinite = function():boolean {};
 Number.prototype.isInteger = function():boolean {};
@@ -291,7 +307,7 @@ System.prototype.runModule = function(cmd:string|null|function=void, conf:array=
 System.prototype.setInterval = function(callback:function, ms:number):number {};
 System.prototype.setTimeout = function(callback:function, ms:number):number {};
 System.prototype.sleep = function(secs:number=1.0):void {};
-System.prototype.source = function(val:string|array, options:object=void):void {};
+System.prototype.source = function(val:string|array, options:object=void):any {};
 System.prototype.strftime = function(num:number=null, options:string|object=void):string {};
 System.prototype.strptime = function(val:string=void, options:string|object=void):number {};
 System.prototype.times = function(callback:function|boolean, count:number=1):number {};
@@ -382,7 +398,7 @@ var runModule = function(cmd:string|null|function=void, conf:array=undefined):an
 var setInterval = function(callback:function, ms:number):number {};
 var setTimeout = function(callback:function, ms:number):number {};
 var sleep = function(secs:number=1.0):void {};
-var source = function(val:string|array, options:object=void):void {};
+var source = function(val:string|array, options:object=void):any {};
 var strftime = function(num:number=null, options:string|object=void):string {};
 var strptime = function(val:string=void, options:string|object=void):number {};
 var times = function(callback:function|boolean, count:number=1):number {};

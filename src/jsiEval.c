@@ -752,8 +752,10 @@ empty_func:
     
     Jsi_FuncObj *fobj = tocall->d.obj->d.fobj;
     Jsi_Func *funcPtr = fobj->func;
-    if (funcPtr->callback == jsi_NoOpCmd || tocall->d.obj->isNoOp)
+    if (funcPtr->callback == jsi_NoOpCmd || tocall->d.obj->isNoOp) {
+        jsi_NoOpCmd(interp, NULL, NULL, NULL, NULL);
         goto empty_func;
+    }
     if (!interp->asserts && funcPtr->callback == jsi_AssertCmd)
         goto empty_func;
     const char *onam = funcPtr->name;

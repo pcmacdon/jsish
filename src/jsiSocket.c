@@ -360,8 +360,9 @@ sockDeletePss(SocketPss *pss)
     }
     Jsi_StackFreeElements(pss->cmdPtr->interp, pss->stack, sockFreeStackPss);
     Jsi_StackFree(pss->stack);
-    if (pss->udata)
-        Jsi_DecrRefCount(pss->cmdPtr->interp, pss->udata);
+    Jsi_OptionsFree(pss->cmdPtr->interp, SPSOptions, pss, 0);
+    //if (pss->udata)
+    //    Jsi_DecrRefCount(pss->cmdPtr->interp, pss->udata);
     pss->cmdPtr->connectCnt--;
     pss->state = PSS_DEAD;
     Jsi_Free(pss);

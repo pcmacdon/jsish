@@ -195,7 +195,7 @@ typedef struct { /* Per session connection (to each server) */
     //int fd;
     lws_fop_fd_t fop_fd;
     int wid;
-    int sfd;
+    //int sfd;
     bool isWebsock, echo;
     const char *clientName;
     const char *clientIP;
@@ -415,7 +415,7 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
         pss->stats.createTime = time(NULL);
         pss->cnt = cmdPtr->idx++;
         pss->wid = sid;
-        pss->sfd = sfd;
+        //pss->sfd = sfd;
         pss->udata = Jsi_ValueNewObj(cmdPtr->interp, NULL);
         Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
 
@@ -448,33 +448,30 @@ static Jsi_RC jsi_wsrecv_flush(jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss);
 static void
 jsi_wsdeletePss(jsi_wsPss *pss)
 {
+    jsi_wsCmdObj*cmdPtr = pss->cmdPtr;
     if (pss->sig == 0)
         return;
     WSSIGASSERT(pss, PWS);
     if (pss->state == PWS_DEAD)
         return;
-    if (pss->cmdPtr && pss->cmdPtr->debug>3)
+    if (cmdPtr && cmdPtr->debug>3)
         fprintf(stderr, "PSS DELETE: %p\n", pss);
 
-    jsi_wsrecv_flush(pss->cmdPtr, pss);
+    jsi_wsrecv_flush(cmdPtr, pss);
     if (pss->hPtr) {
         Jsi_HashValueSet(pss->hPtr, NULL);
         Jsi_HashEntryDelete(pss->hPtr);
         pss->hPtr = NULL;
     }
-    Jsi_Interp *interp = pss->cmdPtr->interp;
+    Jsi_Interp *interp = cmdPtr->interp;
     if (pss->stack) {
         Jsi_StackFreeElements(interp, pss->stack, jsi_wsDelPss);
         Jsi_StackFree(pss->stack);
     }
-    jsi_wsCmdObj*cmdPtr = pss->cmdPtr;
-    cmdPtr->sfd = pss->sfd;
-    //pss->clientName = cmdPtr->clientName;
-    //pss->clientIP = cmdPtr->clientIP;
     Jsi_DSFree(&pss->dHdrs);
     if (pss->isWebsock)
         pss->cmdPtr->stats.connectCnt--;
-    /*Jsi_ObjDecrRefCount(pss->msgs);*/
+    Jsi_OptionsFree(cmdPtr->interp, WPSOptions, pss, 0);
     pss->state = PWS_DEAD;
     Jsi_DSFree(&pss->resultStr);
     Jsi_DSFree(&pss->paramDS);
@@ -483,7 +480,6 @@ jsi_wsdeletePss(jsi_wsPss *pss)
     pss->lastData = NULL;
     if (pss->spa)
         lws_spa_destroy(pss->spa);
-    Jsi_OptionsFree(cmdPtr->interp, WPSOptions, pss, 0);
     Jsi_Free(pss);
 }
 

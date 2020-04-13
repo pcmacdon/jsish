@@ -1177,7 +1177,7 @@ const char *jsi_GetHomeDir(Jsi_Interp *interp) {
         
     if ((str = getenv("HOME")) == NULL) {
         struct passwd pwd, *pw;
-        char buf[20000];
+        char buf[JSI_BUFSIZ*3];
         if (getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pw) == 0 && pw->pw_dir)        
             str = pw->pw_dir;
     }

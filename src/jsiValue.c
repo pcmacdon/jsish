@@ -401,7 +401,7 @@ Jsi_Value *Jsi_ValueArrayIndex(Jsi_Interp *interp, Jsi_Value *args, int index)
     assert(args->vt == JSI_VT_OBJECT);
     if (obj->isarrlist && obj->arr)
         return ((index < 0 || (uint)index >= obj->arrCnt) ? NULL : obj->arr[index]);
-    char unibuf[100];
+    char unibuf[JSI_MAX_NUMBER_STRING];
     Jsi_NumberItoA10(index, unibuf, sizeof(unibuf));
     v = Jsi_TreeObjGetValue(args->d.obj, unibuf, 0);
     return v;
@@ -531,7 +531,7 @@ const char* Jsi_ValueToString(Jsi_Interp *interp, Jsi_Value *v, int *lenPtr)
     if (!v)
         goto done;
     if (lenPtr) *lenPtr = 0;
-    char unibuf[200];
+    char unibuf[JSI_MAX_NUMBER_STRING*2];
     switch(v->vt) {
         case JSI_VT_STRING:
             ntxt = v->d.s.str;
@@ -1182,7 +1182,7 @@ Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *
             if (Jsi_ValueIsString(interp, key)) {
                 char *kstr = Jsi_ValueString(interp, key, NULL);
                 if (!Jsi_Strcmp(kstr,"call") || !Jsi_Strcmp(kstr,"apply") || !Jsi_Strcmp(kstr,"bind")) {
-                    char fbuf[100];
+                    char fbuf[JSI_MAX_NUMBER_STRING];
                     snprintf(fbuf, sizeof(fbuf), "Function.%s", kstr);
                     Jsi_Value *vv = Jsi_NameLookup(interp, fbuf);
                     if (vv)
@@ -1379,7 +1379,7 @@ Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_
         }
         return JSI_ERROR;
     }
-    char unibuf[100];
+    char unibuf[JSI_MAX_NUMBER_STRING];
     Jsi_NumberItoA10(key, unibuf, sizeof(unibuf));
     Jsi_ObjInsert(interp, obj, unibuf, val, flags);
     return JSI_OK;

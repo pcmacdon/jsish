@@ -6,7 +6,7 @@
 
 static void jsonNewDString(Jsi_Interp *interp, Jsi_DString *dStr, const char* str, int len)
 {
-    char buf[100], *dp = buf;
+    char buf[JSI_MAX_NUMBER_STRING], *dp = buf;
     const char *cp = str;
     int ulen;
     

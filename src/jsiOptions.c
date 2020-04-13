@@ -1876,7 +1876,7 @@ static Jsi_RC jsi_BitfieldToValue(Jsi_Interp *interp, Jsi_OptionSpec* spec, Jsi_
         if (JSI_OK != jsi_EnumToValue(interp, eSpec, outValue, outStr, (void*)&nval, flags))
             return JSI_ERROR;
     } else if (outStr) {
-        char obuf[100];
+        char obuf[JSI_MAX_NUMBER_STRING];
         snprintf(obuf, sizeof(obuf), "%" PRId64, inum);
         Jsi_DSAppend(outStr, obuf, NULL);
     } else {

@@ -845,7 +845,7 @@ Jsi_RC jsi_PkgDumpInfo(Jsi_Interp *interp, const char *name, Jsi_Value **ret) {
         Jsi_ObjInsert(interp, nobj, "name", Jsi_ValueNewStringDup(interp, name), 0);
         Jsi_ObjInsert(interp, nobj, "version", Jsi_ValueNewNumber(interp, ptr->version), 0);
         Jsi_ObjInsert(interp, nobj, "lastReq", Jsi_ValueNewNumber(interp, ptr->lastReq), 0);
-        char buf[200];
+        char buf[JSI_MAX_NUMBER_STRING*2];
         jsi_VersionNormalize(ptr->version, buf, sizeof(buf));
         Jsi_ObjInsert(interp, nobj, "verStr", Jsi_ValueNewStringDup(interp, buf), 0);
         const char *cp = (ptr->loadFile?ptr->loadFile:"");
@@ -1192,7 +1192,7 @@ static Jsi_RC SysGetEnvCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     Jsi_Value *vres;
     Jsi_Obj  *ores = Jsi_ObjNew(interp);
     Jsi_Value *nnv;
-    char *val, nam[200];
+    char *val, nam[JSI_BUFSIZ/2];
     //Jsi_ObjIncrRefCount(interp, ores);
     vres = Jsi_ValueMakeObject(interp, NULL, ores);
     //Jsi_IncrRefCount(interp, vres);
@@ -2700,7 +2700,7 @@ static Jsi_RC DebugAddCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     }
     if (bp.line<=0 && !bp.func) 
         return Jsi_LogError("bad number");
-    char nbuf[100];
+    char nbuf[JSI_MAX_NUMBER_STRING];
     bp.id = ++interp->debugOpts.breakIdx;
     bp.enabled = 1;
     snprintf(nbuf, sizeof(nbuf), "%d", bp.id);
@@ -2718,7 +2718,7 @@ static Jsi_RC DebugRemoveCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (interp->breakpointHash)
     {
         int num;
-        char nbuf[100];
+        char nbuf[JSI_MAX_NUMBER_STRING];
         if (Jsi_GetIntFromValue(interp, val, &num) != JSI_OK) 
             return Jsi_LogError("bad number");
         
@@ -2766,7 +2766,7 @@ static Jsi_RC DebugInfoCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         return Jsi_HashKeysDump(interp, interp->breakpointHash, ret, 0);
     Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0);
     int num;
-    char nbuf[100];
+    char nbuf[JSI_MAX_NUMBER_STRING];
     if (Jsi_GetIntFromValue(interp, val, &num) != JSI_OK) 
         return Jsi_LogError("bad number");
     
@@ -3800,7 +3800,7 @@ static Jsi_RC SysVerConvertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Value *flag = Jsi_ValueArrayIndex(interp, args, 1);
     if (!val) goto bail;
     if (Jsi_ValueIsNumber(interp, val)) {
-        char buf[200];
+        char buf[JSI_MAX_NUMBER_STRING*2];
         Jsi_Number n;
         if (Jsi_GetNumberFromValue(interp, val, &n) != JSI_OK)
             goto bail;
@@ -3953,7 +3953,7 @@ static Jsi_RC SysTimesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         if (bv)
             interp->timesStart = now;
         else {
-            char buf[100];
+            char buf[JSI_MAX_NUMBER_STRING];
             snprintf(buf, sizeof(buf), " (times = %.6f sec)\n", (now-interp->timesStart));
             Jsi_Puts(interp, jsi_Stderr, buf, -1);
         }

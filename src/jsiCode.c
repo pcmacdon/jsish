@@ -436,7 +436,7 @@ void jsi_code_decode(Jsi_Interp *interp, jsi_OpCode *op, int currentip, char *bu
     if (_JSICASTINT(op->op) < 0 || op->op >= OP_LASTOP) {
         snprintf(buf, bsiz, "Bad opcode[%d] at %d", op->op, currentip);
     }
-    char nbuf[100];
+    char nbuf[JSI_MAX_NUMBER_STRING];
     snprintf(nbuf, sizeof(nbuf), "%d#%d", currentip, op->Line);
     snprintf(buf, bsiz, "%-8s %s ", nbuf, jsi_op_names[op->op]);
 

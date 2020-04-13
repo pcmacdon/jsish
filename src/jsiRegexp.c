@@ -162,7 +162,7 @@ Jsi_RC Jsi_RegExpMatch(Jsi_Interp *interp, Jsi_Value *pattern, const char *v, in
     int r  = regexec(reg, v, 1, &pos, regexec_flags);
 
     if (r >= REG_BADPAT) {
-        char buf[100];
+        char buf[JSI_MAX_NUMBER_STRING];
 
         regerror(r, reg, buf, sizeof(buf));
         return Jsi_LogError("error while matching pattern: %s", buf);

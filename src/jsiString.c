@@ -724,7 +724,7 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         int match = regexec(regex, p, MAX_SUBREGEX, pmatch, regexec_flags);
 
         if (match >= REG_BADPAT) {
-            char buf[100];
+            char buf[JSI_MAX_NUMBER_STRING];
 
             regerror(match, regex, buf, sizeof(buf));
             Jsi_LogError("error while matching pattern: %s", buf);
@@ -895,7 +895,7 @@ static Jsi_RC StringSearchCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
             return JSI_OK;
         }
         if (r >= REG_BADPAT) {
-            char buf[100];
+            char buf[JSI_MAX_NUMBER_STRING];
 
             regerror(r, reg, buf, sizeof(buf));
             Jsi_LogError("error while matching pattern: %s", buf);

@@ -700,7 +700,7 @@ static Jsi_RC jsi_InterpDelete(Jsi_Interp *interp, void *ptr) {
 
 Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
 {
-    int rc = 0;
+    Jsi_RC rc = JSI_OK;
     Jsi_Interp* interp = NULL;
     int argc = 0, first = 1;
     char **argv = NULL;
@@ -929,7 +929,7 @@ dofile:
     }
     if (jsi_deleted) //TODO: rationalize jsi_deleted, jsi_exitCode, etc
         return jsi_DoExit(rc==JSI_EXIT?NULL:interp, jsi_exitCode);
-    if (rc == 0) {
+    if (rc == JSI_OK) {
         /* Skip output from an ending semicolon which evaluates to undefined */
         Jsi_Value *ret = Jsi_ReturnValue(interp);
         if (!Jsi_ValueIsType(interp, ret, JSI_VT_UNDEF)) {
@@ -940,7 +940,7 @@ dofile:
         }
     } else {
         if (!interp->parent && !interp->isHelp)
-            fputs("ERROR\n", stderr);
+            fprintf(stderr, "ERROR: %s\n", interp->errMsgBuf);
         return jsi_DoExit(interp, 1);
     }
 

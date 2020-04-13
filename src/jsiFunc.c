@@ -189,7 +189,7 @@ const char *jsiFuncInfo(Jsi_Interp *interp, Jsi_DString *dStr, Jsi_Func* func, J
 Jsi_RC jsi_ArgTypeCheck(Jsi_Interp *interp, int typ,  Jsi_Value *arg, const char *p1,
     const char *p2, int index, Jsi_Func *func, bool isdefault) {
     Jsi_RC rc = JSI_OK;
-    char idxBuf[200];
+    char idxBuf[JSI_MAX_NUMBER_STRING*2];
     idxBuf[0] = 0;
     if (func && arg->vt == JSI_VT_UNDEF && !interp->typeCheck.noundef && index>0 && !isdefault && !(typ&JSI_TT_UNDEFINED)) {
         snprintf(idxBuf, sizeof(idxBuf), " arg %d", index);
@@ -295,7 +295,7 @@ done:
         Jsi_DString dStr = {};
         const char *exp = jsi_typeName(interp, typ, &dStr);
         const char *vtyp = jsi_TypeName(interp, (Jsi_ttype)atyp);
-        char idxBuf[200];
+        char idxBuf[JSI_MAX_NUMBER_STRING*2];
         idxBuf[0] = 0;
         if (index>0)
             snprintf(idxBuf, sizeof(idxBuf), " arg %d", index);
@@ -339,7 +339,7 @@ Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const 
     if (ss==NULL && spec == NULL)
         return JSI_OK;
     int i, minArgs, maxArgs, mis = 0, varargs = 0;
-    char nbuf[100];
+    char nbuf[JSI_MAX_NUMBER_STRING];
     if (func->type == FC_BUILDIN) {
         varargs =  (spec->maxArgs<0);
         maxArgs = spec->maxArgs + func->callflags.bits.addargs;

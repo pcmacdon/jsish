@@ -1169,7 +1169,7 @@ static void mdbDeleteCmd(MySqlObj *jdb)
 */
 static void mdbEvalSetColumnJSON(MyDbEvalContext *p, int iCol, Jsi_DString *dStr) {
     Jsi_Interp *interp = p->jdb->interp;
-    char nbuf[200];
+    char nbuf[JSI_MAX_NUMBER_STRING];
     MysqlPrep *prep = p->prep;
     SqlFieldResults *field = prep->fieldResult+iCol;
     if (field->isnull) {
@@ -1219,7 +1219,7 @@ static void mdbEvalSetColumnJSON(MyDbEvalContext *p, int iCol, Jsi_DString *dStr
 
 static void mdbEvalSetColumn(MyDbEvalContext *p, int iCol, Jsi_DString *dStr) {
     //Jsi_Interp *interp = p->jdb->interp;
-    char nbuf[200];
+    char nbuf[JSI_MAX_NUMBER_STRING];
     MysqlPrep *prep = p->prep;
     SqlFieldResults *field = prep->fieldResult+iCol;
     Jsi_Interp *interp = p->jdb->interp;

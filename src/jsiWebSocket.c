@@ -208,7 +208,7 @@ typedef struct { /* Per session connection (to each server) */
     Jsi_DString recvBuf; // To buffer recv when recvJSON is true.
     Jsi_Value *onClose, *onFilter, *onRecv, *onUpload, *onGet, *onUnknown, *rootdir, *headers;
     char *lastData;
-    char key[100]; // Lookup key.
+    char key[JSI_MAX_NUMBER_STRING]; // Lookup key.
 #if (LWS_LIBRARY_VERSION_MAJOR>1)
     char filename[PATH_MAX];
     long file_length;
@@ -569,7 +569,7 @@ static int
 jsi_wsGetHeaders(jsi_wsPss *pss, struct lws *wsi, Jsi_DString* dStr, int lens[], int hmax)
 {
     int n = 0, i = 0, nlen;
-    char buf[1000];
+    char buf[JSI_BUFSIZ];
     const char *cp;
     while ((cp = (char*)lws_token_to_string((enum lws_token_indexes)n))) {
         int len = lws_hdr_copy(wsi, buf, sizeof(buf), ( enum lws_token_indexes)n);
@@ -1344,7 +1344,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     Jsi_DSFree(&sStr);
     if (cmdPtr->debug>1)
         fprintf(stderr, "FILE: %s in %s | %s\n", buf, cmdPtr->curRoot, Jsi_ValueString(interp, cmdPtr->rootdir, NULL));
-    char extBuf[100], *cpde = Jsi_Strrchr(buf, '/');
+    char extBuf[JSI_BUFSIZ], *cpde = Jsi_Strrchr(buf, '/');
     isJsiWeb = (cpde && cmdPtr->jsiFnPattern && Jsi_GlobMatch(cmdPtr->jsiFnPattern, cpde+1, 0));
     bool isgzip = 0;
     if (!ext || !ext[1])
@@ -1836,7 +1836,7 @@ static int jsi_wscallback_http(struct lws *wsi,
         if (cmdPtr->post) {
             unsigned char **p = (unsigned char **)in, *end = (*p) + len;
             int n = 0;
-            char buf[100];
+            char buf[JSI_MAX_NUMBER_STRING];
             Jsi_ValueString(interp, cmdPtr->post, &n);
             snprintf(buf, sizeof(buf), "%d", n);
 
@@ -2228,7 +2228,7 @@ jsi_wscallback_websock(struct lws *wsi,
     case LWS_CALLBACK_CLIENT_ESTABLISHED:
     case LWS_CALLBACK_ESTABLISHED:
         if (cmdPtr->bufferPwr2>0) {
-            char nbuf[100];
+            char nbuf[JSI_MAX_NUMBER_STRING];
             snprintf(nbuf, sizeof(nbuf), "%d", cmdPtr->bufferPwr2);
             lws_set_extension_option(wsi, "permessage-deflate", "rx_buf_size", nbuf);
             lws_set_extension_option(wsi, "permessage-deflate", "tx_buf_size", nbuf);
@@ -2870,7 +2870,7 @@ static Jsi_RC WebSocketVersionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     const char *verStr = NULL;
     verStr = lws_get_library_version();
     if (verStr) {
-        char buf[100], *cp;
+        char buf[JSI_MAX_NUMBER_STRING], *cp;
         snprintf(buf, sizeof(buf), "%s", verStr);
         cp = Jsi_Strchr(buf, ' ');
         if (cp) *cp = 0;

@@ -1395,7 +1395,7 @@ static void jsiSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv) 
 
     bool b;
     if( rc != JSI_OK) {
-        char buf[250];
+        char buf[JSI_BUFSIZ];
         snprintf(buf, sizeof(buf), "error in function: %.200s", p->zName);
         sqlite3_result_error(context, buf, -1);
 
@@ -1760,7 +1760,7 @@ static void dbEvalRowInfo(
 */
 static void dbEvalSetColumnJSON(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
     Jsi_Interp *interp = p->jdb->interp;
-    char nbuf[200];
+    char nbuf[JSI_MAX_NUMBER_STRING];
 
     sqlite3_stmt *pStmt = p->pPreStmt->pStmt;
 
@@ -1810,7 +1810,7 @@ static void dbEvalSetColumnJSON(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
 
 static void dbEvalSetColumn(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
     Jsi_Interp *interp = p->jdb->interp;
-    char nbuf[200];
+    char nbuf[JSI_MAX_NUMBER_STRING];
 
     sqlite3_stmt *pStmt = p->pPreStmt->pStmt;
 
@@ -2560,7 +2560,7 @@ static void dbOutputQuotedString(Jsi_DString *dStr, const char *z) {
 */
 static void dbOutputHexBlob(Jsi_DString *dStr, const void *pBlob, int nBlob){
   int i;
-  char out[100], *zBlob = (char *)pBlob;
+  char out[JSI_MAX_NUMBER_STRING], *zBlob = (char *)pBlob;
   Jsi_DSAppend(dStr, "X'", NULL);
   for(i=0; i<nBlob; i++){ snprintf(out, sizeof(out),"%02x",zBlob[i]&0xff);Jsi_DSAppend(dStr, out, NULL); }
   Jsi_DSAppend(dStr, "'", NULL);
@@ -4393,7 +4393,7 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
         
     DbEvalContext sEval = {};
     int insert = 0, replace = 0, update = 0;
-    char nbuf[100], *bPtr;
+    char nbuf[JSI_MAX_NUMBER_STRING], *bPtr;
 #ifdef JSI_DB_DSTRING_SIZE
     JSI_DSTRING_VAR(dStr, JSI_DB_DSTRING_SIZE);
 #else

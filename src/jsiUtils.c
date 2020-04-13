@@ -625,7 +625,7 @@ static Jsi_RC _object_get_callback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *da
 /* Format value into dStr.  Toplevel caller does init/free. */
 static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, objwalker *owPtr)
 {
-    char buf[100], *str;
+    char buf[JSI_MAX_NUMBER_STRING], *str;
     Jsi_DString eStr;
     Jsi_DSInit(&eStr);
     if (interp->maxDepth>0 && owPtr->depth > interp->maxDepth)
@@ -943,7 +943,7 @@ char *jsiLNhints(const char *buf, int *color, int *bold) {
 }
 
 static void jsiLNGetMatches(const char *str, linenoiseCompletions *lc) {
-    char buf[1000], pre[1000], hpre[6] = {};
+    char buf[JSI_BUFSIZ], pre[JSI_BUFSIZ], hpre[6] = {};
     const char *cp, *fnam = "Info.completions";
     int i = 0, len;
     int rc, isfile = 0, start = 0, end = Jsi_Strlen(str);

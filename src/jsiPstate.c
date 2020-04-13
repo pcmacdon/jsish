@@ -239,8 +239,8 @@ int jsi_PstateSetFile(jsi_Pstate *ps, Jsi_Channel fp, int skipbang)
     l->d.fp = fp;
     Jsi_Rewind(ps->interp, fp);
     if (skipbang) {
-        char buf[1000];
-        if (Jsi_Gets(ps->interp, fp, buf, 1000) && (buf[0] != '#' || buf[1] != '!')) {
+        char buf[JSI_BUFSIZ];
+        if (Jsi_Gets(ps->interp, fp, buf, sizeof(buf)) && (buf[0] != '#' || buf[1] != '!')) {
             Jsi_Rewind(ps->interp, fp);
         }
     }

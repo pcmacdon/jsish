@@ -287,23 +287,23 @@ static Jsi_RC jsi_logic_less(Jsi_Interp* interp, int i1, int i2) {
 
 static const char *jsi_evalprint(Jsi_Value *v)
 {
-    static char buf[100];
+    static char buf[JSI_MAX_NUMBER_STRING];
     if (!v)
         return "nil";
     if (v->vt == JSI_VT_NUMBER) {
-        snprintf(buf, 100, "NUM:%" JSI_NUMGFMT " ", v->d.num);
+        snprintf(buf, sizeof(buf), "NUM:%" JSI_NUMGFMT " ", v->d.num);
     } else if (v->vt == JSI_VT_BOOL) {
-        snprintf(buf, 100, "BOO:%d", v->d.val);
+        snprintf(buf, sizeof(buf), "BOO:%d", v->d.val);
     } else if (v->vt == JSI_VT_STRING) {
-        snprintf(buf, 100, "STR:'%s'", v->d.s.str);
+        snprintf(buf, sizeof(buf), "STR:'%s'", v->d.s.str);
     } else if (v->vt == JSI_VT_VARIABLE) {
-        snprintf(buf, 100, "VAR:%p", v->d.lval);
+        snprintf(buf, sizeof(buf), "VAR:%p", v->d.lval);
     } else if (v->vt == JSI_VT_NULL) {
-        snprintf(buf, 100, "NULL");
+        snprintf(buf, sizeof(buf), "NULL");
     } else if (v->vt == JSI_VT_OBJECT) {
-        snprintf(buf, 100, "OBJ:%p", v->d.obj);
+        snprintf(buf, sizeof(buf), "OBJ:%p", v->d.obj);
     } else if (v->vt == JSI_VT_UNDEF) {
-        snprintf(buf, 100, "UNDEFINED");
+        snprintf(buf, sizeof(buf), "UNDEFINED");
     }
     return buf;
 }
@@ -403,7 +403,7 @@ static void jsiDumpInstr(Jsi_Interp *interp, jsi_Pstate *ps, Jsi_Value *_this,
     jsi_TryList *trylist, jsi_OpCode *ip, Jsi_OpCodes *opcodes)
 {
     int i;
-    char buf[200];
+    char buf[JSI_MAX_NUMBER_STRING*2];
     jsi_code_decode(interp, ip, ip - opcodes->codes, buf, sizeof(buf));
     Jsi_Printf(interp, jsi_Stderr, "%p: %-30.200s : THIS=%s, STACK=[", ip, buf, jsi_evalprint(_this));
     for (i = 0; i < interp->framePtr->Sp; ++i) {
@@ -1538,7 +1538,7 @@ Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     break;
                 }
                 int bval = 0;
-                char nbuf[100];
+                char nbuf[JSI_MAX_NUMBER_STRING];
                 Jsi_Value *vv;
                 Jsi_Obj *obj = v->d.obj;
                 if (!cp) {
@@ -2155,7 +2155,7 @@ Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
     Jsi_IncrRefCount(interp, fargs);
     rc = jsi_evalcode_sub(ps, opcodes, scope, fargs, _this, *vret);
     Jsi_DecrRefCount(interp, fargs);
-    if (interp->didReturn == 0 && !interp->exited) {
+    if (interp->didReturn == 0 && !interp->exited && rc == JSI_OK) {
         if ((interp->evalFlags&JSI_EVAL_RETURN)==0)
             Jsi_ValueMakeUndef(interp, vret);
         /*if (interp->framePtr->Sp != oldSp) //TODO: at some point after memory refs???

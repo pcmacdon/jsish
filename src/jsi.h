@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 6
+#define JSI_VERSION_RELEASE 7
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -213,7 +213,7 @@ typedef enum {
     JSI_DBI_NO_MUTEX     =0x0004, /* Disable mutex. */
     JSI_DBI_FULL_MUTEX   =0x0008, /* Use full mutex. */
     
-    JSI_MAX_NUMBER_STRING=50,
+    JSI_MAX_NUMBER_STRING=100,
     JSI_BUFSIZ=8192
 
 } Jsi_Enums; /* Debugging is easier with enums than #define. */

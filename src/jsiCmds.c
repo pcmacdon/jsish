@@ -4509,6 +4509,14 @@ done:
     return rc;
 }
 
+static Jsi_RC SysRunMainCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    if (jsi_isMain(interp))
+        return SysRunModuleCmd(interp, args, _this, ret, funcPtr);
+    return JSI_OK;
+}
+
 static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DString *dPtr) {
     if (!fstr) return "";
     Jsi_DSSetLength(dPtr, 0);
@@ -4762,7 +4770,7 @@ static Jsi_CmdSpec infoCmds[] = {
     { "execZip",    InfoExecZipCmd,     0,  0, "", .help="If executing a .zip file, return file name", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
     { "files",      InfoFilesCmd,       0,  0, "", .help="Return list of all sourced files", .retType=(uint)JSI_TT_ARRAY },
     { "funcs",      InfoFuncsCmd,       0,  1, "string|regexp|object=void", .help="Return details or list of matching functions", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT },
-    { "locals",     InfoLocalsCmd,      0,  1, "varsOnly:boolean=void", .help="Return functions/vars inside local function", .retType=(uint)JSI_TT_OBJECT },
+    { "locals",     InfoLocalsCmd,      0,  1, "filter:boolean=void", .help="Return locals; use filter=true/false just vars/functions", .retType=(uint)JSI_TT_OBJECT },
     { "interp",     jsi_InterpInfo,     0,  1, "interp:userobj=void", .help="Return info on given or current interp", .retType=(uint)JSI_TT_OBJECT },
     { "isMain",     InfoIsMainCmd,      0,  0, "", .help="Return true if current script was the main script invoked from command-line", .retType=(uint)JSI_TT_BOOLEAN },
     { "keywords",   InfoKeywordsCmd,    0,  2, "isSql=false, name:string=void", .help="Return/lookup reserved keyword", .retType=(uint)JSI_TT_ARRAY|JSI_TT_BOOLEAN },
@@ -4863,6 +4871,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },
+    { "runMain",    SysRunMainCmd,   0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="If isMain invokes runModule", .retType=(uint)JSI_TT_ANY, .flags=0},
     { "runModule",  SysRunModuleCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain and no args givine parses console.args", .retType=(uint)JSI_TT_ANY, .flags=0},
     { "sleep",      SysSleepCmd,     0,  1, "secs:number=1.0",  .help="sleep for N milliseconds, minimum .001", .retType=(uint)JSI_TT_VOID },
 #ifndef JSI_OMIT_EVENT

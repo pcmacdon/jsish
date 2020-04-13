@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.4
+//JSI Command Prototypes: version 3.0.6
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -140,7 +140,7 @@ Info.prototype.interp = function(interp:userobj=void):object {};
 Info.prototype.isMain = function():boolean {};
 Info.prototype.keywords = function(isSql=false, name:string=void):boolean|array {};
 Info.prototype.level = function(level:number=void):number|array|object {};
-Info.prototype.locals = function(varsOnly:boolean=void):object {};
+Info.prototype.locals = function(filter:boolean=void):object {};
 Info.prototype.lookup = function(name:string):any {};
 Info.prototype.methods = function(val:string|regexp):array|object {};
 Info.prototype.named = function(name:string=void):array|userobj {};
@@ -303,6 +303,7 @@ System.prototype.provide = function(name:string|function=void, version:number|st
 System.prototype.puts = function(val, ...):void {};
 System.prototype.quote = function(val:string):string {};
 System.prototype.require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};
+System.prototype.runMain = function(cmd:string|null|function=void, conf:array=undefined):any {};
 System.prototype.runModule = function(cmd:string|null|function=void, conf:array=undefined):any {};
 System.prototype.setInterval = function(callback:function, ms:number):number {};
 System.prototype.setTimeout = function(callback:function, ms:number):number {};
@@ -394,6 +395,7 @@ var provide = function(name:string|function=void, version:number|string=1.0, opt
 var puts = function(val, ...):void {};
 var quote = function(val:string):string {};
 var require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};
+var runMain = function(cmd:string|null|function=void, conf:array=undefined):any {};
 var runModule = function(cmd:string|null|function=void, conf:array=undefined):any {};
 var setInterval = function(callback:function, ms:number):number {};
 var setTimeout = function(callback:function, ms:number):number {};

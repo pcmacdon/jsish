@@ -7,6 +7,12 @@
 #define NO_QSORT_R 1
 #endif
 
+static uint jsi_SizeOfArray(Jsi_Interp *interp, Jsi_Obj *obj) {
+    if (!obj || !obj->arr)
+        return 0;
+    return obj->arrCnt;
+}
+
 static Jsi_RC jsi_ArrayPushCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
@@ -19,11 +25,7 @@ static Jsi_RC jsi_ArrayPushCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     obj = _this->d.obj;
     
     int argc = Jsi_ValueGetLength(interp, args);
-    int curlen = Jsi_ObjGetLength(interp, obj);
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
-    
+    int curlen = jsi_SizeOfArray(interp, obj);    
     int i;
     for (i = 0; i < argc; ++i) {
         Jsi_Value *ov = Jsi_ValueArrayIndex(interp, args, i);
@@ -31,7 +33,7 @@ static Jsi_RC jsi_ArrayPushCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         Jsi_ValueInsertArray(interp, _this, curlen + i, ov, 0);
     }
     
-    Jsi_ValueMakeNumber(interp, ret, Jsi_ObjGetLength(interp, obj));
+    Jsi_ValueMakeNumber(interp, ret, jsi_SizeOfArray(interp, obj));
     return JSI_OK;
 }
 
@@ -45,7 +47,7 @@ static Jsi_RC jsi_ArrayPopCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Value *v;
     Jsi_Obj *obj;
     obj = _this->d.obj;
-    int i = Jsi_ObjGetLength(interp, obj) - 1;
+    int i = jsi_SizeOfArray(interp, obj) - 1;
 
     if (i < 0) {
         Jsi_ValueMakeUndef(interp, ret);
@@ -78,7 +80,7 @@ static Jsi_RC jsi_ArrayJoinCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     int argc, curlen;
     Jsi_DString dStr = {};
 
-    curlen = Jsi_ObjGetLength(interp, _this->d.obj);
+    curlen = jsi_SizeOfArray(interp, _this->d.obj);
     if (curlen == 0) {
         goto bail;
     }
@@ -89,7 +91,7 @@ static Jsi_RC jsi_ArrayJoinCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             jstr = Jsi_ValueToString(interp, sc, NULL);
     }
     
-    if (0 == (argc=Jsi_ObjGetLength(interp, _this->d.obj))) {
+    if (0 == (argc=jsi_SizeOfArray(interp, _this->d.obj))) {
         goto bail;
     }
     int i;
@@ -233,7 +235,7 @@ void Jsi_ValueArrayShift(Jsi_Interp *interp, Jsi_Value *v)
         return;
     }
     
-    int len = Jsi_ObjGetLength(interp, v->d.obj);
+    int len = jsi_SizeOfArray(interp, v->d.obj);
     if (len <= 0) return;
     
     Jsi_Value *v0 = Jsi_ValueArrayIndex(interp, v, 0);
@@ -255,10 +257,10 @@ void Jsi_ValueArrayShift(Jsi_Interp *interp, Jsi_Value *v)
 
 static Jsi_RC jsi_ArrayFlatSub(Jsi_Interp *interp, Jsi_Obj* nobj, Jsi_Value *arr, int depth) {
     
-    int i, n = 0, len = Jsi_ObjGetLength(interp, arr->d.obj);
+    int i, n = 0, len = jsi_SizeOfArray(interp, arr->d.obj);
     if (len <= 0) return JSI_OK;
     Jsi_RC rc = JSI_OK;
-    int clen = Jsi_ObjGetLength(interp, nobj);
+    int clen = jsi_SizeOfArray(interp, nobj);
     for (i = 0; i < len && rc == JSI_OK; i++) {
         Jsi_Value *t = Jsi_ValueArrayIndex(interp, arr, i);
         if (t && depth>0 && Jsi_ValueIsArray(interp, t))
@@ -302,10 +304,7 @@ static Jsi_RC jsi_ArrayConcatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     obj = _this->d.obj;
     
     argc = Jsi_ValueGetLength(interp, args);
-    curlen = Jsi_ObjGetLength(interp, obj);
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
+    curlen = jsi_SizeOfArray(interp, obj);
     Jsi_ObjListifyArray(interp, obj);
    
     nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
@@ -377,10 +376,7 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (!sthis)
         sthis = nthis = Jsi_ValueNew1(interp);
     obj = _this->d.obj;
-    curlen = Jsi_ObjGetLength(interp, obj);    
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
+    curlen = jsi_SizeOfArray(interp, obj);    
     Jsi_ObjListifyArray(interp, obj);
     nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
     nsiz = obj->arrCnt;
@@ -439,10 +435,7 @@ static Jsi_RC jsi_ArrayFilterCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     if (!sthis)
         sthis = nthis = Jsi_ValueNew1(interp);
     obj = _this->d.obj;
-    curlen = Jsi_ObjGetLength(interp, obj);    
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
+    curlen = jsi_SizeOfArray(interp, obj);    
     Jsi_ObjListifyArray(interp, obj);
     nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
     nsiz = obj->arrCnt;
@@ -522,7 +515,6 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     if (_this->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, _this->d.obj)) 
         return Jsi_LogError("expected array object");
     Jsi_Obj *obj;
-    int curlen;
     uint i;
     Jsi_Value *func, *vpargs;
 
@@ -535,10 +527,6 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         sthis = nthis = Jsi_ValueNew1(interp);
 
     obj = _this->d.obj;
-    curlen = Jsi_ObjGetLength(interp, obj);    
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
     Jsi_ObjListifyArray(interp, obj);
     Jsi_RC rc = JSI_OK;
     
@@ -566,7 +554,6 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     if (_this->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, _this->d.obj)) 
         return Jsi_LogError("expected array");
     Jsi_Obj *obj;
-    int curlen;
     uint i;
     Jsi_RC rc = JSI_OK;
     Jsi_Value *func, *vpargs, *sthis = Jsi_ValueArrayIndex(interp, args, 1);
@@ -579,10 +566,6 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         sthis = nthis = Jsi_ValueNew1(interp);
 
     obj = _this->d.obj;
-    curlen = Jsi_ObjGetLength(interp, obj);    
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
     Jsi_ObjListifyArray(interp, obj);
     int fval = 0;
     Jsi_Value *nrPtr = Jsi_ValueNew1(interp);
@@ -628,7 +611,7 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
     if (_this->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, _this->d.obj)) 
         return Jsi_LogError("expected array");
     Jsi_RC rc = JSI_OK;
-    int curlen, i;
+    int i;
     Jsi_Obj *obj;
     Jsi_Value *func, *vpargs, *ini = Jsi_ValueArrayIndex(interp, args, 1);
 
@@ -638,9 +621,6 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
 
     Jsi_Value *nrPtr = Jsi_ValueNew1(interp);
     obj = _this->d.obj;
-    curlen = Jsi_ObjGetLength(interp, obj);    
-    if (curlen < 0)
-        Jsi_ObjSetLength(interp, obj, 0);
     Jsi_ObjListifyArray(interp, obj);
     Jsi_Value *vobjs[4];
     int n, rev = (op==2);
@@ -717,7 +697,7 @@ static Jsi_RC jsi_ArrayIndexSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
         goto bail;
     }
     
-    n = Jsi_ObjGetLength(interp, obj);    
+    n = jsi_SizeOfArray(interp, obj);    
     if (n == 0) {
         goto bail;
     }
@@ -769,7 +749,7 @@ static Jsi_RC jsi_ArrayIncludesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
 static Jsi_RC jsi_ArraySizeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,Jsi_Value **ret, Jsi_Func *funcPtr) {
     if (_this->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, _this->d.obj))
         return Jsi_LogError("expected array object");
-    int i = Jsi_ObjGetLength(interp, _this->d.obj);
+    int i = jsi_SizeOfArray(interp, _this->d.obj);
     Jsi_ValueMakeNumber(interp, ret, i);
     return JSI_OK;
 }
@@ -780,8 +760,7 @@ static Jsi_RC jsi_ArrayShiftCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     Jsi_Value *v;
     Jsi_Obj *obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);
-    uint n = Jsi_ObjGetLength(interp, obj);
-    assert(n <= obj->arrCnt);
+    uint n = jsi_SizeOfArray(interp, obj);
     if (n<=0) {
         Jsi_ValueMakeUndef(interp, ret);
     } else {
@@ -802,10 +781,7 @@ static Jsi_RC jsi_ArrayUnshiftCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
 
     Jsi_Obj *obj = _this->d.obj;
     int argc = Jsi_ValueGetLength(interp, args);
-    int curlen = Jsi_ObjGetLength(interp, obj);
-    if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
-    }
+    int curlen = jsi_SizeOfArray(interp, obj);
     if (argc <= 0) {
         Jsi_ValueMakeNumber(interp, ret, 0);
         return JSI_OK;
@@ -825,7 +801,7 @@ static Jsi_RC jsi_ArrayUnshiftCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     }
     Jsi_ObjSetLength(interp, obj, curlen+argc);
     
-    Jsi_ValueMakeNumber(interp, ret, Jsi_ObjGetLength(interp, obj));
+    Jsi_ValueMakeNumber(interp, ret, jsi_SizeOfArray(interp, obj));
     return JSI_OK;
 }
 
@@ -839,7 +815,7 @@ static Jsi_RC jsi_ArrayFillCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         *start = Jsi_ValueArrayIndex(interp, args, 1),
         *end = Jsi_ValueArrayIndex(interp, args, 2);
     Jsi_Obj *obj = _this->d.obj;
-    n = Jsi_ObjGetLength(interp, obj);
+    n = jsi_SizeOfArray(interp, obj);
 
     if (start && Jsi_GetNumberFromValue(interp, start, &nstart) == JSI_OK) {
         istart = (int)nstart;
@@ -902,7 +878,7 @@ static Jsi_RC jsi_ArraySliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         goto bail;
     }
     obj = _this->d.obj;
-    n = Jsi_ObjGetLength(interp, obj);
+    n = jsi_SizeOfArray(interp, obj);
     if (Jsi_GetNumberFromValue(interp,start, &nstart) == JSI_OK) {
         istart = (int)nstart;
         if (istart > n)
@@ -1166,7 +1142,7 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     argc = Jsi_ValueGetLength(interp, args);
     istart = 0;
     ilen = (argc>=2 ? argc - 2 : 0);
-    n = Jsi_ObjGetLength(interp, obj);
+    n = jsi_SizeOfArray(interp, obj);
     curlen = n;
     
     if (!start) {
@@ -1202,7 +1178,7 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     }
     
     if (curlen < 0) {
-        Jsi_ObjSetLength(interp, obj, 0);
+        Jsi_ObjSetLength(interp, obj, curlen=0);
     }
     Jsi_ObjListifyArray(interp, obj);
    

@@ -519,7 +519,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>level</td><td>level(level:number=void):number|array|object </td><td>Return current level or details of a call-stack frame. With no arg, returns the number of the current stack frame level.
 Otherwise returns details on the specified level.
 The topmost level is 1, and 0 is the current level, and a negative level translates as relative to the current level.</td></tr>
-<tr><td>locals</td><td>locals(varsOnly:boolean=void):object </td><td>Return functions/vars inside local function.</td></tr>
+<tr><td>locals</td><td>locals(filter:boolean=void):object </td><td>Return locals; use filter=true/false just vars/functions.</td></tr>
 <tr><td>lookup</td><td>lookup(name:string) </td><td>Given string name, lookup and return value, eg: function.</td></tr>
 <tr><td>methods</td><td>methods(val:string|regexp):array|object </td><td>Return functions and commands.</td></tr>
 <tr><td>named</td><td>named(name:string=void):array|userobj </td><td>Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object.</td></tr>
@@ -1328,6 +1328,7 @@ With one argument, loads the package (if necessary) and returns its version.
 With two arguments, returns object containing: version, loadFile, func.
 A third argument sets options for package or module.
 Note an error is thrown if requested version is greater than actual version.</td></tr>
+<tr><td>runMain</td><td>runMain(cmd:string|null|function=void, conf:array=undefined) </td><td>If isMain invokes runModule.</td></tr>
 <tr><td>runModule</td><td>runModule(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke named module. If name is empty, uses file basename. If isMain and no args givine parses console.args.</td></tr>
 <tr><td>setInterval</td><td>setInterval(callback:function, ms:number):number </td><td>Setup recurring function to run every given millisecs.</td></tr>
 <tr><td>setTimeout</td><td>setTimeout(callback:function, ms:number):number </td><td>Setup function to run after given millisecs.</td></tr>

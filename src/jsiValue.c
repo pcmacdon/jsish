@@ -1036,7 +1036,7 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
     }
     /* TODO: array["1"] also extern the length of array */
     
-    if (arrayindex >= 0 && arrayindex < MAX_ARRAY_LIST &&
+    if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
         target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
         return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);
     }
@@ -1373,7 +1373,7 @@ Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_
     Jsi_Obj *obj = target->d.obj;
     
     if (obj->isarrlist) {
-        if (key >= 0 && key < interp->maxArrayList) {
+        if (key >= 0 && (uint)key < interp->maxArrayList) {
             Jsi_ObjArraySet(interp, obj, val, key);
             return JSI_OK;
         }

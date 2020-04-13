@@ -633,7 +633,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>lockTimeout</td><td><i>INT</i></td><td>Thread time-out for mutex lock acquires (milliseconds).</td><td><i></i></td></tr>
 <tr><td>logOpts</td><td><i><a href='#logOptsOptions'>options</a></i></td><td>Options for log output to add file/line/time.</td><td><i></i></td></tr>
 <tr><td>maxDepth</td><td><i>INT</i></td><td>Depth limit of recursive function calls (1000).</td><td><i></i></td></tr>
-<tr><td>maxArrayList</td><td><i>INT</i></td><td>Maximum array convertable to list (100000).</td><td><i></i></td></tr>
+<tr><td>maxArrayList</td><td><i>UINT</i></td><td>Maximum array convertable to list (100000).</td><td><i></i></td></tr>
 <tr><td>maxIncDepth</td><td><i>INT</i></td><td>Maximum allowed source/require nesting depth (50).</td><td><i></i></td></tr>
 <tr><td>maxInterpDepth</td><td><i>INT</i></td><td>Maximum nested subinterp create depth (10).</td><td><i></i></td></tr>
 <tr><td>maxUserObjs</td><td><i>INT</i></td><td>Maximum number of 'new' object calls, eg. File, RegExp, etc.</td><td><i></i></td></tr>

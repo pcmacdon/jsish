@@ -1259,7 +1259,7 @@ struct Jsi_Interp {
     Jsi_Value *Top_object;
     Jsi_ScopeStrs *scopes[JSI_MAX_SCOPE];
     int cur_scope;
-    int maxArrayList;
+    uint maxArrayList;
     int delRBCnt;
     Jsi_Func *activeFunc;  // Currently active function call.
     Jsi_Func *prevActiveFunc;  // Prev active function call.

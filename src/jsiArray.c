@@ -267,7 +267,7 @@ static Jsi_RC jsi_ArrayFlatSub(Jsi_Interp *interp, Jsi_Obj* nobj, Jsi_Value *arr
             rc = jsi_ArrayFlatSub(interp, nobj, t , depth-1);
         else if (!Jsi_ValueIsUndef(interp, t))
             Jsi_ObjArrayAdd(interp, nobj, t);
-        if ((++n + clen)>interp->maxArrayList)
+        if ((uint)(++n + clen)>interp->maxArrayList)
             return Jsi_LogError("array size exceeded");
     }
     return rc;

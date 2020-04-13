@@ -76,7 +76,7 @@ static Jsi_RC ObjListifyCallback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *data
         if (!cp || !isdigit(*cp))
             return JSI_OK;
         n = (int)strtol(cp, &ep, 0);
-        if (n<0 || n >= interp->maxArrayList)
+        if (n<0 || (uint)n >= interp->maxArrayList)
             return JSI_OK;
         hPtr->f.bits.isarrlist = 1;
         if (Jsi_ObjArraySizer(interp, obj, n) <= 0) 
@@ -414,12 +414,12 @@ int Jsi_ObjDecrRefCount(Jsi_Interp *interp, Jsi_Obj *obj)  {
 
 int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint len)
 {
-    int nsiz = len + 1, mod = ALLOC_MOD_SIZE;
+    uint nsiz = len + 1, mod = ALLOC_MOD_SIZE;
     assert(obj->isarrlist);
     if (mod>1)
         nsiz = nsiz + ((mod-1) - (nsiz + mod - 1)%mod);
-    if (nsiz > MAX_ARRAY_LIST) {
-        Jsi_LogError("array size too large");
+    if (len >= interp->maxArrayList || nsiz > interp->maxArrayList) {
+        Jsi_LogError("array size too big: %u >= %u", len, interp->maxArrayList);
         return 0;
     }
     if (len >= obj->arrMaxSize) {

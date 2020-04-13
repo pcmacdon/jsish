@@ -100,7 +100,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(INT,   Jsi_Interp, lockTimeout, .help="Thread time-out for mutex lock acquires (milliseconds)" ),
     JSI_OPT(CUSTOM,Jsi_Interp, logOpts,     .help="Options for log output to add file/line/time", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=jsi_InterpLogOptions),
     JSI_OPT(INT,   Jsi_Interp, maxDepth,    .help="Depth limit of recursive function calls (1000)", .flags=JSI_OPT_LOCKSAFE),
-    JSI_OPT(INT,   Jsi_Interp, maxArrayList,.help="Maximum array convertable to list (100000)", .flags=JSI_OPT_LOCKSAFE),
+    JSI_OPT(UINT,  Jsi_Interp, maxArrayList,.help="Maximum array convertable to list (100000)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(INT,   Jsi_Interp, maxIncDepth, .help="Maximum allowed source/require nesting depth (50)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(INT,   Jsi_Interp, maxInterpDepth,.help="Maximum nested subinterp create depth (10)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(INT,   Jsi_Interp, maxUserObjs, .help="Maximum number of 'new' object calls, eg. File, RegExp, etc", .flags=JSI_OPT_LOCKSAFE ),
@@ -1146,6 +1146,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     }
     interp->maxDepth = JSI_MAX_EVAL_DEPTH;
     interp->maxIncDepth = JSI_MAX_INCLUDE_DEPTH;
+    interp->maxArrayList = MAX_ARRAY_LIST;
     interp->typeWarnMax = 50;
     interp->subOpts.dblPrec = __DBL_DECIMAL_DIG__-1;
     interp->subOpts.prompt = "$ ";
@@ -1482,7 +1483,6 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
 #endif
     if (interp->typeCheck.all|interp->typeCheck.parse|interp->typeCheck.funcsig)
         interp->staticFuncsTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
-    interp->maxArrayList = MAX_ARRAY_LIST;
     if (!jsiIntData.isInit) {
         jsiIntData.isInit = 1;
         jsi_InitValue(interp, 0);

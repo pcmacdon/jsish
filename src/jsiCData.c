@@ -1276,8 +1276,8 @@ static Jsi_RC CDataStructDefineCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
             sf->flags |= JSI_OPT_BITSET_ENUM;
         }
         if (sf->arrSize) {
-            if (sf->arrSize>MAX_ARRAY_LIST) {
-                rc = Jsi_LogError("array size too big: %d >= %d", sf->arrSize, MAX_ARRAY_LIST);
+            if (sf->arrSize>interp->maxArrayList) {
+                rc = Jsi_LogError("array size too big: %d >= %d", sf->arrSize, interp->maxArrayList);
                 goto bail;
             }
             if (sf->bits || isEnum) {

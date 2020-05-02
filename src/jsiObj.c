@@ -144,7 +144,15 @@ static Jsi_RC DeleteTreeValue(Jsi_Interp *interp, Jsi_TreeEntry *ti, void *p) {
     return JSI_OK;
 }
 
-int jsi_AllObjOp(Jsi_Interp *interp, Jsi_Obj* obj, int op) {
+// TODO: implement python style GC for objects: http://www.arctrix.com/nas/python/gc/
+void jsi_ObjInsertCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add)
+{
+    if (!add) return;
+    if (obj == value->d.obj && !interp->memLeakCnt++)
+        Jsi_LogWarn("recursive add of object will leak memory");
+}
+
+/*int jsi_AllObjOp(Jsi_Interp *interp, Jsi_Obj* obj, int op) {
     if (op==2) {
         Jsi_Obj* o = interp->allObjs;
         while (o) {
@@ -174,7 +182,7 @@ int jsi_AllObjOp(Jsi_Interp *interp, Jsi_Obj* obj, int op) {
         return 0;
     }
     if (op == -1) {
-        // TODO: fix cleanup for recursive bug, eg: x=[]; x.push(x);
+        // TODO: fix cleanup for recursive bug, eg: x={}; x.x = x;
         // Perhaps use python approach??: http://www.arctrix.com/nas/python/gc/
         while (0 && interp->allObjs) {
             printf("NEED CLEANUP: %p\n", interp->allObjs);
@@ -188,6 +196,7 @@ int jsi_AllObjOp(Jsi_Interp *interp, Jsi_Obj* obj, int op) {
 #endif
     return 0;
 }
+*/
 
 Jsi_Obj *jsi_ObjNew_(Jsi_Interp *interp)
 {
@@ -207,14 +216,14 @@ Jsi_Obj *jsi_ObjNew_(Jsi_Interp *interp)
 #ifndef JSI_MEM_DEBUG
 Jsi_Obj * Jsi_ObjNew(Jsi_Interp *interp) {
     Jsi_Obj *obj = jsi_ObjNew_(interp);
-    jsi_AllObjOp(interp, obj, 1);
+    //jsi_AllObjOp(interp, obj, 1);
     return obj;
 }
 #else
 Jsi_Obj * jsi_ObjNew(Jsi_Interp *interp, const char *fname, int line, const char *func) {
     Jsi_Obj *obj = jsi_ObjNew_(interp);
     jsi_ValueDebugUpdate(interp, obj, objDebugTbl, fname, line, func);
-    jsi_AllObjOp(interp, obj, 1);
+    //jsi_AllObjOp(interp, obj, 1);
     return obj;
 }
 
@@ -225,7 +234,7 @@ Jsi_Obj *Jsi_ObjNew(Jsi_Interp *interp) {
 #ifdef JSI_MEM_DEBUG
     jsi_ValueDebugUpdate(interp, obj, objDebugTbl, NULL, 0, NULL);
 #endif
-    jsi_AllObjOp(interp, obj, 1);
+    //jsi_AllObjOp(interp, obj, 1);
     return obj;
 }
 #define Jsi_ObjNew(interp) jsi_ObjNew(interp, __FILE__, __LINE__,__PRETTY_FUNCTION__)
@@ -258,7 +267,7 @@ void Jsi_ObjFree(Jsi_Interp *interp, Jsi_Obj *obj)
 {
     interp->dbPtr->objCnt--;
     //assert(obj->refcnt == 0);
-    jsi_AllObjOp(interp, obj, 0);
+    //jsi_AllObjOp(interp, obj, 0);
 #ifdef JSI_MEM_DEBUG
     if (interp != obj->VD.interp)
         printf("interp mismatch of objFree: %p!=%p : %p\n", interp, obj->VD.interp, obj);
@@ -339,6 +348,8 @@ Jsi_RC Jsi_ObjArrayAdd(Jsi_Interp *interp, Jsi_Obj *o, Jsi_Value *v)
     if (Jsi_ObjArraySizer(interp, o, len+1) <= 0)
         return JSI_ERROR;
     o->arr[len] = v;
+    if (v && v->vt == JSI_VT_OBJECT)
+        jsi_ObjInsertCheck(interp, o, v, 1);
     if (v)
         Jsi_IncrRefCount(interp, v);
     assert(o->arrCnt<=o->arrMaxSize);
@@ -358,6 +369,8 @@ Jsi_RC Jsi_ObjArraySet(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int a
     obj->arr[n] = value;
     if (value)
         Jsi_IncrRefCount(interp, value);
+    if (value && value->vt == JSI_VT_OBJECT)
+        jsi_ObjInsertCheck(interp, obj, value, 1);
     m = Jsi_ObjGetLength(interp, obj);
     if ((n+1) > m)
        Jsi_ObjSetLength(interp, obj, n+1);
@@ -369,6 +382,9 @@ Jsi_Value *jsi_ObjArraySetDup(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value
 {
     if (Jsi_ObjArraySizer(interp, obj, n) <= 0)
         return NULL;
+    if (value->vt == JSI_VT_OBJECT)
+        jsi_ObjInsertCheck(interp, obj, value, 1);
+
     if (obj->arr[n])
     {
         Jsi_ValueCopy(interp, obj->arr[n], value);

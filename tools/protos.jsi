@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.8
+//JSI Command Prototypes: version 3.0.9
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -105,6 +105,7 @@ File.prototype.mkdir = function(file:string,force:boolean=false):any {};
 File.prototype.mknod = function(file:string, mode:number, dev:number):any {};
 File.prototype.mtime = function(file:string):number {};
 File.prototype.owned = function(file:string):boolean {};
+File.prototype.perms = function(file:string):string {};
 File.prototype.pwd = function():string {};
 File.prototype.read = function(file:string, mode:string='rb'):string {};
 File.prototype.readable = function(file:string):boolean {};
@@ -118,7 +119,6 @@ File.prototype.stat = function(file:string):object {};
 File.prototype.tail = function(file:string):string {};
 File.prototype.tempfile = function(file:string):any {};
 File.prototype.truncate = function(file:string, size:number):any {};
-File.prototype.type = function(file:string):string {};
 File.prototype.writable = function(file:string):boolean {};
 File.prototype.write = function(file:string, str:string, mode:string='wb+'):number {};
 var Function = function(cmd,args) {};

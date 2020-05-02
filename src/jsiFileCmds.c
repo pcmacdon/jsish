@@ -31,6 +31,12 @@
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
 
+#ifndef S_ISUID
+#define S_ISUID 0004000
+#define S_ISGID 0002000
+#define S_ISVTX 0001000
+#endif
+
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
 #endif
@@ -46,12 +52,55 @@ if (interp->isSafe && (Jsi_InterpAccess(interp, fname, (!writ ? JSI_INTACCESS_RE
         || (create && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_CREATE) != JSI_OK))) \
         return Jsi_LogError("%s access denied by safe interp: %s", writ?"write":"read", GSVal(fname));
 
-Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr, int islstat)
+static char* getFileTypeCh(int mode, char smode[])
+{
+    char c = '-';
+    if (S_ISREG(mode))
+        c = '-';
+    else if (S_ISDIR(mode))
+        c = 'd';
+#ifdef S_ISLNK
+    else if (S_ISLNK(mode))
+        c = 'l';
+#endif
+#ifdef S_ISCHR
+    else if (S_ISCHR(mode))
+        c = 'c';
+#endif
+#ifdef S_ISBLK
+    else if (S_ISBLK(mode))
+        c = 'b';
+#endif
+#ifdef S_ISFIFO
+    else if (S_ISFIFO(mode))
+        c = 'p';
+#endif
+#ifdef S_ISSOCK
+    else if (S_ISSOCK(mode))
+        c = 's';
+#endif
+    int i = 0;
+    smode[i++] = c;
+    smode[i++] =  ((mode & S_IRUSR)?'r':'-');
+    smode[i++] =  ((mode & S_IWUSR)?'w':'-');
+    smode[i++] =  ((mode & S_ISUID)?((mode & S_IXUSR)?'s':'S'): ((mode & S_IXUSR)?'x':'-'));
+    smode[i++] =  ((mode & S_IRGRP)?'r':'-');
+    smode[i++] =  ((mode & S_IWGRP)?'w':'-');
+    smode[i++] =  ((mode & S_ISGID)?((mode & S_IXGRP)?'s':'S'): ((mode & S_IXGRP)?'x':'-'));
+    smode[i++] =  ((mode & S_IROTH)?'r':'-');
+    smode[i++] =  ((mode & S_IWOTH)?'w':'-');
+    smode[i++] =  ((mode & S_ISVTX)?((mode & S_IXOTH)?'t':'T'): ((mode & S_IXOTH)?'x':'-'));
+    smode[i] = 0;
+    return smode;
+}
+
+Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value **ret, int flags)
 {
     int rc;
     Jsi_StatBuf st;
     SAFEACCESS(fnam, 0, 1)
+    int islstat = flags&1;
+    int isshort = flags&2;
     if (islstat)
         rc = Jsi_Lstat(interp, fnam, &st);
     else
@@ -68,14 +117,21 @@ Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value *_this,
     nnv = Jsi_ValueMakeNumber(interp, NULL, (Jsi_Number)val); \
     Jsi_ObjInsert(interp, ores, nam, nnv, 0);
     
-    MKDBL("dev",st.st_dev); MKDBL("ino",st.st_ino); MKDBL("mode",st. st_mode);
-    MKDBL("nlink",st.st_nlink); MKDBL("uid",st.st_uid); MKDBL("gid",st.st_gid);
-    MKDBL("rdev",st.st_rdev);
+    MKDBL("mtime",st.st_mtime); MKDBL("size",st.st_size);
+    MKDBL("uid",st.st_uid); MKDBL("gid",st.st_gid);
+    MKDBL("mode",st.st_mode);
+    char smode[30];
+    getFileTypeCh(st.st_mode, smode);
+    Jsi_Value *nv = Jsi_ValueNewStringDup(interp, smode);
+    Jsi_ObjInsert(interp, ores, "perms", nv, 0);
+    if (!isshort) {
+        MKDBL("dev",st.st_dev); MKDBL("ino",st.st_ino); 
+        MKDBL("nlink",st.st_nlink); MKDBL("rdev",st.st_rdev);
 #ifndef __WIN32
-    MKDBL("blksize",st.st_blksize); MKDBL("blocks",st.st_blocks);
+        MKDBL("blksize",st.st_blksize); MKDBL("blocks",st.st_blocks);
 #endif
-    MKDBL("atime",st.st_atime); MKDBL("mtime",st.st_mtime); MKDBL("ctime",st.st_ctime);    
-    MKDBL("size",st.st_size);
+        MKDBL("ctime",st.st_ctime); MKDBL("atime",st.st_atime);
+    }
     Jsi_ValueDup2(interp, ret, vres);
     Jsi_DecrRefCount(interp, vres);
     return JSI_OK;
@@ -85,52 +141,16 @@ Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value *_this,
 static Jsi_RC FileStatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    return jsi_FileStatCmd(interp, Jsi_ValueArrayIndex(interp, args, 0), _this, ret, funcPtr, 0);
+    return jsi_FileStatCmd(interp, Jsi_ValueArrayIndex(interp, args, 0), ret, 0);
 }
 
 static Jsi_RC FileLstatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    return jsi_FileStatCmd(interp, Jsi_ValueArrayIndex(interp, args, 0), _this, ret, funcPtr, 1);
+    return jsi_FileStatCmd(interp, Jsi_ValueArrayIndex(interp, args, 0), ret, 1);
 }
 
-static const char *getFileType(int mode, int lmode)
-{
-#ifdef S_ISLNK
-    if (S_ISLNK(mode) || S_ISLNK(lmode)) {
-        return "link";
-    }
-#endif
-    if (S_ISDIR(mode)) {
-        return "directory";
-    }
-#ifdef S_ISCHR
-    else if (S_ISCHR(mode)) {
-        return "characterSpecial";
-    }
-#endif
-#ifdef S_ISBLK
-    else if (S_ISBLK(mode)) {
-        return "blockSpecial";
-    }
-#endif
-#ifdef S_ISFIFO
-    else if (S_ISFIFO(mode)) {
-        return "fifo";
-    }
-#endif
-#ifdef S_ISSOCK
-    else if (S_ISSOCK(mode)) {
-        return "socket";
-    }
-#endif
-    else if (S_ISREG(mode)) {
-        return "file";
-    }
-    return "unknown";
-}
-
-enum { FSS_Exists, FSS_Atime, FSS_Mtime, FSS_Writable, FSS_Readable, FSS_Executable, FSS_Type, 
+enum { FSS_Exists, FSS_Atime, FSS_Mtime, FSS_Writable, FSS_Readable, FSS_Executable, FSS_Perms, 
 FSS_Owned, FSS_Isdir, FSS_Isfile };
 
 static Jsi_RC _FileSubstat(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
@@ -139,6 +159,7 @@ static Jsi_RC _FileSubstat(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     Jsi_Value *fnam = Jsi_ValueArrayIndex(interp, args, 0);
     int rc;
     Jsi_StatBuf st = {}, lst = {};
+    char smode[30];
     st.st_uid = -1;
     rc = Jsi_Stat(interp, fnam, &st) | Jsi_Lstat(interp, fnam, &lst);
     switch (sub) {
@@ -154,7 +175,9 @@ static Jsi_RC _FileSubstat(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
             Jsi_ValueMakeBool(interp, ret, 1);
 #endif
             break;
-        case FSS_Type: Jsi_ValueMakeStringKey(interp, ret, (char*)getFileType((int)st.st_mode, (int)lst.st_mode)); break;
+        case FSS_Perms: 
+            getFileTypeCh((int)st.st_mode, smode);
+            Jsi_ValueMakeStringKey(interp, ret, smode); break;
         case FSS_Owned:
 #ifndef __WIN32
             Jsi_ValueMakeBool(interp, ret, rc == 0 && geteuid() == st.st_uid);
@@ -176,7 +199,7 @@ static Jsi_RC File##nam##Cmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     return _FileSubstat(interp, args, _this, ret, funcPtr, FSS_##nam);\
 }
 MAKE_FSS_SUB(Exists) MAKE_FSS_SUB(Atime) MAKE_FSS_SUB(Writable) MAKE_FSS_SUB(Readable)
-MAKE_FSS_SUB(Executable) MAKE_FSS_SUB(Type) MAKE_FSS_SUB(Owned)
+MAKE_FSS_SUB(Executable) MAKE_FSS_SUB(Perms) MAKE_FSS_SUB(Owned)
 MAKE_FSS_SUB(Isdir) MAKE_FSS_SUB(Isfile) MAKE_FSS_SUB(Mtime)
 #ifndef __WIN32
 #define MKDIR_DEFAULT(PATHNAME) mkdir(PATHNAME, 0755)
@@ -843,6 +866,7 @@ typedef struct {
     int maxDepth;       /* For recursive */
     int flags;
     bool retCount;
+    bool retInfo;
     int cnt;            /* Actual count. */
     int discardCnt;
     int maxDiscard;
@@ -856,7 +880,6 @@ typedef struct {
     const char *prefix;
 } GlobData;
 
-const char *globRetValues[] = { "file", "dir", "both", "count" };
 static Jsi_OptionSpec GlobOptions[] = {
     JSI_OPT(STRING, GlobData, dir,      .help="The start directory: this path will not be prepended to results"),
     JSI_OPT(INT,    GlobData, maxDepth, .help="Maximum directory depth to recurse into"),
@@ -868,6 +891,7 @@ static Jsi_OptionSpec GlobOptions[] = {
     JSI_OPT(STRKEY, GlobData, prefix,   .help="String prefix to prepend to each file in result list"),
     JSI_OPT(BOOL,   GlobData, recurse,  .help="Recurse into sub-directories"),
     JSI_OPT(BOOL,   GlobData, retCount, .help="Return only the count of matches"),
+    JSI_OPT(BOOL,   GlobData, retInfo,  .help="Return file info: size, uid, gid, mode, name, and path"),
     JSI_OPT(BOOL,   GlobData, tails,    .help="Returned only tail of path"),
     JSI_OPT(STRKEY, GlobData, types,    .help="Filter files to include type: one or more of chars 'fdlpsbc' for file, directory, link, etc"),
     JSI_OPT_END(GlobData, .help="Glob options")
@@ -880,6 +904,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
     if (cnt>interp->maxIncDepth || !path)
         return Jsi_LogError("runaway File.globs");
     struct dirent **namelist;
+    char pbuf[PATH_MAX];
     Jsi_RC rc = JSI_OK;
     int i, n, flags = opts->flags, slen;
     bool bres = 0;
@@ -960,7 +985,6 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
         if (ftyp == DT_LNK) {
             if (opts->noTypes && (!(flags&JSI_FILE_TYPE_LINK)))
                 continue;
-            char pbuf[PATH_MAX];
             snprintf(pbuf, sizeof(pbuf), "%s%s%s", spath, (spath[0]?"/":""),  z);
             Jsi_StatBuf stat;
             Jsi_Value *vpath = Jsi_ValueNewStringConst(interp, pbuf, -1);
@@ -971,7 +995,10 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
             if (S_ISDIR(stat.st_mode))
                 ftyp = DT_DIR;
         }
-        if (ftyp == DT_DIR) {
+        if (ftyp != DT_DIR) {
+            if (!(flags&JSI_FILE_TYPE_FILES) || mid)
+                continue;
+        } else {
             if (mid) {
                 if (zPattern != NULL && Jsi_GlobMatch(zPattern, z, 0) == 0)
                     continue;
@@ -999,25 +1026,8 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
                     else if (bres!=0 && bres!=1)
                         rc = JSI_ERROR;
                 }
-                if (opts->types && Jsi_Strchr(opts->types, 'd')) {
-                    opts->cnt++;
-                    if (!opts->retCount) {
-                        Jsi_DString pStr;
-                        Jsi_DSInit(&pStr);
-                        if (opts->prefix)
-                            Jsi_DSAppend(&pStr, opts->prefix, z, NULL);
-                        if (!opts->tails && spath[0])
-                            Jsi_DSAppend(&pStr, spath, "/", NULL);
-                        Jsi_DSAppend(&pStr, z, NULL);
-                        zz = Jsi_DSValue(&pStr);
-                        if (opts->dirLen && Jsi_Strlen(zz)>=(uint)opts->dirLen) {
-                            zz += opts->dirLen;
-                            if (zz[0] == '/') zz++;
-                        }
-                        Jsi_ObjArrayAdd(interp, obj, Jsi_ValueNewStringDup(interp, zz));
-                        Jsi_DSFree(&pStr);
-                    }
-                }
+                if (opts->types && Jsi_Strchr(opts->types, 'd'))
+                    goto dumpit;
                 zz = Jsi_DSValue(&sStr);
                 rc = SubGlobsDirectory(interp, obj, reg, zPattern, zz, opts, deep+1, cnt+1);
                 Jsi_DSFree(&sStr);
@@ -1029,9 +1039,6 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
                     goto done;
             }
             if (opts->types==0 && opts->noTypes && (!(flags&JSI_FILE_TYPE_DIRS)))
-                continue;
-        } else {
-            if (!(flags&JSI_FILE_TYPE_FILES) || mid)
                 continue;
         }
         // TODO: sanity check types/noTypes.
@@ -1100,9 +1107,10 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
             } else if (bres!=0 && bres!=1)
                 rc = JSI_ERROR;
         }
+dumpit:
         opts->cnt++;
         if (!opts->retCount) {
-            Jsi_DSFree(&tStr);
+            Jsi_DSSetLength(&tStr, 0);
             if (opts->prefix)
                 Jsi_DSAppend(&tStr, opts->prefix, NULL);
             if (!opts->tails)
@@ -1113,8 +1121,29 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
                 z += opts->dirLen;
                 if (z[0] == '/') z++;
             }
-            rc = Jsi_ObjArrayAdd(interp, obj, Jsi_ValueNewStringDup(interp, z));
-            Jsi_DSSetLength(&tStr, 0);
+            Jsi_Value *nv;
+            if (!opts->retInfo)
+                nv = Jsi_ValueNewStringDup(interp, z);
+            else {
+                Jsi_Value *info = Jsi_ValueNew1(interp);
+                snprintf(pbuf, sizeof(pbuf), "%s%s%s", spath, (spath[0]?"/":""),  z);
+                Jsi_Value *vpath = Jsi_ValueNewStringConst(interp, pbuf, -1);
+                Jsi_IncrRefCount(interp, vpath);
+                rc = jsi_FileStatCmd(interp, vpath, &info, 2);
+                Jsi_DecrRefCount(interp, vpath);
+                if (rc != JSI_OK) {
+                    Jsi_DecrRefCount(interp, info);
+                    break;
+                }
+                nv = Jsi_ValueNewStringDup(interp, z);
+                Jsi_ObjInsert(interp, info->d.obj, "name", nv, 0);
+                if (opts->recurse)
+                    Jsi_ObjInsert(interp, info->d.obj, "path", (spath[0]?Jsi_ValueNewStringDup(interp, pbuf):nv), 0);
+                nv = info;
+            }
+            rc = Jsi_ObjArrayAdd(interp, obj, nv);
+            if (opts->retInfo)
+                Jsi_DecrRefCount(interp, nv);
         }
         if (opts->limit>0 && opts->cnt >= opts->limit)
             break;
@@ -1196,7 +1225,12 @@ static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         }
         Jsi_DSAppend(&dStr, dcp, (*dcp && dcp[Jsi_Strlen(dcp)-1]!='/')?"/":"", NULL);
     }
-    if (!Data.retCount) {
+    if (Data.retCount) {
+        if (Data.retInfo) {
+            rc = Jsi_LogError("Can not use both retCount and retInfo");
+            goto done;
+        }
+    } else {
         obj = Jsi_ObjNew(interp);
         Jsi_ValueMakeArrayObject(interp, ret, obj);
     }
@@ -1258,6 +1292,7 @@ static Jsi_CmdSpec fileCmds[] = {
     { "mknod",      FileMknodCmd,       3,  3, "file:string, mode:number, dev:number", .help="Create unix device file using mknod"  },
     { "mtime",      FileMtimeCmd,       1,  1, "file:string",  .help="Return file modified time", .retType=(uint)JSI_TT_NUMBER },
     { "owned",      FileOwnedCmd,       1,  1, "file:string",  .help="Return true if file is owned by user", .retType=(uint)JSI_TT_BOOLEAN },
+    { "perms",      FilePermsCmd,       1,  1, "file:string",  .help="Return perms string", .retType=(uint)JSI_TT_STRING },
     { "pwd",        FilePwdCmd,         0,  0, "",  .help="Return current directory", .retType=(uint)JSI_TT_STRING },
     { "remove",     FileRemoveCmd,      1,  2, "file:string, force:boolean=false",  .help="Delete a file or direcotry" },
     { "rename",     FileRenameCmd,      2,  3, "src:string, dest:string, force:boolean=false",  .help="Rename a file, with possible overwrite" },
@@ -1271,7 +1306,6 @@ static Jsi_CmdSpec fileCmds[] = {
     { "tail",       FileTailCmd,        1,  1, "file:string",  .help="Return file name minus dirname", .retType=(uint)JSI_TT_STRING },
     { "tempfile",   FileTempfileCmd,    1,  1, "file:string",  .help="Create a temp file", .retType=(uint)JSI_TT_ANY },
     { "truncate",   FileTruncateCmd,    2,  2, "file:string, size:number",  .help="Truncate file" },
-    { "type",       FileTypeCmd,        1,  1, "file:string",  .help="Return type of file", .retType=(uint)JSI_TT_STRING },
     { "write",      FileWriteCmd,       2,  3, "file:string, str:string, mode:string='wb+'",  .help="Write a file", .retType=(uint)JSI_TT_NUMBER },
     { "writable",   FileWritableCmd,    1,  1, "file:string",  .help="Return true if file is writable", .retType=(uint)JSI_TT_BOOLEAN },
     { NULL, 0,0,0,0, .help="Commands for accessing the filesystem" }

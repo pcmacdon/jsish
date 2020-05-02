@@ -106,6 +106,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(INT,   Jsi_Interp, maxUserObjs, .help="Maximum number of 'new' object calls, eg. File, RegExp, etc", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(INT,   Jsi_Interp, maxOpCnt,    .help="Execution limit for op-code evaluation", jsi_IIOF|JSI_OPT_LOCKSAFE ),
     JSI_OPT(INT,   Jsi_Interp, memDebug,    .help="Memory debugging level: 1=summary, 2=detail", .flags=JSI_OPT_NO_CLEAR),
+    JSI_OPT(INT,   Jsi_Interp, memLeakCnt,  .help="Leak memory count due to object added to self", jsi_IIOF|JSI_OPT_LOCKSAFE ),
     JSI_OPT(STRKEY,Jsi_Interp, name,        .help="Optional text name for this interp"),
     JSI_OPT(BOOL,  Jsi_Interp, noAutoLoad,  .help="Disable autoload", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(BOOL,  Jsi_Interp, noConfig,    .help="Disable use of Interp.conf to change options after create", jsi_IIOF),
@@ -1966,7 +1967,7 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
         Jsi_HashDelete(interp->packageHash);
     Jsi_HashDelete(interp->assocTbl);
     interp->cleanup = 1;
-    jsi_AllObjOp(interp, NULL, -1);
+    //jsi_AllObjOp(interp, NULL, -1);
 #ifdef JSI_MEM_DEBUG
     jsi_DebugDumpValues(interp);
 #endif
@@ -2398,7 +2399,7 @@ static Jsi_RC SubInterpEvalCallback(Jsi_Interp *interp, void* data)
         oldse = se;
         int isExec = se->isExec;
         if (se->acdata) {
-            jsi_AliasCreateCmd(interp, Jsi_DSValue(&se->func), se->acdata);
+            jsi_AliasCreateCmd(interp, Jsi_DSValue(&se->func), (AliasCmd*)se->acdata);
         }
         else if (se->acfunc) {
             if (JSI_OK != Jsi_FunctionInvokeJSON(interp, se->acfunc, Jsi_DSValue(&se->data), NULL))
@@ -2726,7 +2727,11 @@ static JSITHREADRET NewInterpThread(void* iPtr)
         Jsi_LogError("eval failure");
         interp->threadErrCnt++;
         if (Jsi_MutexLock(interp, interp->Mutex) != JSI_OK)
+#ifdef __WIN32
+            return;
+#else
             return NULL;
+#endif
         Jsi_MutexUnlock(interp, interp->Mutex);
     }
     interpObjErase(udf);

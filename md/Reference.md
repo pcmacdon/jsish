@@ -427,6 +427,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>mknod</td><td>mknod(file:string, mode:number, dev:number) </td><td>Create unix device file using mknod.</td></tr>
 <tr><td>mtime</td><td>mtime(file:string):number </td><td>Return file modified time.</td></tr>
 <tr><td>owned</td><td>owned(file:string):boolean </td><td>Return true if file is owned by user.</td></tr>
+<tr><td>perms</td><td>perms(file:string):string </td><td>Return perms string.</td></tr>
 <tr><td>pwd</td><td>pwd():string </td><td>Return current directory.</td></tr>
 <tr><td>read</td><td>read(file:string, mode:string='rb'):string </td><td>Read a file.</td></tr>
 <tr><td>readable</td><td>readable(file:string):boolean </td><td>Return true if file is readable.</td></tr>
@@ -440,7 +441,6 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>tail</td><td>tail(file:string):string </td><td>Return file name minus dirname.</td></tr>
 <tr><td>tempfile</td><td>tempfile(file:string) </td><td>Create a temp file.</td></tr>
 <tr><td>truncate</td><td>truncate(file:string, size:number) </td><td>Truncate file.</td></tr>
-<tr><td>type</td><td>type(file:string):string </td><td>Return type of file.</td></tr>
 <tr><td>writable</td><td>writable(file:string):boolean </td><td>Return true if file is writable.</td></tr>
 <tr><td>write</td><td>write(file:string, str:string, mode:string='wb+'):number </td><td>Write a file.</td></tr>
 </table>
@@ -461,6 +461,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>prefix</td><td><i>STRKEY</i></td><td>String prefix to prepend to each file in result list.</td><td><i></i></td></tr>
 <tr><td>recurse</td><td><i>BOOL</i></td><td>Recurse into sub-directories.</td><td><i></i></td></tr>
 <tr><td>retCount</td><td><i>BOOL</i></td><td>Return only the count of matches.</td><td><i></i></td></tr>
+<tr><td>retInfo</td><td><i>BOOL</i></td><td>Return file info: size, uid, gid, mode, name, and path.</td><td><i></i></td></tr>
 <tr><td>tails</td><td><i>BOOL</i></td><td>Returned only tail of path.</td><td><i></i></td></tr>
 <tr><td>types</td><td><i>STRKEY</i></td><td>Filter files to include type: one or more of chars 'fdlpsbc' for file, directory, link, etc.</td><td><i></i></td></tr>
 </table>
@@ -606,6 +607,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>maxUserObjs</td><td><i>INT</i></td><td>Maximum number of 'new' object calls, eg. File, RegExp, etc.</td><td><i></i></td></tr>
 <tr><td>maxOpCnt</td><td><i>INT</i></td><td>Execution limit for op-code evaluation.</td><td><i>initOnly</i></td></tr>
 <tr><td>memDebug</td><td><i>INT</i></td><td>Memory debugging level: 1=summary, 2=detail.</td><td><i></i></td></tr>
+<tr><td>memLeakCnt</td><td><i>INT</i></td><td>Leak memory count due to object added to self.</td><td><i>initOnly</i></td></tr>
 <tr><td>name</td><td><i>STRKEY</i></td><td>Optional text name for this interp.</td><td><i></i></td></tr>
 <tr><td>noAutoLoad</td><td><i>BOOL</i></td><td>Disable autoload.</td><td><i></i></td></tr>
 <tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of Interp.conf to change options after create.</td><td><i>initOnly</i></td></tr>

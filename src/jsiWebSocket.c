@@ -848,7 +848,7 @@ static Jsi_RC jsi_wsFileAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
         if (hPtr) {
             jsi_wsFile* fPtr;
             if (!isNew)
-                fPtr = Jsi_HashValueGet(hPtr);
+                fPtr = (typeof(fPtr))Jsi_HashValueGet(hPtr);
             else {
                 fPtr = (jsi_wsFile *)Jsi_Calloc(1, sizeof(*fPtr));
                 fPtr->fileVal = name;
@@ -938,7 +938,8 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
         Jsi_DecrRefCount(interp, fval);
     }
     
-    char *cp, *sp, *se, pref[] = "<!--#", suffix[] = "-->", *msg = NULL;
+    char *cp, *se, pref[] = "<!--#", suffix[] = "-->";
+    const char *sp, *msg = NULL;
     struct {
         int inif, inelse, matched, elide;
     } II[11] = {};
@@ -1034,7 +1035,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
             Jsi_DSSetLength(&lStr, llen-2);
             cp += 2;
             // Extract modifiers before bool var name to lookup.
-            bool warn = 0, req = 0, nifval = 0, not = 0, isq=0, isu=0, qfirst=0;
+            bool warn = 0, req = 0, nifval = 0, inot = 0, isq=0, isu=0, qfirst=0;
             while (*cp &&  !isalpha(*cp)) {
                 bool fail = 0;
                 switch (*cp) {
@@ -1043,7 +1044,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                     case '?': isq = 1; break;
                     case '@': warn = !II[ii].matched; break;
                     case '*': req = !II[ii].matched; break;
-                    case '!': not = 1; break;
+                    case '!': inot = 1; break;
                     default: fail=1; break;
                 }
                 if (fail) { msg = "modifier must be one of: !:=?@*"; break; }
@@ -1067,7 +1068,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                     Jsi_LogWarn("symbol \"%s\" should be a boolean: %s", cp, fbuf);
                 }
             }
-            if (not) nifval = !nifval;
+            if (inot) nifval = !nifval;
             if (!iselif) {
                 if (nifval)
                     II[ii].matched = 1;

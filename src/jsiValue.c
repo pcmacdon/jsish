@@ -327,41 +327,6 @@ Jsi_Value *Jsi_ValueDupJSON(Jsi_Interp *interp, Jsi_Value *val)
     return valPtr;
 }
 
-#if 0
-void jsi_AllValueOp(Jsi_Interp *interp, Jsi_Value* val, int op) {
-    if (op==1) {
-        //printf("ADD: %p : %p : %d\n", interp, val, val->VD.Idx);
-        assert(interp->allValues!=val);
-        val->next = interp->allValues;
-        if (interp->allValues)
-            interp->allValues->prev = val;
-        interp->allValues = val;
-        return;
-    }
-    if (op==0) {
-        //printf("DEL: %p : %p\n", interp, val);
-        if (!val || !interp->allValues) return;
-        if (val == interp->allValues)
-            interp->allValues = val->next;
-        if (val->next)
-            val->next->prev = val->prev;
-        if (val->prev)  
-            val->prev->next = val->next; 
-        return;
-    }
-    if (op == -1) {
-        while (interp->allValues) {
-            printf("NEED CLEANUP: %p\n", interp->allValues);
-            Jsi_ValueFree(interp, interp->allValues);
-        }
-        return;
-    }
-#if JSI__MEMDEBUG
-    assert(0);
-    abort();
-#endif
-}
-#endif
 
 Jsi_Value *Jsi_ValueObjLookup(Jsi_Interp *interp, Jsi_Value *target, const char *key, int isstrkey)
 {
@@ -1416,6 +1381,8 @@ Jsi_TreeEntry * Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key,
     SIGASSERT(val, VALUE);
     /*if (val)
         Jsi_IncrRefCount(interp, val);*/
+    if (val->vt == JSI_VT_OBJECT)
+        jsi_ObjInsertCheck(interp, obj, val, 1); 
     hPtr = Jsi_TreeObjSetValue(obj, key, val, (flags&JSI_OM_ISSTRKEY));
     if ((flags&JSI_OM_DONTDEL))
         val->f.bits.dontdel = hPtr->f.bits.dontdel = 1;

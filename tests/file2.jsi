@@ -8,7 +8,7 @@ File.rename('XX1/BB','XX1/CC.txt');
 ;File.dirname('XX1/AA');
 ;File.rootname('XX1/CC.txt');
 ;File.tail('XX1/CC.txt');
-;File.type('XX1/CC.txt');
+;File.perms('XX1/CC.txt');
 ;File.extension('XX1/CC.txt');
 //;File.realpath('XX1/CC.txt');
 ;File.writable('XX1/CC.txt');
@@ -24,7 +24,7 @@ File.glob(null,{dir:'XX1'}).sort() ==> [ "AA", "CC.txt" ]
 File.dirname('XX1/AA') ==> XX1
 File.rootname('XX1/CC.txt') ==> XX1/CC
 File.tail('XX1/CC.txt') ==> CC.txt
-File.type('XX1/CC.txt') ==> directory
+File.perms('XX1/CC.txt') ==> drwxr-xr-x
 File.extension('XX1/CC.txt') ==> .txt
 File.writable('XX1/CC.txt') ==> true
 File.readable('XX1/CC.txt') ==> true

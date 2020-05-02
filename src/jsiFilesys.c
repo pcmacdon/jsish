@@ -906,7 +906,7 @@ static Jsi_RC FilesysStatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
 {
     UdfGet(udf, _this, funcPtr);
 #if JSI__FILESYS==1
-    return jsi_FileStatCmd(interp, udf->fname, _this, ret, funcPtr, 0);
+    return jsi_FileStatCmd(interp, udf->fname, ret, 0);
 #else
     return JSI_ERROR;
 #endif
@@ -917,7 +917,7 @@ static Jsi_RC FilesysLstatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 {
     UdfGet(udf, _this, funcPtr);
 #if JSI__FILESYS==1
-    return jsi_FileStatCmd(interp, udf->fname, _this, ret, funcPtr, 1);
+    return jsi_FileStatCmd(interp, udf->fname, ret, 1);
 #else
     return JSI_ERROR;
 #endif

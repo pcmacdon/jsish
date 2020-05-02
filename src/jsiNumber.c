@@ -13,7 +13,7 @@ bool Jsi_NumberIsNaN(Jsi_Number n)
 }
 
 int Jsi_NumberIsInfinity(Jsi_Number a) {
-#if JSI__MUSL==1 || defined(__FreeBSD__) || defined(__WIN32)
+#if JSI__MUSL==1 || defined(__FreeBSD__) || defined(__WIN32) || defined(__cplusplus)
     if (!isinf(a))
         return 0;
     return (a<0 ? -1 : 1);
@@ -148,7 +148,7 @@ static Jsi_RC NumberToPrecisionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
     ChkStringN(_this, funcPtr, v);
     if (Jsi_GetIntFromValue(interp, Jsi_ValueArrayIndex(interp, args, skip), &prec) != JSI_OK)
         return JSI_ERROR;
-    if (prec<=0 || prec>JSI_MAX_NUMBER_STRING) return Jsi_LogError("precision must be between 1 and %d", JSI_MAX_NUMBER_STRING);
+    if (prec<=0 || (uint)prec>JSI_MAX_NUMBER_STRING) return Jsi_LogError("precision must be between 1 and %d", JSI_MAX_NUMBER_STRING);
     Jsi_GetDoubleFromValue(interp, v, &num);
     snprintf(buf, sizeof(buf),"%.*" JSI_NUMFFMT, prec, num);
     if (num<0)

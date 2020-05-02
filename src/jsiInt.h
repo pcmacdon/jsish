@@ -527,8 +527,8 @@ struct Jsi_Obj {
     Jsi_Tree *tree;                 /* Tree storage (should be union with array). */
     Jsi_Value *__proto__;           /* TODO: memory leaks when this is changed */
     struct Jsi_Obj *constructor;
-    struct Jsi_Obj *next, *prev;    /* GC list for containers (array and object). */
-    int gc_refs;
+    // struct Jsi_Value *next, *prev; // TODO: GC for container objects.
+    // int gc_ref; 
 #ifdef JSI_MEM_DEBUG
     jsi_ValueDebug VD;
 #endif
@@ -564,7 +564,6 @@ struct Jsi_Value {
         struct Jsi_Value *lval;
         const char *lookupFail;
     } d;
-    struct Jsi_Value *next, *prev;
 #ifdef JSI_MEM_DEBUG
     jsi_ValueDebug VD;
 #endif
@@ -1147,6 +1146,7 @@ struct Jsi_Interp {
     Jsi_InterpDebug *dbPtr;
     jsiCallTraceProc traceHook;
     int opCnt;  /* Count of instructions eval'ed */
+    int memLeakCnt;
     int maxOpCnt;
     int maxUserObjs;
     int userObjCnt;
@@ -1463,8 +1463,7 @@ extern Jsi_Value* jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, c
 extern Jsi_Value* jsi_MakeFuncValueSpec(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, void *privData);
 extern bool jsi_FuncArgCheck(Jsi_Interp *interp, Jsi_Func *f, const char *argStr);
 extern bool jsi_CommandArgCheck(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, Jsi_Func *f, const char *parent);
-extern Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr, int islstat);
+extern Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value **ret, int flags);
 extern Jsi_RC jsi_LoadLoadCmd(Jsi_Interp *interp, Jsi_Value *args, 
     Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr);
 extern Jsi_RC jsi_LoadUnloadCmd(Jsi_Interp *interp, Jsi_Value *args, 
@@ -1476,6 +1475,7 @@ extern Jsi_RC jsi_FuncArgsToString(Jsi_Interp *interp, Jsi_Func *f, Jsi_DString 
 extern Jsi_Value *jsi_LoadFunction(Jsi_Interp *interp, const char *str, Jsi_Value *tret);
 extern Jsi_RC jsi_SysExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr, bool restricted);
+extern void jsi_ObjInsertCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add);
 
 extern Jsi_FuncObj *jsi_FuncObjNew(Jsi_Interp *interp, Jsi_Func *func);
 extern void jsi_FuncObjFree(Jsi_FuncObj *fobj);
@@ -1520,8 +1520,6 @@ extern Jsi_RC jsi_AliasInvoke(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 extern Jsi_Number jsi_VersionNormalize(Jsi_Number ver, char *obuf, size_t osiz);
 extern const char* jsi_FuncGetCode(Jsi_Interp *interp, Jsi_Func *func, int *lenPtr);
 extern Jsi_RC jsi_RegExpMatches(Jsi_Interp *interp, Jsi_Value *pattern, const char *str, int slen, Jsi_Value *ret, int *ofs, bool match);
-extern int jsi_AllObjOp(Jsi_Interp *interp, Jsi_Obj* obj, int op);
-//extern void jsi_AllValueOp(Jsi_Interp *interp, Jsi_Value* obj, int op);
 extern Jsi_RC Jsi_CleanValue(Jsi_Interp *interp, Jsi_Interp *tointerp, Jsi_Value *val, Jsi_Value **ret); //TODO: EXPORT
 extern void jsi_SysPutsCmdPrefix(Jsi_Interp *interp, jsi_LogOptions *popts,Jsi_DString *dStr, int* quote, const char **fnPtr);
 
@@ -1568,7 +1566,7 @@ extern void jsi_DebugValue(Jsi_Value* v, const char *reason, uint idx, Jsi_Inter
 extern void jsi_DebugObj(Jsi_Obj* o, const char *reason, uint idx, Jsi_Interp *interp);
 
 #define jsi_DebugValueCallIdx() ++interp->dbPtr->memDebugCallIdx
-#define VALINIT { __VALSIG__ .refCnt=1, .vt=JSI_VT_UNDEF, .f={.flag=JSI_OM_ISSTATIC}, .d={}, .next=NULL, .prev=NULL, .VD={.fname=__FILE__, .line=__LINE__,.func=__PRETTY_FUNCTION__}  }
+#define VALINIT { __VALSIG__ .refCnt=1, .vt=JSI_VT_UNDEF, .f={.flag=JSI_OM_ISSTATIC}, .d={}, .VD={.fname=__FILE__, .line=__LINE__,.func=__PRETTY_FUNCTION__}  }
 #else
 #define VALINIT { __VALSIG__ .refCnt=1, .vt=JSI_VT_UNDEF, .f={.flag=JSI_OM_ISSTATIC}  }
 #define jsi_ValueDebugUpdate(interp, vd, v, tbl, file, line, func)

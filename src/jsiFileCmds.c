@@ -119,12 +119,12 @@ Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value **ret, int
     
     MKDBL("mtime",st.st_mtime); MKDBL("size",st.st_size);
     MKDBL("uid",st.st_uid); MKDBL("gid",st.st_gid);
-    MKDBL("mode",st.st_mode);
     char smode[30];
     getFileTypeCh(st.st_mode, smode);
     Jsi_Value *nv = Jsi_ValueNewStringDup(interp, smode);
     Jsi_ObjInsert(interp, ores, "perms", nv, 0);
     if (!isshort) {
+        MKDBL("mode",st.st_mode);
         MKDBL("dev",st.st_dev); MKDBL("ino",st.st_ino); 
         MKDBL("nlink",st.st_nlink); MKDBL("rdev",st.st_rdev);
 #ifndef __WIN32

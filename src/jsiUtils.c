@@ -630,7 +630,7 @@ static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *d
     Jsi_DSInit(&eStr);
     if (interp->maxDepth>0 && owPtr->depth > interp->maxDepth)
         return Jsi_LogError("recursive ToString");
-    int quote = owPtr->quote;
+    int quote = owPtr->quote, len = -1, i;
     int isjson = owPtr->quote&JSI_OUTPUT_JSON;
     Jsi_Number num;
     switch(v->vt) {
@@ -672,12 +672,15 @@ outnum:
         case JSI_VT_STRING:
             str = v->d.s.str;
 outstr:
+            if (len == -1)
+                len = Jsi_Strlen(str);
             if (!quote) {
-                Jsi_DSAppend(dStr, str, NULL);
+                Jsi_DSAppendLen(dStr, str, len);
                 return JSI_OK;
             }
             Jsi_DSAppend(dStr,"\"", NULL);
-            while (*str) {
+            i = 0;
+            while (i++<len) {
                 if ((*str == '\'' && (!isjson)) || *str == '\\'|| *str == '\"'|| (*str == '\n'
                     && (!(owPtr->quote&JSI_OUTPUT_NEWLINES)))
                     || *str == '\r' || *str == '\t' || *str == '\f' || *str == '\b'  ) {
@@ -700,6 +703,7 @@ outstr:
                     int l = Jsi_UtfEncode(str, ubuf);
                     Jsi_DSAppend(dStr,ubuf, NULL);
                     str += l-1;
+                    i += l-1;
                 }
                 str++;
             }
@@ -718,6 +722,7 @@ outstr:
                     return JSI_OK;
                 case JSI_OT_STRING:
                     str = o->d.s.str;
+                    len = o->d.s.len;
                     goto outstr;
                 case JSI_OT_FUNCTION:
                     Jsi_FuncObjToString(interp, o->d.fobj->func, &eStr, 3 | ((owPtr->depth==0 && owPtr->quote)?8:0));

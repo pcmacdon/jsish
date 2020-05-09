@@ -1030,7 +1030,7 @@ int Jsi_Puts(Jsi_Interp *interp, Jsi_Channel chan, const char *str, int size)
 
             code = chan->fsPtr->putsProc(chan, str);
     }
-    if (size>=0 && len < size) {
+    if (size>=0 && len>0 && len < size) {
         Jsi_Puts(interp, chan, "\\0", -1);
         Jsi_Puts(interp, chan, str+len+1, size-len-1);
     }

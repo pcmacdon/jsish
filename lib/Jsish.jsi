@@ -298,7 +298,7 @@ function Jsi_ObjToSchema(db:userobj, table:string, data:object, conf:object=void
         db.eval(sql);
         cl[i] = rec;
     }
-    // Now check if schema matches. 
+    // TODO: check if schema matches. 
     /*var t = db.onecolumn("SELECT sql from sqlite_master where type='table' and name=@table");
     if (fs === t)
         return true;

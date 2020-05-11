@@ -1229,7 +1229,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
 <tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non js/json mode).</td><td><i></i></td></tr>
 <tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
-<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>, <b>noChecks</b>)</td><td><i></i></td></tr>
 <tr><td>retChanged</td><td><i>BOOL</i></td><td>Query returns value of sqlite3_changed().</td><td><i></i></td></tr>
 <tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
 <tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (warn). (one of: <b>convert</b>, <b>warn</b>, <b>error</b>, <b>disable</b>)</td><td><i></i></td></tr>
@@ -1268,7 +1268,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
 <tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non js/json mode).</td><td><i></i></td></tr>
 <tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
-<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>, <b>noChecks</b>)</td><td><i></i></td></tr>
 <tr><td>retChanged</td><td><i>BOOL</i></td><td>Query returns value of sqlite3_changed().</td><td><i></i></td></tr>
 <tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
 <tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (warn). (one of: <b>convert</b>, <b>warn</b>, <b>error</b>, <b>disable</b>)</td><td><i></i></td></tr>

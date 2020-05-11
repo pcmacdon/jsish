@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 10
+#define JSI_VERSION_RELEASE 11
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -669,7 +669,7 @@ JSI_EXTERN void* Jsi_UserObjDataFromVar(Jsi_Interp *interp, const char *var); /*
 JSI_EXTERN const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str); /*STUB = 224*/
 JSI_EXTERN const char* Jsi_KeyLookup(Jsi_Interp *interp, const char *str); /*STUB = 225*/
 JSI_EXTERN bool Jsi_IsReserved(Jsi_Interp *interp, const char* str, bool sql); /*STUB = 415*/
-JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults); /*STUB = 417*/
+JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults, bool addCheck); /*STUB = 417*/
 JSI_EXTERN Jsi_RC Jsi_DatetimeFormat(Jsi_Interp *interp, Jsi_Number date, const char *fmt, int isUtc, Jsi_DString *dStr);  /*STUB = 226*/
 JSI_EXTERN Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, int isUtc, Jsi_Number *datePtr, bool noMsg); /*STUB = 227*/
 JSI_EXTERN Jsi_Number Jsi_DateTime(void); /*STUB = 228*/

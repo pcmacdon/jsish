@@ -495,7 +495,8 @@ bool Jsi_StrIsAlnum(const char *cp)
 }
 
 /* Modify Sql to append bind fields for Object */
-Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults) {
+Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, 
+    bool addTypes, bool addDefaults, bool nullDefaults, bool addCheck) {
     Jsi_Value *v, *vnPtr = Jsi_VarLookup(interp, varName);
     if (!vnPtr || !Jsi_ValueIsObjType(interp, vnPtr, JSI_OT_OBJECT))
         return Jsi_LogError("varName must be an Object: %s", varName);
@@ -517,36 +518,45 @@ Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varNam
     const char *pre = "", *kstr;
     if (!create)
         Jsi_DSAppend(&vStr, " VALUES(", NULL);
+    if (nullDefaults)
+        addDefaults = 0;
     for (i=0; i<io->count; i++) {
         kstr = io->keys[i];
-        const char *qs = "", *qe = "";
-        if (!Jsi_StrIsAlnum(kstr) || Jsi_IsReserved(interp, kstr, 1)) {
-            qe = qs = "'";
-        }
-        Jsi_DSAppend(&sStr, pre, qs, kstr, qe, NULL);
-        if (create) {
+        const char *chk = NULL, *chk2 = NULL;
+        Jsi_DSAppend(&sStr, pre, "[", kstr, "]", NULL);
+        if (!create) {
+            Jsi_DSAppend(&vStr, pre, "$", varName, "(", kstr, ")", NULL);
+        } else {
             const char *typ = NULL, *dflt=(nullDefaults?"NULL":NULL);
             if (addTypes && ((v = Jsi_ValueObjLookup(interp, vnPtr, kstr, 1)))) {
                 if (Jsi_ValueIsBoolean(interp, v)) {
                     typ = "BOOLEAN";
-                    if (!nullDefaults && addDefaults) {
+                    if (addDefaults) {
                         bool bv = 0;
                         Jsi_ValueGetBoolean(interp, v, &bv);
                         dflt = (bv?"1":"0");
+                    }
+                    if (addCheck) {
+                        chk = "== 'integer'";
+                        chk2 = "(0,1)";
                     }
                 } else if (Jsi_ValueIsNumber(interp, v)) {
                     typ = "NUMERIC";
                     if (!Jsi_Strcmp(kstr,"rowid"))
                         typ = "INTEGER PRIMARY KEY";
-                    else if (!nullDefaults && addDefaults) {
-                        Jsi_Number nv = 0;
-                        Jsi_DSFree(&jStr);
-                        Jsi_ValueGetNumber(interp, v, &nv);
-                        dflt = Jsi_DSPrintf(&jStr, "%" JSI_NUMGFMT, nv);
+                    else {
+                        if (addDefaults) {
+                            Jsi_Number nv = 0;
+                            Jsi_DSFree(&jStr);
+                            Jsi_ValueGetNumber(interp, v, &nv);
+                            dflt = Jsi_DSPrintf(&jStr, "%" JSI_NUMGFMT, nv);
+                        }
+                        if (addCheck)
+                            chk = "IN ('real','integer')";
                     }
                 } else if (Jsi_ValueIsArray(interp, v) || Jsi_ValueIsObjType(interp, v, JSI_OT_OBJECT)) {
                     typ = "CHARJSON";
-                    if (!nullDefaults && addDefaults) {
+                    if (addDefaults) {
                         Jsi_DSFree(&jStr);
                         Jsi_DSAppend(&jStr, "'", NULL);
                         Jsi_ValueGetDString(interp, v, &jStr, JSI_OUTPUT_JSON|JSI_JSON_STRICT);
@@ -555,19 +565,31 @@ Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varNam
                     }
                 } else {
                     typ = "TEXT";
-                    if (!nullDefaults && addDefaults) {
+                    if (addDefaults) {
                         if ((cp=Jsi_ValueString(interp, v, NULL))) {
                             Jsi_DSFree(&jStr);
                             dflt = Jsi_DSAppend(&jStr, "'", cp, "'", NULL);
                         } else
-                        dflt = "NULL";
+                            dflt = "NULL";
+                    }
+                    if (addCheck) {
+                        if (dflt && !Jsi_Strcmp(dflt,"NULL"))
+                            chk = "IN ('text','null')";
+                        else
+                            chk = "== 'text'";
                     }
                 }
             }
             if (typ)
-                Jsi_DSAppend(&sStr, " ", typ, (dflt?" DEFAULT ":""), dflt, NULL);
-        } else {
-            Jsi_DSAppend(&vStr, pre, "$", varName, "(", kstr, ")", NULL);
+                Jsi_DSAppend(&sStr, " ", typ, NULL);
+            if (dflt)
+                Jsi_DSAppend(&sStr," DEFAULT ", dflt, NULL);
+            if (chk) {
+                Jsi_DSPrintf(&sStr," CONSTRAINT '%s Invalid' CHECK(typeof(%s) %s", kstr, kstr, chk);
+                if (chk2)
+                    Jsi_DSPrintf(&sStr," AND %s IN %s", kstr, chk2);
+                Jsi_DSAppend(&sStr,")", NULL);
+            }
         }
         pre = ",";
     }

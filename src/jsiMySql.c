@@ -184,7 +184,7 @@ typedef struct QueryOpts {
 static const char *trcModeStrs[] = {"eval", "delete", "prepare", "step", NULL}; // Bit-set packed into an int.
 static const char *objSqlModeStrs[] = { "getSql", "noTypes", "noDefaults", "nullDefaults", NULL };
 enum {mdbTMODE_EVAL=0x1, mdbTMODE_DELETE=0x2, mdbTMODE_PREPARE=0x4, mdbTMODE_STEP=0x4};
-enum {OBJMODE_SQLONLY=0x1, OBJMODE_NOTYPES=0x2, OBJMODE_NODEFAULTS=0x4, OBJMODE_NULLDEFAULTS=0x8};
+enum {OBJMODE_SQLONLY=0x1, OBJMODE_NOTYPES=0x2, OBJMODE_NODEFAULTS=0x4, OBJMODE_NULLDEFAULTS=0x8, OBJMODE_NOCHECKS=0x8};
 
 
 typedef struct MySqlObj {
@@ -1623,7 +1623,8 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     } */
     if (opts.objName) {
         if (Jsi_SqlObjBinds(interp, &eStr, opts.objName,  !(opts.objOpts&OBJMODE_NOTYPES), 
-        !(opts.objOpts&OBJMODE_NODEFAULTS), (opts.objOpts&OBJMODE_NULLDEFAULTS)!=0) != JSI_OK)
+        !(opts.objOpts&OBJMODE_NODEFAULTS), (opts.objOpts&OBJMODE_NULLDEFAULTS)!=0,
+        !(opts.objOpts&OBJMODE_NOCHECKS)) != JSI_OK)
             goto bail;
         zSql = Jsi_DSValue(&eStr);
     }

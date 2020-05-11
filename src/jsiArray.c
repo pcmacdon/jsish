@@ -391,12 +391,12 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 
     fptr = func->d.obj->d.fobj->func;
     maa = (fptr->argnames?fptr->argnames->argCnt:0);
-    if (maa>3)
+    if (maa>3 || fptr->type == FC_BUILDIN)
         maa = 3;
     for (i = 0; i < curlen; i++) {
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
-        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):NULL);
+        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
         vobjs[2] = _this;
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
@@ -451,12 +451,12 @@ static Jsi_RC jsi_ArrayFilterCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 
     fptr = func->d.obj->d.fobj->func;
     maa = (fptr->argnames?fptr->argnames->argCnt:0);
-    if (maa>3)
+    if (maa>3 || fptr->type == FC_BUILDIN)
         maa = 3;
     for (i = 0; i < curlen; i++) {
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
-        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):NULL);
+        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
         vobjs[2] = _this;
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
@@ -533,12 +533,12 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_Value *vobjs[3];
     Jsi_Func *fptr = func->d.obj->d.fobj->func;
     int maa = (fptr->argnames?fptr->argnames->argCnt:0);
-    if (maa>3)
+    if (maa>3 || fptr->type == FC_BUILDIN)
         maa = 3;
     for (i = 0; i < obj->arrCnt && rc == JSI_OK; i++) {
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
-        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):NULL);
+        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
         vobjs[2] = _this;
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
@@ -572,12 +572,12 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_Value *vobjs[3];
     Jsi_Func *fptr = func->d.obj->d.fobj->func;
     int maa = (fptr->argnames?fptr->argnames->argCnt:0);
-    if (maa>3)
+    if (maa>3 || fptr->type == FC_BUILDIN)
         maa = 3;
     for (i = 0; i < obj->arrCnt && rc == JSI_OK; i++) {
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
-        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):NULL);
+        vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
         vobjs[2] = _this;
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
@@ -626,7 +626,7 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
     int n, rev = (op==2);
     Jsi_Func *fptr = func->d.obj->d.fobj->func;
     int maa = (fptr->argnames?fptr->argnames->argCnt:0);
-    if (maa>4)
+    if (maa>4 || fptr->type == FC_BUILDIN)
         maa = 4;
 
     for (n = 0, i = (rev?obj->arrCnt-1:0); (rev?i>=0:i < (int)obj->arrCnt) && rc == JSI_OK; n++, i = (rev?i-1:i+1)) {
@@ -638,7 +638,7 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
             
         vobjs[0] = ini;
         vobjs[1] = obj->arr[i];
-        vobjs[2] = (maa>2?Jsi_ValueNewNumber(interp, i):NULL);
+        vobjs[2] = (maa>2?Jsi_ValueNewNumber(interp, i):interp->NullValue);
         vobjs[3] = _this;
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);

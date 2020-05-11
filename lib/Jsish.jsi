@@ -257,22 +257,28 @@ function Jsi_SqlValues(name:string, val:object) {
     return 'VALUES($'+name+'('+val.keys().join('),$'+name+'(')+'))';
 }
 
-// Modify table, adding missing columns that are in data to support up/down grading.
-function Jsi_SchemaUpdate(db:userobj, table:string, data:object, conf:object=void) {
+// Create/modify table compatible with object, adds missing columns that are in data to support up/down grading.
+function Jsi_ObjToSchema(db:userobj, table:string, data:object, conf:object=void) {
     var self = {};
     var options = {
+        noCreate    :false,     // Create table, if not exists.
         objOpts     :{},        // Options for objOpts
         verbose     :false
     };
     parseOpts(self, options, conf);
     var cl = {}, cols = db.query('PRAGMA table_info("'+table+'")');
-    if (!cols.length)
+    if (!cols.length) {
+        if (!self.noCreate)
+            db.query("CREATE TABLE '"+table+"' %s", {objName:'data'});
         return true;
+    }
     for (var c=0; c<cols.length; c++)
         cl[cols[c].name] = cols[c];
     var oo = self.objOpts;
     oo.getSql = true;
-    var s = db.query('CREATE TABLE '+table+' %s', {objName:'data', objOpts:oo});
+    //oo.noCheck = true;
+    var fs = db.query("CREATE TABLE '"+table+"' %s", {objName:'data', objOpts:oo});
+    var s = fs;
     s = ','+s.substr( s.indexOf('(')+1);
     s = s.substr(0, s.length-2);
     s +=',';
@@ -281,26 +287,22 @@ function Jsi_SchemaUpdate(db:userobj, table:string, data:object, conf:object=voi
         var rec = s.substr( s.indexOf(','+i+' '));
         if (!rec) throw('failed to find schema: '+i);
         rec = rec.substr(1);
-        rec = rec.substr(0, rec.indexOf(','));
-        var sql = 'ALTER TABLE '+table+' ADD COLUMN '+rec;
+        var re = rec.indexOf(',');
+        if (rec[re+1] == ' ' && ((re = rec.indexOf(')', re))>=0))
+            re = rec.indexOf(',', re); 
+        rec = rec.substr(0, re);
+        var sql = 'ALTER TABLE "'+table+'" ADD COLUMN '+rec;
+        puts("RR: ",sql);
         if (self.verbose)
             LogInfo('SCHEMA:',sql);
         db.eval(sql);
         cl[i] = rec;
     }
-    // Now check if schema matches.
-    var t = '';
-    for (i in cl) {
-        t += ',';
-        if (typeof(cl[i])==='string')
-            t += cl[i];
-        else
-            t += (i+' '+cl[i].type+' DEFAULT '+cl[i].dflt_value);
-    }
-    t += ',';
-    if (s === t)
+    // Now check if schema matches. 
+    /*var t = db.onecolumn("SELECT sql from sqlite_master where type='table' and name=@table");
+    if (fs === t)
         return true;
-    LogWarn('Schema mismatch (possible downgrade?) in table "'+table+'":\n"'+s+'" !=\n"'+t+'"');
+    LogWarn('Schema mismatch (possible downgrade?) in table "'+table+'":\n"'+fs+'" !=\n"'+t+'"');*/
     return false;
 }
 

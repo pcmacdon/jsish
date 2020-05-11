@@ -652,8 +652,10 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Value *repVal = Jsi_ValueArrayIndex(interp, args, 1+skip);
     if (!Jsi_ValueIsFunction(interp, repVal))
         replace_str = Jsi_ValueToString(interp, repVal, &replace_len);
-    else
-        maxArgs = repVal->d.obj->d.fobj->func->argnames->argCnt;
+    else {
+        Jsi_Func *fptr = repVal->d.obj->d.fobj->func;
+        maxArgs = (fptr->argnames?fptr->argnames->argCnt:0);
+    }
     Jsi_DSInit(&dStr);
 
     if (Jsi_ValueIsString(interp, seq)) {

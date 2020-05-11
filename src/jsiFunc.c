@@ -763,6 +763,12 @@ static Jsi_RC jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Valu
     /* func to call */
     Jsi_Func *funcPtr = tocall->d.obj->d.fobj->func;
     SIGASSERT(funcPtr, FUNC);
+    if (funcPtr->type == FC_BUILDIN) {
+        Jsi_CmdSpec *cs  = funcPtr->cmdSpec;
+        int argc = (args ? Jsi_ValueGetLength(interp, args) : 0);
+        if (cs && cs->minArgs>=0 && argc<cs->minArgs)
+            return Jsi_LogError("too few args: expected %d", cs->minArgs);
+    }
     
     /* prepare args */
     if (args->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, args->d.obj)) 

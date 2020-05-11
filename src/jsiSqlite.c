@@ -173,10 +173,10 @@ static const char *sqexecFmtStrs[] = {
 static const char *mtxStrs[] = { "default", "none", "full", NULL };
 static const char *trcModeStrs[] = {"eval", "delete", "prepare", "step", NULL}; // Bit-set packed into an int.
 static const char *dbTypeChkStrs[] = { "convert", "warn", "error", "disable", NULL };
-static const char *objSqlModeStrs[] = { "getSql", "noTypes", "noDefaults", "nullDefaults", NULL };
+static const char *objSqlModeStrs[] = { "getSql", "noTypes", "noDefaults", "nullDefaults", "noChecks", NULL };
 #endif
 
-enum {OBJMODE_SQLONLY=0x1, OBJMODE_NOTYPES=0x2, OBJMODE_NODEFAULTS=0x4, OBJMODE_NULLDEFAULTS=0x8};
+enum {OBJMODE_SQLONLY=0x1, OBJMODE_NOTYPES=0x2, OBJMODE_NODEFAULTS=0x4, OBJMODE_NULLDEFAULTS=0x8, OBJMODE_NOCHECKS=0x16};
 enum {TMODE_EVAL=0x1, TMODE_DELETE=0x2, TMODE_PREPARE=0x4, TMODE_STEP=0x4};
 typedef enum { MUTEX_DEFAULT, MUTEX_NONE, MUTEX_FULL } Mutex_Type;
 typedef enum { dbTypeCheck_Cast, dbTypeCheck_Warn, dbTypeCheck_Error, dbTypeCheck_None } dbTypeCheck_Mode;
@@ -2648,7 +2648,8 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     if (opts.objName) {
         if (Jsi_SqlObjBinds(interp, &eStr, opts.objName, !(opts.objOpts&OBJMODE_NOTYPES), 
-            !(opts.objOpts&OBJMODE_NODEFAULTS), (opts.objOpts&OBJMODE_NULLDEFAULTS)!=0) != JSI_OK)
+            !(opts.objOpts&OBJMODE_NODEFAULTS), (opts.objOpts&OBJMODE_NULLDEFAULTS)!=0,
+            !(opts.objOpts&OBJMODE_NOCHECKS)) != JSI_OK)
             goto bail;
         zSql = Jsi_DSValue(&eStr);
     }

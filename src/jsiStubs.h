@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "d32d2f3a25ef2f1bb91a706989687883"
+#define JSI_STUBS_MD5 "245bfc701de9f6aaafbe9462645dc362"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -445,7 +445,7 @@ typedef struct Jsi_Stubs {
     void(*_Jsi_IterGetKeys)(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth);
     bool(*_Jsi_IsReserved)(Jsi_Interp *interp, const char* str, bool sql);
     bool(*_Jsi_StrIsAlnum)(const char *cp);
-    Jsi_RC(*_Jsi_SqlObjBinds)(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults);
+    Jsi_RC(*_Jsi_SqlObjBinds)(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults, bool addCheck);
     Jsi_RC(*_Jsi_UserObjName)(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr);
     void *endPtr;
 } Jsi_Stubs;
@@ -1293,7 +1293,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_IterGetKeys(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_IterGetKeys(n0,n1,n2,n3))
 #define Jsi_IsReserved(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_IsReserved(n0,n1,n2))
 #define Jsi_StrIsAlnum(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_StrIsAlnum(n0))
-#define Jsi_SqlObjBinds(n0,n1,n2,n3,n4,n5) JSISTUBCALL(jsiStubsPtr, _Jsi_SqlObjBinds(n0,n1,n2,n3,n4,n5))
+#define Jsi_SqlObjBinds(n0,n1,n2,n3,n4,n5,n6) JSISTUBCALL(jsiStubsPtr, _Jsi_SqlObjBinds(n0,n1,n2,n3,n4,n5,n6))
 #define Jsi_UserObjName(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_UserObjName(n0,n1,n2))
 
 #endif

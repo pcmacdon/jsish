@@ -305,6 +305,66 @@ function Jsi_ObjToSchema(db:userobj, table:string, data:object, conf:object=void
     LogWarn('Schema mismatch (possible downgrade?) in table "'+table+'":\n"'+fs+'" !=\n"'+t+'"');*/
     return false;
 }
+/*
+function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
+    var self = {};
+    var options = {
+        noCreate    :false,     // Create table, if not exists.
+        objOpts     :{},        // Options for objOpts
+        verbose     :false
+    };
+    parseOpts(self, options, conf);
+    var cols = db.query('PRAGMA table_info("'+table+'")');
+    if (!cols.length) {
+        if (!self.noCreate)
+            db.query("CREATE TABLE '"+table+"' %s", {objName:'data'});
+        return true;
+    }
+    var oo = self.objOpts;
+    oo.getSql = true;
+    //oo.noCheck = true;
+    var cs = db.onecolumn("SELECT sql from sqlite_master where type='table' and name=@table").trim();
+    var fs = db.query("CREATE TABLE '"+table+"' %s", {objName:'data', objOpts:oo}).trim();
+    if (fs === cs)
+        return true;
+    var f = fs.substr( fs.indexOf('(')+1, fs.length-1));
+    var c = cs.substr( cs.indexOf('(')+1, cs.length-1));
+    var fl = f.split(',[').sort(), cl = c.split(',[').sort();
+    if (fl.join(',[') == cl.join(',[')
+        return true;
+    var cln = cl.length, fln=fl.length;
+    if (cln >= fln) {
+        LogWarn('Can not sync obj with fewer fields than table: "'+table+'"')
+        return false;
+    }
+    var ci = 0, fi = 0;
+    while (cl<cln && fi<fln) {
+        if (cl[ci] === fl[fi]) {
+            ci++; fi++; continue;
+        }
+        var cn = cl[ci].substr(0, cl[ci].indexOf(']')-1),
+            fn = fl[fi].substr(0, fl[fi].indexOf(']')-1);
+    }
+    for (var i in data) {
+        if (cl[i]) continue;
+        var rec = s.substr( s.indexOf(','+i+' '));
+        if (!rec) throw('failed to find schema: '+i);
+        rec = rec.substr(1);
+        var re = rec.indexOf(',');
+        if (rec[re+1] == ' ' && ((re = rec.indexOf(')', re))>=0))
+            re = rec.indexOf(',', re); 
+        rec = rec.substr(0, re);
+        var sql = 'ALTER TABLE "'+table+'" ADD COLUMN '+rec;
+        puts("RR: ",sql);
+        if (self.verbose)
+            LogInfo('SCHEMA:',sql);
+        db.eval(sql);
+        cl[i] = rec;
+    }
+
+    return false;
+}
+*/
 
 function Jsi__Init() {    
     // Module-level Log functions, aliased if not in debugger.

@@ -702,10 +702,8 @@ Jsi_RC Jsi_ValueToObject(Jsi_Interp *interp, Jsi_Value *v)
     switch(v->vt) {
         case JSI_VT_UNDEF:
         case JSI_VT_NULL:
-            if (interp->strict) {
-                Jsi_LogError("converting a undefined/null value to object");
-                rc = JSI_ERROR;
-            }
+            if (interp->strict)
+                rc = Jsi_LogError("converting a undefined/null value to object");
             o->d.num = 0;
             o->ot = JSI_OT_NUMBER;
             o->__proto__ = interp->Number_prototype;

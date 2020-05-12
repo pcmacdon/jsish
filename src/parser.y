@@ -605,10 +605,14 @@ expr:
     }
     | '(' expr ')'          { $$ = $2; }
     | arrowargs ARROW expr %prec MIN_PRI {
+        jsi_PstatePush(pstate);
         $$ = code_push_func(pstate,  &@1, jsi_FuncMake(pstate, $1, codes_join($3, code_ret(pstate, &@3, 1)), &@1, NULL, 1)); 
+        jsi_PstatePop(pstate);
     }
     | arrowargs ARROW func_statement_block {
+        jsi_PstatePush(pstate);
         $$ = code_push_func(pstate,  &@1, jsi_FuncMake(pstate, $1, $3, &@1, NULL, 1));
+        jsi_PstatePop(pstate);
     }
     | expr AND expr         {
         Jsi_OpCodes *expr2 = codes_join(code_pop(1), $3);

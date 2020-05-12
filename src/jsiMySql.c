@@ -1628,6 +1628,13 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
             goto bail;
         zSql = Jsi_DSValue(&eStr);
     }
+    if ((opts.objOpts&OBJMODE_SQLONLY)) {
+        if (opts.objName)
+            Jsi_ValueMakeStringDup(interp, ret, zSql);
+        else
+            rc = Jsi_LogError("'objOpts.sqlOnly' can only be used with 'objName'");
+        goto bail;
+    }
     if (!opts.separator) {
         switch (opts.mode) {
             case _mdb_EF_LIST: opts.separator = "|"; break;

@@ -373,8 +373,10 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (!Jsi_ValueIsFunction(interp, func)) 
         return Jsi_LogError("expected function");
     sthis = Jsi_ValueArrayIndex(interp, args, 1);
-    if (!sthis)
-        sthis = nthis = Jsi_ValueNew1(interp);
+    if (!sthis || !Jsi_ValueIsObjType(interp, sthis, JSI_OT_OBJECT)) {
+        sthis = nthis = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, sthis);
+    }
     obj = _this->d.obj;
     curlen = jsi_SizeOfArray(interp, obj);    
     Jsi_ObjListifyArray(interp, obj);
@@ -432,8 +434,10 @@ static Jsi_RC jsi_ArrayFilterCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     if (!Jsi_ValueIsFunction(interp, func)) 
         return Jsi_LogError("expected function");
     sthis = Jsi_ValueArrayIndex(interp, args, 1);
-    if (!sthis)
-        sthis = nthis = Jsi_ValueNew1(interp);
+    if (!sthis || !Jsi_ValueIsObjType(interp, sthis, JSI_OT_OBJECT)) {
+        sthis = nthis = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, sthis);
+    }
     obj = _this->d.obj;
     curlen = jsi_SizeOfArray(interp, obj);    
     Jsi_ObjListifyArray(interp, obj);
@@ -494,8 +498,10 @@ static Jsi_RC jsi_ArrayReverseCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_Obj *obj;
     Jsi_Value *tval, *nthis = NULL, *sthis = Jsi_ValueArrayIndex(interp, args, 1);
 
-    if (!sthis)
-        sthis = nthis = Jsi_ValueNew1(interp);
+    if (!sthis || !Jsi_ValueIsObjType(interp, sthis, JSI_OT_OBJECT)) {
+        sthis = nthis = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, sthis);
+    }
     obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);
     m = obj->arrCnt/2;
@@ -523,8 +529,10 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         return Jsi_LogError("expected function");
     Jsi_Value *sthis = Jsi_ValueArrayIndex(interp, args, 1);
     Jsi_Value *nthis = NULL;
-    if (!sthis)
-        sthis = nthis = Jsi_ValueNew1(interp);
+    if (!sthis || !Jsi_ValueIsObjType(interp, sthis, JSI_OT_OBJECT)) {
+        sthis = nthis = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, sthis);
+    }
 
     obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);
@@ -562,8 +570,10 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     if (!Jsi_ValueIsFunction(interp, func)) 
         return Jsi_LogError("expected function");
     Jsi_Value *nthis = NULL;
-    if (!sthis)
-        sthis = nthis = Jsi_ValueNew1(interp);
+    if (!sthis || !Jsi_ValueIsObjType(interp, sthis, JSI_OT_OBJECT)) {
+        sthis = nthis = Jsi_ValueNewObj(interp, NULL);
+        Jsi_IncrRefCount(interp, sthis);
+    }
 
     obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);

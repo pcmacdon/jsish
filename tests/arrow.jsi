@@ -1,0 +1,39 @@
+var array1, n = 0;;
+array1 = [1, 4, 9, 16];
+//Old way.
+;array1.map(function(x) { return x * 2; });
+
+;array1.map(x => { return x * 2; });
+;array1.map(x => x * 2);
+;array1.map((x,y) => { return x * 2; });
+;array1.map((x,y,z) => { return x * 2; });
+;array1.map((x,y) => x * 2);
+;array1.map((x,y,z) => x * 2);
+;array1.map(() => n++ * 2);
+;array1.map(() => { return n++ * 2; });
+
+var x = [1,2,3];
+var y = [1,2,3,4];
+;y.filter( (n,m,x) => x.includes(n) );
+;y.filter( n => x.includes(n) );
+;y.filter( n => { return x.includes(n); } );
+;y.filter( function(n) { return x.includes(n); } );
+
+
+/*
+=!EXPECTSTART!=
+array1.map(function(x) { return x * 2; }) ==> [ 2, 8, 18, 32 ]
+array1.map(x => { return x * 2; }) ==> [ 2, 8, 18, 32 ]
+array1.map(x => x * 2) ==> [ 2, 8, 18, 32 ]
+array1.map((x,y) => { return x * 2; }) ==> [ 2, 8, 18, 32 ]
+array1.map((x,y,z) => { return x * 2; }) ==> [ 2, 8, 18, 32 ]
+array1.map((x,y) => x * 2) ==> [ 2, 8, 18, 32 ]
+array1.map((x,y,z) => x * 2) ==> [ 2, 8, 18, 32 ]
+array1.map(() => n++ * 2) ==> [ 0, 2, 4, 6 ]
+array1.map(() => { return n++ * 2; }) ==> [ 8, 10, 12, 14 ]
+y.filter( (n,m,x) => x.includes(n) ) ==> [ 1, 2, 3, 4 ]
+y.filter( n => x.includes(n) ) ==> [ 1, 2, 3 ]
+y.filter( n => { return x.includes(n); } ) ==> [ 1, 2, 3 ]
+y.filter( function(n) { return x.includes(n); } ) ==> [ 1, 2, 3 ]
+=!EXPECTEND!=
+*/

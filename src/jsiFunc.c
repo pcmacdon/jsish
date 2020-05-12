@@ -766,8 +766,9 @@ static Jsi_RC jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Valu
     if (funcPtr->type == FC_BUILDIN) {
         Jsi_CmdSpec *cs  = funcPtr->cmdSpec;
         int argc = (args ? Jsi_ValueGetLength(interp, args) : 0);
-        if (cs && cs->minArgs>=0 && argc<cs->minArgs)
-            return Jsi_LogError("too few args: expected %d", cs->minArgs);
+        int minArgs = cs->minArgs + funcPtr->callflags.bits.addargs;
+        if (cs && minArgs>=0 && argc<minArgs)
+            return Jsi_LogError("too few args: expected %d", minArgs);
     }
     
     /* prepare args */

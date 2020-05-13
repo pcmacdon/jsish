@@ -26,7 +26,7 @@ delete ii;
 ;File.write('/tmp/xx.txt','');
 ;ii.eval('var db = new Sqlite(\'/tmp/xx.txt\'); db.eval(\'CREATE TABLE foo(a,b)\');');
 
-;//ii.eval('var db = new Sqlite(\'/tmp/xx.db\');//LOCKWRITE');
+;//ii.eval('db = new Sqlite(\'/tmp/xx.db\');//LOCKWRITE');
 
 File.remove('/tmp/xx.txt',true);
 delete ii;
@@ -63,7 +63,7 @@ PASS!: err = Error isSafe disallows updating option: "maxDepth"
 File.remove('/tmp/xx.txt',true) ==> undefined
 File.write('/tmp/xx.txt','') ==> 0
 ii.eval('var db = new Sqlite('/tmp/xx.txt'); db.eval('CREATE TABLE foo(a,b)');') ==> undefined
-ii.eval('var db = new Sqlite('/tmp/xx.db');//LOCKWRITE') ==>
+ii.eval('db = new Sqlite('/tmp/xx.db');//LOCKWRITE') ==>
 PASS!: err = Safe accces denied
 SAFE EXEC:  no exec in safe mode
 SUBINTERP:  subinterps disallowed

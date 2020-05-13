@@ -516,9 +516,8 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
     f->endPos = l->cur;
     f->startPos = -1; // Have to get these from newline count.
     if (f->retType & JSI_TT_UNDEFINED)
-        Jsi_LogWarn("illegal use of 'undefined' in a return type: %s", name?name:"");
+        Jsi_LogWarn("invalid use of 'undefined' in a return type: %s", name?name:"");
     
-    //f->strict = (jsi_GetDirective(interp, ops, "use strict") != NULL);
     pstate->argType = 0;
     if (localvar && args && (interp->strict)) {
         int i, j;
@@ -527,24 +526,20 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
                 if (i != j && !Jsi_Strcmp(args->args[i].name, args->args[j].name)) {
                         if (line)
                             interp->parseLine = line;
-                        Jsi_LogWarn("function %s():  duplicate parameter name '%s'", name?name:"", args->args[i].name);
+                        Jsi_LogError("function %s():  duplicate parameter name '%s'", name?name:"", args->args[i].name);
                         if (line)
                             interp->parseLine = NULL;
-                        jsi_TypeMismatch(interp);
-                        if (interp->typeCheck.error)
-                            pstate->err_count++;
+                        pstate->err_count++;
                 }
             }
             for (j=0; j<localvar->count; j++) {
                 if (!Jsi_Strcmp(localvar->args[j].name, args->args[i].name)) {
                         if (line)
                             interp->parseLine = line;
-                        Jsi_LogWarn("function %s():  parameter name conflicts with 'var %s'", name?name:"", localvar->args[j].name);
+                        Jsi_LogError("function %s():  parameter name conflicts with local '%s'", name?name:"", localvar->args[j].name);
                         if (line)
                             interp->parseLine = NULL;
-                        jsi_TypeMismatch(interp);
-                        if (interp->typeCheck.error)
-                            pstate->err_count++;
+                        pstate->err_count++;
                 }
             }
         }

@@ -129,7 +129,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(STRING,Jsi_Interp, scriptFile,  .help="Interp init script file"),
     JSI_OPT(STRING,Jsi_Interp, stdinStr,    .help="String to use as stdin for console.input()"),
     JSI_OPT(STRING,Jsi_Interp, stdoutStr,   .help="String to collect stdout for puts()"),
-    JSI_OPT(BOOL,  Jsi_Interp, strict,      .help="Globally enable strict: same as 'use strict' in main program"),
+    JSI_OPT(BOOL,  Jsi_Interp, strict,      .help="Globally enable strict: same as 'use strict' in main program", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(CUSTOM,Jsi_Interp, subOpts,     .help="Infrequently used sub-options", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=InterpSubOptions),
     JSI_OPT(BOOL,  Jsi_Interp, subthread,   .help="Create a threaded Interp", jsi_IIOF|JSI_OPT_LOCKSAFE),
     JSI_OPT(CUSTOM,Jsi_Interp, traceCall,   .help="Trace commands", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_callTraceStrs),
@@ -2143,7 +2143,7 @@ static Jsi_RC InterpEvalCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     if (interp->subOpts.mutexUnlock) Jsi_MutexUnlock(interp, interp->Mutex);
     if (!isthrd) {
         int ostrict = sinterp->strict;
-        sinterp->strict = 0;
+        sinterp->strict = !interp->isSafe;
         sinterp->level++;
         if (interp->framePtr->tryDepth)
             sinterp->framePtr->tryDepth++;

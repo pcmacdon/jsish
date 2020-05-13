@@ -778,6 +778,7 @@ static Jsi_RC jsi_ArrayShiftCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         v = obj->arr[0];
         memmove(obj->arr, obj->arr+1, n*sizeof(Jsi_Value*));
         obj->arr[n] = NULL;
+        if (!v) return JSI_OK;
         Jsi_ValueDup2(interp, ret, v);
         Jsi_DecrRefCount(interp, v);
         Jsi_ObjSetLength(interp, obj, n);

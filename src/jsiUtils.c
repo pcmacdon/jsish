@@ -591,7 +591,7 @@ Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varNam
                 Jsi_DSAppend(&sStr,")", NULL);
             }
         }
-        pre = ",";
+        pre = ", ";
     }
     if (!create)
         Jsi_DSAppend(&vStr, ")", NULL);

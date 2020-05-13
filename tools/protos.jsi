@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.12
+//JSI Command Prototypes: version 3.0.13
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};

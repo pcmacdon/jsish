@@ -182,6 +182,8 @@ static Jsi_RC jsi_FuncBindCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_FuncObj *fo = funcPtr->fobj;
+    if (!fo)
+        return Jsi_LogError("bind failure"); // TODO: fix via "call" failure?
     Jsi_Value *nargs = args, *fargs = fo->bindArgs;
     int i, argc = Jsi_ValueGetLength(interp, args);
     int fargc = (fargs? Jsi_ValueGetLength(interp, fargs) : 0);
@@ -250,7 +252,7 @@ Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     else
         fthis = Jsi_ValueDup(interp, interp->Top_object);
     Jsi_ValueToObject(interp, fthis);
-    
+
     /* prepare args */
     Jsi_ValueArrayShift(interp, args);
     Jsi_RC res = jsi_SharedArgs(interp, args, funcPtr, 1);
@@ -258,7 +260,6 @@ Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     if (res == JSI_OK) {
         jsi_InitLocalVar(interp, args, funcPtr);
         jsi_SetCallee(interp, args, tocall);
-        
         if (funcPtr->type == FC_NORMAL) {
             res = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, tocall->d.obj->d.fobj->scope, 
                        args, fthis, ret);

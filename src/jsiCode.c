@@ -219,8 +219,8 @@ static Jsi_OpCodes *code_push_null() { JSI_NEW_CODES(0,OP_PUSHNULL, 0); }
 static Jsi_OpCodes *code_push_bool(int v) { JSI_NEW_CODES(0,OP_PUSHBOO, v); }
 static Jsi_OpCodes *code_push_num(Jsi_Number *v) { JSI_NEW_CODES(1,OP_PUSHNUM, v); }
 static Jsi_OpCodes *code_push_string(jsi_Pstate *p, jsi_Pline *line, const char *str) {
-    if (*str == 'c' && !Jsi_Strcmp(str,"callee"))
-        p->interp->hasCallee = 1;
+    //if (*str == 'c' && !Jsi_Strcmp(str,"callee"))
+        //p->interp->hasCallee = 1;
     JSI_NEW_CODESLN(0,OP_PUSHSTR, str);
 }
 

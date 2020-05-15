@@ -1054,7 +1054,10 @@ Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *
     if (!keyStr)
         return NULL;
     // Special cases such as "length", "constructor", etc...
-    if (Jsi_Strcmp(keyStr,"length")==0) {
+    if (interp->callee && *keyStr=='c' && Jsi_Strcmp(keyStr,"callee")==0)
+        return interp->callee;
+
+    if (*keyStr=='l' && Jsi_Strcmp(keyStr,"length")==0) {
         if (Jsi_ValueIsString(interp, target)) {
             len = Jsi_ValueStrlen(target);
         } else if (target->vt == JSI_VT_OBJECT && target->d.obj->isarrlist) {

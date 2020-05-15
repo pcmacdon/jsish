@@ -168,22 +168,114 @@ Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func, int a
     return (nrc == JSI_ERROR?nrc:rc);
 }
 
-void jsi_SetCallee(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *tocall)
+Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
+    Jsi_Value **ret, Jsi_Func *funcPtr, Jsi_Value *fthis, int calltrc)
 {
-    if (interp->hasCallee) {
-        Jsi_Value *callee = Jsi_ValueNew1(interp);
-        Jsi_ValueCopy(interp, callee, tocall);
-        Jsi_ValueInsert(interp, args, "\1callee\1", callee, JSI_OM_DONTENUM);
-        Jsi_DecrRefCount(interp, callee);
+    Jsi_Func *prevActive = interp->activeFunc;
+    interp->activeFunc = funcPtr;
+    Jsi_IncrRefCount(interp, args);
+    Jsi_RC rc = jsi_SharedArgs(interp, args, funcPtr, 1);
+    if (rc != JSI_OK)
+        goto bail;
+
+    int profile = interp->profile, coverage = interp->coverage;
+    int tc = interp->traceCall;
+    double timStart = 0;
+    jsi_PkgInfo *pkg = funcPtr->pkg;
+    if (pkg) {
+        tc |= pkg->popts.modConf.traceCall;
+        profile |= pkg->popts.modConf.profile;
+        coverage |= pkg->popts.modConf.coverage;
     }
+
+    interp->callDepth++;
+    int adds = funcPtr->callflags.bits.addargs;
+    Jsi_CmdSpec *cs  = funcPtr->cmdSpec;
+    if (adds && cs && (cs->flags&JSI_CMDSPEC_NONTHIS))
+        adds = 0;
+    funcPtr->callflags.bits.addargs = 0;
+    jsi_InitLocalVar(interp, args, funcPtr);
+
+    if (!calltrc) {
+        if (funcPtr->type == FC_NORMAL)
+            calltrc = (tc&jsi_callTraceFuncs);
+        else
+            calltrc = (tc&jsi_callTraceCmds);
+    }
+    if (calltrc && funcPtr->name)
+        jsi_TraceFuncCall(interp, funcPtr, interp->curIp, callee, args, 0, tc);
+
+    Jsi_Value *oc = interp->callee;
+    interp->callee = callee;
+    if (profile || coverage) {
+        interp->profileCnt++;
+        timStart = jsi_GetTimestamp();
+    }
+    int as_cons = funcPtr->callflags.bits.iscons;
+    if (funcPtr->type == FC_NORMAL) {
+        rc = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, callee->d.obj->d.fobj->scope, 
+                   args, fthis, ret);
+        interp->funcCallCnt++;
+    } else if (!funcPtr->callback) {
+        rc = Jsi_LogError("can not call:\"%s()\"", funcPtr->name);
+    } else {
+        if (funcPtr->f.bits.hasattr)
+        {
+
+#define SPTR__(s) (s?s:"")
+            if ((funcPtr->f.bits.isobj) && callee->vt != JSI_VT_OBJECT) {
+                rc = Jsi_LogError("'this' is not object: \"%s()\"", funcPtr->name);
+            } else if ((!(funcPtr->f.bits.iscons)) && as_cons) {
+                rc = Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
+            } else {
+                int aCnt = Jsi_ValueGetLength(interp, args);
+                if (aCnt<(cs->minArgs+adds)) {
+                    rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, SPTR__(cs->argStr));
+                } else if (cs->maxArgs>=0 && (aCnt>cs->maxArgs+adds)) {
+                    rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, SPTR__(cs->argStr));
+                }
+            }
+        }
+        if (rc == JSI_OK) {
+            rc = funcPtr->callback(interp, args, fthis, ret, funcPtr);
+            interp->cmdCallCnt++;
+        }
+    }
+    interp->callee = oc;
+    funcPtr->callCnt++;
+    if (profile || coverage) {
+        double timEnd = jsi_GetTimestamp(), timUsed = (timEnd - timStart);;
+        assert(timUsed>=0);
+        funcPtr->allTime += timUsed;
+        if (interp->framePtr->evalFuncPtr)
+            interp->framePtr->evalFuncPtr->subTime += timUsed;
+        else
+            interp->subTime += timUsed;
+    }
+
+    if (rc == JSI_OK && calltrc && (tc&jsi_callTraceReturn))
+        jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, NULL, *ret, tc);
+    if (rc == JSI_OK && !as_cons && funcPtr->retType && (interp->typeCheck.all || interp->typeCheck.run))
+        rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
+    interp->callDepth--;
+
+bail:
+    jsi_SharedArgs(interp, args, funcPtr, 0);
+    interp->activeFunc = prevActive;
+    Jsi_DecrRefCount(interp, args);
+    return rc;
 }
 
 static Jsi_RC jsi_FuncBindCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_FuncObj *fo = funcPtr->fobj;
-    if (!fo)
-        return Jsi_LogError("bind failure"); // TODO: fix via "call" failure?
+    if (!fo) {
+        if (interp->callee && Jsi_ValueIsFunction(interp,  interp->callee))
+            fo = interp->callee->d.obj->d.fobj;
+        else
+            return Jsi_LogError("bind failure"); // TODO: fix via "call" failure?
+    }
     Jsi_Value *nargs = args, *fargs = fo->bindArgs;
     int i, argc = Jsi_ValueGetLength(interp, args);
     int fargc = (fargs? Jsi_ValueGetLength(interp, fargs) : 0);
@@ -232,16 +324,13 @@ static Jsi_RC jsi_FunctionBindCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
 Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret)
 {
-    Jsi_Value *tocall = _this;
-    if (!Jsi_ValueIsFunction(interp, tocall)) 
+    if (!Jsi_ValueIsFunction(interp, _this)) 
         return Jsi_LogError("can not execute expression, expression is not a function");
 
-    if (!tocall->d.obj->d.fobj) {   /* empty function */
+    Jsi_FuncObj *fo = _this->d.obj->d.fobj;
+    if (!fo)   /* empty function */
         return JSI_OK;
-    }
-    
-    /* func to call */
-    Jsi_Func *funcPtr = tocall->d.obj->d.fobj->func;
+    Jsi_Func *funcPtr = fo->func;
     
     /* new this */
     Jsi_Value *fthis;
@@ -255,22 +344,7 @@ Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
 
     /* prepare args */
     Jsi_ValueArrayShift(interp, args);
-    Jsi_RC res = jsi_SharedArgs(interp, args, funcPtr, 1);
-    
-    if (res == JSI_OK) {
-        jsi_InitLocalVar(interp, args, funcPtr);
-        jsi_SetCallee(interp, args, tocall);
-        if (funcPtr->type == FC_NORMAL) {
-            res = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, tocall->d.obj->d.fobj->scope, 
-                       args, fthis, ret);
-        } else {
-            res = funcPtr->callback(interp, args, fthis, ret, funcPtr);
-        }
-        funcPtr->callCnt++;
-    }
-    if (res == JSI_OK && funcPtr->retType)
-        res = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
-    jsi_SharedArgs(interp, args, funcPtr, 0);
+    Jsi_RC res = jsi_FuncCallSub(interp, args, _this, ret, funcPtr, fthis, 0);
     Jsi_DecrRefCount(interp, fthis);
     return res;
 }
@@ -280,7 +354,6 @@ static Jsi_RC jsi_FunctionCallCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
 {
     if (Jsi_FunctionIsConstructor(funcPtr)) 
         return Jsi_LogError("Execute call as constructor");
-    
     return Jsi_FunctionCall(interp, args, _this, ret);
 }
 
@@ -320,16 +393,15 @@ Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret)
 {
     int isalloc = 0;
-    Jsi_Value *tocall = _this;
-    if (!Jsi_ValueIsFunction(interp, tocall)) 
+    if (!Jsi_ValueIsFunction(interp, _this)) 
         return Jsi_LogError("can not execute expression, expression is not a function");
 
-    if (!tocall->d.obj->d.fobj) {   /* empty function */
+    if (!_this->d.obj->d.fobj) {   /* empty function */
         return JSI_OK;
     }
     
     /* func to call */
-    Jsi_Func *funcPtr = tocall->d.obj->d.fobj->func;
+    Jsi_Func *funcPtr = _this->d.obj->d.fobj->func;
    /* if (funcPtr == NULL || funcPtr->callback == jsi_Function_constructor) 
         return Jsi_LogError("can not use apply to itself");*/
     
@@ -357,22 +429,8 @@ Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         Jsi_IncrRefCount(interp, fargs);
     }
     
-    res = jsi_SharedArgs(interp, fargs, funcPtr, 1);
-    if (res == JSI_OK) {
-        jsi_InitLocalVar(interp, fargs, funcPtr);
-        jsi_SetCallee(interp, fargs, tocall);
+    res = jsi_FuncCallSub(interp, fargs, _this, ret, funcPtr, fthis, 0);
     
-        if (funcPtr->type == FC_NORMAL) {
-            res = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, tocall->d.obj->d.fobj->scope, 
-                fargs, fthis, ret);
-        } else {
-            res = funcPtr->callback(interp, fargs, fthis, ret, funcPtr);
-        }
-        funcPtr->callCnt++;
-    }
-    if (res == JSI_OK && funcPtr->retType)
-        res = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
-    jsi_SharedArgs(interp, fargs, funcPtr, 0);
 done:
     if (isalloc)
         Jsi_DecrRefCount(interp, fargs);

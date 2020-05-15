@@ -1122,7 +1122,6 @@ struct Jsi_Interp {
     bool noSubInterps;
     bool tracePuts;
     bool isMain;
-    bool hasCallee;
     bool subthread;
     bool strict;
     bool protoInit;
@@ -1182,6 +1181,7 @@ struct Jsi_Interp {
     bool selfZvfs;
     int inParse;
     Jsi_Value *retValue;       /* Return value from eval */
+    Jsi_Value *callee;
     jsi_Pstate *ps, *parsePs;
     Jsi_Value *argv0;
     Jsi_Value *args;
@@ -1405,6 +1405,8 @@ typedef Jsi_RC (*Jsi_Constructor)(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_Value **ret, int flags, void *privData);
 extern Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func, int alloc);
 extern void jsi_SetCallee(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *tocall);
+extern Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr, Jsi_Value *fthis, int calltrc);
 extern Jsi_RC jsi_AssertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr);
 extern Jsi_RC jsi_NoOpCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,

@@ -718,7 +718,6 @@ Jsi_RC jsi_FunctionSubCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     double timStart = 0;
     int docall;
     int calltrc = 0, profile = interp->profile, coverage = interp->coverage;
-    jsi_PkgInfo *pkg;
     int tc;
     
     //char *lpv = interp->lastPushStr;
@@ -768,24 +767,9 @@ empty_func:
     if (adds && (cs->flags&JSI_CMDSPEC_NONTHIS))
         adds = 0;
 
-    Jsi_Func *pprevActive = interp->prevActiveFunc, *prevActive = interp->prevActiveFunc = interp->activeFunc;
-    interp->activeFunc = funcPtr;
-
-    rc = jsi_SharedArgs(interp, args, funcPtr, 1); /* make arg vars to share arguments */
-    if (rc != JSI_OK)
-        goto bail;
-    funcPtr->callflags.bits.addargs = 0;
-    jsi_InitLocalVar(interp, args, funcPtr);
-    jsi_SetCallee(interp, args, tocall);
+    Jsi_Func *pprevActive = interp->prevActiveFunc;
+    interp->prevActiveFunc = interp->activeFunc;
     
-    pkg = funcPtr->pkg;
-    tc = interp->traceCall;
-    if (pkg) {
-        tc |= pkg->popts.modConf.traceCall;
-        profile |= pkg->popts.modConf.profile;
-        coverage |= pkg->popts.modConf.coverage;
-    }
-
     if (as_constructor) {                       /* new Constructor */
         Jsi_Obj *newobj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);
         Jsi_Value *proto = NULL;
@@ -799,12 +783,42 @@ empty_func:
         Jsi_ValueReset(interp, &_this);
         Jsi_ValueMakeObject(interp, &_this, newobj);            
         /* TODO: constructor specifics??? */
-        calltrc = (tc&jsi_callTraceNew);
+        calltrc = (interp->traceCall&jsi_callTraceNew);
     }
-    if (funcPtr->type == FC_NORMAL)
-        calltrc = (tc&jsi_callTraceFuncs);
-    else
-        calltrc = (tc&jsi_callTraceCmds);
+   
+#if 1
+    if (funcPtr->type == FC_BUILDIN) {
+        funcPtr->callflags.bits.iscons = (as_constructor?JSI_CALL_CONSTRUCTOR:0);
+        funcPtr->fobj = fobj; // Backlink for bind.
+        funcPtr->callflags.bits.isdiscard = discard;
+    }
+    rc = jsi_FuncCallSub(interp, args, tocall, ret, funcPtr, _this, calltrc);
+#else
+    Jsi_Func *prevActive = interp->activeFunc;
+    interp->activeFunc = funcPtr;
+    rc = jsi_SharedArgs(interp, args, funcPtr, 1); /* make arg vars to share arguments */
+    if (rc != JSI_OK)
+        goto bail;
+    funcPtr->callflags.bits.addargs = 0;
+    jsi_InitLocalVar(interp, args, funcPtr);
+    //jsi_SetCallee(interp, args, tocall);
+    Jsi_Value *oc = interp->callee;
+    interp->callee = tocall;
+    
+    tc = interp->traceCall;
+    jsi_PkgInfo *pkg = funcPtr->pkg;
+    if (pkg) {
+        tc |= pkg->popts.modConf.traceCall;
+        profile |= pkg->popts.modConf.profile;
+        coverage |= pkg->popts.modConf.coverage;
+    }
+
+    if (!calltrc) {
+        if (funcPtr->type == FC_NORMAL)
+            calltrc = (tc&jsi_callTraceFuncs);
+        else
+            calltrc = (tc&jsi_callTraceCmds);
+    }
     if (calltrc && funcPtr->name)
         jsi_TraceFuncCall(interp, funcPtr, ip, _this, args, 0, tc);
 
@@ -823,7 +837,7 @@ empty_func:
         }
         interp->funcCallCnt++;
     } else if (!funcPtr->callback) {
-        Jsi_LogError("can not call:\"%s()\"", funcPtr->name);
+        rc = Jsi_LogError("can not call:\"%s()\"", funcPtr->name);
     } else {
         int oldcf = funcPtr->callflags.i;
         funcPtr->callflags.bits.iscons = (as_constructor?JSI_CALL_CONSTRUCTOR:0);
@@ -835,31 +849,27 @@ empty_func:
                 docall = 0;
                 Jsi_LogError("'this' is not object: \"%s()\"", funcPtr->name);
             } else if ((!(funcPtr->f.bits.iscons)) && as_constructor) {
-                rc = JSI_ERROR;
                 docall = 0;
-                Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
+                rc = Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
             } else {
                 int aCnt = Jsi_ValueGetLength(interp, args);
                 if (aCnt<(cs->minArgs+adds)) {
-                    Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, SPTR(cs->argStr));
-                    rc = JSI_ERROR;
+                    rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, SPTR(cs->argStr));
                     docall = 0;
                 } else if (cs->maxArgs>=0 && (aCnt>cs->maxArgs+adds)) {
-                    Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, SPTR(cs->argStr));
-                    rc = JSI_ERROR;
+                    rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, SPTR(cs->argStr));
                     docall = 0;
                 }
             }
         }
         if (docall) {
-            funcPtr->fobj = fobj; // Backlink for bind.
-            funcPtr->callflags.bits.isdiscard = discard;
             rc = funcPtr->callback(interp, args, 
                 _this, ret, funcPtr);
             interp->cmdCallCnt++;
         }
         funcPtr->callflags.i = oldcf;
     }
+    interp->callee = oc;
     if (profile || coverage) {
         double timEnd = jsi_GetTimestamp(), timUsed = (timEnd - timStart);;
         assert(timUsed>=0);
@@ -871,17 +881,19 @@ empty_func:
     }
     if (calltrc && (tc&jsi_callTraceReturn) && funcPtr->name)
         jsi_TraceFuncCall(interp, funcPtr, ip, _this, NULL, *ret, tc);
-    if (!onam)
-        funcPtr->name = NULL;
     if (docall) {
         funcPtr->callCnt++;
         if (rc == JSI_OK && !as_constructor && funcPtr->retType && (interp->typeCheck.all || interp->typeCheck.run))
             rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
     }
-    interp->prevActiveFunc = pprevActive;
     interp->activeFunc = prevActive;
+    jsi_SharedArgs(interp, args, funcPtr, 0); /* make arg vars to shared arguments */
+#endif
 
-    if (as_constructor) {
+    if (!onam)
+        funcPtr->name = NULL;
+    interp->prevActiveFunc = pprevActive;
+    if (as_constructor && rc == JSI_OK) {
         if (_this->vt == JSI_VT_OBJECT)
             _this->d.obj->constructor = tocall->d.obj;
         if ((*ret)->vt != JSI_VT_OBJECT) {
@@ -891,7 +903,6 @@ empty_func:
     }
 
 bail:
-    jsi_SharedArgs(interp, args, funcPtr, 0); /* make arg vars to shared arguments */
     Jsi_DecrRefCount(interp, _this);
     interp->curFunction = oldCurFunc;
 
@@ -1067,12 +1078,12 @@ static Jsi_RC jsi_evalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *i
         return rc;
     }
     Jsi_ValueToObject(interp, src);
-    if (interp->hasCallee && (src->d.obj == currentScope->d.obj || (interp->framePtr->arguments && src->d.obj == interp->framePtr->arguments->d.obj))) {
+    /*if (interp->hasCallee && (src->d.obj == currentScope->d.obj || (interp->framePtr->arguments && src->d.obj == interp->framePtr->arguments->d.obj))) {
         if (idx->vt == JSI_VT_STRING && Jsi_Strcmp(idx->d.s.str, "callee") == 0) {
             jsiClearStack(interp,1);
             Jsi_ValueMakeStringKey(interp, &idx, "\1callee\1");
         }
-    }
+    }*/
     int bsc = Jsi_ValueIsObjType(interp, src, JSI_OT_NUMBER); // Previous bad subscript.
     if (bsc == 0 && interp->lastSubscriptFail && interp->lastSubscriptFail->vt != JSI_VT_UNDEF)
         Jsi_ValueReset(interp, &interp->lastSubscriptFail);
@@ -1368,11 +1379,6 @@ Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     interp->framePtr->arguments = Jsi_ValueNewObj(interp,
                         Jsi_ObjNewArray(interp, currentScope->d.obj->arr, currentScope->d.obj->arrCnt, 0));
                     Jsi_IncrRefCount(interp, interp->framePtr->arguments);
-                    if (interp->hasCallee) {
-                        Jsi_Value *callee = Jsi_ValueObjLookup(interp, currentScope, "\1callee\1", 0);
-                        if (callee)
-                            Jsi_ValueInsert(interp, interp->framePtr->arguments, "\1callee\1", callee, JSI_OM_DONTENUM);
-                    }
                     // interp->framePtr->arguments->d.obj->__proto__ = interp->Object_prototype; // ecma
                 }
                 Jsi_ValueCopy(interp,_jsi_STACKIDX(interp->framePtr->Sp), interp->framePtr->arguments);

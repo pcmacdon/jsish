@@ -1001,11 +1001,13 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
                 Jsi_PkgOpts po = {};
                 Jsi_Value *nopts = NULL;
                 if (opts) {
-                    nopts = Jsi_ValueNew(interp);
-                    Jsi_CleanValue(interp, interp->topInterp, po.info, &nopts);
+                    nopts = Jsi_ValueNew1(interp->topInterp);
+                    Jsi_CleanValue(interp, interp->topInterp, opts, &nopts);
                     po.info = nopts;
                 }
                 Jsi_RC rc = Jsi_PkgProvideEx(interp->topInterp, name, version, initProc, &po);
+                if (nopts)
+                    Jsi_DecrRefCount(interp->topInterp, nopts);
                 if (rc != JSI_OK)
                     return JSI_ERROR;
                 ptr = jsi_PkgGet(interp->topInterp, name);

@@ -88,7 +88,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(ARRAY, Jsi_Interp, autoFiles,   .help="File(s) to source for loading Jsi_Auto to handle unknown commands"),
     JSI_OPT(CUSTOM,Jsi_Interp, busyCallback,.help="Command in parent interp (or noOp) to periodically call", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"interpName:string, opCnt:number"),
     JSI_OPT(INT   ,Jsi_Interp, busyInterval,.help="Call busyCallback command after this many op-code evals (100000)"),
-    JSI_OPT(STRKEY,Jsi_Interp, confFile,    .help="Config file of options in non-strict JSON form", jsi_IIOF|JSI_OPT_LOCKSAFE),
+    JSI_OPT(STRKEY,Jsi_Interp, confFile,    .help="Config file of options in JSON non-strict format", jsi_IIOF|JSI_OPT_LOCKSAFE),
     JSI_OPT(BOOL,  Jsi_Interp, coverage,    .help="On exit generate detailed code coverage for function calls (with profile)"),
     JSI_OPT(CUSTOM,Jsi_Interp, debugOpts,   .help="Options for debugging", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=InterpDebugOptions),
     JSI_OPT(BOOL,  Jsi_Interp, interactive, .help="Force interactive mode. ie. ignore no_interactive flag", jsi_IIOF),
@@ -110,11 +110,11 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(STRKEY,Jsi_Interp, name,        .help="Optional text name for this interp"),
     JSI_OPT(BOOL,  Jsi_Interp, noAutoLoad,  .help="Disable autoload", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(BOOL,  Jsi_Interp, noConfig,    .help="Disable use of Interp.conf to change options after create", jsi_IIOF),
-    JSI_OPT(BOOL,  Jsi_Interp, noInput,     .help="Disable use of console.input()" ),
+    JSI_OPT(BOOL,  Jsi_Interp, noInput,     .help="Disable use of console.input()", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(BOOL,  Jsi_Interp, noLoad,      .help="Disable load of shared libs", .flags=JSI_OPT_LOCKSAFE),
-    JSI_OPT(BOOL,  Jsi_Interp, noNetwork,   .help="Disable new Socket/WebSocket, or load of builtin MySql" ),
-    JSI_OPT(BOOL,  Jsi_Interp, noStderr,    .help="Make puts, log, assert, etc use stdout" ),
-    JSI_OPT(BOOL,  Jsi_Interp, noSubInterps,.help="Disallow sub-interp creation"),
+    JSI_OPT(BOOL,  Jsi_Interp, noNetwork,   .help="Disable new Socket/WebSocket, or load of builtin MySql", .flags=JSI_OPT_LOCKSAFE),
+    JSI_OPT(BOOL,  Jsi_Interp, noStderr,    .help="Make puts, log, assert, etc use stdout", .flags=JSI_OPT_LOCKSAFE),
+    JSI_OPT(BOOL,  Jsi_Interp, noSubInterps,.help="Disallow sub-interp creation", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(FUNC,  Jsi_Interp, onComplete,  .help="Function to return commands completions for interactive mode.  Default uses Info.completions ", .flags=0, .custom=0, .data=(void*)"prefix:string, start:number, end:number" ),
     JSI_OPT(FUNC,  Jsi_Interp, onEval,      .help="Function to get control for interactive evals", .flags=0, .custom=0, .data=(void*)"cmd:string" ),
     JSI_OPT(FUNC,  Jsi_Interp, onExit,      .help="Command to call in parent on exit, returns true to continue", jsi_IIOF , .custom=0, .data=(void*)""),
@@ -129,7 +129,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(STRING,Jsi_Interp, scriptFile,  .help="Interp init script file"),
     JSI_OPT(STRING,Jsi_Interp, stdinStr,    .help="String to use as stdin for console.input()"),
     JSI_OPT(STRING,Jsi_Interp, stdoutStr,   .help="String to collect stdout for puts()"),
-    JSI_OPT(BOOL,  Jsi_Interp, strict,      .help="Globally enable strict: same as 'use strict' in main program", .flags=JSI_OPT_LOCKSAFE),
+    JSI_OPT(BOOL,  Jsi_Interp, strict,      .help="Globally enable strict: same as 'use strict' in main program"),
     JSI_OPT(CUSTOM,Jsi_Interp, subOpts,     .help="Infrequently used sub-options", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=InterpSubOptions),
     JSI_OPT(BOOL,  Jsi_Interp, subthread,   .help="Create a threaded Interp", jsi_IIOF|JSI_OPT_LOCKSAFE),
     JSI_OPT(CUSTOM,Jsi_Interp, traceCall,   .help="Trace commands", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_callTraceStrs),
@@ -226,7 +226,7 @@ Jsi_RC Jsi_CleanValue(Jsi_Interp *interp, Jsi_Interp *tointerp, Jsi_Value *val, 
     int len, iskey;
     Jsi_Obj *obj;
     switch (val->vt) {
-        case JSI_VT_UNDEF: Jsi_ValueMakeUndef(interp, ret); return rc;
+        case JSI_VT_UNDEF: Jsi_ValueMakeUndef(tointerp, ret); return rc;
         case JSI_VT_NULL: Jsi_ValueMakeNull(tointerp, ret); return rc;
         case JSI_VT_BOOL: Jsi_ValueMakeBool(tointerp, ret, val->d.val); return rc;
         case JSI_VT_NUMBER: Jsi_ValueMakeNumber(tointerp, ret, val->d.num); return rc;
@@ -1418,7 +1418,6 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     if (parent && parent->isSafe) {
         interp->isSafe = 1;
         interp->safeMode = parent->safeMode;
-        interp->maxOpCnt = parent->maxOpCnt;
         if (interp->safeWriteDirs || interp->safeReadDirs || interp->safeExecPattern) {
             Jsi_LogWarn("ignoring safe* options in safe sub-sub-interp");
             if (interp->safeWriteDirs) Jsi_DecrRefCount(interp, interp->safeWriteDirs);
@@ -1426,6 +1425,18 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
             interp->safeWriteDirs = interp->safeReadDirs = NULL;
             interp->safeExecPattern = NULL;
         }
+        // Enforce LOCKSAFE options.
+        interp->maxDepth = parent->maxDepth;
+        interp->maxArrayList = parent->maxArrayList;
+        interp->maxIncDepth = parent->maxIncDepth;
+        interp->maxInterpDepth = parent->maxInterpDepth;
+        interp->maxUserObjs = parent->maxUserObjs;
+        interp->maxOpCnt = parent->maxOpCnt;
+        interp->memLeakCnt = parent->memLeakCnt;
+        if (parent->noLoad) interp->noLoad = 1;
+        if (parent->noNetwork) interp->noNetwork = 1;
+        if (parent->noStderr) interp->noStderr = 1;
+        if (parent->noSubInterps) interp->noSubInterps = 1;
     }
 
     jsi_InterpConfFiles(interp);

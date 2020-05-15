@@ -589,7 +589,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>autoFiles</td><td><i>ARRAY</i></td><td>File(s) to source for loading Jsi_Auto to handle unknown commands.</td><td><i></i></td></tr>
 <tr><td>busyCallback</td><td><i>CUSTOM</i></td><td>Command in parent interp (or noOp) to periodically call.</td><td><i></i></td></tr>
 <tr><td>busyInterval</td><td><i>INT</i></td><td>Call busyCallback command after this many op-code evals (100000).</td><td><i></i></td></tr>
-<tr><td>confFile</td><td><i>STRKEY</i></td><td>Config file of options in non-strict JSON form.</td><td><i>initOnly</i></td></tr>
+<tr><td>confFile</td><td><i>STRKEY</i></td><td>Config file of options in JSON non-strict format.</td><td><i>initOnly</i></td></tr>
 <tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
 <tr><td>debugOpts</td><td><i><a href='#debugOptsOptions'>options</a></i></td><td>Options for debugging.</td><td><i></i></td></tr>
 <tr><td>interactive</td><td><i>BOOL</i></td><td>Force interactive mode. ie. ignore no_interactive flag.</td><td><i>initOnly</i></td></tr>

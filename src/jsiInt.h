@@ -1403,9 +1403,7 @@ extern Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
         
 typedef Jsi_RC (*Jsi_Constructor)(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, int flags, void *privData);
-extern Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func, int alloc);
-extern void jsi_SetCallee(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *tocall);
-extern Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+extern Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     Jsi_Value **ret, Jsi_Func *funcPtr, Jsi_Value *fthis, int calltrc);
 extern Jsi_RC jsi_AssertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr);
@@ -1427,8 +1425,6 @@ extern const char *jsi_ObjectTypeName(Jsi_Interp *interp, Jsi_otype otyp);
 extern const char *jsi_ValueTypeName(Jsi_Interp *interp, Jsi_Value *val);
 extern const char *jsi_TypeName(Jsi_Interp *interp, Jsi_ttype otyp);
 extern Jsi_RC jsi_ObjectToStringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr);
-extern Jsi_RC jsi_HasOwnPropertyCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr);
 extern Jsi_Value* jsi_ValueMakeBlobDup(Jsi_Interp *interp, Jsi_Value **vPtr, unsigned char *s, int len);
 
@@ -1503,7 +1499,6 @@ extern const char *jsi_typeName(Jsi_Interp *interp, int typ, Jsi_DString *dStr);
 extern Jsi_RC jsi_ArgTypeCheck(Jsi_Interp *interp, int typ, Jsi_Value *arg, const char *p1, const char *p2, int index, Jsi_Func *func, bool isdefault);
 extern void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, const char *name, const char *namePre, Jsi_OpCodes *argCodes);
 extern Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const char *name, jsi_Pline *line, Jsi_OpCodes *argCodes, bool isParse);
-extern Jsi_RC jsi_FunctionSubCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Value *tocall, int discard);
 extern Jsi_ScopeStrs *jsi_ArgsOptAdd(jsi_Pstate *pstate, Jsi_ScopeStrs *a);
 extern Jsi_ScopeStrs *jsi_argInsert(jsi_Pstate *pstate, Jsi_ScopeStrs *a, const char *name, Jsi_Value *defValue, jsi_Pline *lPtr, bool prepend);
 extern Jsi_ScopeStrs* jsi_ParseArgStr(Jsi_Interp *interp, const char *argStr);
@@ -1511,10 +1506,8 @@ extern Jsi_Value* jsi_AccessFile(Jsi_Interp *interp, const char *name, int mode)
 extern double jsi_GetTimestamp(void);
 extern const char *jsi_GetCurFile(Jsi_Interp *interp);
 extern void jsi_TypeMismatch(Jsi_Interp* interp);
-extern void jsi_SortDString(Jsi_Interp *interp, Jsi_DString *dStr, const char *sep);
 extern const char* jsi_GetDirective(Jsi_Interp *interp, Jsi_OpCodes *ops, const char *str);
 extern Jsi_Value* jsi_CommandCreate(Jsi_Interp *interp, const char *name, Jsi_CmdProc *cmdProc, void *privData, int flags, Jsi_CmdSpec *cspec);
-extern int jsi_GetDefaultType(const char *cp);
 extern Jsi_RC jsi_ParseTypeCheckStr(Jsi_Interp *interp, const char *str);
 extern Jsi_Interp *jsi_DoExit(Jsi_Interp *interp, int rc);
 extern Jsi_RC jsi_CDataDataSetCmdSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr, int flags);

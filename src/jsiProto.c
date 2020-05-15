@@ -51,7 +51,7 @@ static Jsi_RC jsi_Function_constructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_
 }
 
 // Guesstimate type based on default value.
-int jsi_GetDefaultType(const char *cp) {
+static int jsi_GetDefaultType(const char *cp) {
     if (isdigit(*cp) || *cp == '-' || *cp == '.') return JSI_TT_NUMBER;
     if (*cp == 'f' || *cp == 't') return JSI_TT_BOOLEAN;
     if (*cp == 'n') return JSI_TT_NULL;
@@ -106,8 +106,7 @@ Jsi_ScopeStrs* jsi_ParseArgStr(Jsi_Interp *interp, const char *argStr)
     return ss;
 }
 
-// Runtime function call checker.
-Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func, int alloc)
+static Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func, int alloc)
 {
     int i;
     Jsi_RC rc = JSI_OK, nrc = JSI_OK;
@@ -168,6 +167,7 @@ Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func, int a
     return (nrc == JSI_ERROR?nrc:rc);
 }
 
+// Handle all function/command calls.
 Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     Jsi_Value **ret, Jsi_Func *funcPtr, Jsi_Value *fthis, int calltrc)
 {
@@ -221,18 +221,18 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     } else {
         if (funcPtr->f.bits.hasattr)
         {
-
-#define SPTR__(s) (s?s:"")
             if ((funcPtr->f.bits.isobj) && callee->vt != JSI_VT_OBJECT) {
                 rc = Jsi_LogError("'this' is not object: \"%s()\"", funcPtr->name);
             } else if ((!(funcPtr->f.bits.iscons)) && as_cons) {
                 rc = Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
             } else {
                 int aCnt = Jsi_ValueGetLength(interp, args);
+                const char *cstr = cs->argStr;
+                if (!cstr) cstr = "";
                 if (aCnt<(cs->minArgs+adds)) {
-                    rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, SPTR__(cs->argStr));
+                    rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, cstr);
                 } else if (cs->maxArgs>=0 && (aCnt>cs->maxArgs+adds)) {
-                    rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, SPTR__(cs->argStr));
+                    rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, cstr);
                 }
             }
         }
@@ -270,12 +270,9 @@ static Jsi_RC jsi_FuncBindCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_FuncObj *fo = funcPtr->fobj;
-    if (!fo) {
-        if (interp->callee && Jsi_ValueIsFunction(interp,  interp->callee))
-            fo = interp->callee->d.obj->d.fobj;
-        else
-            return Jsi_LogError("bind failure"); // TODO: fix via "call" failure?
-    }
+    if (!fo)
+        return Jsi_LogError("bind failure");
+
     Jsi_Value *nargs = args, *fargs = fo->bindArgs;
     int i, argc = Jsi_ValueGetLength(interp, args);
     int fargc = (fargs? Jsi_ValueGetLength(interp, fargs) : 0);
@@ -321,7 +318,7 @@ static Jsi_RC jsi_FunctionBindCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     return JSI_OK;
 }
 
-Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret)
 {
     if (!Jsi_ValueIsFunction(interp, _this)) 
@@ -331,7 +328,9 @@ Jsi_RC Jsi_FunctionCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     if (!fo)   /* empty function */
         return JSI_OK;
     Jsi_Func *funcPtr = fo->func;
-    
+    if (funcPtr->type == FC_BUILDIN)
+        funcPtr->fobj = fo; // Backlink for bind.
+
     /* new this */
     Jsi_Value *fthis;
     Jsi_Value *arg1 = NULL;
@@ -396,16 +395,10 @@ Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     if (!Jsi_ValueIsFunction(interp, _this)) 
         return Jsi_LogError("can not execute expression, expression is not a function");
 
-    if (!_this->d.obj->d.fobj) {   /* empty function */
+    if (!_this->d.obj->d.fobj)
         return JSI_OK;
-    }
     
-    /* func to call */
     Jsi_Func *funcPtr = _this->d.obj->d.fobj->func;
-   /* if (funcPtr == NULL || funcPtr->callback == jsi_Function_constructor) 
-        return Jsi_LogError("can not use apply to itself");*/
-    
-    /* new this */
     Jsi_Value *fthis;
     Jsi_Value *arg1 = NULL;
     if ((arg1 = Jsi_ValueArrayIndex(interp, args, 0)) && !Jsi_ValueIsUndef(interp, arg1)
@@ -416,7 +409,7 @@ Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_ValueToObject(interp, fthis);
     
     /* prepare args */
-    Jsi_RC res = JSI_ERROR;
+    Jsi_RC rc = JSI_ERROR;
     Jsi_Value *fargs = Jsi_ValueArrayIndex(interp, args, 1);
     if (fargs) {
         if (fargs->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, fargs->d.obj)) {
@@ -428,14 +421,13 @@ Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         fargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewType(interp, JSI_OT_ARRAY));
         Jsi_IncrRefCount(interp, fargs);
     }
-    
-    res = jsi_FuncCallSub(interp, fargs, _this, ret, funcPtr, fthis, 0);
+    rc = jsi_FuncCallSub(interp, fargs, _this, ret, funcPtr, fthis, 0);
     
 done:
     if (isalloc)
         Jsi_DecrRefCount(interp, fargs);
     Jsi_DecrRefCount(interp, fthis);
-    return res;
+    return rc;
 }
 
 
@@ -446,7 +438,7 @@ static Jsi_RC ObjectValueOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     return JSI_OK;
 }
 
-Jsi_RC ObjectMergeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC ObjectMergeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
@@ -476,7 +468,7 @@ Jsi_RC ObjectMergeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
 }
 
 #if (JSI_HAS___PROTO__==1)
-Jsi_RC jsi_GetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC jsi_GetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
@@ -486,7 +478,7 @@ Jsi_RC jsi_GetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     return JSI_OK;
 }
 
-Jsi_RC jsi_SetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC jsi_SetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
@@ -502,7 +494,7 @@ Jsi_RC jsi_SetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
 }
 #endif
 
-Jsi_RC jsi_HasOwnPropertyCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC jsi_HasOwnPropertyCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *v;

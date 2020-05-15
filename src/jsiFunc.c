@@ -771,50 +771,7 @@ static Jsi_RC jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Valu
         return Jsi_LogError("argument must be an array");
     /* new this */
     Jsi_Value *fthis = Jsi_ValueDup(interp, _this ? _this : tocall);
-#if 1
     Jsi_RC rc = jsi_FuncCallSub(interp, args, tocall, ret, funcPtr, fthis, 0);
-#else
-    Jsi_Func *prevActive = interp->activeFunc;
-    Jsi_RC rc = jsi_SharedArgs(interp, args, funcPtr, 1);
-    int calltrc = 0;
-    int tc = interp->traceCall | (funcPtr->pkg?funcPtr->pkg->popts.modConf.traceCall:0);
-    interp->callDepth++;
-    Jsi_IncrRefCount(interp, args);
-    if (rc == JSI_OK) {
-        jsi_InitLocalVar(interp, args, funcPtr);
-        //jsi_SetCallee(interp, args, tocall);
-        Jsi_Value *oc = interp->callee;
-        interp->callee = tocall;
-        if (funcPtr->type == FC_NORMAL) {
-            if ((tc&jsi_callTraceFuncs) && funcPtr->name)
-                calltrc = 1;
-        } else {
-            if ((tc&jsi_callTraceCmds) && funcPtr->name)
-                calltrc = 1;
-        }
-        interp->activeFunc = funcPtr;
-        if (funcPtr->type == FC_NORMAL) {
-            if (calltrc)
-                jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, args, NULL, tc);
-            rc = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, tocall->d.obj->d.fobj->scope, 
-                args, fthis, ret);
-        } else {
-            if (calltrc)
-                jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, args, NULL, tc);
-            rc = funcPtr->callback(interp, args, fthis, ret, funcPtr);
-        }
-        interp->callee = oc;
-        funcPtr->callCnt++;
-    }
-    interp->callDepth--;
-    if (rc == JSI_OK && funcPtr->retType)
-        rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
-    if (rc == JSI_OK && calltrc && (tc&jsi_callTraceReturn))
-        jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, NULL, *ret, tc);
-    interp->activeFunc = prevActive;
-    jsi_SharedArgs(interp, args, funcPtr, 0);
-    Jsi_DecrRefCount(interp, args);
-#endif
     Jsi_DecrRefCount(interp, fthis);
     return rc;
 }

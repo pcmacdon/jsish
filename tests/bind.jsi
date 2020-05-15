@@ -37,6 +37,11 @@ nn(10);
 var pp = puts.bind(null,'XX');
 ;pp('HI');
 
+function h(a) { return {a: a, th: this}; }
+var i;
+;i= h.bind({str: "foo"}, 2);
+;i.call({x: 1});
+
 /*
 =!EXPECTSTART!=
 module.getX() ==> 81
@@ -50,5 +55,7 @@ add5(10,12) ==> 22
 add5(10,11) ==> 21
 pp('HI') ==> XX HI
 undefined
+i= h.bind({str: "foo"}, 2) ==> "function () { [native code] }"
+i.call({x: 1}) ==> { a:2, th:{ str:"foo" } }
 =!EXPECTEND!=
 */

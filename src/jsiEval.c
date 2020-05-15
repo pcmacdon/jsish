@@ -12,13 +12,13 @@
 #define _jsi_THIS (interp->Obj_this)
 #define _jsi_THISIDX(s) interp->Obj_this[s]
 
-static Jsi_RC jsi_EvalLogErr(Jsi_Interp *interp, const char *str) { Jsi_LogMsg(interp, JSI_ERROR, "%s", str); return JSI_ERROR; }
+static Jsi_RC jsiEvalLogErr(Jsi_Interp *interp, const char *str) { Jsi_LogMsg(interp, JSI_ERROR, "%s", str); return JSI_ERROR; }
 
-#define _jsi_StrictChk(v) ((strict==0 || !Jsi_NumberIsNaN(v->d.num)) ? JSI_OK : jsi_EvalLogErr(interp, "value is NaN"))
-#define _jsi_StrictChk2(v1,v2)  ((strict==0  || (Jsi_NumberIsNaN(v1->d.num)==0 && Jsi_NumberIsNaN(v2->d.num)==0))  ? JSI_OK : jsi_EvalLogErr(interp, "value is NaN"))
-#define _jsi_StrictUChk(v) ((strict==0 || v->vt != JSI_VT_UNDEF) ? JSI_OK : jsi_EvalLogErr(interp, "value is undefined"))
-#define _jsi_StrictUChk2(v1,v2)  ((strict==0  || (v1->vt != JSI_VT_UNDEF && v2->vt != JSI_VT_UNDEF))  ? JSI_OK : jsi_EvalLogErr(interp, "value is undefined"))
-#define _jsi_StrictUChk3(v1,v2)  ((strict==0  || (v1->vt != JSI_VT_UNDEF || v2->vt == JSI_VT_UNDEF))  ? JSI_OK : jsi_EvalLogErr(interp, "lhs value undefined in ===/!==") )
+#define _jsi_StrictChk(v) ((strict==0 || !Jsi_NumberIsNaN(v->d.num)) ? JSI_OK : jsiEvalLogErr(interp, "value is NaN"))
+#define _jsi_StrictChk2(v1,v2)  ((strict==0  || (Jsi_NumberIsNaN(v1->d.num)==0 && Jsi_NumberIsNaN(v2->d.num)==0))  ? JSI_OK : jsiEvalLogErr(interp, "value is NaN"))
+#define _jsi_StrictUChk(v) ((strict==0 || v->vt != JSI_VT_UNDEF) ? JSI_OK : jsiEvalLogErr(interp, "value is undefined"))
+#define _jsi_StrictUChk2(v1,v2)  ((strict==0  || (v1->vt != JSI_VT_UNDEF && v2->vt != JSI_VT_UNDEF))  ? JSI_OK : jsiEvalLogErr(interp, "value is undefined"))
+#define _jsi_StrictUChk3(v1,v2)  ((strict==0  || (v1->vt != JSI_VT_UNDEF || v2->vt == JSI_VT_UNDEF))  ? JSI_OK : jsiEvalLogErr(interp, "lhs value undefined in ===/!==") )
 
 static jsi_Pstate* jsiNewParser(Jsi_Interp* interp, const char *codeStr, Jsi_Channel fp, int iseval)
 {
@@ -82,7 +82,7 @@ static Jsi_RC jsiEvalOp(Jsi_Interp* interp, jsi_Pstate *ps, char *program,
     return r;
 }
                      
-static Jsi_Value** jsi_ValuesAlloc(Jsi_Interp *interp, int cnt, Jsi_Value**old, int oldsz) {
+static Jsi_Value** jsiValuesAlloc(Jsi_Interp *interp, int cnt, Jsi_Value**old, int oldsz) {
     int i;
     Jsi_Value **v = (Jsi_Value **)Jsi_Realloc(old, cnt* sizeof(Jsi_Value*));
     for (i=oldsz; i<cnt; i++)
@@ -97,8 +97,8 @@ static void jsiSetupStack(Jsi_Interp *interp)
         interp->maxStack += STACK_INCR_SIZE;
     else
         interp->maxStack = STACK_INIT_SIZE;
-    _jsi_STACK = jsi_ValuesAlloc(interp, interp->maxStack, _jsi_STACK, oldsz);
-    _jsi_THIS = jsi_ValuesAlloc(interp, interp->maxStack, _jsi_THIS, oldsz); //TODO:!!! use interp->framePtr for this.
+    _jsi_STACK = jsiValuesAlloc(interp, interp->maxStack, _jsi_STACK, oldsz);
+    _jsi_THIS = jsiValuesAlloc(interp, interp->maxStack, _jsi_THIS, oldsz); //TODO:!!! use interp->framePtr for this.
 }
 
 static void jsiPush(Jsi_Interp* interp, int n) {
@@ -146,7 +146,7 @@ static void jsiClearThis(Jsi_Interp *interp, int ofs) {
 }
 
 
-static Jsi_RC inline jsi_ValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Value* src, int lop)
+static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Value* src, int lop)
 {
     Jsi_Value *v;
     if (dst->vt != JSI_VT_VARIABLE) {
@@ -235,7 +235,7 @@ static void jsiVarDeref(Jsi_Interp* interp, int n) {
     jsiPop(interp, 1);                                          \
 }
 
-static Jsi_RC jsi_logic_less(Jsi_Interp* interp, int i1, int i2) {
+static Jsi_RC jsiLogicLess(Jsi_Interp* interp, int i1, int i2) {
     Jsi_Value *v, *v1 = _jsi_STACK[interp->framePtr->Sp-i1], *v2 = _jsi_STACK[interp->framePtr->Sp-i2], *res = _jsi_TOQ;
     int val = 0, l1 = 0, l2 = 0; 
     bool strict = interp->strict;
@@ -285,7 +285,7 @@ static Jsi_RC jsi_logic_less(Jsi_Interp* interp, int i1, int i2) {
     return JSI_OK;
 }
 
-static const char *jsi_evalprint(Jsi_Value *v)
+static const char *jsiEvalPrint(Jsi_Value *v)
 {
     static char buf[JSI_MAX_NUMBER_STRING];
     if (!v)
@@ -308,8 +308,8 @@ static const char *jsi_evalprint(Jsi_Value *v)
     return buf;
 }
 /* destroy top of trylist */
-#define pop_try(head) jsi_pop_try(interp, &head)
-static void jsi_pop_try(Jsi_Interp* interp, jsi_TryList **head)
+#define pop_try(head) jsiPopTry(interp, &head)
+static void jsiPopTry(Jsi_Interp* interp, jsi_TryList **head)
 {
     interp->framePtr->tryDepth--;
     jsi_TryList *t = (*head)->next;
@@ -318,7 +318,7 @@ static void jsi_pop_try(Jsi_Interp* interp, jsi_TryList **head)
     interp->tryList = t;
 }
 
-static void jsi_push_try(Jsi_Interp* interp, jsi_TryList **head, jsi_TryList *n)
+static void jsiPushTry(Jsi_Interp* interp, jsi_TryList **head, jsi_TryList *n)
 {
     interp->tryList = n;
     interp->framePtr->tryDepth++;
@@ -327,9 +327,9 @@ static void jsi_push_try(Jsi_Interp* interp, jsi_TryList **head, jsi_TryList *n)
 }
 
 /* restore scope chain */
-#define JSI_RESTORE_SCOPE() jsi_restore_scope(interp, ps, trylist, \
+#define JSI_RESTORE_SCOPE() jsiRestoreScope(interp, ps, trylist, \
     &scope, &currentScope, &context_id)
-static void jsi_restore_scope(Jsi_Interp* interp, jsi_Pstate *ps, jsi_TryList* trylist,
+static void jsiRestoreScope(Jsi_Interp* interp, jsi_Pstate *ps, jsi_TryList* trylist,
   jsi_ScopeChain **scope, Jsi_Value **currentScope, int *context_id) {
 
 /* JSI_RESTORE_SCOPE(scope_save, curscope_save)*/
@@ -346,9 +346,9 @@ static void jsi_restore_scope(Jsi_Interp* interp, jsi_Pstate *ps, jsi_TryList* t
     *context_id = ps->_context_id++; 
 }
 
-#define JSI_DO_THROW(nam) if (jsi_do_throw(interp, ps, &ip, &trylist,&scope, &currentScope, &context_id, (interp->framePtr->Sp?_jsi_TOP:NULL), nam) != JSI_OK) { rc = JSI_ERROR; break; }
+#define JSI_DO_THROW(nam) if (jsiDoThrow(interp, ps, &ip, &trylist,&scope, &currentScope, &context_id, (interp->framePtr->Sp?_jsi_TOP:NULL), nam) != JSI_OK) { rc = JSI_ERROR; break; }
 
-static int jsi_do_throw(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, jsi_TryList **tlp,
+static int jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, jsi_TryList **tlp,
      jsi_ScopeChain **scope, Jsi_Value **currentScope, int *context_id, Jsi_Value *top, const char *nam) {
     if (Jsi_InterpGone(interp))
         return JSI_ERROR;
@@ -375,19 +375,19 @@ static int jsi_do_throw(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, js
                 *ipp = trylist->d.td.fstart - 1;
                 break;
             } else if (*ipp >= trylist->d.td.fstart && *ipp < trylist->d.td.fend) {
-                jsi_pop_try(interp, tlp);
+                jsiPopTry(interp, tlp);
                 trylist = *tlp;
             } else Jsi_LogBug("Throw within a try, but not in its scope?");
         } else {
-            jsi_restore_scope(interp, ps, trylist, scope, currentScope, context_id);
-            jsi_pop_try(interp, tlp);
+            jsiRestoreScope(interp, ps, trylist, scope, currentScope, context_id);
+            jsiPopTry(interp, tlp);
             trylist = *tlp;
         }
     }
     return JSI_OK;
 }
 
-static jsi_TryList *jsi_trylist_new(jsi_try_op_type t, jsi_ScopeChain *scope_save, Jsi_Value *curscope_save)
+static jsi_TryList *jsiTrylistNew(jsi_try_op_type t, jsi_ScopeChain *scope_save, Jsi_Value *curscope_save)
 {
     jsi_TryList *n = (jsi_TryList *)Jsi_Calloc(1,sizeof(*n));
     
@@ -405,9 +405,9 @@ static void jsiDumpInstr(Jsi_Interp *interp, jsi_Pstate *ps, Jsi_Value *_this,
     int i;
     char buf[JSI_MAX_NUMBER_STRING*2];
     jsi_code_decode(interp, ip, ip - opcodes->codes, buf, sizeof(buf));
-    Jsi_Printf(interp, jsi_Stderr, "%p: %-30.200s : THIS=%s, STACK=[", ip, buf, jsi_evalprint(_this));
+    Jsi_Printf(interp, jsi_Stderr, "%p: %-30.200s : THIS=%s, STACK=[", ip, buf, jsiEvalPrint(_this));
     for (i = 0; i < interp->framePtr->Sp; ++i) {
-        Jsi_Printf(interp, jsi_Stderr, "%s%s", (i>0?", ":""), jsi_evalprint(_jsi_STACKIDX(i)));
+        Jsi_Printf(interp, jsi_Stderr, "%s%s", (i>0?", ":""), jsiEvalPrint(_jsi_STACKIDX(i)));
     }
     Jsi_Printf(interp, jsi_Stderr, "]");
     if (ip->fname) {
@@ -419,28 +419,28 @@ static void jsiDumpInstr(Jsi_Interp *interp, jsi_Pstate *ps, Jsi_Value *_this,
     jsi_TryList *tlt = trylist;
     for (i = 0; tlt; tlt = tlt->next) i++;
     if (ps->last_exception)
-        Jsi_Printf(interp, jsi_Stderr, "TL: %d, excpt: %s\n", i, jsi_evalprint(ps->last_exception));
+        Jsi_Printf(interp, jsi_Stderr, "TL: %d, excpt: %s\n", i, jsiEvalPrint(ps->last_exception));
 }
 
-static int jsi_cmpstringp(const void *p1, const void *p2)
+static int jsiCmpStringp(const void *p1, const void *p2)
 {
    return Jsi_Strcmp(* (char * const *) p1, * (char * const *) p2);
 }
 
-void jsi_SortDString(Jsi_Interp *interp, Jsi_DString *dStr, const char *sep) {
+static void jsiSortDString(Jsi_Interp *interp, Jsi_DString *dStr, const char *sep) {
     int argc, i;
     char **argv;
     Jsi_DString sStr;
     Jsi_DSInit(&sStr);
     Jsi_SplitStr(Jsi_DSValue(dStr), &argc, &argv, sep, &sStr);
-    qsort(argv, argc, sizeof(char*), jsi_cmpstringp);
+    qsort(argv, argc, sizeof(char*), jsiCmpStringp);
     Jsi_DSSetLength(dStr, 0);
     for (i=0; i<argc; i++)
         Jsi_DSAppend(dStr, (i?" ":""), argv[i], NULL);
     Jsi_DSFree(&sStr);
 }
 
-static void jsi_ValueObjDelete(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, int force)
+static void jsiValueObjDelete(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, int force)
 {
     if (target->vt != JSI_VT_OBJECT) return;
     const char *kstr = Jsi_ValueToString(interp, key, NULL);
@@ -481,7 +481,7 @@ static void jsiObjGetNames(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_DString* dStr, 
     Jsi_TreeSearchDone(&srch);
 }
 
-static void jsi_DumpFunctions(Jsi_Interp *interp, const char *spnam) {
+static void jsiDumpFunctions(Jsi_Interp *interp, const char *spnam) {
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
     Jsi_MapEntry *hPtr;
@@ -558,7 +558,7 @@ dumpspec:
             }
             csi = (csi?csi->next:NULL);
         }
-        jsi_SortDString(interp, &dStr, " ");
+        jsiSortDString(interp, &dStr, " ");
         if (varname)
             spnam = varname;
         else if (interp->lastPushStr && !spnam[0])
@@ -708,17 +708,14 @@ void jsi_TraceFuncCall(Jsi_Interp *interp, Jsi_Func *fstatic, jsi_OpCode *iPtr,
     }
 }
 
-Jsi_RC jsi_FunctionSubCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC jsiFunctionSubCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Value *tocall, int discard)
 {
     Jsi_RC rc = JSI_OK;
     const char *oldCurFunc = interp->curFunction, *spnam = "";
     jsi_OpCode *ip = interp->curIp;
     int adds, as_constructor = (ip->op == OP_NEWFCALL);
-    double timStart = 0;
-    int docall;
-    int calltrc = 0, profile = interp->profile, coverage = interp->coverage;
-    int tc;
+    int calltrc = 0;
     
     //char *lpv = interp->lastPushStr;
     if (tocall->vt == JSI_VT_UNDEF && tocall->f.bits.lookupfailed && tocall->d.lookupFail && !interp->noAutoLoad) {
@@ -731,7 +728,7 @@ Jsi_RC jsi_FunctionSubCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     if (!Jsi_ValueIsFunction(interp, tocall)) {
        // if (tocall->f.bits.subscriptfailed && tocall->d.lookupFail)
        //     spnam = tocall->d.lookupFail;
-        jsi_DumpFunctions(interp, spnam);
+        jsiDumpFunctions(interp, spnam);
         rc = JSI_ERROR;
         goto empty_func;
     }
@@ -786,109 +783,12 @@ empty_func:
         calltrc = (interp->traceCall&jsi_callTraceNew);
     }
    
-#if 1
     if (funcPtr->type == FC_BUILDIN) {
         funcPtr->callflags.bits.iscons = (as_constructor?JSI_CALL_CONSTRUCTOR:0);
         funcPtr->fobj = fobj; // Backlink for bind.
         funcPtr->callflags.bits.isdiscard = discard;
     }
     rc = jsi_FuncCallSub(interp, args, tocall, ret, funcPtr, _this, calltrc);
-#else
-    Jsi_Func *prevActive = interp->activeFunc;
-    interp->activeFunc = funcPtr;
-    rc = jsi_SharedArgs(interp, args, funcPtr, 1); /* make arg vars to share arguments */
-    if (rc != JSI_OK)
-        goto bail;
-    funcPtr->callflags.bits.addargs = 0;
-    jsi_InitLocalVar(interp, args, funcPtr);
-    //jsi_SetCallee(interp, args, tocall);
-    Jsi_Value *oc = interp->callee;
-    interp->callee = tocall;
-    
-    tc = interp->traceCall;
-    jsi_PkgInfo *pkg = funcPtr->pkg;
-    if (pkg) {
-        tc |= pkg->popts.modConf.traceCall;
-        profile |= pkg->popts.modConf.profile;
-        coverage |= pkg->popts.modConf.coverage;
-    }
-
-    if (!calltrc) {
-        if (funcPtr->type == FC_NORMAL)
-            calltrc = (tc&jsi_callTraceFuncs);
-        else
-            calltrc = (tc&jsi_callTraceCmds);
-    }
-    if (calltrc && funcPtr->name)
-        jsi_TraceFuncCall(interp, funcPtr, ip, _this, args, 0, tc);
-
-    //Jsi_Value *spretPtr = *ret;
- 
-    interp->activeFunc = funcPtr;
-    docall = (rc==JSI_OK);
-    if (profile || coverage) {
-        interp->profileCnt++;
-        timStart = jsi_GetTimestamp();
-    }
-    if (funcPtr->type == FC_NORMAL) {
-        if (docall) {
-            rc = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, tocall->d.obj->d.fobj->scope, 
-                args, _this, ret);
-        }
-        interp->funcCallCnt++;
-    } else if (!funcPtr->callback) {
-        rc = Jsi_LogError("can not call:\"%s()\"", funcPtr->name);
-    } else {
-        int oldcf = funcPtr->callflags.i;
-        funcPtr->callflags.bits.iscons = (as_constructor?JSI_CALL_CONSTRUCTOR:0);
-        if (funcPtr->f.bits.hasattr)
-        {
-#define SPTR(s) (s?s:"")
-            if ((funcPtr->f.bits.isobj) && _this->vt != JSI_VT_OBJECT) {
-                rc = JSI_ERROR;
-                docall = 0;
-                Jsi_LogError("'this' is not object: \"%s()\"", funcPtr->name);
-            } else if ((!(funcPtr->f.bits.iscons)) && as_constructor) {
-                docall = 0;
-                rc = Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
-            } else {
-                int aCnt = Jsi_ValueGetLength(interp, args);
-                if (aCnt<(cs->minArgs+adds)) {
-                    rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, SPTR(cs->argStr));
-                    docall = 0;
-                } else if (cs->maxArgs>=0 && (aCnt>cs->maxArgs+adds)) {
-                    rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, SPTR(cs->argStr));
-                    docall = 0;
-                }
-            }
-        }
-        if (docall) {
-            rc = funcPtr->callback(interp, args, 
-                _this, ret, funcPtr);
-            interp->cmdCallCnt++;
-        }
-        funcPtr->callflags.i = oldcf;
-    }
-    interp->callee = oc;
-    if (profile || coverage) {
-        double timEnd = jsi_GetTimestamp(), timUsed = (timEnd - timStart);;
-        assert(timUsed>=0);
-        funcPtr->allTime += timUsed;
-        if (interp->framePtr->evalFuncPtr)
-            interp->framePtr->evalFuncPtr->subTime += timUsed;
-        else
-            interp->subTime += timUsed;
-    }
-    if (calltrc && (tc&jsi_callTraceReturn) && funcPtr->name)
-        jsi_TraceFuncCall(interp, funcPtr, ip, _this, NULL, *ret, tc);
-    if (docall) {
-        funcPtr->callCnt++;
-        if (rc == JSI_OK && !as_constructor && funcPtr->retType && (interp->typeCheck.all || interp->typeCheck.run))
-            rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
-    }
-    interp->activeFunc = prevActive;
-    jsi_SharedArgs(interp, args, funcPtr, 0); /* make arg vars to shared arguments */
-#endif
 
     if (!onam)
         funcPtr->name = NULL;
@@ -902,14 +802,13 @@ empty_func:
         }
     }
 
-bail:
     Jsi_DecrRefCount(interp, _this);
     interp->curFunction = oldCurFunc;
 
     return rc;
 }
 
-Jsi_RC jsiEvalFunction(jsi_Pstate *ps, jsi_OpCode *ip, int discard) {
+static Jsi_RC jsiEvalFunction(jsi_Pstate *ps, jsi_OpCode *ip, int discard) {
     Jsi_Interp *interp = ps->interp;
     int stackargc = (int)(uintptr_t)ip->data;
     jsiVarDeref(interp, stackargc + 1);
@@ -926,7 +825,7 @@ Jsi_RC jsiEvalFunction(jsi_Pstate *ps, jsi_OpCode *ip, int discard) {
         _this = Jsi_ValueDup(interp, _this);
         jsiClearThis(interp, tocall_index);
     }   
-    Jsi_RC rc = jsi_FunctionSubCall(interp, args, _this, &spretPtr, tocall, discard);
+    Jsi_RC rc = jsiFunctionSubCall(interp, args, _this, &spretPtr, tocall, discard);
     
     jsiPop(interp, stackargc);
     jsiClearStack(interp,1);
@@ -946,7 +845,7 @@ Jsi_RC jsiEvalFunction(jsi_Pstate *ps, jsi_OpCode *ip, int discard) {
     return rc;
 }
 
-static Jsi_RC jsi_PushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, Jsi_Value *currentScope, int context_id) {
+static Jsi_RC jsiPushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, Jsi_Value *currentScope, int context_id) {
     Jsi_Interp *interp = ps->interp;
     jsi_FastVar *fvar = (typeof(fvar))ip->data;
     SIGASSERT(fvar,FASTVAR);
@@ -999,7 +898,7 @@ static Jsi_RC jsi_PushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope,
     return JSI_OK;
 }
 
-static void jsi_PushFunc(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, Jsi_Value *currentScope) {
+static void jsiPushFunc(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, Jsi_Value *currentScope) {
     /* TODO: now that we're caching ps, may need to reference function ps for context_id??? */
     Jsi_Interp *interp = ps->interp;
     Jsi_FuncObj *fo = jsi_FuncObjNew(interp, (Jsi_Func *)ip->data);
@@ -1038,7 +937,7 @@ static void jsi_PushFunc(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, 
     jsiPush(interp,1);
 }
 
-static Jsi_RC jsi_evalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *idx, jsi_OpCode *ip,  jsi_OpCode *end,
+static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *idx, jsi_OpCode *ip,  jsi_OpCode *end,
     Jsi_Value *currentScope)
 {
     Jsi_RC rc = JSI_OK;
@@ -1128,7 +1027,7 @@ void jsi_DebuggerStmt(void) {
     // Called for "debugger" statement.
 }
 
-static Jsi_RC jsi_ValueAssignCheck(Jsi_Interp *interp, Jsi_Value *val, int lop) {
+static Jsi_RC jsiValueAssignCheck(Jsi_Interp *interp, Jsi_Value *val, int lop) {
     if (lop == OP_FCALL || lop == OP_NEWFCALL)
         return JSI_OK;
     if (val->f.bits.lookupfailed && val->d.lookupFail)
@@ -1136,7 +1035,7 @@ static Jsi_RC jsi_ValueAssignCheck(Jsi_Interp *interp, Jsi_Value *val, int lop) 
     return JSI_OK;
 }
 
-Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes, 
+Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes, 
      jsi_ScopeChain *scope, Jsi_Value *currentScope,
      Jsi_Value *_this, Jsi_Value *vret)
 {
@@ -1301,11 +1200,11 @@ Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_PUSHVAR: {
-                rc = jsi_PushVar(ps, ip, scope, currentScope, context_id);      
+                rc = jsiPushVar(ps, ip, scope, currentScope, context_id);      
                 break;
             }
             case OP_PUSHFUN: {
-                jsi_PushFunc(ps, ip, scope, currentScope);
+                jsiPushFunc(ps, ip, scope, currentScope);
                 break;
             }
             case OP_NEWFCALL:
@@ -1331,7 +1230,7 @@ Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_SUBSCRIPT: {
-                rc = jsi_evalSubscript(interp, _jsi_TOQ, _jsi_TOP, ip, end, currentScope);
+                rc = jsiEvalSubscript(interp, _jsi_TOQ, _jsi_TOP, ip, end, currentScope);
                 break;
             }
             case OP_ASSIGN: {
@@ -1339,16 +1238,16 @@ Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 bool globThis = (sval->vt == JSI_VT_OBJECT && sval->d.obj == interp->csc->d.obj);
                 if ((uintptr_t)ip->data == 1) {
                     jsiVarDeref(interp,1);
-                    rc = jsi_ValueAssign(interp, dval, sval, lop);                    
+                    rc = jsiValueAssign(interp, dval, sval, lop);                    
                     if (strict && sval->vt == JSI_VT_UNDEF)
-                        rc = jsi_ValueAssignCheck(interp, sval, lop);
+                        rc = jsiValueAssignCheck(interp, sval, lop);
                     jsiPop(interp,1);
                 } else {
                     jsiVarDeref(interp, 3);
                     Jsi_Value *v3 = _jsi_STACKIDX(interp->framePtr->Sp-3);
                     if (v3->vt == JSI_VT_OBJECT) {
                         if (strict && sval->vt == JSI_VT_UNDEF)
-                            rc = jsi_ValueAssignCheck(interp, sval, lop);
+                            rc = jsiValueAssignCheck(interp, sval, lop);
                         jsi_ValueObjKeyAssign(interp, v3, dval, sval, 0);
                         jsi_ValueDebugLabel(sval, "assign", NULL);
                     } else if (strict)
@@ -1581,24 +1480,24 @@ Jsi_RC jsi_evalcode_sub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             }
             case OP_LESS:
                 jsiVarDeref(interp,2);
-                rc = jsi_logic_less(interp,2,1);
+                rc = jsiLogicLess(interp,2,1);
                 jsiPop(interp,1);
                 break;
             case OP_GREATER:
                 jsiVarDeref(interp,2);
-                rc = jsi_logic_less(interp,1,2);
+                rc = jsiLogicLess(interp,1,2);
                 jsiPop(interp,1);
                 break;
             case OP_LESSEQU:
                 jsiVarDeref(interp,2);
-                rc = jsi_logic_less(interp,1,2);
+                rc = jsiLogicLess(interp,1,2);
                 if (rc == JSI_OK)
                     _jsi_TOQ->d.val = !_jsi_TOQ->d.val;
                 jsiPop(interp,1);
                 break;
             case OP_GREATEREQU:
                 jsiVarDeref(interp,2);
-                rc = jsi_logic_less(interp,2,1);
+                rc = jsiLogicLess(interp,2,1);
                 if (rc == JSI_OK)
                     _jsi_TOQ->d.val = !_jsi_TOQ->d.val;
                 jsiPop(interp,1);
@@ -1899,7 +1798,7 @@ undef_eval:
                         if (_jsi_TOQ->vt != JSI_VT_OBJECT) Jsi_LogWarn("delete non-object key, ignore");
                         if (_jsi_TOQ->d.obj == currentScope->d.obj) Jsi_LogWarn("Delete arguments");
                     }
-                    jsi_ValueObjDelete(interp, _jsi_TOQ, _jsi_TOP, 0);
+                    jsiValueObjDelete(interp, _jsi_TOQ, _jsi_TOP, 0);
                     
                     jsiPop(interp,2);
                 } else Jsi_LogBug("delete");
@@ -1927,7 +1826,7 @@ undef_eval:
             }
             case OP_STRY: {
                 jsi_TryInfo *ti = (jsi_TryInfo *)ip->data;
-                jsi_TryList *n = jsi_trylist_new(jsi_TL_TRY, scope, currentScope);
+                jsi_TryList *n = jsiTrylistNew(jsi_TL_TRY, scope, currentScope);
                 
                 n->d.td.tstart = ip;                            /* make every thing pointed to right pos */
                 n->d.td.tend = n->d.td.tstart + ti->trylen;
@@ -1939,7 +1838,7 @@ undef_eval:
                 n->inCatch=0;
                 n->inFinal=0;
 
-                jsi_push_try(interp, &trylist, n);
+                jsiPushTry(interp, &trylist, n);
                 break;
             }
             case OP_ETRY: {             /* means nothing happen go to final */
@@ -2060,12 +1959,12 @@ undef_eval:
                 jsiVarDeref(interp,1);
                 Jsi_ValueToObject(interp, _jsi_TOP);
                 
-                jsi_TryList *n = jsi_trylist_new(jsi_TL_WITH, scope, currentScope);
+                jsi_TryList *n = jsiTrylistNew(jsi_TL_WITH, scope, currentScope);
                 
                 n->d.wd.wstart = ip;
                 n->d.wd.wend = n->d.wd.wstart + (uintptr_t)ip->data;
 
-                jsi_push_try(interp, &trylist, n);
+                jsiPushTry(interp, &trylist, n);
                 interp->framePtr->withDepth++;
                 
                 /* make expr to top of scope chain */
@@ -2159,7 +2058,7 @@ Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
     interp->refCount++;
     interp->level++;
     Jsi_IncrRefCount(interp, fargs);
-    rc = jsi_evalcode_sub(ps, opcodes, scope, fargs, _this, *vret);
+    rc = jsiEvalCodeSub(ps, opcodes, scope, fargs, _this, *vret);
     Jsi_DecrRefCount(interp, fargs);
     if (interp->didReturn == 0 && !interp->exited && rc == JSI_OK) {
         if ((interp->evalFlags&JSI_EVAL_RETURN)==0)
@@ -2180,7 +2079,7 @@ Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
     return rc;
 }
 
-Jsi_RC jsi_JsPreprocessLine(Jsi_Interp* interp, char *buf, size_t bsiz, uint ilen, int jOpts[4], int lineNo) {
+static Jsi_RC jsiJsPreprocessLine(Jsi_Interp* interp, char *buf, size_t bsiz, uint ilen, int jOpts[4], int lineNo) {
     if (buf[0]==';' && buf[1] && buf[2]) {
         // Wrap ";XXX;" in a puts("XXX ==> ", XXX)
         if (!jOpts[0]) {
@@ -2233,7 +2132,7 @@ Jsi_RC jsi_JsPreprocessLine(Jsi_Interp* interp, char *buf, size_t bsiz, uint ile
     return JSI_OK;
 }
 
-Jsi_RC jsi_JsPreprocessLineCB(Jsi_Interp* interp, char *buf, size_t bsiz, uint ilen, int jOpts[4], int lineNo) {
+static Jsi_RC jsiJsPreprocessLineCB(Jsi_Interp* interp, char *buf, size_t bsiz, uint ilen, int jOpts[4], int lineNo) {
     const char *jpp = interp->jsppChars;
     if (!jpp[0] || !jpp[1])
         return JSI_OK;
@@ -2422,10 +2321,10 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                 if (jpp || interp->unitTest)
                     ilen = Jsi_Strlen(buf);
                 if (interp->unitTest && buf[0]==';' && buf[1] && buf[2]) {
-                    if (interp->unitTest&1 && jsi_JsPreprocessLine(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)
+                    if (interp->unitTest&1 && jsiJsPreprocessLine(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)
                         goto bail;
                 } else if (interp->jsppCallback && interp->jsppChars) {
-                    if (jsi_JsPreprocessLineCB(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)
+                    if (jsiJsPreprocessLineCB(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)
                         goto bail;
                 }
 cont:

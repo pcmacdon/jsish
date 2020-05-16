@@ -78,7 +78,7 @@ static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     jsi_Pstate *ps = interp->ps;
     Jsi_RC rc = JSI_OK;
     int flags = 0;
-    int i, argc;
+    int i, argc = 1;
     SourceData data = {.trace = interp->debugOpts.includeTrace, .once = interp->debugOpts.includeOnce};
     Jsi_Value *v, *va = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Value *vo = Jsi_ValueArrayIndex(interp, args, 1);
@@ -114,19 +114,18 @@ static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     const char *sop = (data.once?" <ONCE>":"");
     if (!Jsi_ValueIsArray(interp, va)) {
         v = va;
-        if (v && Jsi_ValueIsString(interp,v)) {
-            if (data.trace)
-                Jsi_LogInfo("sourcing: %s%s", Jsi_ValueString(interp, v, 0), sop);
-            rc = jsi_evalStrFile(ps->interp, v, NULL, flags, data.level);
-        } else {
-            Jsi_LogError("expected string");
-            rc = JSI_ERROR;
-        }
-        goto done;
+        goto doit;
     }
     argc = Jsi_ValueGetLength(interp, va);
     for (i=0; i<argc && rc == JSI_OK; i++) {
         v = Jsi_ValueArrayIndex(interp, va, i);
+doit:
+        if (!v) continue;
+        if (interp->isSafe && data.exists) {
+            Jsi_StatBuf sb;
+            if (Jsi_Stat(interp, v, &sb))
+                continue;
+        }
         if (v && Jsi_ValueIsString(interp,v)) {
             if (data.trace)
                 Jsi_LogInfo("sourcing: %s%s", Jsi_ValueString(interp, v, 0), sop);
@@ -137,7 +136,7 @@ static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
             break;
         }
     }
-done:
+
     if (rc == JSI_OK)
         Jsi_ValueCopy(interp, *ret, interp->retValue);
     interp->isMain = oisi;

@@ -2119,8 +2119,8 @@ tre_match_empty(tre_stack_t *stack, tre_ast_node_t *node, int *tags,
             {
               /* Add the tag to `tags'. */
               for (i = 0; tags[i] >= 0; i++)
-            if (tags[i] == lit->code_max)
-              break;
+                if (tags[i] == lit->code_max)
+                  break;
               if (tags[i] < 0)
             {
               tags[i] = lit->code_max;

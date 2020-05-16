@@ -646,6 +646,7 @@ function Cdata(args:array, conf:object=void)
                 self.out += '\n#define CDATA_CODE_GLOB_VAR_'+name+' 1\n';
             else
                 self.out += '\n#define CDATA_CODE_PER_INTERP_'+name+' 1\n';
+            self.out += '\nstatic const char* '+name+'_PkgInfo = NULL;\n';
         }
         // Process functions
         for (var ff of def.flds) {
@@ -1643,15 +1644,25 @@ Jsi_RC Jsi_InitDemo(Jsi_Interp *interp, int isRelease)
         Jsi_InterpFreeData(interp, "Demo_InterpData");
 #endif
     if (!isRelease) {
-        Jsi_PkgOpts vr = {};
+        Jsi_RC rc;
 #if (defined(CDATA_CODE_GLOB_VAR_Demo) || defined(CDATA_CODE_PER_INTERP_Demo))
+        Jsi_PkgOpts vr = {};
         vr.spec = Demo__Specs;
         vr.data = ddPtr;
         vr.cmdSpec = DemoCmds;
+        if (Demo_PkgInfo) {
+            vr.info = Jsi_ValueNew1(interp);
+            rc = Jsi_JSONParse(interp, Demo_PkgInfo, &vr.info, 0);
+        }
+        if (rc == JSI_OK)
+            rc = Jsi_PkgProvideEx(interp, "Demo", 1, Jsi_InitDemo, &vr);
+        if (vr.info)
+            Jsi_DecrRefCount(interp, vr.info);
+#else
+        rc = Jsi_PkgProvideEx(interp, "Demo", 1, Jsi_InitDemo, NULL);
 #endif
-        if (Jsi_PkgProvideEx(interp, "Demo", 1, Jsi_InitDemo, (vr.data?&vr:NULL)) != JSI_OK)
-            return JSI_ERROR;
-
+        if (rc != JSI_OK)
+            return rc;
 #ifdef CDATA_CONSTRUCTOR
         Jsi_Hash *wsys;
         if (!(wsys = Jsi_UserObjRegister(interp, &DemoObjReg))) {

@@ -47,6 +47,8 @@ extension Car = { // Extension to create a Car object command.
             puts("Unloading Car");
         } else {
             puts("Loading Car");
+            static const char *info = "{carstuff:true, mynum:1}";  // JSON for pkg.info
+            Car_PkgInfo = info;
         }
         return JSI_OK;
     }

@@ -84,8 +84,8 @@ function Zip(args:string|array, conf:object=void) {
         for (var i in flist) {
             var fn = flist[i];
             var fdst = fn.substr(zdir.length+1);
-            var ftyp = File.type(zdir+'/'+fn);
-            if (ftyp === 'directory') continue;
+            var ftyp = File.perms(zdir+'/'+fn);
+            if (ftyp[0] === 'd') continue;
             if (self.verbose)
                 puts(""+fn);
             var fdir = File.dirname(ddir+fn);

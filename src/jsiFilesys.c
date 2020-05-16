@@ -1394,7 +1394,7 @@ char *Jsi_FileRealpathStr(Jsi_Interp *interp, const char *path, char *newname)
     else
 #endif
     apath = realpath(npath, newname);
-    if (!apath) {
+    if (!apath && path[0] != '~') {
         if ((path[0] == '.' && path[1] == '/') || (path[0] != '/' && 
         !(path[0] == '.' && path[1] == '.') && path[1] != ':')) {
             Jsi_GetCwd(interp, &eStr);

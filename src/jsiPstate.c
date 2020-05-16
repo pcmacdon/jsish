@@ -109,8 +109,8 @@ Jsi_ScopeStrs *jsi_argInsert(jsi_Pstate *pstate, Jsi_ScopeStrs *a, const char *n
         Jsi_IncrRefCount(interp, defValue);
         if (a->firstDef==0)
             a->firstDef = a->argCnt;
-            if (atyp)
-                jsi_ArgTypeCheck(interp, atyp, defValue, "default value", name, a->argCnt, NULL, 1);
+        if (atyp)
+            jsi_ArgTypeCheck(interp, atyp, defValue, "default value", name, a->argCnt, NULL, 1);
     } else {
         if (a->firstDef && (interp->typeCheck.run || interp->typeCheck.all) )
             Jsi_LogWarn("expected default value in argument list: \"%s\"", name);

@@ -1059,40 +1059,28 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     while(ip < end && rc == JSI_OK) {
         int plop = ip->op;
 
+#define _JSI_BI_OP_SKIP_SUB(n) {\
+    ip++;\
+    if (ip->logflag != n && (ip->op == OP_POP || ip->op == OP_RET || ip->op == OP_ASSIGN))\
+        ip++;\
+    continue;\
+}
+#define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && !(interp->framePtr->logflag &(1<<n))) _JSI_BI_OP_SKIP_SUB(n)
+
         if (ip->logflag) { // Mask out LogDebug, etc if not enabled.
             interp->curIp = ip;
             switch (ip->logflag) {
                 case jsi_Oplf_assert:
-                    if (!interp->asserts) {
-                        ip++;
-                        if (ip->logflag != jsi_Oplf_assert && (ip->op == OP_POP || ip->op == OP_RET))
-                            ip++;
-                        continue;
-                    }
+                    if (!interp->asserts) { _JSI_BI_OP_SKIP_SUB(jsi_Oplf_assert) }
                     break;
                 case jsi_Oplf_debug:
-                    if (!interp->logOpts.Debug && !(interp->framePtr->logflag &(1<<jsi_Oplf_debug))) {
-                        ip++;
-                        if (ip->logflag != jsi_Oplf_debug && (ip->op == OP_POP || ip->op == OP_RET))
-                            ip++;
-                        continue;
-                    }
+                    _JSI_BI_OP_SKIP(Debug, jsi_Oplf_debug)
                     break;
                 case jsi_Oplf_test:
-                    if (!interp->logOpts.Test && !(interp->framePtr->logflag &(1<<jsi_Oplf_test))) {
-                        ip++;
-                        if (ip->logflag != jsi_Oplf_test && (ip->op == OP_POP || ip->op == OP_RET))
-                            ip++;
-                        continue;
-                    }
+                    _JSI_BI_OP_SKIP(Test, jsi_Oplf_test)
                     break;
                 case jsi_Oplf_trace:
-                    if (!interp->logOpts.Trace && !(interp->framePtr->logflag &(1<<jsi_Oplf_trace))) {
-                        ip++;
-                        if (ip->logflag != jsi_Oplf_trace && (ip->op == OP_POP || ip->op == OP_RET))
-                            ip++;
-                        continue;
-                    }
+                    _JSI_BI_OP_SKIP(Trace, jsi_Oplf_trace)
                     break;
                 default:
                     break;

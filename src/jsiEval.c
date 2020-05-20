@@ -1061,8 +1061,12 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
 
 #define _JSI_BI_OP_SKIP_SUB(n) {\
     ip++;\
-    if (ip->logflag != n && (ip->op == OP_POP || ip->op == OP_RET || ip->op == OP_ASSIGN))\
+    if (ip->logflag != n)  {\
+        if (ip->op == OP_POP) ip++; \
+        else if (ip->op == OP_RET || ip->op == OP_ASSIGN) { \
+          rc = Jsi_LogError("invalid use of return/= here"); \
         ip++;\
+      }}\
     continue;\
 }
 #define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && !(interp->framePtr->logflag &(1<<n))) _JSI_BI_OP_SKIP_SUB(n)

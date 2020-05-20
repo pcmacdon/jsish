@@ -548,6 +548,15 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
         }
     }
     if (name) {
+        if ((name[0] == 'a' && !Jsi_Strcmp(name,"assert"))
+            || (name[0] == 'L' && (!Jsi_Strcmp(name,"LogDebug") || !Jsi_Strcmp(name,"LogTrace") || !Jsi_Strcmp(name,"LogTest")))) {
+                if (line)
+                    interp->parseLine = line;
+                Jsi_LogError("invalid redefine of builtin: %s", name);
+                if (line)
+                    interp->parseLine = NULL;
+                pstate->err_count++;
+        }
         f->name = Jsi_KeyAdd(interp, name);
         if ((interp->typeCheck.run|interp->typeCheck.parse|interp->typeCheck.all|interp->typeCheck.funcsig)) {
             

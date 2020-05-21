@@ -77,24 +77,15 @@ static Jsi_RC jsi_ArrayJoinCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     if (_this->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, _this->d.obj))
         return Jsi_LogError("expected array object");
     const char *jstr = "";
-    int argc, curlen;
     Jsi_DString dStr = {};
+    int i, argc = jsi_SizeOfArray(interp, _this->d.obj);
 
-    curlen = jsi_SizeOfArray(interp, _this->d.obj);
-    if (curlen == 0) {
-        goto bail;
-    }
-
-    if (Jsi_ValueGetLength(interp, args) >= 1) {
+    if (argc>0 && Jsi_ValueGetLength(interp, args) >= 1) {
         Jsi_Value *sc = Jsi_ValueArrayIndex(interp, args, 0);
         if (sc != NULL)
             jstr = Jsi_ValueToString(interp, sc, NULL);
     }
     
-    if (0 == (argc=jsi_SizeOfArray(interp, _this->d.obj))) {
-        goto bail;
-    }
-    int i;
     for (i = 0; i < argc; ++i) {
         const char *cp;
         Jsi_Value *ov = Jsi_ValueArrayIndex(interp, _this, i);
@@ -108,18 +99,13 @@ static Jsi_RC jsi_ArrayJoinCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             Jsi_DSAppend(&dStr, jstr, NULL);
         Jsi_DSAppend(&dStr, cp, NULL);
     }
-    
-    Jsi_ValueMakeStringDup(interp, ret, Jsi_DSValue(&dStr));
-    Jsi_DSFree(&dStr);
-    return JSI_OK;
-bail:
-    Jsi_ValueMakeStringDup(interp, ret, "");
-    return JSI_OK;        
+
+    Jsi_ValueFromDS(interp, &dStr, ret);
+    return JSI_OK;      
 }
 
 
 Jsi_Value* Jsi_ValueArrayConcat(Jsi_Interp *interp, Jsi_Value *arg1, Jsi_Value *arg2) {
-    Jsi_Value *va;
     Jsi_Obj *obj;
     if (arg1->vt != JSI_VT_OBJECT || !Jsi_ObjIsArray(interp, arg1->d.obj)) {
         return NULL;
@@ -148,8 +134,7 @@ Jsi_Value* Jsi_ValueArrayConcat(Jsi_Interp *interp, Jsi_Value *arg1, Jsi_Value *
         Jsi_ValueDup2(interp, nobj->arr+j, obj->arr[i]);
     }
     Jsi_ObjSetLength(interp, nobj, len1+len2);
-    va = Jsi_ValueMakeArrayObject(interp, NULL, nobj);
-    return va;
+    return Jsi_ValueMakeArrayObject(interp, NULL, nobj);
 }
 
 Jsi_RC Jsi_ValueArrayPush(Jsi_Interp *interp, Jsi_Value *arg1, Jsi_Value *arg2) {
@@ -268,7 +253,7 @@ static Jsi_RC jsi_ArrayFlatSub(Jsi_Interp *interp, Jsi_Obj* nobj, Jsi_Value *arr
         else if (!Jsi_ValueIsUndef(interp, t))
             Jsi_ObjArrayAdd(interp, nobj, t);
         if ((uint)(++n + clen)>interp->maxArrayList)
-            return Jsi_LogError("array size exceeded");
+            rc = Jsi_LogError("array size exceeded");
     }
     return rc;
 }
@@ -310,10 +295,8 @@ static Jsi_RC jsi_ArrayConcatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
     nsiz = obj->arrMaxSize;
     if (nsiz<=0) nsiz = 100;
-    if (Jsi_ObjArraySizer(interp, nobj, nsiz+1) <= 0) {
-        rc = Jsi_LogError("index too large: %d", nsiz+1);
-        goto bail;
-    }
+    if (Jsi_ObjArraySizer(interp, nobj, nsiz+1) <= 0)
+        return Jsi_LogError("index too large: %d", nsiz+1);;
 
     int i, j, m;
     for (i = 0; i<curlen; i++)
@@ -348,10 +331,10 @@ static Jsi_RC jsi_ArrayConcatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             Jsi_ValueDup2(interp, nobj->arr+m++, va);
        }
     }
+bail:
     Jsi_ObjSetLength(interp, nobj, curlen);
     Jsi_ValueMakeArrayObject(interp, ret, nobj);
-        
-bail:
+
     return rc;
 }
 
@@ -389,7 +372,7 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     maa = (fptr->argnames?fptr->argnames->argCnt:0);
     if (maa>3 || fptr->type == FC_BUILDIN)
         maa = 3;
-    for (i = 0; i < curlen; i++) {
+    for (i = 0; i < curlen && rc == JSI_OK; i++) {
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
         vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
@@ -399,11 +382,8 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         nobj->arr[i] = Jsi_ValueNew1(interp);
         rc = Jsi_FunctionInvoke(interp, func, vpargs, nobj->arr+i, sthis);
         Jsi_DecrRefCount(interp, vpargs);
-        if( JSI_OK!=rc ) {
-            goto bail;
-        }
     }
-    Jsi_ObjSetLength(interp, nobj, curlen);
+    Jsi_ObjSetLength(interp, nobj, i);
            
 bail:
     if (nthis)
@@ -848,13 +828,8 @@ static Jsi_RC jsi_ArrayFillCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             obj->arr[i] = Jsi_ValueDup(interp, value);
     }
 bail:
-    if (_this != *ret) {
+    if (_this != *ret)
         Jsi_ValueMove(interp, *ret, _this);
-        /*if (*ret)
-            Jsi_DecrRefCount(interp, *ret);
-        *ret = _this;
-        Jsi_IncrRefCount(interp, *ret);*/
-    }
     return rc;
 }
 
@@ -866,29 +841,28 @@ static Jsi_RC jsi_ArraySliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     Jsi_RC rc = JSI_OK;
     int istart = 0, iend, n, nsiz;
     Jsi_Number nstart;
-    Jsi_Obj *nobj, *obj;
     Jsi_Value *start = Jsi_ValueArrayIndex(interp, args, 0),
         *end = Jsi_ValueArrayIndex(interp, args, 1);
-    if (!start) {
-        goto done;
-    }
+    Jsi_Obj *obj, *nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
+    Jsi_ValueMakeArrayObject(interp, ret, nobj);
+    
+    if (!start)
+        return rc;
+
     obj = _this->d.obj;
     n = jsi_SizeOfArray(interp, obj);
     if (Jsi_GetNumberFromValue(interp,start, &nstart) == JSI_OK) {
         istart = (int)nstart;
         if (istart > n)
-            goto done;
+            return rc;
         if (istart < 0)
             istart = (n+istart);
         if (istart<0)
-            goto done;
+            return rc;
     }
       
-    if (n == 0) {
-done:
-        Jsi_ValueMakeArrayObject(interp, ret, Jsi_ObjNewType(interp, JSI_OT_ARRAY));
-        return JSI_OK;
-    }
+    if (n == 0)
+        return rc;
     Jsi_Number nend;
     iend = n-1;
     if (end && Jsi_GetNumberFromValue(interp,end, &nend) == JSI_OK) {
@@ -898,19 +872,15 @@ done:
         if (iend < 0)
             iend = (n+iend);
         if (iend<0)
-            goto done;
+            return rc;
     }
     nsiz = iend-istart+1;
     if (nsiz<=0)
-        goto done;
+        return rc;
     Jsi_ObjListifyArray(interp, obj);
     
-    nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
-
-    if (Jsi_ObjArraySizer(interp, nobj, nsiz) <= 0) {
-        rc = Jsi_LogError("index too large: %d", nsiz);
-        goto bail;
-    }
+    if (Jsi_ObjArraySizer(interp, nobj, nsiz) <= 0)
+        return Jsi_LogError("index too large: %d", nsiz);
 
     int i, m;
     for (m = 0, i = istart; i <= iend; i++, m++)
@@ -920,8 +890,6 @@ done:
         Jsi_ValueDup2(interp, nobj->arr+m, obj->arr[i]);
     }
     Jsi_ObjSetLength(interp, nobj, nsiz);
-    Jsi_ValueMakeArrayObject(interp, ret, nobj);
-bail:
     return rc;
 }
 
@@ -1134,9 +1102,8 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     n = jsi_SizeOfArray(interp, obj);
     curlen = n;
     
-    if (!start) {
-        goto bail;
-    }
+    if (!start)
+        return JSI_OK;
 
     nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
     Jsi_ValueMakeArrayObject(interp, ret, nobj);
@@ -1147,7 +1114,7 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     if (Jsi_GetNumberFromValue(interp, start, &nstart) == JSI_OK) {
         istart = (int)nstart;
         if (istart > n)
-            goto bail;
+            return JSI_OK;
         if (istart < 0)
             istart = (n+istart);
         if (istart<0)
@@ -1163,7 +1130,7 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
         if (rhowmany < 0)
             rhowmany = (n-istart);
         if (rhowmany<0)
-            goto bail;
+            return JSI_OK;
     }
     
     if (curlen < 0) {
@@ -1193,9 +1160,8 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     /* Add elements. */
     newlen = curlen + argc - (argc>=2?2:1);
     if (Jsi_ObjArraySizer(interp, obj, newlen+3) <= 0) {
-        Jsi_LogError("too long");
         Jsi_ValueMakeUndef(interp, ret);
-        return JSI_ERROR;
+        return Jsi_LogError("too long");
     }
     if (ilen>0) {
         for (i = curlen-1; i>=istart; i--) {
@@ -1210,7 +1176,6 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
         }
     }
     Jsi_ObjSetLength(interp, obj, newlen);
-bail:    
     return JSI_OK;
 }
 
@@ -1282,7 +1247,7 @@ static Jsi_CmdSpec arrayCmds[] = {
     { "slice",      jsi_ArraySliceCmd,      1, 2, "start:number, end:number=void", .help="Return sub-array", .retType=(uint)JSI_TT_ARRAY },
     { "some",       jsi_ArraySomeCmd,       1, 2, "callback:function, this:object=void", .help="Return true if function returns true some element", .retType=(uint)JSI_TT_BOOLEAN },
     { "sort",       jsi_ArraySortCmd,       0, 1, "options:function|object=void", .help="Sort an array", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=0, .opts=jsi_ArraySortOptions },
-    { "splice",     jsi_ArraySpliceCmd,     1,-1, "start:number, howmany:number=void, ...", .help="Change the content of an array, adding new elements while removing old elements", .retType=(uint)JSI_TT_ARRAY|JSI_TT_NULL },
+    { "splice",     jsi_ArraySpliceCmd,     1,-1, "start:number, howmany:number=void, ...", .help="Change the content of an array, adding new elements while removing old elements", .retType=(uint)JSI_TT_ARRAY },
     { "reverse",    jsi_ArrayReverseCmd,    0, 0, "", .help="Reverse order of all elements in an array", .retType=(uint)JSI_TT_ARRAY },
     { "unshift",    jsi_ArrayUnshiftCmd,    0,-1, "...", .help="Add new elements to start of array and return size", .retType=(uint)JSI_TT_NUMBER },
     { NULL, 0,0,0,0, .help="Provide access to array objects" }

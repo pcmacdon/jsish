@@ -297,7 +297,7 @@ ifneq ($(wildcard .fslckout),)
 endif
 	./jsimin lib/Zip.jsi create $@ $(ZIPDIR) lib
 endif
-	@echo "Finished '$(TARGET)' build (IGNORE MYSQL BUILD ERRORS)."
+	@echo "Finished $(TARGET) build of '$(PROGBIN)'."
 
 apps: ledger.zip
 #apps: sqliteui$(EXEEXT)

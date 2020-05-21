@@ -175,91 +175,90 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     interp->activeFunc = funcPtr;
     Jsi_IncrRefCount(interp, args);
     Jsi_RC rc = jsi_SharedArgs(interp, args, funcPtr, 1);
-    if (rc != JSI_OK)
-        goto bail;
-
-    int profile = interp->profile, coverage = interp->coverage;
-    int tc = interp->traceCall;
-    double timStart = 0;
-    jsi_PkgInfo *pkg = funcPtr->pkg;
-    if (pkg) {
-        tc |= pkg->popts.modConf.traceCall;
-        profile |= pkg->popts.modConf.profile;
-        coverage |= pkg->popts.modConf.coverage;
-    }
-
-    interp->callDepth++;
-    int adds = funcPtr->callflags.bits.addargs;
-    Jsi_CmdSpec *cs  = funcPtr->cmdSpec;
-    if (adds && cs && (cs->flags&JSI_CMDSPEC_NONTHIS))
-        adds = 0;
-    funcPtr->callflags.bits.addargs = 0;
-    jsi_InitLocalVar(interp, args, funcPtr);
-
-    if (!calltrc) {
-        if (funcPtr->type == FC_NORMAL)
-            calltrc = (tc&jsi_callTraceFuncs);
-        else
-            calltrc = (tc&jsi_callTraceCmds);
-    }
-    if (calltrc && funcPtr->name)
-        jsi_TraceFuncCall(interp, funcPtr, interp->curIp, callee, args, 0, tc);
-
-    Jsi_Value *oc = interp->callee;
-    interp->callee = callee;
-    if (profile || coverage) {
-        interp->profileCnt++;
-        timStart = jsi_GetTimestamp();
-    }
-    int as_cons = funcPtr->callflags.bits.iscons;
-    if (funcPtr->type == FC_NORMAL) {
-        rc = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, callee->d.obj->d.fobj->scope, 
-                   args, fthis, ret);
-        interp->funcCallCnt++;
-    } else if (!funcPtr->callback) {
-        rc = Jsi_LogError("can not call:\"%s()\"", funcPtr->name);
-    } else {
-        if (funcPtr->f.bits.hasattr)
-        {
-            if ((funcPtr->f.bits.isobj) && callee->vt != JSI_VT_OBJECT) {
-                rc = Jsi_LogError("'this' is not object: \"%s()\"", funcPtr->name);
-            } else if ((!(funcPtr->f.bits.iscons)) && as_cons) {
-                rc = Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
-            } else {
-                int aCnt = Jsi_ValueGetLength(interp, args);
-                const char *cstr = cs->argStr;
-                if (!cstr) cstr = "";
-                if (aCnt<(cs->minArgs+adds)) {
-                    rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, cstr);
-                } else if (cs->maxArgs>=0 && (aCnt>cs->maxArgs+adds)) {
-                    rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, cstr);
+    if (rc == JSI_OK) {
+    
+        int profile = interp->profile, coverage = interp->coverage;
+        int tc = interp->traceCall;
+        double timStart = 0;
+        jsi_PkgInfo *pkg = funcPtr->pkg;
+        if (pkg) {
+            tc |= pkg->popts.modConf.traceCall;
+            profile |= pkg->popts.modConf.profile;
+            coverage |= pkg->popts.modConf.coverage;
+        }
+    
+        interp->callDepth++;
+        int adds = funcPtr->callflags.bits.addargs;
+        Jsi_CmdSpec *cs  = funcPtr->cmdSpec;
+        if (adds && cs && (cs->flags&JSI_CMDSPEC_NONTHIS))
+            adds = 0;
+        funcPtr->callflags.bits.addargs = 0;
+        jsi_InitLocalVar(interp, args, funcPtr);
+    
+        if (!calltrc) {
+            if (funcPtr->type == FC_NORMAL)
+                calltrc = (tc&jsi_callTraceFuncs);
+            else
+                calltrc = (tc&jsi_callTraceCmds);
+        }
+        if (calltrc && funcPtr->name)
+            jsi_TraceFuncCall(interp, funcPtr, interp->curIp, callee, args, 0, tc);
+    
+        Jsi_Value *oc = interp->callee;
+        interp->callee = callee;
+        if (profile || coverage) {
+            interp->profileCnt++;
+            timStart = jsi_GetTimestamp();
+        }
+        int as_cons = funcPtr->callflags.bits.iscons;
+        if (funcPtr->type == FC_NORMAL) {
+            rc = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, callee->d.obj->d.fobj->scope, 
+                       args, fthis, ret);
+            interp->funcCallCnt++;
+        } else if (!funcPtr->callback) {
+            rc = Jsi_LogError("can not call:\"%s()\"", funcPtr->name);
+        } else {
+            if (funcPtr->f.bits.hasattr)
+            {
+                if ((funcPtr->f.bits.isobj) && callee->vt != JSI_VT_OBJECT) {
+                    rc = Jsi_LogError("'this' is not object: \"%s()\"", funcPtr->name);
+                } else if ((!(funcPtr->f.bits.iscons)) && as_cons) {
+                    rc = Jsi_LogError("can not call as constructor: \"%s()\"", funcPtr->name);
+                } else {
+                    int aCnt = Jsi_ValueGetLength(interp, args);
+                    const char *cstr = cs->argStr;
+                    if (!cstr) cstr = "";
+                    if (aCnt<(cs->minArgs+adds)) {
+                        rc = Jsi_LogError("missing args, expected \"%s(%s)\" ", cs->name, cstr);
+                    } else if (cs->maxArgs>=0 && (aCnt>cs->maxArgs+adds)) {
+                        rc = Jsi_LogError("extra args, expected \"%s(%s)\" ", cs->name, cstr);
+                    }
                 }
             }
+            if (rc == JSI_OK) {
+                rc = funcPtr->callback(interp, args, fthis, ret, funcPtr);
+                interp->cmdCallCnt++;
+            }
         }
-        if (rc == JSI_OK) {
-            rc = funcPtr->callback(interp, args, fthis, ret, funcPtr);
-            interp->cmdCallCnt++;
+        interp->callee = oc;
+        funcPtr->callCnt++;
+        if (profile || coverage) {
+            double timEnd = jsi_GetTimestamp(), timUsed = (timEnd - timStart);;
+            assert(timUsed>=0);
+            funcPtr->allTime += timUsed;
+            if (interp->framePtr->evalFuncPtr)
+                interp->framePtr->evalFuncPtr->subTime += timUsed;
+            else
+                interp->subTime += timUsed;
         }
-    }
-    interp->callee = oc;
-    funcPtr->callCnt++;
-    if (profile || coverage) {
-        double timEnd = jsi_GetTimestamp(), timUsed = (timEnd - timStart);;
-        assert(timUsed>=0);
-        funcPtr->allTime += timUsed;
-        if (interp->framePtr->evalFuncPtr)
-            interp->framePtr->evalFuncPtr->subTime += timUsed;
-        else
-            interp->subTime += timUsed;
+    
+        if (rc == JSI_OK && calltrc && (tc&jsi_callTraceReturn))
+            jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, NULL, *ret, tc);
+        if (rc == JSI_OK && !as_cons && funcPtr->retType && (interp->typeCheck.all || interp->typeCheck.run))
+            rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
+        interp->callDepth--;
     }
 
-    if (rc == JSI_OK && calltrc && (tc&jsi_callTraceReturn))
-        jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, NULL, *ret, tc);
-    if (rc == JSI_OK && !as_cons && funcPtr->retType && (interp->typeCheck.all || interp->typeCheck.run))
-        rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
-    interp->callDepth--;
-
-bail:
     jsi_SharedArgs(interp, args, funcPtr, 0);
     interp->activeFunc = prevActive;
     Jsi_DecrRefCount(interp, args);

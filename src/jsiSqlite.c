@@ -1373,6 +1373,26 @@ static void jsiSqlFuncUnixTime(sqlite3_context *context, int argc, sqlite3_value
     sqlite3_result_double(context, (double)d);
 }
 
+static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**argv) {
+    Jsi_Db *jdb = (Jsi_Db*)sqlite3_user_data(context);
+    SQLSIGASSERT(jdb,DB);
+    Jsi_Interp *interp = jdb->interp;
+    if (argc!=2) {
+        Jsi_LogWarn("sqlite regex, expected: str pattern");
+        return;
+    }
+    const char *str = (char *)sqlite3_value_text(argv[1]);
+    char *spat = (char *)sqlite3_value_text(argv[0]);
+    int rc = 0;
+    Jsi_Value *pat = Jsi_ValueNewRegExp(interp, spat);
+    if (!pat)
+        return;
+    Jsi_IncrRefCount(interp, pat);
+    if (Jsi_RegExpMatch(interp, pat, str, &rc, NULL)==JSI_OK)
+        sqlite3_result_int(context, rc);
+    Jsi_DecrRefCount(interp, pat);
+}
+
 static void jsiSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv) {
     SqlFunc *p = (SqlFunc*)sqlite3_user_data(context);
     int i;
@@ -3789,6 +3809,7 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         toacc = *ret;
     }
     sqlite3_create_function(db->db, "unixtime", -1, SQLITE_UTF8, db, jsiSqlFuncUnixTime, 0, 0);
+    sqlite3_create_function(db->db, "regexp", -1, SQLITE_UTF8, db, jsiSqlFuncRegexp, 0, 0);
     
     fobj = Jsi_ValueGetObj(interp, toacc /* constructor obj*/);
     if ((db->objId = Jsi_UserObjNew(interp, &sqliteobject, fobj, db))<0)

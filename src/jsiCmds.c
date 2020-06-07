@@ -3866,8 +3866,9 @@ static Jsi_RC SysMatchObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
         *arg3 = Jsi_ValueArrayIndex(interp, args, 2),
         *arg4 = Jsi_ValueArrayIndex(interp, args, 3);
     
-    Jsi_DString dStr;
+    Jsi_DString dStr, sStr;
     Jsi_DSInit(&dStr);
+    Jsi_DSInit(&sStr);
     Jsi_RC rc = JSI_OK;
     if (!arg2) {
         jsi_sysTypeGet(interp, arg1, &dStr);
@@ -3890,34 +3891,41 @@ static Jsi_RC SysMatchObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     jsi_sysTypeGet(interp, arg1, &dStr);
     cp = Jsi_DSValue(&dStr);
-    if (sp) {
-        if (Jsi_Strcmp(cp, sp)) {
-            if (partial && *cp && *sp) {
-                /*Jsi_DString eStr = {}, fStr = {};
-                char *ss = Jsi_AppendLen(&eStr, sp+1, Jsi_Strlen(sp)-2);
-                int vargc; char **vargv;
-                Jsi_SplitStr(Jsi_DSValue(&eStr), &vargc, &vargv, ",", &fStr);*/
-                cs=cp+1; ss=sp;
-                while (*cs) {
-                    Jsi_DString eStr = {};
-                    ce=Jsi_Strchr(cs,','); 
-                    if (!ce) ce = cs+Jsi_Strlen(cs);
-                    Jsi_DSAppend(&eStr, ",", NULL);
-                    int elen = ce-cs;
-                    cc = Jsi_DSAppendLen(&eStr, cs, elen); // obj key.
-                    int dlen = Jsi_Strlen(cc);
-                    if (dlen>1 && cc[dlen-1]=='}')
-                        cc[--dlen] = 0;
-                    if (*ss=='{' && !Jsi_Strncmp(ss+1, cc+1, dlen-1))
-                        ss = ss+dlen;
-                    else
-                        ss = Jsi_Strstr(ss, cc);
-                    Jsi_DSFree(&eStr);
-                    if (!ss) goto mismatch;
-                    cs=(*ce?ce+1:ce);
-                }
-                goto done;
+    if (Jsi_Strchr(sp, ' ')) {
+        Jsi_DSAppend(&sStr, sp, NULL);
+        char *cp = Jsi_DSValue(&sStr), *ep = cp;
+        while (*cp) {
+            while (isspace(*cp)) cp++;
+            *ep++ = *cp++;
+        }
+        *ep = 0;
+    }
+    if (Jsi_Strcmp(cp, sp)) {
+        if (partial && *cp && *sp) {
+            /*Jsi_DString eStr = {}, fStr = {};
+            char *ss = Jsi_AppendLen(&eStr, sp+1, Jsi_Strlen(sp)-2);
+            int vargc; char **vargv;
+            Jsi_SplitStr(Jsi_DSValue(&eStr), &vargc, &vargv, ",", &fStr);*/
+            cs=cp+1; ss=sp;
+            while (*cs) {
+                Jsi_DString eStr = {};
+                ce=Jsi_Strchr(cs,','); 
+                if (!ce) ce = cs+Jsi_Strlen(cs);
+                Jsi_DSAppend(&eStr, ",", NULL);
+                int elen = ce-cs;
+                cc = Jsi_DSAppendLen(&eStr, cs, elen); // obj key.
+                int dlen = Jsi_Strlen(cc);
+                if (dlen>1 && cc[dlen-1]=='}')
+                    cc[--dlen] = 0;
+                if (*ss=='{' && !Jsi_Strncmp(ss+1, cc+1, dlen-1))
+                    ss = ss+dlen;
+                else
+                    ss = Jsi_Strstr(ss, cc);
+                Jsi_DSFree(&eStr);
+                if (!ss) goto mismatch;
+                cs=(*ce?ce+1:ce);
             }
+            goto done;
 mismatch:
             ok = 0;
             if (interp->asserts && !noerror)
@@ -3925,10 +3933,10 @@ mismatch:
             else
                 Jsi_LogWarn("matchobj failed: expected '%s' got '%s'", sp, cp);
         }
-        //goto done;
     }
 done:
     Jsi_DSFree(&dStr);
+    Jsi_DSFree(&sStr);
     if (rc == JSI_OK)
         Jsi_ValueMakeBool(interp, ret, ok);
     return rc;
@@ -4862,7 +4870,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "load",       jsi_LoadLoadCmd, 1,  1, "shlib:string", .help="Load a shared executable and invoke its _Init call", .retType=(uint)JSI_TT_VOID },
 #endif
     { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Object field names/types matching. Single arg generates string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
+    { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Validate that object matches given name:type string. With single arg returns generated string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },

@@ -325,6 +325,7 @@ function DebugUI(fileargs:array, conf:object=void)
     function listFile(file:string, line:number, num:number) {
         var find = addFile(file);
         var data = self.filedata[file];
+        if (!data) return;
         printf("FILE: %s:%d\n", file, line);
         for (var i=line; i<line+num && data[i-1] !== undefined; i++)
                 printf("%-5d: %s\n", i, data[i-1]);

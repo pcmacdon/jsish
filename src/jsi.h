@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 19
+#define JSI_VERSION_RELEASE 20
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -514,6 +514,7 @@ JSI_EXTERN Jsi_Value* Jsi_ValueNewStringConst(Jsi_Interp *interp, const char *s,
 JSI_EXTERN Jsi_Value* Jsi_ValueNewStringDup(Jsi_Interp *interp, const char *s); /*STUB = 106*/
 JSI_EXTERN Jsi_Value* Jsi_ValueNewArray(Jsi_Interp *interp, const char **items, int count); /*STUB = 107*/
 JSI_EXTERN Jsi_Value* Jsi_ValueNewObj(Jsi_Interp *interp, Jsi_Obj *o) ; /*STUB = 108*/
+JSI_EXTERN Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt); /*STUB = 419*/ /*LAST*/
 #define Jsi_ValueNewBlobString(interp, s) Jsi_ValueNewBlob(interp, (uchar*)s, Jsi_Strlen(s))
 #define Jsi_ValueNewArrayObj(interp, items, count, copy) Jsi_ValueNewObj(interp, Jsi_ObjNewArray(interp, items, count, copy))
 
@@ -617,7 +618,7 @@ JSI_EXTERN Jsi_Hash* Jsi_UserObjRegister    (Jsi_Interp *interp, Jsi_UserObjReg 
 JSI_EXTERN Jsi_RC Jsi_UserObjUnregister  (Jsi_Interp *interp, Jsi_UserObjReg *reg); /*STUB = 179*/
 JSI_EXTERN int Jsi_UserObjNew    (Jsi_Interp *interp, Jsi_UserObjReg* reg, Jsi_Obj *obj, void *data); /*STUB = 180*/
 JSI_EXTERN void* Jsi_UserObjGetData(Jsi_Interp *interp, Jsi_Value* value, Jsi_Func *funcPtr); /*STUB = 181*/
-JSI_EXTERN Jsi_RC Jsi_UserObjName(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr); /*STUB = 418*/ /*LAST*/
+JSI_EXTERN Jsi_RC Jsi_UserObjName(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr); /*STUB = 418*/
 /* -- */
 
 

@@ -60,7 +60,10 @@ var binds;
 ;binds = [91,3];
 ;db.query('insert into foo values(?,?);', binds);
 ;db.query('insert into foo values(?,?);', {values:binds});
-;db.query('insert into foo values(?,?);', {values:[91,3]});
+;db.query('insert into foo values(?,?);', {values:[91,'dog']});
+;db.query('insert into foo values(?,?);', {values:[91,'door']});
+
+;db.query('select * from foo where b REGEXP "^do"');
 
 ;db.func('bar',function(n) { return n+'.000'; });
 
@@ -158,7 +161,9 @@ INSERT INTO "table" VALUES(91,3);
 binds = [91,3] ==> [ 91, 3 ]
 db.query('insert into foo values(?,?);', binds) ==> []
 db.query('insert into foo values(?,?);', {values:binds}) ==> []
-db.query('insert into foo values(?,?);', {values:[91,3]}) ==> []
+db.query('insert into foo values(?,?);', {values:[91,'dog']}) ==> []
+db.query('insert into foo values(?,?);', {values:[91,'door']}) ==> []
+db.query('select * from foo where b REGEXP "^do"') ==> [ { a:91, b:"dog" }, { a:91, b:"door" } ]
 db.func('bar',function(n) { return n+'.000'; }) ==> undefined
 db.onecolumn('select bar(a) from foo where b == 2;') ==> 95.000
 db.conf({onTrace:null}) ==> undefined

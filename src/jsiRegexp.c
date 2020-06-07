@@ -104,6 +104,21 @@ Jsi_RC jsi_RegExpValueNew(Jsi_Interp *interp, const char *regtxt, Jsi_Value *ret
     return JSI_OK;
 }
 
+Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt) {
+    Jsi_DString dStr = {};
+    Jsi_DSAppend(&dStr, "/", regtxt, "/", NULL);
+    Jsi_Regex *re = Jsi_RegExpNew(interp, Jsi_DSValue(&dStr), 0);
+    Jsi_DSFree(&dStr);
+    if (re == NULL)
+        return NULL;
+    Jsi_Obj *o = Jsi_ObjNewType(interp, JSI_OT_REGEXP);
+    Jsi_Value *ret = Jsi_ValueNew(interp);
+    Jsi_ValueMakeObject(interp, &ret, o);
+    ret->d.obj->d.robj = re;
+    ret->d.obj->ot = JSI_OT_REGEXP;
+    return ret;
+}
+
 
 static Jsi_RC RegExp_constructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)

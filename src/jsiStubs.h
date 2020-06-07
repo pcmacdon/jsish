@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "245bfc701de9f6aaafbe9462645dc362"
+#define JSI_STUBS_MD5 "37fc6a9753c3414663cd55c6d7135e39"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -447,6 +447,7 @@ typedef struct Jsi_Stubs {
     bool(*_Jsi_StrIsAlnum)(const char *cp);
     Jsi_RC(*_Jsi_SqlObjBinds)(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults, bool addCheck);
     Jsi_RC(*_Jsi_UserObjName)(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr);
+    Jsi_Value*(*_Jsi_ValueNewRegExp)(Jsi_Interp *interp, const char *regtxt);
     void *endPtr;
 } Jsi_Stubs;
 
@@ -873,6 +874,7 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_StrIsAlnum,\
     Jsi_SqlObjBinds,\
     Jsi_UserObjName,\
+    Jsi_ValueNewRegExp,\
     NULL
 
 #ifdef JSI_USE_STUBS
@@ -1295,6 +1297,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_StrIsAlnum(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_StrIsAlnum(n0))
 #define Jsi_SqlObjBinds(n0,n1,n2,n3,n4,n5,n6) JSISTUBCALL(jsiStubsPtr, _Jsi_SqlObjBinds(n0,n1,n2,n3,n4,n5,n6))
 #define Jsi_UserObjName(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_UserObjName(n0,n1,n2))
+#define Jsi_ValueNewRegExp(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewRegExp(n0,n1))
 
 #endif
 

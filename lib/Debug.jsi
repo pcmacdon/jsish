@@ -328,6 +328,8 @@ function Debug(fileargs:array, conf:object=void):number {
 
     // Show current position.
     function showPos(file:string, line:number, func:string) {
+        if (!self.filedata[file])
+            return;
         var linestr = self.filedata[file][line-1];
         var lev = (self.curlev?self.curlev:self.level);
         if (func.length)

@@ -1316,7 +1316,7 @@ By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or
 <tr><td>isNaN</td><td>isNaN(val):boolean </td><td>Return true if not a number.</td></tr>
 <tr><td>load</td><td>load(shlib:string):void </td><td>Load a shared executable and invoke its _Init call.</td></tr>
 <tr><td>log</td><td>log(val, ...):void </td><td>Same as puts, but includes file:line.</td></tr>
-<tr><td>matchObj</td><td>matchObj(obj:object, match:string=void, partial=false, noerror=false):string|boolean </td><td>Object field names/types matching. Single arg generates string.</td></tr>
+<tr><td>matchObj</td><td>matchObj(obj:object, match:string=void, partial=false, noerror=false):string|boolean </td><td>Validate that object matches given name:type string. With single arg returns generated string.</td></tr>
 <tr><td>noOp</td><td>noOp() </td><td>A No-Op. A zero overhead command call that is useful for debugging.</td></tr>
 <tr><td>parseFloat</td><td>parseFloat(val):number </td><td>Convert string to a double.</td></tr>
 <tr><td>parseInt</td><td>parseInt(val:any, base:number=10):number </td><td>Convert string to an integer.</td></tr>

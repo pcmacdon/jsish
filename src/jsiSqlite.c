@@ -231,6 +231,7 @@ typedef struct Jsi_Db {
     Jsi_List *stmtCache;
     int stmtCacheMax;               /* The next maximum number of stmtList */
     int stmtCacheCnt;                 /* Number of statements in stmtList */
+    int maxRegexCache;
     /*IncrblobChannel *pIncrblob; * Linked list of open incrblob channels */
     Jsi_Hash *strKeyTbl;       /* Used with JSI_LITE_ONLY */
     bool noJsonConv;
@@ -256,6 +257,7 @@ typedef struct Jsi_Db {
     Jsi_Value *version;
     Jsi_DString name;
     Jsi_Hash *typeNameHash;
+    Jsi_Hash *regexpHash;
 } Jsi_Db;
 
 static const int jsi_DbPkgVersion = 2;
@@ -331,6 +333,7 @@ static Jsi_OptionSpec SqlOptions[] =
     JSI_OPT(BOOL,   Jsi_Db, noJsonConv, .help="Do not JSON auto-convert array and object in CHARJSON columns" ),
     JSI_OPT(UINT64, Jsi_Db, lastInsertId,.help="The rowid of last insert"),
     JSI_OPT(BOOL,   Jsi_Db, load,       .help="Extensions can be loaded" ),
+    JSI_OPT(INT,    Jsi_Db, maxRegexCache,.help="Max cache size for regex patterns; 0=disable, -1=unlimited (100)"),
     JSI_OPT(CUSTOM, Jsi_Db, mutex,      .help="Mutex type to use", jsi_IIOF, .custom=Jsi_Opt_SwitchEnum, .data=mtxStrs),
     JSI_OPT(DSTRING,Jsi_Db, name,       .help="The dbname to use instead of 'main'", jsi_IIOF),
     JSI_OPT(BOOL,   Jsi_Db, noConfig,   .help="Disable use of Sqlite.conf to change options after create", jsi_IIOF),
@@ -1034,6 +1037,10 @@ static void dbDeleteCmd(Jsi_Db *jdb)
     dbFlushStmtCache(jdb);
     if (jdb->stmtHash)
         Jsi_HashDelete(jdb->stmtHash);
+    if (jdb->typeNameHash)
+        Jsi_HashDelete(jdb->typeNameHash);
+    if (jdb->regexpHash)
+        Jsi_HashDelete(jdb->regexpHash);
     //closeIncrblobChannels(jdb);
     if (jdb->db) {
         DbClose(jdb->db);
@@ -1373,6 +1380,13 @@ static void jsiSqlFuncUnixTime(sqlite3_context *context, int argc, sqlite3_value
     sqlite3_result_double(context, (double)d);
 }
 
+static Jsi_RC jsiSqlfreeValueTbl(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr) {
+    Jsi_Value *val = (Jsi_Value *)ptr;
+    if (!val) return JSI_OK;
+    Jsi_DecrRefCount(interp, val);
+    return JSI_OK;
+}
+
 static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**argv) {
     Jsi_Db *jdb = (Jsi_Db*)sqlite3_user_data(context);
     SQLSIGASSERT(jdb,DB);
@@ -1384,13 +1398,35 @@ static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**
     const char *str = (char *)sqlite3_value_text(argv[1]);
     char *spat = (char *)sqlite3_value_text(argv[0]);
     int rc = 0;
-    Jsi_Value *pat = Jsi_ValueNewRegExp(interp, spat);
-    if (!pat)
-        return;
-    Jsi_IncrRefCount(interp, pat);
+    bool isNew = 0;
+    Jsi_Value *pat = NULL;
+    Jsi_HashEntry *hPtr;
+    if (jdb->regexpHash && ((hPtr = Jsi_HashEntryFind(jdb->regexpHash, spat))))
+        pat = (Jsi_Value*)Jsi_HashValueGet(hPtr);
+    if (!pat) {
+        if (jdb->regexpHash && jdb->maxRegexCache>0 && (int)Jsi_HashSize(jdb->regexpHash)>=jdb->maxRegexCache) {
+            Jsi_LogError("Regex hash reached max size: %d", jdb->maxRegexCache);
+            return;
+        }
+        pat = Jsi_ValueNewRegExp(interp, spat);
+        if (!pat)
+            return;
+        Jsi_IncrRefCount(interp, pat);
+        if (jdb->maxRegexCache) {
+            if (!jdb->regexpHash)
+                jdb->regexpHash = Jsi_HashNew(interp, JSI_KEYS_STRING, jsiSqlfreeValueTbl);
+            hPtr = Jsi_HashEntryNew(jdb->regexpHash, spat, &isNew);
+            if (!hPtr) {
+                Jsi_DecrRefCount(interp, pat);
+                return;
+            }
+            Jsi_HashValueSet(hPtr, pat);
+        }
+    }
     if (Jsi_RegExpMatch(interp, pat, str, &rc, NULL)==JSI_OK)
         sqlite3_result_int(context, rc);
-    Jsi_DecrRefCount(interp, pat);
+    if (!jdb->maxRegexCache)
+        Jsi_DecrRefCount(interp, pat);
 }
 
 static void jsiSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv) {
@@ -3737,6 +3773,7 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     db->_->newCnt++;
     db->_->activeCnt++;
     db->stmtCacheMax = NUM_PREPARED_STMTS;
+    db->maxRegexCache = 100;
     db->hasOpts = 1;
     if ((arg != NULL && !Jsi_ValueIsNull(interp,arg))
         && Jsi_OptionsProcess(interp, SqlOptions, db, arg, 0) < 0) {
@@ -4607,6 +4644,7 @@ Jsi_Db* Jsi_DbNew(const char *zFile, int inFlags /* JSI_DBI_* */)
     }
     db->sig = SQLITE_SIG_DB;
     db->stmtCacheMax = NUM_PREPARED_STMTS;
+    db->maxRegexCache = 100;
     db->optPtr = &db->queryOpts;
 
     if (inFlags&JSI_DBI_READONLY) {

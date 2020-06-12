@@ -1391,12 +1391,12 @@ static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**
     Jsi_Db *jdb = (Jsi_Db*)sqlite3_user_data(context);
     SQLSIGASSERT(jdb,DB);
     Jsi_Interp *interp = jdb->interp;
-    if (argc!=2) {
-        Jsi_LogWarn("sqlite regex, expected: str pattern");
+    if (argc!=2 && argc!=3) {
+        Jsi_LogWarn("sqlite regex, expected: str pattern ?modifier?");
         return;
     }
     const char *str = (char *)sqlite3_value_text(argv[1]);
-    char *spat = (char *)sqlite3_value_text(argv[0]);
+    char *spat = (char *)sqlite3_value_text(argv[0]), *mod = (char *)sqlite3_value_text(argv[2]);
     int rc = 0;
     bool isNew = 0;
     Jsi_Value *pat = NULL;
@@ -1408,7 +1408,7 @@ static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**
             Jsi_LogError("Regex hash reached max size: %d", jdb->maxRegexCache);
             return;
         }
-        pat = Jsi_ValueNewRegExp(interp, spat);
+        pat = Jsi_ValueNewRegExp(interp, spat, mod);
         if (!pat)
             return;
         Jsi_IncrRefCount(interp, pat);

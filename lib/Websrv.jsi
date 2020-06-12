@@ -78,9 +78,9 @@ function Websrv(args:string|array, conf:object=void):void
         LogTrace("Opening WS:",id);
     }
     
-    function WsClose(ws:userobj|null, id:number)
+    function WsClose(ws:userobj|null, id:number, isError:boolean)
     {
-        LogTrace("Closing WS:",id);
+        LogTrace("Closing WS:",id, isError);
     }
     
     function WsAuth(ws:userobj, id:number, url:string, userpass:string)

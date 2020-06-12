@@ -43,15 +43,17 @@ function Wget(fileargs:array|string, conf:object=void) {
         self.fd.write(str);
     }
     
-    function WsClose(ws:userobj|null, id:number) {
+    function WsClose(ws:userobj|null, id:number, isError:boolean) {
         LogTrace("CLOSE");
+        if (isError)
+            puts("Connection error");
         self.done = true;
         if (self.fd) {
             self.fd.close();
             delete self.fd;
         }
         if (self.onDone)
-            self.onDone(id);
+            self.onDone(id, isError);
     }
     
     function main() {
@@ -77,6 +79,8 @@ function Wget(fileargs:array|string, conf:object=void) {
         
         if (self.O == '')
             self.O = File.tail(self.path);
+        if (self.O == '')
+            self.O = '-';
         if (self.O !== '-' && self.O !== '.' && File.exists(self.O)) {
             if (!self.force)
                 throw('output file already exists: '+self.O);

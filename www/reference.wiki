@@ -1186,6 +1186,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>noJsonConv</td><td><i>BOOL</i></td><td>Do not JSON auto-convert array and object in CHARJSON columns.</td><td><i></i></td></tr>
 <tr><td>lastInsertId</td><td><i>UINT64</i></td><td>The rowid of last insert.</td><td><i></i></td></tr>
 <tr><td>load</td><td><i>BOOL</i></td><td>Extensions can be loaded.</td><td><i></i></td></tr>
+<tr><td>maxRegexCache</td><td><i>INT</i></td><td>Max cache size for regex patterns; 0=disable, -1=unlimited (100).</td><td><i></i></td></tr>
 <tr><td>mutex</td><td><i>STRKEY</i></td><td>Mutex type to use. (one of: <b>default</b>, <b>none</b>, <b>full</b>)</td><td><i>initOnly</i></td></tr>
 <tr><td>name</td><td><i>DSTRING</i></td><td>The dbname to use instead of 'main'.</td><td><i>initOnly</i></td></tr>
 <tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of Sqlite.conf to change options after create.</td><td><i>initOnly</i></td></tr>
@@ -1729,9 +1730,9 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>headers</td><td><i>ARRAY</i></td><td>Headers to send to browser on connection: name/value pairs.</td><td><i></i></td></tr>
 <tr><td>isWebsock</td><td><i>BOOL</i></td><td>Is a websocket connection.</td><td><i></i></td></tr>
 <tr><td>key</td><td><i>STRBUF</i></td><td>String key lookup in ids command for SSI echo ${#}.</td><td><i>readOnly</i></td></tr>
-<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number)</td><td><i></i></td></tr>
+<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number, boolean:ok)</td><td><i></i></td></tr>
 <tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
-<tr><td>onUnknown</td><td><i>FUNC</i></td><td>Function to call to server out content when no file exists. @function(ws:userobj, id:number, url:string, args:array)</td><td><i></i></td></tr>
+<tr><td>onUnknown</td><td><i>FUNC</i></td><td>Function to call to serve out content when no file exists. @function(ws:userobj, id:number, url:string, args:array)</td><td><i></i></td></tr>
 <tr><td>onRecv</td><td><i>FUNC</i></td><td>Function to call when websock data recieved. @function(ws:userobj, id:number, data:string)</td><td><i></i></td></tr>
 <tr><td>onUpload</td><td><i>FUNC</i></td><td>Function to call handle http-post. @function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)</td><td><i></i></td></tr>
 <tr><td>rootdir</td><td><i>STRING</i></td><td>Directory to serve html from (".").</td><td><i></i></td></tr>

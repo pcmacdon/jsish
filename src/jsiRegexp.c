@@ -104,9 +104,9 @@ Jsi_RC jsi_RegExpValueNew(Jsi_Interp *interp, const char *regtxt, Jsi_Value *ret
     return JSI_OK;
 }
 
-Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt) {
+Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt, const char *modifiers) {
     Jsi_DString dStr = {};
-    Jsi_DSAppend(&dStr, "/", regtxt, "/", NULL);
+    Jsi_DSAppend(&dStr, "/", regtxt, "/", modifiers, NULL);
     Jsi_Regex *re = Jsi_RegExpNew(interp, Jsi_DSValue(&dStr), 0);
     Jsi_DSFree(&dStr);
     if (re == NULL)

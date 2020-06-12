@@ -281,9 +281,9 @@ static Jsi_OptionSpec WPSOptions[] =
     JSI_OPT(ARRAY,      jsi_wsPss, headers,     .help="Headers to send to browser on connection: name/value pairs"),
     JSI_OPT(BOOL,       jsi_wsPss, isWebsock,   .help="Is a websocket connection" ),
     JSI_OPT(STRBUF,     jsi_wsPss, key,         .help="String key lookup in ids command for SSI echo ${#}", jsi_IIRO),
-    JSI_OPT(FUNC,       jsi_wsPss, onClose,     .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number"),
+    JSI_OPT(FUNC,       jsi_wsPss, onClose,     .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number, boolean:ok"),
     JSI_OPT(FUNC,       jsi_wsPss, onGet,       .help="Function to call to server handle http-get", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
-    JSI_OPT(FUNC,       jsi_wsPss, onUnknown,   .help="Function to call to server out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, args:array"),
+    JSI_OPT(FUNC,       jsi_wsPss, onUnknown,   .help="Function to call to serve out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, args:array"),
     JSI_OPT(FUNC,       jsi_wsPss, onRecv,      .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
     JSI_OPT(FUNC,       jsi_wsPss, onUpload,    .help="Function to call handle http-post", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean"),
     JSI_OPT(STRING,     jsi_wsPss, rootdir,     .help="Directory to serve html from (\".\")"),
@@ -1648,7 +1648,7 @@ bail:
 }
 
 static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss,
-    const char *inPtr, int nlen, bool isClose)
+    const char *inPtr, int nlen, bool isClose, bool isError)
 {
     Jsi_Value *vpargs, *vargs[10];
     Jsi_Value* func = NULL;
@@ -1662,7 +1662,9 @@ static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_
         return JSI_OK;
     vargs[n++] = (cmdPtr->deleted?Jsi_ValueNewNull(interp):Jsi_ValueNewObj(interp, cmdPtr->fobj));
     vargs[n++] = Jsi_ValueNewNumber(interp, (Jsi_Number)(pss?pss->wid:0));
-    if (!isClose) {
+    if (isClose)
+        vargs[n++] = Jsi_ValueNewBoolean(interp, isError);
+    else {
         if (nlen<=0)
             return JSI_OK;
         vargs[n++]  = Jsi_ValueNewBlob(interp, (uchar*)inPtr, nlen);
@@ -1737,6 +1739,7 @@ static int jsi_wscallback_http(struct lws *wsi,
     const char *inPtr = (char*)in;
     char client_name[128], client_ip[128];
     const char *res = "";
+    int isError = 0;
 #ifdef EXTERNAL_POLL
     int m;
     int fd = (int)(long)user;
@@ -1824,12 +1827,14 @@ static int jsi_wscallback_http(struct lws *wsi,
         break;
     }
     case LWS_CALLBACK_RECEIVE_CLIENT_HTTP_READ:
-        if (jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 0) != JSI_OK)
+        if (jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 0, 0) != JSI_OK)
             rc = 1;
         break;
 
+    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
+        isError = 1;
     case LWS_CALLBACK_COMPLETED_CLIENT_HTTP:
-        if (jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 1) != JSI_OK)
+        if (jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 1, isError) != JSI_OK)
             rc = 1;
         break;
 
@@ -2265,7 +2270,7 @@ jsi_wscallback_websock(struct lws *wsi,
         pss = jsi_wsgetPss(cmdPtr, wsi, user, 0, 0);
         if (!pss) break;
         if (cmdPtr->onClose || pss->onClose) {
-            rc = jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 1);
+            rc = jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 1, 0);
             if (rc != JSI_OK)
                 return Jsi_LogError("websock bad rcv eval");
         }
@@ -2362,7 +2367,7 @@ jsi_wscallback_websock(struct lws *wsi,
                     break;
                 }
             }
-            rc = jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, nlen, 0);
+            rc = jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, nlen, 0, 0);
             if (inPtr != in)
                 Jsi_Free(inPtr);
             if (rc != JSI_OK) {
@@ -2631,7 +2636,7 @@ static Jsi_RC jsi_wsrecv_flush(jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss)
         return JSI_OK;
     cmdPtr->recvBufCnt--;
     const char *inPtr = Jsi_DSFreeDup(&pss->recvBuf);
-    Jsi_RC rc = jsi_wsrecv_callback(cmdPtr->interp, cmdPtr, pss, inPtr, nlen, 0);
+    Jsi_RC rc = jsi_wsrecv_callback(cmdPtr->interp, cmdPtr, pss, inPtr, nlen, 0, 0);
     if (rc != JSI_OK) {
         pss->stats.recvErrCnt++;
         pss->stats.recvErrLast = time(NULL);

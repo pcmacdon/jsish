@@ -51,9 +51,9 @@ function Proxy(args:array, conf:object=void):void
         //self.done = 1;
     }
     
-    function WsClose(ws:userobj|null, id:number)
+    function WsClose(ws:userobj|null, id:number, isError:boolean)
     {
-        LogTrace("Closing WS: "+id);
+        LogTrace("Closing WS: "+id, isError);
     }
     
     function WsCloseLast(ws:userobj|null) // Wait around for a while for reconnect or new clients before exiting

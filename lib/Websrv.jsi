@@ -230,6 +230,21 @@ function Websrv(args:string|array, conf:object=void):void
         return true;
     }
     
+    function mimeLookup(ws:userobj, id:number, extension:string, url:string) {
+        ws.conf({mimeLookupFunc:null});
+        if (!File.exists('/etc/mime.types')) return;
+        var dat = File.read('/etc/mime.types').split('\n');
+        var o = ws.conf('mimeTypes');
+        if (!o) ws.conf({mimeTypes:o = {}});
+        for (var i=0; i<dat.length; i++) {
+            var l = dat[i];
+            if (l[0] == '#') continue;
+            l = l.trim().replace(/\s+/g,' ').split(' ');
+            for (var j=1; j<l.length; l++)
+                o[l[j]] = l[0];
+        }
+    }
+    
     function OpenBrowser(url:string, anchor:string, query:string) {
         var prog = self.browser;
         var browsers = {
@@ -387,7 +402,8 @@ function Websrv(args:string|array, conf:object=void):void
             onFilter:WsFilter,
             port:self.port,
             rootdir:self.rootdir,
-            urlPrefix:self.urlPrefix
+            urlPrefix:self.urlPrefix,
+            mimeLookupFunc:mimeLookup,
         };
         switch (self.mode) {
             case 'admin':

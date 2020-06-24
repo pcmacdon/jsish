@@ -120,10 +120,10 @@ typedef struct { /* Per server data (or client if client-mode). */
     Jsi_Hash *pssTable, *handlers, *fileHash;
     Jsi_Value *onAuth, *onCloseLast, *onClose, *onFilter, *onOpen, *onRecv,
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
-        *rootdir, *interface, *address, *mimeTypes, *mimeLoadFunc, *extOpts, *headers, *ssiExts;
+        *rootdir, *interface, *address, *mimeTypes, *mimeLookupFunc, *extOpts, *headers, *ssiExts;
     bool client, noUpdate, noWebsock, noWarn, use_ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
     Jsi_Value* version;
-    int idx, mimeFuncCalled;
+    int idx;
     int port;
     uint modifySecs;
     int maxUpload;
@@ -318,12 +318,12 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(INT,    jsi_wsCmdObj, maxConnects,.help="In server mode, max number of client connections accepted"),
     JSI_OPT(INT,    jsi_wsCmdObj, maxDownload,.help="Max size of file download"),
     JSI_OPT(INT,    jsi_wsCmdObj, maxUpload,  .help="Max size of file upload will accept"),
-    JSI_OPT(OBJ,    jsi_wsCmdObj, mimeTypes,  .help="Object providing map of file extensions to mime types. eg. {txt:'text/plain', bb:'text/bb'}"),
-    JSI_OPT(FUNC,   jsi_wsCmdObj, mimeLoadFunc,   .help="Function to call to load mimeTypes", .flags=0, .custom=0, .data=(void*)"ws:userobj"),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, mimeTypes,  .help="Object map of file-exts to mime types; initial and/or override of builtins"),
+    JSI_OPT(FUNC,   jsi_wsCmdObj, mimeLookupFunc, .help="Function to call to lookup mime; returns and/or inserts into mimeTypes", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, extension:string, url:string"),
     JSI_OPT(UINT,   jsi_wsCmdObj, modifySecs, .help="Seconds between checking for modified files with onModify (2)"),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noConfig,   .help="Disable use of conf() to change options after options after create", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noCompress, .help="Disable per-message-deflate extension which can truncate large msgs"),
-    JSI_OPT(BOOL,   jsi_wsCmdObj, noUpdate,   .help="Disable update event-processing (eg. to exit)"),
+    JSI_OPT(BOOL,   jsi_wsCmdObj, noUpdate,   .help="Disable update event-processing"),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noWebsock,  .help="Serve html, but disallow websocket upgrade", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noWarn,     .help="Quietly ignore file related errors"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onAuth,     .help="Function to call for http basic authentication", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, userpass:string"),
@@ -1415,13 +1415,33 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             if (mVal)
                 mime = Jsi_ValueString(interp, mVal, NULL);
         }
-        if (!mime && cmdPtr->mimeLoadFunc && !cmdPtr->mimeFuncCalled) {
-            cmdPtr->mimeFuncCalled = 1;
+        if (!mime && cmdPtr->mimeLookupFunc) {
             jsi_ws_loadMimeTypes(interp, cmdPtr, 0);
-            Jsi_FunctionInvokeBool(interp, cmdPtr->mimeLoadFunc, Jsi_ValueNewObj(interp, cmdPtr->fobj));
-            Jsi_Value *mVal = Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, ext+1, 1);
-            if (mVal)
-                mime = Jsi_ValueString(interp, mVal, NULL);
+            /* Pass 4 args: ws, id, extension, and url. */
+            Jsi_Obj *oarg1;
+            Jsi_Value *vpargs, *vargs[10];
+            int n = 0;
+            vargs[n++] = Jsi_ValueNewObj(interp, cmdPtr->fobj);
+            vargs[n++] = Jsi_ValueNewNumber(interp, (Jsi_Number)(pss->wid));
+            vargs[n++] = Jsi_ValueNewStringDup(interp, ext+1);
+            vargs[n++] = Jsi_ValueNewStringDup(interp, inPtr);
+            vpargs = Jsi_ValueMakeObject(interp, NULL, oarg1 = Jsi_ObjNewArray(interp, vargs, n, 0));
+            Jsi_IncrRefCount(interp, vpargs);
+            Jsi_Value *ret = Jsi_ValueNew1(interp);
+            rc = Jsi_FunctionInvoke(interp, cmdPtr->mimeLookupFunc, vpargs, &ret, NULL);
+            if (rc == JSI_OK && Jsi_ValueIsString(interp, ret))
+                Jsi_ValueInsert(interp, cmdPtr->mimeTypes, ext+1, ret, 0);
+
+            Jsi_DecrRefCount(interp, vpargs);
+            Jsi_DecrRefCount(interp, ret);
+
+            if (rc != JSI_OK) {
+                Jsi_LogWarn("websock mimeLookupFunc bad eval");
+            } else {
+                Jsi_Value *mVal = Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, ext+1, 1);
+                if (mVal)
+                    mime = Jsi_ValueString(interp, mVal, NULL);
+            }
         }
         if (!mime)
             mime = "text/html";

@@ -880,9 +880,9 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <h2>Options for "obj"</h2>
 <table border="1" class="optstbl table">
 <tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>name</td><td><i>STRKEY</i></td><td>Name of object var.</td><td><i></i></td></tr>
-<tr><td>omit</td><td><i>ARRAY</i></td><td>Members in object to disregard.</td><td><i></i></td></tr>
-<tr><td>getSql</td><td><i>BOOL</i></td><td>Return expanded SQL without evaluating it.</td><td><i></i></td></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of object var data source for %s.</td><td><i></i></td></tr>
+<tr><td>skip</td><td><i>ARRAY</i></td><td>Object members to ignore.</td><td><i></i></td></tr>
+<tr><td>getSql</td><td><i>BOOL</i></td><td>Return expanded SQL without evaluating.</td><td><i></i></td></tr>
 <tr><td>defaultNull</td><td><i>BOOL</i></td><td>Create with DEFAULT NULL.</td><td><i></i></td></tr>
 <tr><td>noChecks</td><td><i>BOOL</i></td><td>Create with no CHECK constraints.</td><td><i></i></td></tr>
 <tr><td>noDefaults</td><td><i>BOOL</i></td><td>Create with no defaults.</td><td><i></i></td></tr>
@@ -1189,7 +1189,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>stmtCacheMax</td><td><i>INT</i></td><td>Max cache size for compiled statements.</td><td><i></i></td></tr>
 <tr><td>timeout</td><td><i>INT</i></td><td>Amount of time to wait when file is locked, in ms.</td><td><i></i></td></tr>
 <tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
-<tr><td>version</td><td><i>OBJ</i></td><td>Sqlite version info.</td><td><i></i></td></tr>
+<tr><td>version</td><td><i>OBJ</i></td><td>Sqlite version info.</td><td><i>readOnly</i></td></tr>
 <tr><td>timeout</td><td><i>INT</i></td><td>Amount of time to wait when file is locked, in ms.</td><td><i></i></td></tr>
 <tr><td>vfs</td><td><i>STRING</i></td><td>VFS to use.</td><td><i>initOnly</i></td></tr>
 </table>
@@ -1656,11 +1656,12 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>maxConnects</td><td><i>INT</i></td><td>In server mode, max number of client connections accepted.</td><td><i></i></td></tr>
 <tr><td>maxDownload</td><td><i>INT</i></td><td>Max size of file download.</td><td><i></i></td></tr>
 <tr><td>maxUpload</td><td><i>INT</i></td><td>Max size of file upload will accept.</td><td><i></i></td></tr>
-<tr><td>mimeTypes</td><td><i>OBJ</i></td><td>Object providing map of file extensions to mime types. eg. {txt:'text/plain', bb:'text/bb'}.</td><td><i>initOnly</i></td></tr>
+<tr><td>mimeTypes</td><td><i>OBJ</i></td><td>Object map of file-exts to mime types; initial and/or override of builtins.</td><td><i></i></td></tr>
+<tr><td>mimeLookupFunc</td><td><i>FUNC</i></td><td>Function to call to lookup mime; returns and/or inserts into mimeTypes. @function(ws:userobj, id:number, extension:string, url:string)</td><td><i></i></td></tr>
 <tr><td>modifySecs</td><td><i>UINT</i></td><td>Seconds between checking for modified files with onModify (2).</td><td><i></i></td></tr>
 <tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of conf() to change options after options after create.</td><td><i>initOnly</i></td></tr>
 <tr><td>noCompress</td><td><i>BOOL</i></td><td>Disable per-message-deflate extension which can truncate large msgs.</td><td><i></i></td></tr>
-<tr><td>noUpdate</td><td><i>BOOL</i></td><td>Disable update event-processing (eg. to exit).</td><td><i></i></td></tr>
+<tr><td>noUpdate</td><td><i>BOOL</i></td><td>Disable update event-processing.</td><td><i></i></td></tr>
 <tr><td>noWebsock</td><td><i>BOOL</i></td><td>Serve html, but disallow websocket upgrade.</td><td><i>initOnly</i></td></tr>
 <tr><td>noWarn</td><td><i>BOOL</i></td><td>Quietly ignore file related errors.</td><td><i></i></td></tr>
 <tr><td>onAuth</td><td><i>FUNC</i></td><td>Function to call for http basic authentication. @function(ws:userobj, id:number, url:string, userpass:string)</td><td><i></i></td></tr>

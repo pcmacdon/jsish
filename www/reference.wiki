@@ -873,8 +873,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
 <tr><td>noNamedParams</td><td><i>BOOL</i></td><td>Disable translating sql to support named params.</td><td><i></i></td></tr>
 <tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non-json mode).</td><td><i></i></td></tr>
-<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
-<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>obj</td><td><i><a href='#objOptions'>options</a></i></td><td>Options for object.</td><td><i></i></td></tr>
 <tr><td>paramVar</td><td><i>ARRAY</i></td><td>Array var to use for parameters.</td><td><i></i></td></tr>
 <tr><td>prefetch</td><td><i>BOOL</i></td><td>Let client library cache entire results.</td><td><i></i></td></tr>
 <tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
@@ -899,8 +898,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
 <tr><td>noNamedParams</td><td><i>BOOL</i></td><td>Disable translating sql to support named params.</td><td><i></i></td></tr>
 <tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non-json mode).</td><td><i></i></td></tr>
-<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
-<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>)</td><td><i></i></td></tr>
+<tr><td>obj</td><td><i><a href='#objOptions'>options</a></i></td><td>Options for object.</td><td><i></i></td></tr>
 <tr><td>paramVar</td><td><i>ARRAY</i></td><td>Array var to use for parameters.</td><td><i></i></td></tr>
 <tr><td>prefetch</td><td><i>BOOL</i></td><td>Let client library cache entire results.</td><td><i></i></td></tr>
 <tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
@@ -908,6 +906,20 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (error). (one of: <b>convert</b>, <b>error</b>, <b>warn</b>, <b>disable</b>)</td><td><i></i></td></tr>
 <tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
 <tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="objOptions"></a>
+<h2>Options for "obj"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of object var.</td><td><i></i></td></tr>
+<tr><td>omit</td><td><i>ARRAY</i></td><td>Members in object to disregard.</td><td><i></i></td></tr>
+<tr><td>getSql</td><td><i>BOOL</i></td><td>Return expanded SQL without evaluating it.</td><td><i></i></td></tr>
+<tr><td>defaultNull</td><td><i>BOOL</i></td><td>Create with DEFAULT NULL.</td><td><i></i></td></tr>
+<tr><td>noChecks</td><td><i>BOOL</i></td><td>Create with no CHECK constraints.</td><td><i></i></td></tr>
+<tr><td>noDefaults</td><td><i>BOOL</i></td><td>Create with no defaults.</td><td><i></i></td></tr>
+<tr><td>noTypes</td><td><i>BOOL</i></td><td>Create with no types.</td><td><i></i></td></tr>
 </table>
 <a name="MySqlend"></a>
 <p><a href="#TOC">Return to top</a>
@@ -1229,8 +1241,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
 <tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
 <tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non js/json mode).</td><td><i></i></td></tr>
-<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
-<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>, <b>noChecks</b>)</td><td><i></i></td></tr>
+<tr><td>obj</td><td><i><a href='#objOptions'>options</a></i></td><td>Options for object.</td><td><i></i></td></tr>
 <tr><td>retChanged</td><td><i>BOOL</i></td><td>Query returns value of sqlite3_changed().</td><td><i></i></td></tr>
 <tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
 <tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (warn). (one of: <b>convert</b>, <b>warn</b>, <b>error</b>, <b>disable</b>)</td><td><i></i></td></tr>
@@ -1268,8 +1279,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
 <tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
 <tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non js/json mode).</td><td><i></i></td></tr>
-<tr><td>objName</td><td><i>STRKEY</i></td><td>Object var name for CREATE/INSERT: replaces %s with fields in query.</td><td><i></i></td></tr>
-<tr><td>objOpts</td><td><i>ARRAY</i></td><td>Options for objName. (zero or more of: <b>getSql</b>, <b>noTypes</b>, <b>noDefaults</b>, <b>nullDefaults</b>, <b>noChecks</b>)</td><td><i></i></td></tr>
+<tr><td>obj</td><td><i><a href='#objOptions'>options</a></i></td><td>Options for object.</td><td><i></i></td></tr>
 <tr><td>retChanged</td><td><i>BOOL</i></td><td>Query returns value of sqlite3_changed().</td><td><i></i></td></tr>
 <tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
 <tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (warn). (one of: <b>convert</b>, <b>warn</b>, <b>error</b>, <b>disable</b>)</td><td><i></i></td></tr>
@@ -1687,7 +1697,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>noWebsock</td><td><i>BOOL</i></td><td>Serve html, but disallow websocket upgrade.</td><td><i>initOnly</i></td></tr>
 <tr><td>noWarn</td><td><i>BOOL</i></td><td>Quietly ignore file related errors.</td><td><i></i></td></tr>
 <tr><td>onAuth</td><td><i>FUNC</i></td><td>Function to call for http basic authentication. @function(ws:userobj, id:number, url:string, userpass:string)</td><td><i></i></td></tr>
-<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number)</td><td><i></i></td></tr>
+<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number, isError:boolean)</td><td><i></i></td></tr>
 <tr><td>onCloseLast</td><td><i>FUNC</i></td><td>Function to call when last websock connection closes. On object delete arg is null. @function(ws:userobj|null)</td><td><i></i></td></tr>
 <tr><td>onFilter</td><td><i>FUNC</i></td><td>Function to call on a new connection: return false to kill connection. @function(ws:userobj, id:number, url:string, ishttp:boolean)</td><td><i></i></td></tr>
 <tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
@@ -1730,7 +1740,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>headers</td><td><i>ARRAY</i></td><td>Headers to send to browser on connection: name/value pairs.</td><td><i></i></td></tr>
 <tr><td>isWebsock</td><td><i>BOOL</i></td><td>Is a websocket connection.</td><td><i></i></td></tr>
 <tr><td>key</td><td><i>STRBUF</i></td><td>String key lookup in ids command for SSI echo ${#}.</td><td><i>readOnly</i></td></tr>
-<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number, boolean:ok)</td><td><i></i></td></tr>
+<tr><td>onClose</td><td><i>FUNC</i></td><td>Function to call when the websocket connection closes. @function(ws:userobj|null, id:number, isError:boolean)</td><td><i></i></td></tr>
 <tr><td>onGet</td><td><i>FUNC</i></td><td>Function to call to server handle http-get. @function(ws:userobj, id:number, url:string, query:array)</td><td><i></i></td></tr>
 <tr><td>onUnknown</td><td><i>FUNC</i></td><td>Function to call to serve out content when no file exists. @function(ws:userobj, id:number, url:string, args:array)</td><td><i></i></td></tr>
 <tr><td>onRecv</td><td><i>FUNC</i></td><td>Function to call when websock data recieved. @function(ws:userobj, id:number, data:string)</td><td><i></i></td></tr>

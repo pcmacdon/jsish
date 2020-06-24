@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 21
+#define JSI_VERSION_RELEASE 22
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -614,6 +614,16 @@ typedef struct Jsi_UserObjReg {
     Jsi_UserObjIsEquProc *isequ;
 } Jsi_UserObjReg;
 
+typedef struct {
+    const char* name;
+    Jsi_Value* skip;
+    bool getSql;
+    bool defaultNull;
+    bool noChecks;
+    bool noDefaults;
+    bool noTypes;
+} Jsi_SqlObjOpts;
+
 JSI_EXTERN Jsi_Hash* Jsi_UserObjRegister    (Jsi_Interp *interp, Jsi_UserObjReg *reg); /*STUB = 178*/
 JSI_EXTERN Jsi_RC Jsi_UserObjUnregister  (Jsi_Interp *interp, Jsi_UserObjReg *reg); /*STUB = 179*/
 JSI_EXTERN int Jsi_UserObjNew    (Jsi_Interp *interp, Jsi_UserObjReg* reg, Jsi_Obj *obj, void *data); /*STUB = 180*/
@@ -670,7 +680,8 @@ JSI_EXTERN void* Jsi_UserObjDataFromVar(Jsi_Interp *interp, const char *var); /*
 JSI_EXTERN const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str); /*STUB = 224*/
 JSI_EXTERN const char* Jsi_KeyLookup(Jsi_Interp *interp, const char *str); /*STUB = 225*/
 JSI_EXTERN bool Jsi_IsReserved(Jsi_Interp *interp, const char* str, bool sql); /*STUB = 415*/
-JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, bool addTypes, bool addDefaults, bool nullDefaults, bool addCheck); /*STUB = 417*/
+JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts*opts); /*STUB = 417*/
+
 JSI_EXTERN Jsi_RC Jsi_DatetimeFormat(Jsi_Interp *interp, Jsi_Number date, const char *fmt, int isUtc, Jsi_DString *dStr);  /*STUB = 226*/
 JSI_EXTERN Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, int isUtc, Jsi_Number *datePtr, bool noMsg); /*STUB = 227*/
 JSI_EXTERN Jsi_Number Jsi_DateTime(void); /*STUB = 228*/
@@ -1499,6 +1510,16 @@ typedef struct Jsi_CDataDb {
 JSI_DBDATA_FIELDS
 } Jsi_CDataDb;
 
+#define JSI_DBOBJ_OPTSPEC \
+    JSI_OPT(STRKEY,   Jsi_SqlObjOpts, name,         .help="Name of object var data source for %s" ), \
+    JSI_OPT(ARRAY,    Jsi_SqlObjOpts, skip,         .help="Object members to ignore" ), \
+    JSI_OPT(BOOL,     Jsi_SqlObjOpts, getSql,       .help="Return expanded SQL without evaluating" ), \
+    JSI_OPT(BOOL,     Jsi_SqlObjOpts, defaultNull,  .help="Create with DEFAULT NULL" ), \
+    JSI_OPT(BOOL,     Jsi_SqlObjOpts, noChecks,     .help="Create with no CHECK constraints" ), \
+    JSI_OPT(BOOL,     Jsi_SqlObjOpts, noDefaults,   .help="Create with no defaults" ), \
+    JSI_OPT(BOOL,     Jsi_SqlObjOpts, noTypes,      .help="Create with no types" ), \
+    JSI_OPT_END(Jsi_SqlObjOpts, .help="Options for obj")
+
 JSI_EXTERN int Jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *cd, const char *query); /*STUB = 400*/
 JSI_EXTERN Jsi_CDataDb* Jsi_CDataLookup(Jsi_Interp *interp, const char *name); /*STUB = 401*/
 JSI_EXTERN Jsi_RC Jsi_CDataRegister(Jsi_Interp *interp, Jsi_CData_Static *statics); /*STUB = 402*/
@@ -1532,7 +1553,7 @@ typedef char STRING65536[(1<<16)+1];
 #define JSI_STUBS_STRUCTSIZES (sizeof(Jsi_MapSearch)+sizeof(Jsi_TreeSearch) \
     +sizeof(Jsi_HashSearch)+sizeof(Jsi_Filesystem)+sizeof(Jsi_Chan)+sizeof(Jsi_Event) \
     +sizeof(Jsi_CDataDb)+sizeof(Jsi_Stack)+sizeof(Jsi_OptionSpec)+sizeof(Jsi_CmdSpec) \
-    +sizeof(Jsi_UserObjReg)+sizeof(Jsi_String) + sizeof(Jsi_PkgOpts))
+    +sizeof(Jsi_UserObjReg)+sizeof(Jsi_String) + sizeof(Jsi_PkgOpts) + sizeof(Jsi_SqlObjOpts))
 
 #ifndef JSI_OMIT_STUBS
 #ifdef JSI_USE_STUBS

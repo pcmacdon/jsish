@@ -3893,12 +3893,13 @@ static Jsi_RC SysMatchObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     cp = Jsi_DSValue(&dStr);
     if (Jsi_Strchr(sp, ' ')) {
         Jsi_DSAppend(&sStr, sp, NULL);
-        char *cp = Jsi_DSValue(&sStr), *ep = cp;
-        while (*cp) {
-            while (isspace(*cp)) cp++;
-            *ep++ = *cp++;
+        char *tp = Jsi_DSValue(&sStr), *ep = tp;
+        while (*tp) {
+            while (isspace(*tp)) tp++;
+            *ep++ = *tp++;
         }
         *ep = 0;
+        sp = Jsi_DSValue(&sStr);
     }
     if (Jsi_Strcmp(cp, sp)) {
         if (partial && *cp && *sp) {
@@ -3926,13 +3927,13 @@ static Jsi_RC SysMatchObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
                 cs=(*ce?ce+1:ce);
             }
             goto done;
-mismatch:
-            ok = 0;
-            if (interp->asserts && !noerror)
-                rc = Jsi_LogError("matchobj failed: expected '%s' got '%s'", sp, cp); 
-            else
-                Jsi_LogWarn("matchobj failed: expected '%s' got '%s'", sp, cp);
         }
+mismatch:
+        ok = 0;
+        if (interp->asserts && !noerror)
+            rc = Jsi_LogError("matchobj failed: expected '%s' got '%s'", sp, cp); 
+        else
+            Jsi_LogWarn("matchobj failed: expected '%s' got '%s'", sp, cp);
     }
 done:
     Jsi_DSFree(&dStr);

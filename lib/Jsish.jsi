@@ -269,13 +269,14 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
     var cols = db.query('PRAGMA table_info("'+table+'")');
     if (!cols.length) {
         if (!self.noCreate)
-            db.query("CREATE TABLE '"+table+"' %s", {objName:'data'});
+            db.query("CREATE TABLE '"+table+"' %v", 'data');
         return true;
     }
-    var oo = self.objOpts;
+    var oo = self.objOpts.merge({});
     oo.getSql = true;
+    oo.name = 'data';
     var cs = db.onecolumn("SELECT sql from sqlite_master where type='table' and name=@table").trim();
-    var fs = db.query("CREATE TABLE '"+table+"' %s", {objName:'data', objOpts:oo}).trim();
+    var fs = db.query("CREATE TABLE '"+table+"' %v", {obj:oo}).trim();
     if (fs === cs)
         return true;
     var f = fs.substring( fs.indexOf('([')+2, fs.length-2);

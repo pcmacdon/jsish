@@ -120,10 +120,10 @@ typedef struct { /* Per server data (or client if client-mode). */
     Jsi_Hash *pssTable, *handlers, *fileHash;
     Jsi_Value *onAuth, *onCloseLast, *onClose, *onFilter, *onOpen, *onRecv,
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
-        *rootdir, *interface, *address, *mimeTypes, *extOpts, *headers, *ssiExts;
+        *rootdir, *interface, *address, *mimeTypes, *mimeLoadFunc, *extOpts, *headers, *ssiExts;
     bool client, noUpdate, noWebsock, noWarn, use_ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
     Jsi_Value* version;
-    int idx;
+    int idx, mimeFuncCalled;
     int port;
     uint modifySecs;
     int maxUpload;
@@ -281,7 +281,7 @@ static Jsi_OptionSpec WPSOptions[] =
     JSI_OPT(ARRAY,      jsi_wsPss, headers,     .help="Headers to send to browser on connection: name/value pairs"),
     JSI_OPT(BOOL,       jsi_wsPss, isWebsock,   .help="Is a websocket connection" ),
     JSI_OPT(STRBUF,     jsi_wsPss, key,         .help="String key lookup in ids command for SSI echo ${#}", jsi_IIRO),
-    JSI_OPT(FUNC,       jsi_wsPss, onClose,     .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number, boolean:ok"),
+    JSI_OPT(FUNC,       jsi_wsPss, onClose,     .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number, isError:boolean"),
     JSI_OPT(FUNC,       jsi_wsPss, onGet,       .help="Function to call to server handle http-get", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
     JSI_OPT(FUNC,       jsi_wsPss, onUnknown,   .help="Function to call to serve out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, args:array"),
     JSI_OPT(FUNC,       jsi_wsPss, onRecv,      .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
@@ -318,7 +318,8 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(INT,    jsi_wsCmdObj, maxConnects,.help="In server mode, max number of client connections accepted"),
     JSI_OPT(INT,    jsi_wsCmdObj, maxDownload,.help="Max size of file download"),
     JSI_OPT(INT,    jsi_wsCmdObj, maxUpload,  .help="Max size of file upload will accept"),
-    JSI_OPT(OBJ,    jsi_wsCmdObj, mimeTypes,  .help="Object providing map of file extensions to mime types. eg. {txt:'text/plain', bb:'text/bb'}", jsi_IIOF),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, mimeTypes,  .help="Object providing map of file extensions to mime types. eg. {txt:'text/plain', bb:'text/bb'}"),
+    JSI_OPT(FUNC,   jsi_wsCmdObj, mimeLoadFunc,   .help="Function to call to load mimeTypes", .flags=0, .custom=0, .data=(void*)"ws:userobj"),
     JSI_OPT(UINT,   jsi_wsCmdObj, modifySecs, .help="Seconds between checking for modified files with onModify (2)"),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noConfig,   .help="Disable use of conf() to change options after options after create", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noCompress, .help="Disable per-message-deflate extension which can truncate large msgs"),
@@ -326,7 +327,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(BOOL,   jsi_wsCmdObj, noWebsock,  .help="Serve html, but disallow websocket upgrade", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, noWarn,     .help="Quietly ignore file related errors"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onAuth,     .help="Function to call for http basic authentication", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, userpass:string"),
-    JSI_OPT(FUNC,   jsi_wsCmdObj, onClose,    .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number"),
+    JSI_OPT(FUNC,   jsi_wsCmdObj, onClose,    .help="Function to call when the websocket connection closes", .flags=0, .custom=0, .data=(void*)"ws:userobj|null, id:number, isError:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onCloseLast,.help="Function to call when last websock connection closes. On object delete arg is null", .flags=0, .custom=0, .data=(void*)"ws:userobj|null"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onFilter,   .help="Function to call on a new connection: return false to kill connection", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, ishttp:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onGet,      .help="Function to call to server handle http-get", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
@@ -807,19 +808,25 @@ static bool jsi_wsAddHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws
     Jsi_DString *hStr) {
     uchar buffer[JSI_BUFSIZ];
     uchar *p = (unsigned char *)buffer, *end = p + sizeof(buffer);
-    int n = 0;
+    int n = 0, len;
     int i, hvl, argc = Jsi_ValueGetLength(interp, hdrs);
     for (i=0; i<argc; i+=2) {
         const char *hn = Jsi_ValueArrayIndexToStr(interp, hdrs, i, NULL),
             *hv = Jsi_ValueArrayIndexToStr(interp, hdrs, i+1, &hvl);
-        if (hn && hv) {
-            if (lws_add_http_header_by_name(wsi, (const uchar *)hn, (const uchar *)hv, hvl, &p, end))
-                return false;
-            n = p - buffer;
-            if (n>0)
-                Jsi_DSAppendLen(hStr, (char*)buffer, n);
-            p = buffer;
+        if (!hn || !hv || !(len=Jsi_Strlen(hn))) {
+            Jsi_LogWarn("Header invalid: %s %s", (hn?hn:""), (hv?hv:""));
+            return false;
         }
+        if (hn[len-1] != ':') {
+            Jsi_LogWarn("Header name must end in colon: %s %s", (hn?hn:""), (hv?hv:""));
+            return false;
+        }
+        if (lws_add_http_header_by_name(wsi, (const uchar *)hn, (const uchar *)hv, hvl, &p, end))
+            return false;
+        n = p - buffer;
+        if (n>0)
+            Jsi_DSAppendLen(hStr, (char*)buffer, n);
+        p = buffer;
     }
     return true;
 }
@@ -1185,6 +1192,37 @@ static Jsi_RC WebSocketUnaliasCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     return JSI_OK;
 }
 
+static const char* jsi_ws_mtypes[] = {
+    "html", "text/html", "js", "application/x-javascript",
+    "css", "text/css", "png", "image/png", "ico", "image/icon",
+    "gif", "image/gif", "jpeg", "image/jpeg",
+    "jpg", "image/jpeg", "svg", "image/svg+xml",
+    "mpv", "video/x-matroska", "mkv", "video/x-matroska",
+    "mp4", "video/mp4", "mpeg", "video/mpeg", "webm", "video/webm",
+    "ogv", "video/ogg", "avi", "video/x-msvideo",
+    "json", "application/json", "txt", "text/plain",
+    "jsi", "application/x-javascript", "cssi", "text/css",
+    "shtml", "text/html",  "scss", "text/css", "vtt", "text/vtt",
+    "sjs", "application/x-javascript",
+    0, 0
+};
+
+void jsi_ws_loadMimeTypes(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, bool add) {
+    bool ex = (cmdPtr->mimeTypes!=NULL);
+    if (ex && !add)
+        return;
+    
+    if (!ex) {
+        cmdPtr->mimeTypes = Jsi_ValueMakeObject(interp, NULL, NULL);
+        Jsi_IncrRefCount(interp, cmdPtr->mimeTypes);
+    }
+    Jsi_Obj *obj = cmdPtr->mimeTypes->d.obj;
+    int i;
+    for (i=0; jsi_ws_mtypes[i]; i+=2)
+        if (!ex || !Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, jsi_ws_mtypes[i], 1))
+            Jsi_ObjInsert(interp, obj, jsi_ws_mtypes[i], Jsi_ValueNewStringConst(interp, jsi_ws_mtypes[i+1], -1), 0);
+}
+
 int
 jsi_ws_http_redirect(struct lws *wsi, int code, Jsi_DString *tStr, 
                   unsigned char **p, unsigned char *end)
@@ -1364,32 +1402,29 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
         }
         Jsi_HashEntry *hPtr;
 
+        if (!cmdPtr->mimeTypes) {
+            int i;
+            for (i=0; jsi_ws_mtypes[i]; i+=2)
+                if (tolower(*eext) == jsi_ws_mtypes[i][0] && !Jsi_Strncasecmp(eext, jsi_ws_mtypes[i], -1)) {
+                    mime = jsi_ws_mtypes[i+1];
+                    break;
+                }
+        }
         if (cmdPtr->mimeTypes) {
-            /* Lookup mime type in mimeTypes object. */
             Jsi_Value *mVal = Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, ext+1, 1);
             if (mVal)
                 mime = Jsi_ValueString(interp, mVal, NULL);
         }
-        if (!mime) {
-            static const char* mtypes[] = {
-                "html", "text/html", "js", "application/x-javascript",
-                "css", "text/css", "png", "image/png", "ico", "image/icon",
-                "gif", "image/gif", "jpeg", "image/jpeg",
-                "jpg", "image/jpeg", "svg", "image/svg+xml",
-                "json", "application/json", "txt", "text/plain",
-                "jsi", "application/x-javascript", "cssi", "text/css",
-                "shtml", "text/html",  "scss", "text/css",
-                "sjs", "application/x-javascript",
-                0, 0
-            };
-            mime = "text/html";
-            int i;
-            for (i=0; mtypes[i]; i+=2)
-                if (tolower(*eext) == mtypes[i][0] && !Jsi_Strncasecmp(eext, mtypes[i], -1)) {
-                    mime = mtypes[i+1];
-                    break;
-                }
+        if (!mime && cmdPtr->mimeLoadFunc && !cmdPtr->mimeFuncCalled) {
+            cmdPtr->mimeFuncCalled = 1;
+            jsi_ws_loadMimeTypes(interp, cmdPtr, 0);
+            Jsi_FunctionInvokeBool(interp, cmdPtr->mimeLoadFunc, Jsi_ValueNewObj(interp, cmdPtr->fobj));
+            Jsi_Value *mVal = Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, ext+1, 1);
+            if (mVal)
+                mime = Jsi_ValueString(interp, mVal, NULL);
         }
+        if (!mime)
+            mime = "text/html";
 
         isSSI = jsi_wsIsSSIExt(interp, cmdPtr, pss, eext);
 
@@ -2396,6 +2431,7 @@ static Jsi_RC WebSocketConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Value *opts = Jsi_ValueArrayIndex(interp, args, 0);
     if (cmdPtr->noConfig && opts && !Jsi_ValueIsString(interp, opts))
         return Jsi_LogError("WebSocket conf() is disabled for set");
+    jsi_ws_loadMimeTypes(interp, cmdPtr, 0);
     return Jsi_OptionsConf(interp, WSOptions, cmdPtr, opts, ret, 0);
 
 }
@@ -2994,6 +3030,9 @@ bail:
         jsi_wswebsocketObjFree(interp, cmdPtr);
         return JSI_ERROR;
     }
+    if (cmdPtr->mimeTypes)
+        jsi_ws_loadMimeTypes(interp, cmdPtr, 1);
+
     if (!cmdPtr->udata) {
         cmdPtr->udata = Jsi_ValueNewObj(interp, NULL);
         Jsi_IncrRefCount(interp, cmdPtr->udata);
@@ -3143,6 +3182,7 @@ fail:
 #ifdef LWS_LIBRARY_VERSION_NUMBER
     Jsi_JSONParseFmt(interp, &cmdPtr->version, "{libVer:\"%s\", hdrVer:\"%s\", hdrNum:%d, pkgVer:%d}",
         (char *)lws_get_library_version(), LWS_LIBRARY_VERSION, LWS_LIBRARY_VERSION_NUMBER, jsi_WsPkgVersion);
+    Jsi_IncrRefCount(interp, cmdPtr->version);
 #endif
     return JSI_OK;
 }

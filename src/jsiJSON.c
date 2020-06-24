@@ -219,9 +219,13 @@ Jsi_RC Jsi_JSONParse(Jsi_Interp *interp, const char *js, Jsi_Value **ret, int fl
             Jsi_ValueMakeUndef(interp, ret);
         goto done;
     }
-    v = jsonGen1Value(interp, p, js, i, &i, 1);
-    Jsi_ValueReplace(interp, ret, v);
-    Jsi_DecrRefCount(interp, v);
+    v = jsonGen1Value(interp, p, js, i, &i, (*ret!=NULL));
+    if (!*ret)
+        *ret = v;
+    else {
+        Jsi_ValueReplace(interp, ret, v);
+        Jsi_DecrRefCount(interp, v);
+    }
 done:
     Jsi_JsonFree(&pp);
     return result;

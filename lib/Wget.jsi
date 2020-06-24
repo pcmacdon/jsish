@@ -8,7 +8,7 @@ function Wget(fileargs:array|string, conf:object=void) {
         headers     : [],           // Header fields to send.
         nowait      : false,        // Just return object: caller will call update.
         onDone      : null,         // Callback when done.
-        O           : '',           // Output file name, or - for stdout, . for return contents: default is url tail.
+        O           : '',           // Output file name, or - for stdout, . for response: default is url tail.
         wsOpts      :{},            // Websocket options.
         wsdebug     : 0             // WebSockets debug level.
     };
@@ -53,7 +53,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             delete self.fd;
         }
         if (self.onDone)
-            self.onDone(id, isError);
+            self.onDone(id, self, isError);
     }
     
     function main() {
@@ -80,7 +80,7 @@ function Wget(fileargs:array|string, conf:object=void) {
         if (self.O == '')
             self.O = File.tail(self.path);
         if (self.O == '')
-            self.O = '-';
+            self.O = '.';
         if (self.O !== '-' && self.O !== '.' && File.exists(self.O)) {
             if (!self.force)
                 throw('output file already exists: '+self.O);

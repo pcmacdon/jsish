@@ -3,17 +3,19 @@ Sqlite
 <div id="sectmenu"></div>
 Starting
 ====
-The simplest use of [Sqlite](Reference.md#Sqlite) is with **%s** and an [object](#Objects):
+The simplest use of [Sqlite](Reference.md#Sqlite) is with **%v** and an [object](#Objects) var:
 
     var db = new Sqlite();
     var lite = {set:null, x:1, y:'big', z:false};
-    db.query('CREATE TABLE Bag %s', 'lite');
-    db.query('INSERT INTO  Bag %s', 'lite');
+    db.query('CREATE TABLE Bag %v', 'lite');
+    db.query('INSERT INTO  Bag %v', 'lite');
+    lite.z = true;
+    db.query('UPDATE Bag %v WHERE $lite(x) == 1', 'lite');
     puts(db.query('SELECT * FROM Bag'));
 
 ==>
 
-    [ { set:null, x:1, y:"big", z:false } ]
+    [ { set:null, x:1, y:"big", z:true } ]
     
 Query
 ====
@@ -25,7 +27,7 @@ An optional second argument is:
 
 |Type|Option|Description
 |----|----|----
-|string|objName|Object var name for CREATE/INSERT: replaces %s with fields in query.
+|object|obj|Object var name for CREATE/INSERT: replaces %v with fields in query.
 |array|values|Values for ? bind parameters.
 |function|callback|Function to call with each row result. @function(values:object).
 |object||Options|
@@ -140,14 +142,14 @@ Array elements can be bound using **values**:
 
 ### Objects
 This binding method
-uses the name of an object variable with **%s**,
+uses the name of an object variable with **%v**,
 which expands to the appropriate schema for CREATE, or bind for INSERT.
 
 #### CREATE
-A *CREATE* binds expands **%s** into a schema:
+A *CREATE* binds expands **%v** into a schema:
 
     var lite = {w:null, x:1, y:'big', z:false};
-    db.query('CREATE TABLE IF NOT EXISTS Bag %s', 'lite');
+    db.query('CREATE TABLE IF NOT EXISTS Bag %v', 'lite');
 
 The resulting schema here is:
 
@@ -156,25 +158,25 @@ The resulting schema here is:
 Note it is quoted and typed such that input/output will work correctly.
 
 #### INSERT
-An *INSERT* bind expands **%s** to *names* and *values*:
+An *INSERT* bind expands **%v** to *names* and *values*:
 
-    db.query('INSERT INTO  Bag %s', 'lite');
+    db.query('INSERT INTO  Bag %v', 'lite');
     puts(db.query('SELECT * FROM Bag'));
 
 ==>
 
     [ { set:null, x:1, y:"big", z:false } ]
 
-We can also do the same thing using **objName**:
+We can also do the same thing using **obj.name**:
 
-    db.query('INSERT INTO  Bag %s', {objName:'lite',mode:'json'});
+    db.query('INSERT INTO  Bag %v', {obj:{name:'lite'}, mode:'json'});
 
 The generated schemas can be dumped using [echo](./Reference.md#Options for new Sqlite)
 
     var db = new Sqlite(null, {echo:true});
     var lite = {set:null, x:1, y:'big', z:false};
-    db.query('CREATE TABLE Bag %s', 'lite');
-    db.query('INSERT INTO  Bag %s', 'lite');
+    db.query('CREATE TABLE Bag %v', 'lite');
+    db.query('INSERT INTO  Bag %v', 'lite');
 
 ==>
 
@@ -188,8 +190,9 @@ and upon SELECT *JSON-parsed*:
 
     var db = new Sqlite();
     var mix = {ar:[1,'b',true], ob:{x:9,k:'b'}};
-    db.query('CREATE TABLE Bin %s', {objName:'mix',echo:true});
-    db.query('INSERT INTO  Bin %s', 'mix');
+    db.conf({echo:true});
+    db.query('CREATE TABLE Bin %v', 'mix');
+    db.query('INSERT INTO  Bin %v', 'mix');
     var out = db.query('SELECT * FROM Bin')[0];
     puts(out.ob.x + out.ar[0]);
 
@@ -266,7 +269,7 @@ This makes it useful for bulk loading.
 Oncolumn
 ====
 
-	function onecolumn(sql:string)
+    function onecolumn(sql:string)
     
 onecolumn() provides no inputs or outputs.  It simply returns the first column
 of the first row.

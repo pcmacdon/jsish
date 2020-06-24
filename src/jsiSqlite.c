@@ -173,10 +173,8 @@ static const char *sqexecFmtStrs[] = {
 static const char *mtxStrs[] = { "default", "none", "full", NULL };
 static const char *trcModeStrs[] = {"eval", "delete", "prepare", "step", NULL}; // Bit-set packed into an int.
 static const char *dbTypeChkStrs[] = { "convert", "warn", "error", "disable", NULL };
-static const char *objSqlModeStrs[] = { "getSql", "noTypes", "noDefaults", "nullDefaults", "noChecks", NULL };
 #endif
 
-enum {OBJMODE_SQLONLY=0x1, OBJMODE_NOTYPES=0x2, OBJMODE_NODEFAULTS=0x4, OBJMODE_NULLDEFAULTS=0x8, OBJMODE_NOCHECKS=0x16};
 enum {TMODE_EVAL=0x1, TMODE_DELETE=0x2, TMODE_PREPARE=0x4, TMODE_STEP=0x4};
 typedef enum { MUTEX_DEFAULT, MUTEX_NONE, MUTEX_FULL } Mutex_Type;
 typedef enum { dbTypeCheck_Cast, dbTypeCheck_Warn, dbTypeCheck_Error, dbTypeCheck_None } dbTypeCheck_Mode;
@@ -196,8 +194,8 @@ typedef struct QueryOpts {
     const char *nullvalue;
     const char *table;
     const char *cdata; // Name of C data array to use for query.
-    const char *objName;
     Jsi_Value *width;
+    Jsi_SqlObjOpts obj;
 } QueryOpts;
 
 
@@ -293,6 +291,10 @@ typedef struct DbEvalContext {
 
 static Jsi_RC dbIsNumArray(Jsi_Interp *interp, Jsi_Value *value, Jsi_OptionSpec* spec, void *record);
 
+static Jsi_OptionSpec dbExecFmtObjOptions[] =
+{
+    JSI_DBOBJ_OPTSPEC
+};
 
 static Jsi_OptionSpec ExecFmtOptions[] =
 {
@@ -305,8 +307,7 @@ static Jsi_OptionSpec ExecFmtOptions[] =
     JSI_OPT(CUSTOM, QueryOpts, mode,        .help="Set output mode of returned data", .flags=0, .custom=Jsi_Opt_SwitchEnum,  .data=(void*)sqexecFmtStrs),
     JSI_OPT(BOOL,   QueryOpts, nocache,     .help="Disable query cache"),
     JSI_OPT(STRKEY, QueryOpts, nullvalue,   .help="Null string output (for non js/json mode)"),
-    JSI_OPT(STRKEY, QueryOpts, objName,     .help="Object var name for CREATE/INSERT: replaces %s with fields in query" ),
-    JSI_OPT(CUSTOM, QueryOpts, objOpts,     .help="Options for objName", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=objSqlModeStrs),
+    JSI_OPT(CUSTOM, QueryOpts, obj,         .help="Options for object", .flags=0,  .custom=Jsi_Opt_SwitchSuboption,  .data=dbExecFmtObjOptions ),
     JSI_OPT(BOOL,   QueryOpts, retChanged,  .help="Query returns value of sqlite3_changed()"),
     JSI_OPT(STRKEY, QueryOpts, separator,   .help="Separator string (for csv and text mode)"),
     JSI_OPT(CUSTOM, QueryOpts, typeCheck,   .help="Type check mode (warn)", .flags=0, .custom=Jsi_Opt_SwitchEnum, .data=(void*)dbTypeChkStrs),
@@ -357,7 +358,7 @@ static Jsi_OptionSpec SqlOptions[] =
     JSI_OPT(INT,    Jsi_Db, stmtCacheMax,.help="Max cache size for compiled statements"),
     JSI_OPT(INT,    Jsi_Db, timeout,    .help="Amount of time to wait when file is locked, in ms"),
     JSI_OPT(OBJ,    Jsi_Db, udata,      .help="User data" ),
-    JSI_OPT(OBJ,    Jsi_Db, version,    .help="Sqlite version info"),
+    JSI_OPT(OBJ,    Jsi_Db, version,    .help="Sqlite version info", jsi_IIRO),
     JSI_OPT(INT,    Jsi_Db, timeout,    .help="Amount of time to wait when file is locked, in ms"),
     JSI_OPT(STRING, Jsi_Db, vfs,        .help="VFS to use", jsi_IIOF),
     JSI_OPT_END(Jsi_Db, .help="Options for source command")
@@ -1958,7 +1959,7 @@ static Jsi_Value* dbEvalSetColumnValue(DbEvalContext *p, int iCol, Jsi_Value **v
         if (!p->jdb->noJsonConv) {
             const char *dectyp = sqlite3_column_decltype(pStmt, iCol);
             if (dectyp && !Jsi_Strncasecmp(dectyp, "charjson", 8)) {
-                Jsi_Value *v = Jsi_ValueNew(interp);// NULL; //Jsi_ValueNew1(interp);
+                Jsi_Value *v = NULL; //Jsi_ValueNew1(interp);
                 str = (char*)sqlite3_column_text(pStmt, iCol );
                 if (JSI_OK != Jsi_JSONParse(interp, str, &v, 0))
                     Jsi_LogWarn("JSON parse failure for CHARJSON column");
@@ -2659,13 +2660,15 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     opts = jdb->queryOpts;
     opts.callback = NULL;
     opts.width = NULL;
+    opts.obj.name = NULL;
+    opts.obj.skip = NULL;
     Jsi_Value *callback = NULL, *width = NULL;
             
     if (arg) {
         if (Jsi_ValueIsFunction(interp,arg))
             callback = opts.callback = arg;
         else if (Jsi_ValueIsString(interp, arg))
-            opts.objName = Jsi_ValueString(interp, arg, NULL);
+            opts.obj.name = Jsi_ValueString(interp, arg, NULL);
         else if (Jsi_ValueIsObjType(interp, arg, JSI_OT_ARRAY))
             opts.values = arg;
         else if (Jsi_ValueIsObjType(interp, arg, JSI_OT_OBJECT))
@@ -2702,20 +2705,18 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
         }
         goto bail;
     }
-    if (opts.objName) {
-        if (Jsi_SqlObjBinds(interp, &eStr, opts.objName, !(opts.objOpts&OBJMODE_NOTYPES), 
-            !(opts.objOpts&OBJMODE_NODEFAULTS), (opts.objOpts&OBJMODE_NULLDEFAULTS)!=0,
-            !(opts.objOpts&OBJMODE_NOCHECKS)) != JSI_OK)
+    if (opts.obj.name) {
+        if (Jsi_SqlObjBinds(interp, &eStr, &opts.obj) != JSI_OK)
             goto bail;
         zSql = Jsi_DSValue(&eStr);
     }
     if ((jdb->echo || opts.echo) && zSql)
         Jsi_LogInfo("SQL-ECHO: %s\n", zSql); 
-    if ((opts.objOpts&OBJMODE_SQLONLY)) {
-        if (opts.objName)
+    if ((opts.obj.getSql)) {
+        if (opts.obj.name)
             Jsi_ValueMakeStringDup(interp, ret, zSql);
         else
-            rc = Jsi_LogError("'objOpts.sqlOnly' can only be used with 'objName'");
+            rc = Jsi_LogError("'obj.getSql' can only be used with 'objName'");
         goto bail;
     }
     if (!opts.separator) {
@@ -3863,6 +3864,7 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         sqlite3_db_config(db->db, SQLITE_DBCONFIG_MAINDBNAME, dbname);
     Jsi_JSONParseFmt(interp, &db->version, "{libVer:\"%s\", hdrVer:\"%s\", hdrNum:%d, hdrSrcId:\"%s\", pkgVer:%d}",
         (char *)sqlite3_libversion(), SQLITE_VERSION, SQLITE_VERSION_NUMBER, SQLITE_SOURCE_ID, jsi_DbPkgVersion); 
+    Jsi_IncrRefCount(interp, db->version);
     dbSetupCallbacks(db, NULL);
     
 bail:

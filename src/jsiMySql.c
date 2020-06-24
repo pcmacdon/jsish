@@ -176,15 +176,13 @@ typedef struct QueryOpts {
     const char *nullvalue;
     const char *table;
     //const char *CData; // Name of cdata to use for query.
-    const char* objName;
+    Jsi_SqlObjOpts obj;
     Jsi_Value *width;
     int maxString;
 } QueryOpts;
 
 static const char *trcModeStrs[] = {"eval", "delete", "prepare", "step", NULL}; // Bit-set packed into an int.
-static const char *objSqlModeStrs[] = { "getSql", "noTypes", "noDefaults", "nullDefaults", NULL };
 enum {mdbTMODE_EVAL=0x1, mdbTMODE_DELETE=0x2, mdbTMODE_PREPARE=0x4, mdbTMODE_STEP=0x4};
-enum {OBJMODE_SQLONLY=0x1, OBJMODE_NOTYPES=0x2, OBJMODE_NODEFAULTS=0x4, OBJMODE_NULLDEFAULTS=0x8, OBJMODE_NOCHECKS=0x8};
 
 
 typedef struct MySqlObj {
@@ -261,6 +259,11 @@ void mdbTypeNameHashInit(MySqlObj *jdb) {
     Jsi_HashSet(hPtr, (void*)"datetime", (void*)MYSQL_TYPE_DATETIME);
 }
 
+static Jsi_OptionSpec mdbExecFmtObjOptions[] =
+{
+    JSI_DBOBJ_OPTSPEC
+};
+
 static Jsi_OptionSpec QueryFmtOptions[] =
 {
     JSI_OPT(FUNC,   QueryOpts, callback, .help="Function to call with each row result", .flags=0, .custom=0, .data=(void*)"values:object" ),
@@ -272,8 +275,7 @@ static Jsi_OptionSpec QueryFmtOptions[] =
     JSI_OPT(BOOL,   QueryOpts, nocache, .help="Disable query cache"),
     JSI_OPT(BOOL,   QueryOpts, noNamedParams, .help="Disable translating sql to support named params"),
     JSI_OPT(STRKEY, QueryOpts, nullvalue, .help="Null string output (for non-json mode)"),
-    JSI_OPT(STRKEY, QueryOpts, objName,  .help="Object var name for CREATE/INSERT: replaces %s with fields in query" ),
-    JSI_OPT(CUSTOM, QueryOpts, objOpts,     .help="Options for objName", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=objSqlModeStrs),
+    JSI_OPT(CUSTOM, QueryOpts, obj,       .help="Options for object", .flags=0,  .custom=Jsi_Opt_SwitchSuboption,  .data=mdbExecFmtObjOptions ),
     JSI_OPT(ARRAY,  QueryOpts, paramVar, .help="Array var to use for parameters" ),
     JSI_OPT(BOOL,   QueryOpts, prefetch, .help="Let client library cache entire results"),
     JSI_OPT(STRKEY, QueryOpts, separator, .help="Separator string (for csv and text mode)"),
@@ -1587,13 +1589,15 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     opts = jdb->queryOpts;
     opts.callback = NULL;
     opts.width = NULL;
+    opts.obj.name = NULL;
+    opts.obj.skip = NULL;
     Jsi_Value *callback = NULL, *width = NULL;
             
     if (arg) {
         if (Jsi_ValueIsFunction(interp,arg))
             callback = opts.callback = arg;
         else if (Jsi_ValueIsString(interp, arg))
-            opts.objName = Jsi_ValueString(interp, arg, NULL);
+            opts.obj.name = Jsi_ValueString(interp, arg, NULL);
         else if (Jsi_ValueIsObjType(interp, arg, JSI_OT_ARRAY))
             opts.values = arg;
         else if (Jsi_ValueIsObjType(interp, arg, JSI_OT_OBJECT))
@@ -1621,18 +1625,16 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)n);
         return JSI_OK;
     } */
-    if (opts.objName) {
-        if (Jsi_SqlObjBinds(interp, &eStr, opts.objName,  !(opts.objOpts&OBJMODE_NOTYPES), 
-        !(opts.objOpts&OBJMODE_NODEFAULTS), (opts.objOpts&OBJMODE_NULLDEFAULTS)!=0,
-        !(opts.objOpts&OBJMODE_NOCHECKS)) != JSI_OK)
+    if (opts.obj.name) {
+        if (Jsi_SqlObjBinds(interp, &eStr, &opts.obj) != JSI_OK)
             goto bail;
         zSql = Jsi_DSValue(&eStr);
     }
-    if ((opts.objOpts&OBJMODE_SQLONLY)) {
-        if (opts.objName)
+    if (opts.obj.getSql) {
+        if (opts.obj.name)
             Jsi_ValueMakeStringDup(interp, ret, zSql);
         else
-            rc = Jsi_LogError("'objOpts.sqlOnly' can only be used with 'objName'");
+            rc = Jsi_LogError("'obj.getSql' can only be used with 'objName'");
         goto bail;
     }
     if (!opts.separator) {

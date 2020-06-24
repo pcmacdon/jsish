@@ -494,38 +494,62 @@ bool Jsi_StrIsAlnum(const char *cp)
     return 1;
 }
 
+bool jsi_StrInArray(Jsi_Interp* interp, Jsi_Value *arr, const char *str) {
+    Jsi_Obj *obj = arr->d.obj;
+    uint i = 0;
+    for (i = 0; i<obj->arrCnt; i++)
+    {
+        if (!obj->arr[i])
+            continue;
+        const char *cp = Jsi_ValueString(interp, obj->arr[i], NULL);
+        if (cp && !Jsi_Strcmp(cp, str))
+            return 1;
+    }
+    return 0;
+}
+
 /* Modify Sql to append bind fields for Object */
-Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varName, 
-    bool addTypes, bool addDefaults, bool nullDefaults, bool addCheck) {
+Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts* opts) {
+    const char *varName = opts->name; 
+    bool addTypes = !opts->noTypes, addDefaults = !opts->defaultNull,
+        nullDefaults = opts->defaultNull, addCheck  = !opts->noChecks;
     Jsi_Value *v, *vnPtr = Jsi_VarLookup(interp, varName);
     if (!vnPtr || !Jsi_ValueIsObjType(interp, vnPtr, JSI_OT_OBJECT))
         return Jsi_LogError("varName must be an Object: %s", varName);
     char *cp, *zSql = Jsi_DSValue(zStr);
     int create = !Jsi_Strncasecmp(zSql,"create",6);
     int insert = !Jsi_Strncasecmp(zSql,"insert",6);
-    if (!create && !insert) return JSI_OK;
-    const char *cPtr = Jsi_Strstr(zSql, " %s");
-    if (!cPtr) cPtr = Jsi_Strstr(zSql, "\t%s");
+    int update = !Jsi_Strncasecmp(zSql,"update",6);
+    if (!create && !insert && !update) return JSI_OK;
+    const char *cPtr = Jsi_Strstr(zSql, " %v");
+    if (!cPtr) cPtr = Jsi_Strstr(zSql, "\t%v");
     if (!cPtr)
-        return Jsi_LogError("Object varName must contain a ' %%s': %s", varName);
-    Jsi_DString sStr = {}, vStr = {}, jStr = {};
-    Jsi_DSAppendLen(&sStr, zSql, cPtr?(cPtr-zSql):-1);
-    Jsi_DSAppend(&sStr, " (", NULL);
+        return Jsi_LogError("Object varName must contain a ' %%v': %s", varName);
+    Jsi_DString sStr = {}, vStr = {}, jStr = {}, *tsPtr = &sStr;
+    Jsi_DSAppendLen(&sStr, zSql, cPtr-zSql);
+    Jsi_DSAppend(&sStr, (update?" SET ":" ("), NULL);
 
     Jsi_IterObj *io = Jsi_IterObjNew(interp, NULL);
     Jsi_IterGetKeys(interp, vnPtr, io, 0);
     uint i;
     const char *pre = "", *kstr;
-    if (!create)
+    if (insert)
         Jsi_DSAppend(&vStr, " VALUES(", NULL);
     if (nullDefaults)
         addDefaults = 0;
+    if (update)
+        tsPtr = &vStr;
     for (i=0; i<io->count; i++) {
         kstr = io->keys[i];
         const char *chk = NULL, *chk2 = NULL;
-        Jsi_DSAppend(&sStr, pre, "[", kstr, "]", NULL);
+        if (opts->skip && jsi_StrInArray(interp, opts->skip, kstr))
+            continue;
+        Jsi_DSAppend(tsPtr, pre, "[", kstr, "]", NULL);
         if (!create) {
-            Jsi_DSAppend(&vStr, pre, "$", varName, "(", kstr, ")", NULL);
+            if (update)
+                Jsi_DSAppend(tsPtr, " = ", "$", varName, "(", kstr, ")", NULL);
+            else
+                Jsi_DSAppend(&vStr, pre, "$", varName, "(", kstr, ")", NULL);
         } else {
             const char *typ = NULL, *dflt=(nullDefaults?"NULL":NULL);
             if (addTypes && ((v = Jsi_ValueObjLookup(interp, vnPtr, kstr, 1)))) {
@@ -573,9 +597,10 @@ Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varNam
                             dflt = "NULL";
                     }
                     if (addCheck) {
-                        if (dflt && !Jsi_Strcmp(dflt,"NULL"))
-                            chk = "IN ('text','null')";
-                        else
+                        if (dflt && !Jsi_Strcmp(dflt,"NULL")) {
+                            chk = NULL; // "IN ('text','null')";
+                            typ = NULL;
+                        } else
                             chk = "== 'text'";
                     }
                 }
@@ -593,10 +618,10 @@ Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, const char *varNam
         }
         pre = ", ";
     }
-    if (!create)
+    if (insert)
         Jsi_DSAppend(&vStr, ")", NULL);
     Jsi_IterObjFree(io);
-    Jsi_DSAppend(&sStr, ") ", Jsi_DSValue(&vStr), cPtr+3, NULL);
+    Jsi_DSAppend(&sStr, (update?"":") "), Jsi_DSValue(&vStr), cPtr+3, NULL);
     Jsi_DSFree(zStr);
     Jsi_DSAppend(zStr, Jsi_DSValue(&sStr), NULL);
     Jsi_DSFree(&sStr); Jsi_DSFree(&vStr); Jsi_DSFree(&jStr);

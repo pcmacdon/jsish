@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <assert.h>
+#include <fcntl.h>
 
 #ifdef WIN32
 #define _GET_TIME_OF_DAY_H
@@ -1103,6 +1104,9 @@ static Jsi_RC SocketConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         Jsi_LogError("sock create failed");
         goto bail;
     }
+//#ifndef WIN32
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+//#endif
     on = 1;
     if (cmdPtr->reuse && setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on) )) {
         Jsi_LogError("sock reuse failed");

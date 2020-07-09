@@ -3931,9 +3931,9 @@ static Jsi_RC SysMatchObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
 mismatch:
         ok = 0;
         if (interp->asserts && !noerror)
-            rc = Jsi_LogError("matchobj failed: expected '%s' got '%s'", sp, cp); 
+            rc = Jsi_LogError("matchobj failed: expected '%s', not '%s'", sp, cp); 
         else
-            Jsi_LogWarn("matchobj failed: expected '%s' got '%s'", sp, cp);
+            Jsi_LogWarn("matchobj failed: expected '%s', not '%s'", sp, cp);
     }
 done:
     Jsi_DSFree(&dStr);

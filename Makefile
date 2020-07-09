@@ -205,7 +205,7 @@ LD=$(XCPREFIX)ld
 
 ifeq ($(TARGET),musl)
 PROGFLAGS += -DJSI__MUSL
-CC=musl-gcc
+CC=musl-gcc -D__MUSL__
 endif
 
 CCPATH := $(shell which $(CC) )

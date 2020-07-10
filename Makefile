@@ -1,7 +1,10 @@
 # Makefile for jsish: controlled by make.conf from configure.
 PREFIX=/usr/local
-WEBSOCKDIR = websocket
-WEBSOCKSRC = $(WEBSOCKDIR)/src
+WEBSOCKDIR = lws
+#WEBSOCKDIR = websocket
+WEBSOCKROOT = $(WEBSOCKDIR)/lws-$(LWS_VER)
+WEBSOCKSRC = $(WEBSOCKROOT)/src
+LWS_VER=2.0202
 SQLITEDIR = sqlite
 ACFILES	= src/parser.c
 #ACFILES	= src/jsiParser.c
@@ -85,8 +88,10 @@ endif
 ifeq ($(WITH_EXT_WEBSOCKET),1)
 
 ifeq ($(BUILDIN_WEBSOCKET),1)
-WEBSOCKLIB = $(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
-CFLAGS += -I$(WEBSOCKSRC)/lib  -I$(WEBSOCKSRC)/build -Iwebsocket/$(TARGET) -I$(WEBSOCKDIR)/build/$(TARGET)
+WEBSOCKLIB = $(WEBSOCKROOT)/liblws_$(TARGET)-$(LWS_VER).a
+CFLAGS += -I$(WEBSOCKSRC)
+#WEBSOCKLIB = $(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
+#CFLAGS += -I$(WEBSOCKSRC)/lib  -I$(WEBSOCKSRC)/build -Iwebsocket/$(TARGET) -I$(WEBSOCKDIR)/build/$(TARGET)
 STATICLIBS += $(WEBSOCKLIB)
 
 else
@@ -155,7 +160,7 @@ PROGFLAGS += JSI__MINIZ=1
 endif
 
 else
-WEBSOCKLIB=$(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
+#WEBSOCKLIB=$(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
 PROGLDFLAGS += $(WEBSOCKLIB) -lwsock32 -lws2_32
 endif
 
@@ -205,7 +210,8 @@ LD=$(XCPREFIX)ld
 
 ifeq ($(TARGET),musl)
 PROGFLAGS += -DJSI__MUSL
-CC=musl-gcc -D__MUSL__
+CC=musl-gcc
+CFLAGS += -D__MUSL__
 endif
 
 CCPATH := $(shell which $(CC) )
@@ -314,12 +320,15 @@ sqliteui$(EXEEXT):  .FORCE
 libwebsocket: $(WEBSOCKLIB)
 USECMAKE=0
 
-$(WEBSOCKLIB):
+$(WEBSOCKLIB)_OLD:
 ifeq ($(USECMAKE), 1)
 	$(MAKE) -C $(WEBSOCKDIR) -f Makefile.cmake CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) USECMAKE=$(USECMAKE) MINIZ=$(JSI__MINIZ)
 else
 	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) USECMAKE=$(USECMAKE) MINIZ=$(JSI__MINIZ)
 endif
+
+$(WEBSOCKLIB):
+	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER)
 
 $(SQLITELIB): $(SQLITEDIR)/Makefile
 	$(MAKE) -C $(SQLITEDIR) CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
@@ -460,13 +469,13 @@ remake: clean all
 clean:
 	rm -rf src/*.o *.a jsish $(MINIZDIR)/*.o win/*.o regex/*.o
 	$(MAKE) -C sqlite clean
-	$(MAKE) -C websocket clean
+	$(MAKE) -C lws clean
 	$(MAKE) -C c-demos clean
 
 cleanall: clean
 	rm -f $(ACFILES) $(PROGBINA) core src/parser.c src/parser.h src/parser.tab.c jsimin jsish *.so $(PROGBINMIN)
 	$(MAKE) -C sqlite cleanall
-	$(MAKE) -C websocket cleanall
+	$(MAKE) -C lws cleanall
 	$(MAKE) -C c-demos cleanall
 
 JSIMINVER=$(shell test -x ./jsimin && ./jsimin -v | cut -d' ' -f2)

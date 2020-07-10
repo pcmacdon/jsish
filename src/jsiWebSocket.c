@@ -52,7 +52,7 @@ JSI_EXTENSION_INI
 
 #include <signal.h>
 
-#include <libwebsockets.h>
+#include <liblws.h>
 
 //#define LWS_NO_EXTENSIONS
 static const int jsi_WsPkgVersion = 2;
@@ -1216,7 +1216,7 @@ void jsi_ws_loadMimeTypes(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, bool add) {
         cmdPtr->mimeTypes = Jsi_ValueMakeObject(interp, NULL, NULL);
         Jsi_IncrRefCount(interp, cmdPtr->mimeTypes);
     }
-    Jsi_Obj *obj = cmdPtr->mimeTypes->d.obj;
+    Jsi_Obj *obj = Jsi_ValueGetObj(interp, cmdPtr->mimeTypes);
     int i;
     for (i=0; jsi_ws_mtypes[i]; i+=2)
         if (!ex || !Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, jsi_ws_mtypes[i], 1))

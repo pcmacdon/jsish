@@ -1,29 +1,26 @@
 # Makefile to download/compile libwebsockets.a, with or without CMAKE.
 #LWSVER=1.7
-LWSVER=2.2
-SOURCEDIR=lwl
+LWS_VER=2.0202
 TARGET=unix
-LWSLIB=liblws_$(TARGET)
-CFLAGS  = -g -Wall -I../miniz
+SDIR=lws-$(LWS_VER)
+LWSLIB=$(SDIR)/liblws_$(TARGET)-$(LWS_VER).a
+CFLAGS  = -g -Wall
 
 ifeq ($(MINIZ),1)
-CFLAGS += -I../miniz
+LWSOPTS = -I../../miniz
 endif
 
-all: download
-	$(MAKE) -Clws TARGET=$(TARGET)
-	$(MAKE) -Clws TARGET=$(TARGET) liblws
+all: $(SDIR)/Makefile
+	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CC=$(CC)
 
-download: lws/Makefile
-
-lws/Makefile:
-	wget  http://jsish.org/fossil/lws/zip/lws -O lws.zip 
-	unzip lws.zip
+$(SDIR)/Makefile:
+	wget  http://jsish.org/fossil/lws/zip/lws?r=ver-$(LWS_VER) -O lws-$(LWS_VER).zip 
+	unzip -oq lws-$(LWS_VER).zip
+	mv lws $(SDIR)
 
 clean:
-	rm -f $(LWSLIB)
-
-cleanall: clean
-	rm -rf build
+	$(MAKE) -C$(SDIR) clean
 	
-.PHONY: all depend remake clean cleanall download
+cleanall: clean
+	
+.PHONY: all depend remake clean cleanall

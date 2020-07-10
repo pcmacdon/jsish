@@ -1,4 +1,4 @@
-# Makefile to download/compile libwebsockets.a, with or without CMAKE.
+# Makefile to download/compile "liblws_TARG-VER.a"
 #LWSVER=1.7
 LWS_VER=2.0202
 TARGET=unix

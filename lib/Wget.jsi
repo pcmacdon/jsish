@@ -9,7 +9,9 @@ function Wget(fileargs:array|string, conf:object=void) {
         nowait      : false,        // Just return object: caller will call update.
         onDone      : null,         // Callback when done.
         O           : '',           // Output file name, or - for stdout, . for response: default is url tail.
-        wsOpts      :{},            // Websocket options.
+        sslCert     : null,         // Used for https
+        sslKey      : null,         // Used for https
+        wsOpts      : {},           // Websocket options.
         wsdebug     : 0             // WebSockets debug level.
     };
     
@@ -98,7 +100,9 @@ function Wget(fileargs:array|string, conf:object=void) {
             port:self.port,
             address:self.address,
             protocol:self.protocol,
-            clientHost:self.address
+            clientHost:self.address,
+            sslCert:self.sslCert,
+            sslKey:self.sslKey,
         };
         for (var i in self.wsOpts)
             wsopts[i] = self.wsOpts[i];
@@ -112,7 +116,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             else {
                 if (self.port === 80)
                     wsopts.port = 443;
-                wsopts.use_ssl = true;
+                wsopts.ssl = true;
             }
         }
         LogTrace("Starting:", conf, wsopts);

@@ -121,7 +121,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     Jsi_Value *onAuth, *onCloseLast, *onClose, *onFilter, *onOpen, *onRecv,
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
         *rootdir, *interface, *address, *mimeTypes, *mimeLookupFunc, *extOpts, *headers, *ssiExts;
-    bool client, noUpdate, noWebsock, noWarn, use_ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
+    bool client, noUpdate, noWebsock, noWarn, ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
     Jsi_Value* version;
     int idx;
     int port;
@@ -170,8 +170,8 @@ typedef struct { /* Per server data (or client if client-mode). */
     const char *protocol;
     struct lws_protocols protocols[JWS_PROTOCOL__MAX+1];
     int ietf_version;
-    char *ssl_cert_filepath;
-    char *ssl_private_key_filepath;
+    const char *sslCert;
+    const char *sslKey;
     int ws_uid;
     int ws_gid;
     const char *clientHost;
@@ -303,7 +303,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(BOOL,   jsi_wsCmdObj, client,     .help="Run in client mode", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, clientHost, .help="Override host name for client"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, clientOrigin,.help="Override client origin (origin)"),
-    JSI_OPT(INT,    jsi_wsCmdObj, debug,      .help="Set debug level. Setting this to 512 will turn on max libwebsocket log levels"),
+    JSI_OPT(INT,    jsi_wsCmdObj, debug,      .help="Set debug level. Setting this to 512 will turn on max liblws log levels"),
     JSI_OPT(BOOL,   jsi_wsCmdObj, echo,       .help="LogInfo outputs all websock Send/Recv messages"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, formParams, .help="Comma seperated list of upload form param names ('text,send,file,upload')", jsi_IIRO),
     JSI_OPT(BOOL,   jsi_wsCmdObj, extHandlers,.help="Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi", jsi_IIOF),
@@ -347,13 +347,15 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(STRING, jsi_wsCmdObj, rootdir,    .help="Directory to serve html from (\".\")"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, server,     .help="String to send out int the header SERVER (jsiWebSocket)"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, ssiExts,    .help="Object map of file extensions to apply SSI.  eg. {myext:true, shtml:false} ", jsi_IIOF),
+    JSI_OPT(BOOL,   jsi_wsCmdObj, ssl,        .help="Use https", jsi_IIOF),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, sslCert,    .help="SSL certificate file"),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, sslKey,     .help="SSL key file"),
     JSI_OPT(CUSTOM, jsi_wsCmdObj, stats,      .help="Statistical data", jsi_IIRO, .custom=Jsi_Opt_SwitchSuboption, .data=WPSStats),
     JSI_OPT(TIME_T, jsi_wsCmdObj, startTime,  .help="Time of websocket start", jsi_IIRO),
     JSI_OPT(STRKEY, jsi_wsCmdObj, includeFile,.help="Default file when no extension given (include.shtml)"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, udata,      .help="User data"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlPrefix,  .help="Prefix in url to strip from path; for reverse proxy"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlRedirect,.help="Redirect when no url or / is given. Must match urlPrefix, if given"),
-    JSI_OPT(BOOL,   jsi_wsCmdObj, use_ssl,    .help="Use https (for client)", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, useridPass, .help="The USERID:PASSWORD to use for basic authentication"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, version,    .help="WebSocket version info", jsi_IIRO),
     JSI_OPT_END(jsi_wsCmdObj, .help="Websocket options")
@@ -2988,7 +2990,7 @@ static Jsi_CmdSpec websockCmds[] = {
     { "file",       WebSocketFileCmd,     0,  1, "name:string=void",.help="Add file to hash, or with no args return file hash", .retType=(uint)JSI_TT_ARRAY|JSI_TT_VOID },
     { "query",      WebSocketQueryCmd,    1,  2, "id:number, name:string=void",.help="Get one or all query values for connect id", .retType=(uint)JSI_TT_STRING|JSI_TT_OBJECT|JSI_TT_VOID },
     { "send",       WebSocketSendCmd,     2,  2, "id:number, data:any", .help="Send a websocket message to id", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_wssend },
-    { "status",     WebSocketStatusCmd,   0,  0, "", .help="Return libwebsocket server status", .retType=(uint)JSI_TT_OBJECT|JSI_TT_VOID},
+    { "status",     WebSocketStatusCmd,   0,  0, "", .help="Return liblws server status", .retType=(uint)JSI_TT_OBJECT|JSI_TT_VOID},
     { "unalias",    WebSocketUnaliasCmd,  1,  1, "path:string", .help="Return alias reverse lookup", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID},
     { "update",     WebSocketUpdateCmd,   0,  0, "", .help="Service events for just this websocket", .retType=(uint)JSI_TT_VOID },
     { "version",    WebSocketVersionCmd,  0,  0, "", .help="Runtime library version string", .retType=(uint)JSI_TT_STRING },
@@ -3104,14 +3106,14 @@ bail:
     if (!cmdPtr->noCompress)
         cmdPtr->info.extensions = jsi_lws_exts;
 
-    cmdPtr->info.ssl_cert_filepath = cmdPtr->ssl_cert_filepath;
-    cmdPtr->info.ssl_private_key_filepath = cmdPtr->ssl_private_key_filepath;
     cmdPtr->info.gid = cmdPtr->ws_gid;
     cmdPtr->info.uid = cmdPtr->ws_uid;
     cmdPtr->opts = LWS_SERVER_OPTION_SKIP_SERVER_CANONICAL_NAME|LWS_SERVER_OPTION_VALIDATE_UTF8;
     cmdPtr->info.options = cmdPtr->opts;
     cmdPtr->info.max_http_header_pool = 16;
     cmdPtr->info.timeout_secs = 5;
+    cmdPtr->info.ssl_cert_filepath = cmdPtr->sslCert;
+    cmdPtr->info.ssl_private_key_filepath = cmdPtr->sslKey;
     cmdPtr->info.ssl_cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:"
                    "ECDHE-RSA-AES256-GCM-SHA384:"
                    "DHE-RSA-AES256-GCM-SHA384:"
@@ -3127,13 +3129,24 @@ bail:
                    "!AES256-SHA256";
 
     lws_set_log_level(cmdPtr->debug>255?cmdPtr->debug/256:0, NULL);
-    // TODO: WS2.2 Still leaks a small amount if server port unavailable.
-    if (!cmdPtr->client)
+    if (!cmdPtr->client) {
         cmdPtr->info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
+#ifdef LWS_OPENSSL_SUPPORT
+        cmdPtr->info.client_ssl_cert_filepath = cmdPtr->sslCert;
+        cmdPtr->info.client_ssl_private_key_filepath = cmdPtr->sslKey;
+#endif
+    }
+    if (cmdPtr->ssl) {
+#ifndef LWS_OPENSSL_SUPPORT
+        Jsi_LogError("WebSocket not compiled with SSL");
+        goto bail;
+#endif
+        cmdPtr->info.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+    }
     cmdPtr->context = lws_create_context(&cmdPtr->info);
     if (cmdPtr->context == NULL) {
 fail:
-        Jsi_LogError("libwebsocket init failed on port %d (try another port?)", cmdPtr->info.port);
+        Jsi_LogError("WebSocket init failed on port %d (try another port?)", cmdPtr->info.port);
         goto bail;
     }
     if (cmdPtr->info.options & LWS_SERVER_OPTION_EXPLICIT_VHOSTS) {
@@ -3147,12 +3160,13 @@ fail:
         lci.context = cmdPtr->context;
         lci.address = cmdPtr->address ? Jsi_ValueString(cmdPtr->interp, cmdPtr->address, NULL) : "127.0.0.1";
         lci.port = cmdPtr->port;
-        lci.ssl_connection = cmdPtr->use_ssl;
+        lci.ssl_connection = cmdPtr->ssl;
         lci.path = Jsi_ValueString(cmdPtr->interp, cmdPtr->rootdir, NULL);
         lci.host = cmdPtr->clientHost?cmdPtr->clientHost:lws_canonical_hostname( cmdPtr->context );
         lci.origin = cmdPtr->clientOrigin?cmdPtr->clientOrigin:"origin";
         lci.protocol = cmdPtr->protocols[JWS_PROTOCOL_WEBSOCK].name;
         lci.ietf_version_or_minus_one = cmdPtr->ietf_version;
+   
 #if (LWS_LIBRARY_VERSION_MAJOR>1)
         if (cmdPtr->post)
             lci.method = "POST";
@@ -3231,8 +3245,18 @@ Jsi_RC Jsi_InitWebSocket(Jsi_Interp *interp, int release)
     return JSI_ERROR;
 #endif
     Jsi_Value *info = Jsi_ValueNew1(interp);
-    Jsi_JSONParseFmt(interp, &info, "{libVer:\"%s\", hdrVer:\"%s\", pkgVer:%d}",
-        libver, LWS_LIBRARY_VERSION, jsi_WsPkgVersion);
+    bool hasSSL = 0;
+    const char *sslVerStr = "";
+    long sslCompat = 0;
+    long sslVer = 0;
+#ifdef LWS_OPENSSL_SUPPORT
+    hasSSL = 1;
+    sslVer = OPENSSL_VERSION_NUMBER;
+    sslVerStr = OPENSSL_VERSION_TEXT;
+    sslCompat = OPENSSL_API_COMPAT;
+#endif
+    Jsi_JSONParseFmt(interp, &info, "{libVer:\"%s\", hdrVer:\"%s\", pkgVer:%d, ssl:%s, sslVer:%ld, sslVerStr:\"%s\", sslCompat:%ld}",
+        libver, LWS_LIBRARY_VERSION, jsi_WsPkgVersion, (hasSSL?"true":"false"), sslVer, sslVerStr, sslCompat);
     Jsi_PkgOpts wsPkgOpts = { wsObjCmd_Specs, &wsObjCmd, websockCmds, info };
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "WebSocket", jsi_WsPkgVersion, Jsi_InitWebSocket, &wsPkgOpts);
     Jsi_DecrRefCount(interp, info);

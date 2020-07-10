@@ -92,7 +92,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(BOOL,  Jsi_Interp, coverage,    .help="On exit generate detailed code coverage for function calls (with profile)"),
     JSI_OPT(CUSTOM,Jsi_Interp, debugOpts,   .help="Options for debugging", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=InterpDebugOptions),
     JSI_OPT(BOOL,  Jsi_Interp, interactive, .help="Force interactive mode. ie. ignore no_interactive flag", jsi_IIOF),
-    JSI_OPT(BOOL,  Jsi_Interp, hasOpenSSL,  .help="Is SSL available in WebSocket", jsi_IIOF),
+    JSI_OPT(BOOL,  Jsi_Interp, hasOpenSSL,  .help="WebSocket compiled with SSL is available", jsi_IIOF),
     JSI_OPT(STRKEY,Jsi_Interp, historyFile, .help="In interactive mode, file to use for history (~/.jsish_history)", jsi_IIOF),
     JSI_OPT(BOOL,  Jsi_Interp, isSafe,      .help="Is this a safe interp (ie. with limited or no file access)", jsi_IIOF),
     JSI_OPT(STRKEY,Jsi_Interp, jsppChars,   .help="Line preprocessor when sourcing files. Line starts with first char, and either ends with it, or matches string"),

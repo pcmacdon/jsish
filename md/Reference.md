@@ -593,7 +593,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
 <tr><td>debugOpts</td><td><i><a href='#debugOptsOptions'>options</a></i></td><td>Options for debugging.</td><td><i></i></td></tr>
 <tr><td>interactive</td><td><i>BOOL</i></td><td>Force interactive mode. ie. ignore no_interactive flag.</td><td><i>initOnly</i></td></tr>
-<tr><td>hasOpenSSL</td><td><i>BOOL</i></td><td>Is SSL available in WebSocket.</td><td><i>initOnly</i></td></tr>
+<tr><td>hasOpenSSL</td><td><i>BOOL</i></td><td>WebSocket compiled with SSL is available.</td><td><i>initOnly</i></td></tr>
 <tr><td>historyFile</td><td><i>STRKEY</i></td><td>In interactive mode, file to use for history (~/.jsish_history).</td><td><i>initOnly</i></td></tr>
 <tr><td>isSafe</td><td><i>BOOL</i></td><td>Is this a safe interp (ie. with limited or no file access).</td><td><i>initOnly</i></td></tr>
 <tr><td>jsppChars</td><td><i>STRKEY</i></td><td>Line preprocessor when sourcing files. Line starts with first char, and either ends with it, or matches string.</td><td><i></i></td></tr>
@@ -762,133 +762,6 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>tan</td><td>tan(num:number):number </td><td>Returns the tangent of an angle.</td></tr>
 </table>
 <a name="Mathend"></a>
-<p><a href="#TOC">Return to top</a>
-<a name="MySql"></a>
-
-<hr>
-
-
-<h1>MySql</h1>
-
-<font color=red>Synopsis:new MySql(options:object=void):userobj
-
-</font><p>Commands for accessing mysql databases.
-
-
-<h2>Methods for "MySql"</h2>
-<table border="1"class="cmdstbl table">
-<tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>MySql</td><td>new MySql(<a href='#new MySqlOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to a MySql database:.</td></tr>
-<tr><td>affectedRows</td><td>affectedRows():number </td><td>Return affected rows.</td></tr>
-<tr><td>complete</td><td>complete(sql:string):boolean </td><td>Return true if sql is complete.</td></tr>
-<tr><td>conf</td><td>conf(<a href='#MySql.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
-<tr><td>errorNo</td><td>errorNo():number </td><td>Return error code returned by most recent call to mysql3_exec().</td></tr>
-<tr><td>errorState</td><td>errorState():string </td><td>Return the mysql error state str.</td></tr>
-<tr><td>eval</td><td>eval(sql:string):number </td><td>Run sql commands without input/output.</td></tr>
-<tr><td>exists</td><td>exists(sql:string):boolean </td><td>Execute sql, and return true if there is at least one result value.</td></tr>
-<tr><td>info</td><td>info():object </td><td>Return info about last query.</td></tr>
-<tr><td>lastQuery</td><td>lastQuery():string </td><td>Return info string about most recently executed statement.</td></tr>
-<tr><td>lastRowid</td><td>lastRowid():number </td><td>Return rowid of last insert.</td></tr>
-<tr><td>onecolumn</td><td>onecolumn(sql:string) </td><td>Execute sql, and return a single value.</td></tr>
-<tr><td>ping</td><td>ping(noError:boolean=false):number </td><td>Ping connection.</td></tr>
-<tr><td>query</td><td>query(sql:string, <a href='#MySql.queryOptions'>options</a>:function|string|array|object=void) </td><td>Run sql query with input and/or outputs..</td></tr>
-<tr><td>reconnect</td><td>reconnect():void </td><td>Reconnect with current settings.</td></tr>
-<tr><td>reset</td><td>reset():number </td><td>Reset connection.</td></tr>
-</table>
-
-
-<a name="new MySqlOptions"></a>
-<a name="MySql.confOptions"></a>
-<h2>Options for "new MySql"</h2>
-<table border="1" class="optstbl table">
-<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>bindWarn</td><td><i>BOOL</i></td><td>Treat failed variable binds as a warning.</td><td><i>initOnly</i></td></tr>
-<tr><td>database</td><td><i>STRKEY</i></td><td>Database to use.</td><td><i>initOnly</i></td></tr>
-<tr><td>debug</td><td><i>ARRAY</i></td><td>Enable debug trace for various operations. (zero or more of: <b>eval</b>, <b>delete</b>, <b>prepare</b>, <b>step</b>)</td><td><i></i></td></tr>
-<tr><td>enableMulti</td><td><i>BOOL</i></td><td>Accept muiltiple semi-colon separated statements in eval().</td><td><i>initOnly</i></td></tr>
-<tr><td>errorCnt</td><td><i>INT</i></td><td>Count of errors.</td><td><i>readOnly</i></td></tr>
-<tr><td>queryOpts</td><td><i><a href='#queryOptsOptions'>options</a></i></td><td>Default options for exec.</td><td><i></i></td></tr>
-<tr><td>forceInt</td><td><i>BOOL</i></td><td>Bind float as int if possible.</td><td><i></i></td></tr>
-<tr><td>host</td><td><i>STRING</i></td><td>IP address or host name for mysqld (default is 127.0.0.1).</td><td><i></i></td></tr>
-<tr><td>maxStmts</td><td><i>INT</i></td><td>Max cache size for compiled statements.</td><td><i></i></td></tr>
-<tr><td>name</td><td><i>DSTRING</i></td><td>Name for this db handle.</td><td><i></i></td></tr>
-<tr><td>numStmts</td><td><i>INT</i></td><td>Current size of compiled statement cache.</td><td><i>readOnly</i></td></tr>
-<tr><td>password</td><td><i>STRKEY</i></td><td>Database password..</td><td><i>initOnly</i></td></tr>
-<tr><td>port</td><td><i>INT</i></td><td>IP port for mysqld.</td><td><i>initOnly</i></td></tr>
-<tr><td>reconnect</td><td><i>BOOL</i></td><td>Reconnect.</td><td><i></i></td></tr>
-<tr><td>sslKey</td><td><i>STRING</i></td><td>SSL key.</td><td><i></i></td></tr>
-<tr><td>sslCert</td><td><i>STRING</i></td><td>SSL Cert.</td><td><i></i></td></tr>
-<tr><td>sslCA</td><td><i>STRING</i></td><td>SSL CA.</td><td><i></i></td></tr>
-<tr><td>sslCAPath</td><td><i>STRING</i></td><td>SSL CA path.</td><td><i></i></td></tr>
-<tr><td>sslCipher</td><td><i>STRING</i></td><td>SSL Cipher.</td><td><i></i></td></tr>
-<tr><td>udata</td><td><i>OBJ</i></td><td>User data..</td><td><i></i></td></tr>
-<tr><td>user</td><td><i>STRKEY</i></td><td>Database user name. Default is current user-name..</td><td><i>initOnly</i></td></tr>
-<tr><td>version</td><td><i>DOUBLE</i></td><td>Mysql version number.</td><td><i>readOnly</i></td></tr>
-</table>
-
-
-<a name="queryOptsOptions"></a>
-<h2>Options for "queryOpts"</h2>
-<table border="1" class="optstbl table">
-<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>callback</td><td><i>FUNC</i></td><td>Function to call with each row result. @function(values:object)</td><td><i></i></td></tr>
-<tr><td>headers</td><td><i>BOOL</i></td><td>First row returned contains column labels.</td><td><i></i></td></tr>
-<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of returned values.</td><td><i></i></td></tr>
-<tr><td>mapundef</td><td><i>BOOL</i></td><td>In variable binds, map an 'undefined' var to null.</td><td><i></i></td></tr>
-<tr><td>maxString</td><td><i>INT</i></td><td>If not using prefetch, the maximum string value size (0=8K).</td><td><i></i></td></tr>
-<tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
-<tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
-<tr><td>noNamedParams</td><td><i>BOOL</i></td><td>Disable translating sql to support named params.</td><td><i></i></td></tr>
-<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non-json mode).</td><td><i></i></td></tr>
-<tr><td>obj</td><td><i><a href='#objOptions'>options</a></i></td><td>Options for object.</td><td><i></i></td></tr>
-<tr><td>paramVar</td><td><i>ARRAY</i></td><td>Array var to use for parameters.</td><td><i></i></td></tr>
-<tr><td>prefetch</td><td><i>BOOL</i></td><td>Let client library cache entire results.</td><td><i></i></td></tr>
-<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
-<tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
-<tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (error). (one of: <b>convert</b>, <b>error</b>, <b>warn</b>, <b>disable</b>)</td><td><i></i></td></tr>
-<tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
-<tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
-</table>
-
-
-<a name="MySql.queryOptions"></a>
-<a name="MySql.confOptions"></a>
-<h2>Options for "MySql.query"</h2>
-<table border="1" class="optstbl table">
-<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>callback</td><td><i>FUNC</i></td><td>Function to call with each row result. @function(values:object)</td><td><i></i></td></tr>
-<tr><td>headers</td><td><i>BOOL</i></td><td>First row returned contains column labels.</td><td><i></i></td></tr>
-<tr><td>limit</td><td><i>INT</i></td><td>Maximum number of returned values.</td><td><i></i></td></tr>
-<tr><td>mapundef</td><td><i>BOOL</i></td><td>In variable binds, map an 'undefined' var to null.</td><td><i></i></td></tr>
-<tr><td>maxString</td><td><i>INT</i></td><td>If not using prefetch, the maximum string value size (0=8K).</td><td><i></i></td></tr>
-<tr><td>mode</td><td><i>STRKEY</i></td><td>Set output mode of returned data. (one of: <b>rows</b>, <b>arrays</b>, <b>array1d</b>, <b>list</b>, <b>column</b>, <b>json</b>, <b>json2</b>, <b>html</b>, <b>csv</b>, <b>insert</b>, <b>line</b>, <b>tabs</b>, <b>none</b>)</td><td><i></i></td></tr>
-<tr><td>nocache</td><td><i>BOOL</i></td><td>Disable query cache.</td><td><i></i></td></tr>
-<tr><td>noNamedParams</td><td><i>BOOL</i></td><td>Disable translating sql to support named params.</td><td><i></i></td></tr>
-<tr><td>nullvalue</td><td><i>STRKEY</i></td><td>Null string output (for non-json mode).</td><td><i></i></td></tr>
-<tr><td>obj</td><td><i><a href='#objOptions'>options</a></i></td><td>Options for object.</td><td><i></i></td></tr>
-<tr><td>paramVar</td><td><i>ARRAY</i></td><td>Array var to use for parameters.</td><td><i></i></td></tr>
-<tr><td>prefetch</td><td><i>BOOL</i></td><td>Let client library cache entire results.</td><td><i></i></td></tr>
-<tr><td>separator</td><td><i>STRKEY</i></td><td>Separator string (for csv and text mode).</td><td><i></i></td></tr>
-<tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
-<tr><td>typeCheck</td><td><i>STRKEY</i></td><td>Type check mode (error). (one of: <b>convert</b>, <b>error</b>, <b>warn</b>, <b>disable</b>)</td><td><i></i></td></tr>
-<tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
-<tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
-</table>
-
-
-<a name="objOptions"></a>
-<h2>Options for "obj"</h2>
-<table border="1" class="optstbl table">
-<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>name</td><td><i>STRKEY</i></td><td>Name of object var data source for %s.</td><td><i></i></td></tr>
-<tr><td>skip</td><td><i>ARRAY</i></td><td>Object members to ignore.</td><td><i></i></td></tr>
-<tr><td>getSql</td><td><i>BOOL</i></td><td>Return expanded SQL without evaluating.</td><td><i></i></td></tr>
-<tr><td>defaultNull</td><td><i>BOOL</i></td><td>Create with DEFAULT NULL.</td><td><i></i></td></tr>
-<tr><td>noChecks</td><td><i>BOOL</i></td><td>Create with no CHECK constraints.</td><td><i></i></td></tr>
-<tr><td>noDefaults</td><td><i>BOOL</i></td><td>Create with no defaults.</td><td><i></i></td></tr>
-<tr><td>noTypes</td><td><i>BOOL</i></td><td>Create with no types.</td><td><i></i></td></tr>
-</table>
-<a name="MySqlend"></a>
 <p><a href="#TOC">Return to top</a>
 <a name="Number"></a>
 
@@ -1253,6 +1126,20 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <tr><td>table</td><td><i>STRKEY</i></td><td>Table name for mode=insert.</td><td><i></i></td></tr>
 <tr><td>values</td><td><i>ARRAY</i></td><td>Values for ? bind parameters.</td><td><i></i></td></tr>
 <tr><td>width</td><td><i>CUSTOM</i></td><td>In column mode, set column widths.</td><td><i></i></td></tr>
+</table>
+
+
+<a name="objOptions"></a>
+<h2>Options for "obj"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>name</td><td><i>STRKEY</i></td><td>Name of object var data source for %s.</td><td><i></i></td></tr>
+<tr><td>skip</td><td><i>ARRAY</i></td><td>Object members to ignore.</td><td><i></i></td></tr>
+<tr><td>getSql</td><td><i>BOOL</i></td><td>Return expanded SQL without evaluating.</td><td><i></i></td></tr>
+<tr><td>defaultNull</td><td><i>BOOL</i></td><td>Create with DEFAULT NULL.</td><td><i></i></td></tr>
+<tr><td>noChecks</td><td><i>BOOL</i></td><td>Create with no CHECK constraints.</td><td><i></i></td></tr>
+<tr><td>noDefaults</td><td><i>BOOL</i></td><td>Create with no defaults.</td><td><i></i></td></tr>
+<tr><td>noTypes</td><td><i>BOOL</i></td><td>Create with no types.</td><td><i></i></td></tr>
 </table>
 <a name="Sqliteend"></a>
 <p><a href="#TOC">Return to top</a>
@@ -1625,7 +1512,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>ids</td><td>ids(name:string=void):array </td><td>Return list of ids, or lookup one id.</td></tr>
 <tr><td>query</td><td>query(id:number, name:string=void):string|object|void </td><td>Get one or all query values for connect id.</td></tr>
 <tr><td>send</td><td>send(id:number, data:any):void </td><td>Send a websocket message to id. Send a message to one (or all connections if -1). If not already a string, msg is formatted as JSON prior to the send.</td></tr>
-<tr><td>status</td><td>status():object|void </td><td>Return libwebsocket server status.</td></tr>
+<tr><td>status</td><td>status():object|void </td><td>Return liblws server status.</td></tr>
 <tr><td>unalias</td><td>unalias(path:string):string|void </td><td>Return alias reverse lookup.</td></tr>
 <tr><td>update</td><td>update():void </td><td>Service events for just this websocket.</td></tr>
 <tr><td>version</td><td>version():string </td><td>Runtime library version string.</td></tr>
@@ -1642,7 +1529,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>client</td><td><i>BOOL</i></td><td>Run in client mode.</td><td><i>initOnly</i></td></tr>
 <tr><td>clientHost</td><td><i>STRKEY</i></td><td>Override host name for client.</td><td><i></i></td></tr>
 <tr><td>clientOrigin</td><td><i>STRKEY</i></td><td>Override client origin (origin).</td><td><i></i></td></tr>
-<tr><td>debug</td><td><i>INT</i></td><td>Set debug level. Setting this to 512 will turn on max libwebsocket log levels.</td><td><i></i></td></tr>
+<tr><td>debug</td><td><i>INT</i></td><td>Set debug level. Setting this to 512 will turn on max liblws log levels.</td><td><i></i></td></tr>
 <tr><td>echo</td><td><i>BOOL</i></td><td>LogInfo outputs all websock Send/Recv messages.</td><td><i></i></td></tr>
 <tr><td>formParams</td><td><i>STRKEY</i></td><td>Comma seperated list of upload form param names ('text,send,file,upload').</td><td><i>readOnly</i></td></tr>
 <tr><td>extHandlers</td><td><i>BOOL</i></td><td>Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi.</td><td><i>initOnly</i></td></tr>
@@ -1685,13 +1572,15 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>rootdir</td><td><i>STRING</i></td><td>Directory to serve html from (".").</td><td><i></i></td></tr>
 <tr><td>server</td><td><i>STRKEY</i></td><td>String to send out int the header SERVER (jsiWebSocket).</td><td><i></i></td></tr>
 <tr><td>ssiExts</td><td><i>OBJ</i></td><td>Object map of file extensions to apply SSI.  eg. {myext:true, shtml:false} .</td><td><i>initOnly</i></td></tr>
+<tr><td>ssl</td><td><i>BOOL</i></td><td>Use https.</td><td><i>initOnly</i></td></tr>
+<tr><td>sslCert</td><td><i>STRKEY</i></td><td>SSL certificate file.</td><td><i></i></td></tr>
+<tr><td>sslKey</td><td><i>STRKEY</i></td><td>SSL key file.</td><td><i></i></td></tr>
 <tr><td>stats</td><td><i><a href='#statsOptions'>options</a></i></td><td>Statistical data.</td><td><i>readOnly</i></td></tr>
 <tr><td>startTime</td><td><i>TIME_T</i></td><td>Time of websocket start.</td><td><i>readOnly</i></td></tr>
 <tr><td>includeFile</td><td><i>STRKEY</i></td><td>Default file when no extension given (include.shtml).</td><td><i></i></td></tr>
 <tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
 <tr><td>urlPrefix</td><td><i>STRKEY</i></td><td>Prefix in url to strip from path; for reverse proxy.</td><td><i></i></td></tr>
 <tr><td>urlRedirect</td><td><i>STRKEY</i></td><td>Redirect when no url or / is given. Must match urlPrefix, if given.</td><td><i></i></td></tr>
-<tr><td>use_ssl</td><td><i>BOOL</i></td><td>Use https (for client).</td><td><i>initOnly</i></td></tr>
 <tr><td>useridPass</td><td><i>STRKEY</i></td><td>The USERID:PASSWORD to use for basic authentication.</td><td><i></i></td></tr>
 <tr><td>version</td><td><i>OBJ</i></td><td>WebSocket version info.</td><td><i>readOnly</i></td></tr>
 </table>

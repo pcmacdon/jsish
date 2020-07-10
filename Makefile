@@ -5,6 +5,7 @@ WEBSOCKDIR = lws
 WEBSOCKROOT = $(WEBSOCKDIR)/lws-$(LWS_VER)
 WEBSOCKSRC = $(WEBSOCKROOT)/src
 LWS_VER=2.0202
+LWS_SSL=0
 SQLITEDIR = sqlite
 ACFILES	= src/parser.c
 #ACFILES	= src/jsiParser.c
@@ -18,8 +19,6 @@ CFLAGS += -g -Og -O0
 SLIBCFLAGS = -Wl,--export-dynamic -shared -DJSI_USE_STUBS=1
 
 MAKEFILE=Makefile
-CMAKE=cmake
-USECMAKE=
 
 PCFILES = src/jsiLexer.c src/jsiFunc.c src/jsiValue.c src/jsiRegexp.c src/jsiPstate.c src/jsiInterp.c \
     src/jsiUtils.c src/jsiProto.c src/jsiFilesys.c src/jsiChar.c src/jsiString.c src/jsiBool.c \
@@ -89,10 +88,18 @@ ifeq ($(WITH_EXT_WEBSOCKET),1)
 
 ifeq ($(BUILDIN_WEBSOCKET),1)
 WEBSOCKLIB = $(WEBSOCKROOT)/liblws_$(TARGET)-$(LWS_VER).a
+WEBSOCKLIBB = $(WEBSOCKLIB)
+
 CFLAGS += -I$(WEBSOCKSRC)
 #WEBSOCKLIB = $(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
 #CFLAGS += -I$(WEBSOCKSRC)/lib  -I$(WEBSOCKSRC)/build -Iwebsocket/$(TARGET) -I$(WEBSOCKDIR)/build/$(TARGET)
 STATICLIBS += $(WEBSOCKLIB)
+
+ifeq ($(LWS_SSL),1)
+#CFLAGS += -I$(HOME)/usr/include
+WEBSOCKLIB += $(HOME)/usr/lib/libssl.a $(HOME)/usr/lib/libcrypto.a
+CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -I$(HOME)/usr/openssl/include
+endif
 
 else
 WEBSOCKLIB = -lwebsockets
@@ -317,18 +324,10 @@ sqliteui$(EXEEXT):  .FORCE
 	cp $(PROGBINA) $@
 	./jsimin lib/Zip.jsi create  $@ ../sqliteui lib
 
-libwebsocket: $(WEBSOCKLIB)
-USECMAKE=0
+libwebsocket: $(WEBSOCKLIBB)
 
-$(WEBSOCKLIB)_OLD:
-ifeq ($(USECMAKE), 1)
-	$(MAKE) -C $(WEBSOCKDIR) -f Makefile.cmake CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) USECMAKE=$(USECMAKE) MINIZ=$(JSI__MINIZ)
-else
-	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) USECMAKE=$(USECMAKE) MINIZ=$(JSI__MINIZ)
-endif
-
-$(WEBSOCKLIB):
-	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER)
+$(WEBSOCKLIBB):
+	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(LWS_SSL)
 
 $(SQLITELIB): $(SQLITEDIR)/Makefile
 	$(MAKE) -C $(SQLITEDIR) CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)

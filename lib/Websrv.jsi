@@ -30,6 +30,9 @@ function Websrv(args:string|array, conf:object=void):void
         query       :'',        // Query to append to url.
         rootdir     :null,      // Base directory.
         server      :false,     // Server mode: same as noGui=true and closeTimout=0
+        ssl         :false,     // Enable ssl
+        sslCert     :null,      // Used for https
+        sslKey      :null,      // Used for https
         srcFile     :'',        // File of code to source inside the Websrv function.
         uploadDir   :'/tmp',    // Upload files go here
         timeout     :60000,     // Set timeout (in ms) to shutdown. This is idle time, unless negative.
@@ -403,6 +406,9 @@ function Websrv(args:string|array, conf:object=void):void
             port:self.port,
             rootdir:self.rootdir,
             urlPrefix:self.urlPrefix,
+            sslCert:self.sslCert,
+            sslKey:self.sslKey,
+            ssl:self.ssl,
             mimeLookupFunc:mimeLookup,
         };
         switch (self.mode) {

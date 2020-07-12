@@ -23,6 +23,7 @@ $(SDIR)/Makefile:
 clean:
 	$(MAKE) -C$(SDIR) clean
 	
-cleanall: clean
+cleanall:
+	$(MAKE) -C$(SDIR) cleanall
 	
 .PHONY: all depend remake clean cleanall

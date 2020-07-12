@@ -32,8 +32,9 @@ $(DSTLIB):
 	)
 
 clean:
+	rm -rf $(TARGET)
+	
+cleanall:
 	rm -rf unix musl win $(ZIPFILE)
-	
-cleanall: clean
-	
+
 .PHONY: all clean cleanall

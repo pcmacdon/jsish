@@ -52,7 +52,7 @@ JSI_EXTENSION_INI
 
 #include <signal.h>
 
-#include <liblws.h>
+#include <lws.h>
 
 //#define LWS_NO_EXTENSIONS
 static const int jsi_WsPkgVersion = 2;

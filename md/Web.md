@@ -170,3 +170,11 @@ The following resources are available to include from **/jsi/lib/web/**:
 |[jsi.js](jsi.js.md)| Support code for type-checking.
 |[vue.min.js](https://vuejs.org/)| Web framework library.
 |[vue-router.min.js](https://router.vuejs.org/)| Router for Vue.
+
+SSL
+----
+
+Example:
+
+     jsish -W -port 4443 -local false -server true -sslDir /etc/letsencrypt/live/example.org/ .
+

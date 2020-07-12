@@ -7,7 +7,10 @@ function Websrv(args:string|array, conf:object=void):void
 {
     var LogTrace = function(...) {}; // Comment out for debugging.
     var self = {
-        chans   :{}
+        chans   :{},
+        ssl     :false,
+        sslcert :null,
+        sslkey  :null,
     };
     var options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
@@ -30,9 +33,9 @@ function Websrv(args:string|array, conf:object=void):void
         query       :'',        // Query to append to url.
         rootdir     :null,      // Base directory.
         server      :false,     // Server mode: same as noGui=true and closeTimout=0
-        ssl         :false,     // Enable ssl
-        sslCert     :null,      // Used for https
-        sslKey      :null,      // Used for https
+        sslDir      :null,      // Enable ssl and use certs in this dir.
+        sslFnCert   :'cert.pem',// File name in sslDir of cert.
+        sslFnKey    :'privkey.pem',// File name in sslDir of key.
         srcFile     :'',        // File of code to source inside the Websrv function.
         uploadDir   :'/tmp',    // Upload files go here
         timeout     :60000,     // Set timeout (in ms) to shutdown. This is idle time, unless negative.
@@ -44,7 +47,7 @@ function Websrv(args:string|array, conf:object=void):void
         wsdebug     :0,         // Debug option for websockets.
         wsOpts      :{},        // Websocket options.
         zip         :'',        // A .zip, .sqlar, or .fossil file to mount and use as rootdir.
-        zipVer      :''         // Version to mount in fossil.
+        zipVer      :'',        // Version to mount in fossil.
     };
 
     parseOpts(self, options, conf);
@@ -262,7 +265,7 @@ function Websrv(args:string|array, conf:object=void):void
         // Display page in browser.
         var eurl = self.urlPrefix + '/'+url;
         eurl = eurl.map(['//', '/']);
-        var surl = " http://127.0.0.1:"+self.wsopts.port+eurl;
+        var surl = ' '+(self.ssl?'https':'http')+'://127.0.0.1:'+self.wsopts.port+eurl;
         if (query)
             surl += '?'+ query.replace(/&/g,'\\&');
         if (anchor)
@@ -390,6 +393,11 @@ function Websrv(args:string|array, conf:object=void):void
             if (self.url.substr(0, rlen) === self.rootdir)
                 self.url = self.url.substr(rlen);
         }
+        if (self.sslDir) {
+            if (self.sslFnKey != '') self.sslkey = File.join(self.sslDir, self.sslFnKey);
+            if (self.sslFnCert != '') self.sslcert = File.join(self.sslDir, self.sslFnCert);
+            self.ssl = true;
+        }
         if (!self.rootdir)
             self.rootdir = '.';
         // Provide default values for websocket.
@@ -406,8 +414,8 @@ function Websrv(args:string|array, conf:object=void):void
             port:self.port,
             rootdir:self.rootdir,
             urlPrefix:self.urlPrefix,
-            sslCert:self.sslCert,
-            sslKey:self.sslKey,
+            sslCert:self.sslcert,
+            sslKey:self.sslkey,
             ssl:self.ssl,
             mimeLookupFunc:mimeLookup,
         };

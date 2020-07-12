@@ -9,10 +9,11 @@ function Wget(fileargs:array|string, conf:object=void) {
         nowait      : false,        // Just return object: caller will call update.
         onDone      : null,         // Callback when done.
         O           : '',           // Output file name, or - for stdout, . for response: default is url tail.
-        sslCert     : null,         // Used for https
-        sslKey      : null,         // Used for https
+        sslDir      :null,          // Enable ssl and use certs in this dir
+        sslFnCert   :'cert.pem',    // File name in sslDir of cert.
+        sslFnKey    :'privkey.pem', // File name in sslDir of key.
         wsOpts      : {},           // Websocket options.
-        wsdebug     : 0             // WebSockets debug level.
+        wsdebug     : 0,            // WebSockets debug level.
     };
     
     var self = {
@@ -25,7 +26,10 @@ function Wget(fileargs:array|string, conf:object=void) {
         scheme      : 'http',       // Url scheme
         protocol    : 'get',
         response    : '',
-        url         : null
+        url         : null,
+        ssl         :false,
+        sslcert     :null,
+        sslkey      :null,
     };
 
     parseOpts(self, options, conf);
@@ -90,6 +94,12 @@ function Wget(fileargs:array|string, conf:object=void) {
         }
         if (self.post.length)
             self.protocol = 'post';
+
+        if (self.sslDir) {
+            if (self.sslFnKey != '') sself.sslkey = File.join(self.sslDir, self.sslFnKey);
+            if (self.sslFnCert != '') sself.sslcert = File.join(self.sslDir, self.sslFnCert);
+            self.ssl = true;
+        }
         
         var wsopts = {
             client:true,
@@ -103,6 +113,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             clientHost:self.address,
             sslCert:self.sslCert,
             sslKey:self.sslKey,
+            ssl:self.ssl;
         };
         for (var i in self.wsOpts)
             wsopts[i] = self.wsOpts[i];
@@ -116,7 +127,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             else {
                 if (self.port === 80)
                     wsopts.port = 443;
-                wsopts.ssl = true;
+                self.ssl = true;
             }
         }
         LogTrace("Starting:", conf, wsopts);

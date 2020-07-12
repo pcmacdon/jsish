@@ -1,16 +1,15 @@
 # Makefile for jsish: controlled by make.conf from configure.
 PREFIX=/usr/local
-WEBSOCKDIR = lws
-#WEBSOCKDIR = websocket
-WEBSOCKROOT = $(WEBSOCKDIR)/lws-$(LWS_VER)
-WEBSOCKSRC = $(WEBSOCKROOT)/src
 LWS_VER=2.0202
 LWS_SSL=0
+WEBSOCKDIR = lws
+WEBSOCKROOT = $(WEBSOCKDIR)/lws-$(LWS_VER)
+WEBSOCKSRC = $(WEBSOCKROOT)/src
 SQLITEDIR = sqlite
 ACFILES	= src/parser.c
 #ACFILES	= src/jsiParser.c
 BUILDSYS = $(shell uname -o)
-
+ALLTARGS = 
 CFLAGS += -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
 # -pg
 #CFLAGS += -g -O3
@@ -87,8 +86,16 @@ endif
 ifeq ($(WITH_EXT_WEBSOCKET),1)
 
 ifeq ($(BUILDIN_WEBSOCKET),1)
-WEBSOCKLIB = $(WEBSOCKROOT)/liblws_$(TARGET)-$(LWS_VER).a
-WEBSOCKLIBB = $(WEBSOCKLIB)
+
+ifeq ($(LWS_SSL),1)
+SSL_SFX=ssl_
+else
+SSL_SFX=
+endif
+
+LWS_LIBNAME = liblws_$(SSL_SFX)$(TARGET)-$(LWS_VER).a
+LWS_LIBDIR = $(WEBSOCKROOT)/$(LWS_LIBNAME)
+WEBSOCKLIB = $(LWS_LIBDIR)
 
 CFLAGS += -I$(WEBSOCKSRC)
 #WEBSOCKLIB = $(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
@@ -97,12 +104,20 @@ STATICLIBS += $(WEBSOCKLIB)
 
 ifeq ($(LWS_SSL),1)
 #CFLAGS += -I$(HOME)/usr/include
-WEBSOCKLIB += $(HOME)/usr/lib/libssl.a $(HOME)/usr/lib/libcrypto.a
-CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -I$(HOME)/usr/openssl/include
+# WEBSOCKLIB += $(HOME)/usr/lib/libssl.a $(HOME)/usr/lib/libcrypto.a
+# CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -I$(HOME)/usr/openssl/include
+WEBSOCKLIB += openssl/$(TARGET)/libssl.a openssl/$(TARGET)/libcrypto.a
+CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -Iopenssl/$(TARGET)/include
+ALLTARGS += openssllib
+ifeq ($(TARGET),win)
+EXTRALD += -lcrypt32
+endif
 endif
 
+ALLTARGS += lwslib
+
 else
-WEBSOCKLIB = -lwebsockets
+WEBSOCKLIB = -llws
 endif
 
 PROGFLAGS += -DJSI__WEBSOCKET=1
@@ -265,7 +280,7 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: src/jsi.c src/jsiOne.c jsimin $(STATICLIBS) $(PROGBIN) checkcfgver
+all: src/jsi.c src/jsiOne.c jsimin $(ALLTARGS) $(STATICLIBS) $(PROGBIN) checkcfgver
 
 help:
 	@echo "targets are: mkwin mkmusl shared jsishs stubs ref test testmem release"
@@ -324,13 +339,18 @@ sqliteui$(EXEEXT):  .FORCE
 	cp $(PROGBINA) $@
 	./jsimin lib/Zip.jsi create  $@ ../sqliteui lib
 
-libwebsocket: $(WEBSOCKLIBB)
+lwslib: $(LWS_LIBDIR)
 
-$(WEBSOCKLIBB):
-	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(LWS_SSL)
+$(LWS_LIBDIR):
+	$(MAKE) -C $(WEBSOCKDIR) CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(LWS_SSL) LWS_LIBNAME=$(LWS_LIBNAME)
 
 $(SQLITELIB): $(SQLITEDIR)/Makefile
 	$(MAKE) -C $(SQLITEDIR) CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
+
+openssllib: openssl/$(TARGET)/libcypto.a
+
+openssl/$(TARGET)/libcypto.a:
+	$(MAKE) -C openssl CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
 
 
 src/%.o: src/%.c

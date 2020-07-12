@@ -1,7 +1,7 @@
 # Makefile for jsish: controlled by make.conf from configure.
 PREFIX=/usr/local
 LWS_VER=2.0202
-LWS_SSL=0
+LWS_SSL=1
 WEBSOCKDIR = lws
 WEBSOCKROOT = $(WEBSOCKDIR)/lws-$(LWS_VER)
 WEBSOCKSRC = $(WEBSOCKROOT)/src

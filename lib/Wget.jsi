@@ -113,7 +113,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             clientHost:self.address,
             sslCert:self.sslCert,
             sslKey:self.sslKey,
-            ssl:self.ssl;
+            ssl:self.ssl,
         };
         for (var i in self.wsOpts)
             wsopts[i] = self.wsOpts[i];

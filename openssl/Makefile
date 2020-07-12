@@ -19,6 +19,7 @@ all: $(ZIPFILE) $(DSTLIB)
 
 $(ZIPFILE):
 	wget  http://jsish.org/download/$(ZIPFILE)
+	# TODO FALLBACK: wget  http://github.com/openssl/openssl/archive/$(ZIPFILE)
 
 $(DSTLIB):
 	mkdir -p $(SDIR) $(TARGET)/include

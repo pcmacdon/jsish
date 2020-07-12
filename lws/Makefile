@@ -15,9 +15,10 @@ all: $(SDIR)/Makefile
 	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME)
 
 $(SDIR)/Makefile:
-	wget  http://jsish.org/fossil/lws/zip/lws?r=ver-$(LWS_VER) -O lws-$(LWS_VER).zip 
+	wget  http://jsish.org/fossil/lws/zip/lws?r=lws-$(LWS_VER) -O lws-$(LWS_VER).zip 
 	unzip -oq lws-$(LWS_VER).zip
 	mv lws $(SDIR)
+	# TODO FALLBACK: wget  http://github.com/pcmacdon/lws/archive/lws-$(LWS_VER).zip
 
 clean:
 	$(MAKE) -C$(SDIR) clean

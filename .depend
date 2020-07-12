@@ -34,8 +34,7 @@ src/jsiUtf8.o: src/jsiUtf8.c src/jsiInt.h src/jsi.h src/parser.h
 src/jsiUserObj.o: src/jsiUserObj.c src/jsiInt.h src/jsi.h src/parser.h
 src/jsiSocket.o: src/jsiSocket.c src/jsiInt.h src/jsi.h src/parser.h
 src/jsiSqlite.o: src/jsiSqlite.c src/jsi.h sqlite/src/sqlite3.h
-src/jsiWebSocket.o: src/jsiWebSocket.c src/jsiInt.h src/jsi.h src/parser.h \
- websocket/src/lib/libwebsockets.h websocket/unix/lws_config.h
+src/jsiWebSocket.o: src/jsiWebSocket.c src/jsiInt.h src/jsi.h src/parser.h
 src/jsiMySql.o: src/jsiMySql.c src/jsiInt.h src/jsi.h src/parser.h
 src/jsiCData.o: src/jsiCData.c src/jsiInt.h src/jsi.h src/parser.h
 src/jsiVfs.o: src/jsiVfs.c src/jsiInt.h src/jsi.h src/parser.h

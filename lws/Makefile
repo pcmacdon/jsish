@@ -12,7 +12,7 @@ LWSOPTS = -I../../miniz
 endif
 
 all: $(SDIR)/Makefile
-	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME)
+	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CFLAGS="$(CFLAGS)" CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME)
 
 $(SDIR)/Makefile:
 	wget  http://jsish.org/fossil/lws/zip/lws?r=lws-$(LWS_VER) -O lws-$(LWS_VER).zip 

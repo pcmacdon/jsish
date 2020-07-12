@@ -86,6 +86,22 @@ bool Jsi_OptionsValid(Jsi_Interp *interp,  Jsi_OptionSpec* spec)
     return (i>0);
 }
 
+Jsi_OptionSpec* jsi_OptionsEnd(Jsi_OptionSpec* spec) {
+    int i = 0;
+    while (spec[i].id>=JSI_OPTION_BOOL && spec[i].id < JSI_OPTION_END)
+        i++;
+    if (spec[i].id == JSI_OPTION_END)
+        return spec+i;
+    return NULL;
+}
+
+const char* jsi_OptionsEndStr(Jsi_OptionSpec* spec) {
+    Jsi_OptionSpec* s = jsi_OptionsEnd(spec);
+    if (s)
+        return s->name;
+    return "";
+}
+
 #ifndef JSI_LITE_ONLY
 
 static void jsi_DumpOptionSpec(Jsi_Interp *interp, Jsi_Obj *nobj, Jsi_OptionSpec* spec, int addName);
@@ -223,7 +239,6 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
     const char *expType = NULL;
     char *record = (char*)rec, *ptr = record + specPtr->offset;
     Jsi_OptionCustom* cust = NULL;
-    const char *emsg = NULL, *epre = "";
 
     if (specPtr->id<JSI_OPTION_BOOL || specPtr->id>=JSI_OPTION_END) 
         return Jsi_LogBug("unknown option id \"%d\" for \"%s\"", specPtr->id, specPtr->name);
@@ -250,6 +265,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
     case JSI_OPTION_CUSTOM:
         if (!specPtr->custom) 
             return Jsi_LogBug("missing or custom for \"%s\"", specPtr->name);
+        break;
 
     case JSI_OPTION_BOOL: {
         if (!argValue)
@@ -347,7 +363,9 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
     {
         if (argValue == NULL || Jsi_ValueIsNull(interp, argValue))
             *(const char**)ptr = NULL;
-        else {
+        else if (!Jsi_ValueIsString(interp, argValue)) {
+            goto bail;
+        } else {
             const char *scp;
             if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
                 return JSI_ERROR;
@@ -420,7 +438,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
             } else {
                 const char *scp;
                 if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
-                    return JSI_ERROR;
+                    goto bail;
                 }
                 if (JSI_OK != Jsi_DatetimeParse(interp, scp, "", 0, &nv, false))
                     return JSI_ERROR;
@@ -440,7 +458,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
                 const char *scp;
                 Jsi_Number num;
                 if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
-                    return JSI_ERROR;
+                    goto bail;
                 }
                 if (JSI_OK != Jsi_DatetimeParse(interp, scp, "", 0, &num, false))
                     return JSI_ERROR;
@@ -461,7 +479,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
             } else {
                 const char *scp;
                 if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
-                    return JSI_ERROR;
+                    goto bail;
                 }
                 Jsi_Number nval;
                 if (JSI_OK != Jsi_DatetimeParse(interp, scp, "", 0, &nval, false))
@@ -536,11 +554,18 @@ done:
     return JSI_OK;
 
 bail:
-    if (!emsg) {
-        emsg = jsi_OptTypeInfo[specPtr->id].cName;
-        epre = "expected ";
+    {
+        Jsi_OptionSpec *espec = jsi_OptionsEnd(specPtr);
+        const char *emsg = jsi_OptTypeInfo[specPtr->id].help,
+            *cname = jsi_OptTypeInfo[specPtr->id].cName,
+            *sname = "", *shelp = "";
+        if (espec) {
+            sname = espec->name;
+            if (espec->help)
+                shelp = espec->help;
+        }
+        return Jsi_LogError("for %s option %s.%s: expected \"%s\" (%s) %s", (cust?cust->name:""), sname, specPtr->name, emsg, cname, shelp);
     }
-    return Jsi_LogError("%s%s: for %s option \"%.40s\"", epre, emsg, (cust?cust->name:""), specPtr->name);
 }
 
 Jsi_RC

@@ -2355,7 +2355,7 @@ cont:
     interp->evalFlags = flags;
     if (!ps)
         rc = JSI_ERROR;
-    else {
+    else if (!interp->noEval) {
         Jsi_ValueMakeUndef(interp, &interp->retValue);
         interp->ps = ps;
         Jsi_Value *retValue = interp->retValue;

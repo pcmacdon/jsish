@@ -156,11 +156,11 @@ function jsi_structpp(args:array, conf:object)
         pdq.pre += sc;
         if (bsgets.length) {
             rc = "\n/* A set/get bitfield function for the struct \"name\". */\n"
-                + "static int pdq_bsget_"+name+"(Jsi_Interp *interp, Jsi_OptionSpec *spec, void *data, Jsi_Wide *s, int isSet) \{\n"
+                + "static int pdq_bsget_"+name+"(Jsi_Interp *interp, Jsi_OptionSpec *spec, void *data, Jsi_Wide *s, int isSet) {\n"
                 + "  int rc = JSI_OK, idx = spec->offset;\n"
                 + "  const char *fname=\"\";\n"
                 + "  struct "+name+" *p = (struct "+name+" *)data;\n"
-                + "  switch (idx) \{\n";
+                + "  switch (idx) {\n";
             for (var k in bsgets) {
                 var i = bsgets[k][0];
                 var j = bsgets[k][1];
@@ -178,9 +178,9 @@ function jsi_structpp(args:array, conf:object)
                 rc += "\n    case "+k+": {\n"+rr+"    }\n";
             }
             rc += "\n    default: {Jsi_LogError(\"bad index: %d\", idx); return JSI_ERROR; }\n";
-            rc += "  \}\n"
+            rc += "  }\n"
                     + "  if (rc != JSI_OK) Jsi_LogError(\"value %lld out of range for field '%s'\",*s, fname); return JSI_ERROR; }\n"
-                + "  return rc;\n\}\n\n";
+                + "  return rc;\n}\n\n";
             pdq.out += rc;
         }
         pdq.out += "\nstatic pdq_Field pdq_SF_"+name+"[] = {\n"+ fieldstr +"  {0}\n};\n\n";
@@ -235,11 +235,11 @@ function jsi_structpp(args:array, conf:object)
         var name = self.name;
         pdq.out = pdq.pre + "\n#ifdef _PDQSTATIC_C_\n"
         + pdq.out
-        + "static pdq_Type pdq_SFT_"+name+"\[\] = {\n"
+        + "static pdq_Type pdq_SFT_"+name+"[] = {\n"
         + pdq.types
-        + "  { 0 }\n};\n\nstatic pdq_Struct pdq_SFL_"+name+"\[\] = {\n"
+        + "  { 0 }\n};\n\nstatic pdq_Struct pdq_SFL_"+name+"[] = {\n"
         + pdq.structs 
-        + "  { 0 }\n};\n\nstatic pdq_Enum pdq_SFE_"+name+"\[\] = {\n"
+        + "  { 0 }\n};\n\nstatic pdq_Enum pdq_SFE_"+name+"[] = {\n"
         + pdq.enums 
         + "  { 0 }\n};\n\n"
         + "static pdq_static pdq_statics_"+name+" = { pdq_static_SIG, \""+name+"\", pdq_SFL_"+name
@@ -336,15 +336,15 @@ function jsi_structpp(args:array, conf:object)
             dputs("IV:", items.enums[i],'\n');
             GenEnum(items.enums[i], '', false);
         }
-        for (var i in items.sigs) {
+        for (i in items.sigs) {
             dputs("IV:", items.sigs[i],'\n');
             GenEnum(items.sigs[i], '_SIG', true);
         }
-        for (var i in items.structs) {
+        for (i in items.structs) {
             dputs("IV:", items.structs[i],'\n');
             GenStruct(items.structs[i]);
         }
-        for (var i in items.vars) {
+        for (i in items.vars) {
             dputs("IV:", items.vars[i],'\n');
             GenVars(items.vars[i]);
         }

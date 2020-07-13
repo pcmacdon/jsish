@@ -20,17 +20,17 @@
 <tr><td>concat</td><td>concat(...):array </td><td>Return array with args appended.</td></tr>
 <tr><td>every</td><td>every(callback:function) </td><td>Returns true if every value in array satisfies the test.</td></tr>
 <tr><td>fill</td><td>fill(value:any, start:number=0, end:number=-1):array </td><td>Fill an array with values.</td></tr>
-<tr><td>filter</td><td>filter(callback:function, this:object=void):array </td><td>Return a filtered array.</td></tr>
+<tr><td>filter</td><td>filter(callback:function, thisArg:object=void):array </td><td>Return a filtered array.</td></tr>
 <tr><td>find</td><td>find(callback:function) </td><td>Returns the value of the first element in the array that satisfies the test.</td></tr>
 <tr><td>findIndex</td><td>findIndex(callback:function) </td><td>Returns the index of the first element in the array that satisfies the test.</td></tr>
 <tr><td>flat</td><td>flat(depth:number=1):array </td><td>Flatten an arra.</td></tr>
-<tr><td>forEach</td><td>forEach(callback:function, this:object=void):void </td><td>Invoke function with each item in object.</td></tr>
+<tr><td>forEach</td><td>forEach(callback:function, thisArg:object=void):void </td><td>Invoke function with each item in object.</td></tr>
 <tr><td>includes</td><td>includes(val:any) </td><td>Returns true if array contains value.</td></tr>
 <tr><td>indexOf</td><td>indexOf(str:any, startIdx:number=0):number </td><td>Return index of first occurrance in array.</td></tr>
 <tr><td>isArray</td><td>isArray():boolean </td><td>True if val array.</td></tr>
 <tr><td>join</td><td>join(sep:string=''):string </td><td>Return elements joined by char.</td></tr>
 <tr><td>lastIndexOf</td><td>lastIndexOf(val:any, start:number=0):number </td><td>Return index of last occurence in array.</td></tr>
-<tr><td>map</td><td>map(callback:function, this:object=void):array </td><td>Creates a new array with the results of calling a provided function on every element in this array.</td></tr>
+<tr><td>map</td><td>map(callback:function, thisArg:object=void):array </td><td>Creates a new array with the results of calling a provided function on every element in this array.</td></tr>
 <tr><td>pop</td><td>pop() </td><td>Remove and return last element of array.</td></tr>
 <tr><td>push</td><td>push(val:any, ...):number </td><td>Push one or more elements onto array and return size.</td></tr>
 <tr><td>reduce</td><td>reduce(callback:function, initial:any) </td><td>Return a reduced array.</td></tr>
@@ -39,7 +39,7 @@
 <tr><td>shift</td><td>shift() </td><td>Remove first element and shift downwards.</td></tr>
 <tr><td>sizeOf</td><td>sizeOf():number </td><td>Return size of array.</td></tr>
 <tr><td>slice</td><td>slice(start:number, end:number=void):array </td><td>Return sub-array.</td></tr>
-<tr><td>some</td><td>some(callback:function, this:object=void):boolean </td><td>Return true if function returns true some element.</td></tr>
+<tr><td>some</td><td>some(callback:function, thisArg:object=void):boolean </td><td>Return true if function returns true some element.</td></tr>
 <tr><td>sort</td><td>sort(<a href='#Array.sortOptions'>options</a>:function|object=void):array </td><td>Sort an array.</td></tr>
 <tr><td>splice</td><td>splice(start:number, howmany:number=void, ...):array </td><td>Change the content of an array, adding new elements while removing old elements.</td></tr>
 <tr><td>unshift</td><td>unshift(...):number </td><td>Add new elements to start of array and return size.</td></tr>
@@ -420,7 +420,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>isdir</td><td>isdir(file:string):boolean </td><td>Return true if file is a directory.</td></tr>
 <tr><td>isfile</td><td>isfile(file:string):boolean </td><td>Return true if file is a normal file.</td></tr>
 <tr><td>isrelative</td><td>isrelative(file:string):boolean </td><td>Return true if file path is relative.</td></tr>
-<tr><td>join</td><td>join(path:string, path:string):string </td><td>Join two file realpaths, or just second if an absolute path.</td></tr>
+<tr><td>join</td><td>join(path1:string, path2:string):string </td><td>Join two file realpaths, or just second if an absolute path.</td></tr>
 <tr><td>link</td><td>link(src:string, dest:string, ishard:boolean=false) </td><td>Link a file. The second argument is the destination file to be created. If a third bool argument is true, a hard link is created.</td></tr>
 <tr><td>lstat</td><td>lstat(file:string):object </td><td>Return status info for file.</td></tr>
 <tr><td>mkdir</td><td>mkdir(file:string,force:boolean=false) </td><td>Create a directory: force creates subdirs.</td></tr>
@@ -484,7 +484,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
 <tr><td>Function</td><td>new Function():function </td><td>Function constructor (unimplemented).</td></tr>
 <tr><td>apply</td><td>apply(thisArg:null|object|function, args:array=void) </td><td>Call function passing args array.</td></tr>
-<tr><td>bind</td><td>bind(thisArg:object|function=null,arg,...) </td><td>Return function that calls bound function prepended with thisArg+arguments.</td></tr>
+<tr><td>bind</td><td>bind(thisArg:object|function=null,...) </td><td>Return function that calls bound function prepended with thisArg+arguments.</td></tr>
 <tr><td>call</td><td>call(thisArg:null|object|function, arg1, ...) </td><td>Call function with args.</td></tr>
 </table>
 <a name="Functionend"></a>
@@ -513,7 +513,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>execZip</td><td>execZip():string|void </td><td>If executing a .zip file, return file name.</td></tr>
 <tr><td>executable</td><td>executable():string </td><td>Return name of executable.</td></tr>
 <tr><td>files</td><td>files():array </td><td>Return list of all sourced files.</td></tr>
-<tr><td>funcs</td><td>funcs(string|regexp|object=void):array|object </td><td>Return details or list of matching functions.</td></tr>
+<tr><td>funcs</td><td>funcs(arg:string|regexp|object=void):array|object </td><td>Return details or list of matching functions.</td></tr>
 <tr><td>interp</td><td>interp(interp:userobj=void):object </td><td>Return info on given or current interp.</td></tr>
 <tr><td>isMain</td><td>isMain():boolean </td><td>Return true if current script was the main script invoked from command-line.</td></tr>
 <tr><td>keywords</td><td>keywords(isSql=false, name:string=void):boolean|array </td><td>Return/lookup reserved keyword.</td></tr>
@@ -574,7 +574,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>info</td><td>info():object </td><td>Returns internal statistics about interp.</td></tr>
 <tr><td>source</td><td>source(file:string, async:boolean=false) </td><td>Interpret file within sub-interp. When the 'async' option is used on a threaded interp, the script is queued as an Event.</td></tr>
 <tr><td>uplevel</td><td>uplevel(js:string, level:number=0) </td><td>Interpret code at the given stack level. The level argument is as returned by Info.level().  Not supported with threads.</td></tr>
-<tr><td>value</td><td>value(var:string, level:number=0) </td><td>Lookup value of variable at stack level.</td></tr>
+<tr><td>value</td><td>value(varName:string, level:number=0) </td><td>Lookup value of variable at stack level.</td></tr>
 </table>
 
 
@@ -611,6 +611,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>name</td><td><i>STRKEY</i></td><td>Optional text name for this interp.</td><td><i></i></td></tr>
 <tr><td>noAutoLoad</td><td><i>BOOL</i></td><td>Disable autoload.</td><td><i></i></td></tr>
 <tr><td>noConfig</td><td><i>BOOL</i></td><td>Disable use of Interp.conf to change options after create.</td><td><i>initOnly</i></td></tr>
+<tr><td>noEval</td><td><i>BOOL</i></td><td>Disable eval: just parses file to check syntax.</td><td><i>initOnly</i></td></tr>
 <tr><td>noInput</td><td><i>BOOL</i></td><td>Disable use of console.input().</td><td><i></i></td></tr>
 <tr><td>noLoad</td><td><i>BOOL</i></td><td>Disable load of shared libs.</td><td><i></i></td></tr>
 <tr><td>noNetwork</td><td><i>BOOL</i></td><td>Disable new Socket/WebSocket, or load of builtin MySql.</td><td><i></i></td></tr>
@@ -1474,10 +1475,10 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <tr><td>getenv</td><td>getenv(name:string=void):string|object|void </td><td>Get one or all environment.</td></tr>
 <tr><td>getpid</td><td>getpid(parent:boolean=false):number </td><td>Get process/parent id.</td></tr>
 <tr><td>getuser</td><td>getuser():object </td><td>Get userid info.</td></tr>
-<tr><td>hash</td><td>hash(val:string, <a href='#Util.hashOptions'>options</a>|object=void):string </td><td>Return hash (default SHA256) of string/file.</td></tr>
+<tr><td>hash</td><td>hash(val:string, <a href='#Util.hashOptions'>options</a>:object=void):string </td><td>Return hash (default SHA256) of string/file.</td></tr>
 <tr><td>hexStr</td><td>hexStr(val:string, decode:boolean=false):string </td><td>Hex encode/decode a string.</td></tr>
 <tr><td>setenv</td><td>setenv(name:string, value:string=void) </td><td>Set/get an environment var.</td></tr>
-<tr><td>sqlValues</td><td>sqlValues(name:string, var:object=void) </td><td>Get object values for SQL.</td></tr>
+<tr><td>sqlValues</td><td>sqlValues(name:string, obj:object=void) </td><td>Get object values for SQL.</td></tr>
 <tr><td>times</td><td>times(callback:function|boolean, count:number=1):number </td><td>Call function count times and return execution time in microseconds.</td></tr>
 <tr><td>verConvert</td><td>verConvert(ver:string|number, zeroTrim:number=0):number|string|null </td><td>Convert a version to/from a string/number, or return null if not a version. For string output zeroTrim says how many trailing .0 to trim (0-2).</td></tr>
 </table>
@@ -1510,7 +1511,7 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <h2>Methods for "Vfs"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>conf</td><td>conf(mount:string, string|<a href='#Vfs.confOptions'>options</a>:object|string=void) </td><td>Configure mount.</td></tr>
+<tr><td>conf</td><td>conf(mount:string, <a href='#Vfs.confOptions'>options</a>:string|object|string=void) </td><td>Configure mount.</td></tr>
 <tr><td>exec</td><td>exec(cmd:string) </td><td>Safe mode exec for VFS support cmds eg. fossil info/ls/cat.</td></tr>
 <tr><td>fileconf</td><td>fileconf(mount:string, path:string, <a href='#Vfs.fileconfOptions'>options</a>:string|object=void) </td><td>Configure file info which is same info as in fileList.</td></tr>
 <tr><td>list</td><td>list():array </td><td>Return list of all vfs mounts.</td></tr>
@@ -1769,8 +1770,8 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <h2>Methods for "Zvfs"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>append</td><td>append(archive:string, filelist:array, path:string|null=void, filelist:array=void, path:string|null=void, ...):void </td><td>Like 'create()', but appends to an existing archive (with no dup checking).</td></tr>
-<tr><td>create</td><td>create(archive:string, filelist:array, path:string|null=void, filelist:array=void, path:string|null=void, ...):void </td><td>Create a zip with the given files in prefix path. This command creates a zip archive and adds files to it. Files are relative the given 'path', or the current directory. If the destignation file already exist but is not an archive (eg. an executable), zip data is appended to the end of the file. If the existing file is already an archive, an error will be thrown. To truncate an existing archive, use zvfs.truncate(). Or use zvfs.append() instead. 
+<tr><td>append</td><td>append(archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...):void </td><td>Like 'create()', but appends to an existing archive (with no dup checking).</td></tr>
+<tr><td>create</td><td>create(archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...):void </td><td>Create a zip with the given files in prefix path. This command creates a zip archive and adds files to it. Files are relative the given 'path', or the current directory. If the destignation file already exist but is not an archive (eg. an executable), zip data is appended to the end of the file. If the existing file is already an archive, an error will be thrown. To truncate an existing archive, use zvfs.truncate(). Or use zvfs.append() instead. 
    zvfs.create('foo.zip',['main.js', 'bar.js'], 'src', ['a.html', 'css/a.css'], 'html');</td></tr>
 <tr><td>deflate</td><td>deflate(data:string):string </td><td>Compress string using zlib deflate.</td></tr>
 <tr><td>inflate</td><td>inflate(data:string):string </td><td>Uncompress string using zlib inflate.</td></tr>

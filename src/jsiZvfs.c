@@ -2346,8 +2346,8 @@ bail:
 }
 
 static Jsi_CmdSpec zvfsCmds[] = {
-    { "append",     ZvfsAppendCmd,      2, -1, "archive:string, filelist:array, path:string|null=void, filelist:array=void, path:string|null=void, ...",  .help="Like 'create()', but appends to an existing archive (with no dup checking)", .retType=(uint)JSI_TT_VOID },
-    { "create",     ZvfsCreateCmd,      2, -1, "archive:string, filelist:array, path:string|null=void, filelist:array=void, path:string|null=void, ...",  .help="Create a zip with the given files in prefix path", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_create },
+    { "append",     ZvfsAppendCmd,      2, -1, "archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...",  .help="Like 'create()', but appends to an existing archive (with no dup checking)", .retType=(uint)JSI_TT_VOID },
+    { "create",     ZvfsCreateCmd,      2, -1, "archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...",  .help="Create a zip with the given files in prefix path", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_create },
     { "list",       ZvfsListCmd,        1,  1, "archive:string",  .help="List files in archive", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_list },
     { "mount",      ZvfsMountCmd,       1,  2, "archive:string, mountdir:string=void",  .help="Mount zip on mount point", .retType=(uint)JSI_TT_STRING, .flags=0, .info=FN_mount },
     { "names",      ZvfsNamesCmd,       0,  1, "mountdir:string=void",  .help="Return all zvfs mounted zips, or archive for specified mount", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_info },

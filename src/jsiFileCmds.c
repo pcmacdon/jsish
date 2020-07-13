@@ -1281,7 +1281,7 @@ static Jsi_CmdSpec fileCmds[] = {
     { "executable", FileExecutableCmd,  1,  1, "file:string",  .help="Return true if file is executable", .retType=(uint)JSI_TT_BOOLEAN },
     { "exists",     FileExistsCmd,      1,  1, "file:string",  .help="Return true if file exists", .retType=(uint)JSI_TT_BOOLEAN },
     { "extension",  FileExtensionCmd,   1,  1, "file:string",  .help="Return file extension", .retType=(uint)JSI_TT_STRING },
-    { "join",       FileJoinCmd,        2,  2, "path:string, path:string",  .help="Join two file realpaths, or just second if an absolute path", .retType=(uint)JSI_TT_STRING },
+    { "join",       FileJoinCmd,        2,  2, "path1:string, path2:string",  .help="Join two file realpaths, or just second if an absolute path", .retType=(uint)JSI_TT_STRING },
     { "isdir",      FileIsdirCmd,       1,  1, "file:string",  .help="Return true if file is a directory", .retType=(uint)JSI_TT_BOOLEAN },
     { "isfile",     FileIsfileCmd,      1,  1, "file:string",  .help="Return true if file is a normal file", .retType=(uint)JSI_TT_BOOLEAN },
     { "isrelative", FileIsRelativeCmd,  1,  1, "file:string",  .help="Return true if file path is relative", .retType=(uint)JSI_TT_BOOLEAN },

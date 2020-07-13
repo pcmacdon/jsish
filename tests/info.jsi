@@ -57,7 +57,9 @@ Info.funcs() ==> [ "XX", "X", "Y" ]
 K = {} ==> {}
 K.f(1) ==> 'F'
 undefined
-Info.funcs(K.f).argList ==> [ "z" ]
+Info.funcs(K.f).argList ==> /home/pmacdona/src/jsi3/tests/info.jsi:29: warn: type mismatch for argument arg 1 'arg': expected "string|object|regexp" but got "function", in call to 'funcs' <function (z) {...}>.    (at or near "f")
+
+[ "z" ]
 Info.funcs(K) ==> [ "f", "g" ]
 File.tail(Info.script()) ==> info.jsi
 File.tail(Info.script(XX)) ==> info.jsi

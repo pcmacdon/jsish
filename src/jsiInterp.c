@@ -110,6 +110,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(STRKEY,Jsi_Interp, name,        .help="Optional text name for this interp"),
     JSI_OPT(BOOL,  Jsi_Interp, noAutoLoad,  .help="Disable autoload", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(BOOL,  Jsi_Interp, noConfig,    .help="Disable use of Interp.conf to change options after create", jsi_IIOF),
+    JSI_OPT(BOOL,  Jsi_Interp, noEval,      .help="Disable eval: just parses file to check syntax", jsi_IIOF),
     JSI_OPT(BOOL,  Jsi_Interp, noInput,     .help="Disable use of console.input()", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(BOOL,  Jsi_Interp, noLoad,      .help="Disable load of shared libs", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(BOOL,  Jsi_Interp, noNetwork,   .help="Disable new Socket/WebSocket, or load of builtin MySql", .flags=JSI_OPT_LOCKSAFE),
@@ -1335,6 +1336,8 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
             bool bv = 1;
             char *aio2 = argv[iocnt+1], *aioc = Jsi_Strchr(aio2, ':'),
                 argNamS[50], *argNam = aio2;
+            if (!aioc)
+                aioc = Jsi_Strchr(aio2, '=');
             const char *argVal;
             if (!Jsi_Strcmp("traceCall", aio2))
                 interp->traceCall |= (jsi_callTraceFuncs |jsi_callTraceArgs |jsi_callTraceReturn | jsi_callTraceBefore | jsi_callTraceFullPath);
@@ -2768,7 +2771,7 @@ static Jsi_CmdSpec interpCmds[] = {
     { "info",   InterpInfoCmd,    0,  0, "", .help="Returns internal statistics about interp", .retType=(uint)JSI_TT_OBJECT },
     { "source", InterpSourceCmd,  1,  2, "file:string, async:boolean=false", .help="Interpret file within sub-interp", .retType=(uint)JSI_TT_ANY, .flags=0, .info=FN_interpeval },
     { "uplevel",InterpUplevelCmd, 2,  2, "js:string, level:number=0", .help="Interpret code at the given stack level", .retType=(uint)JSI_TT_ANY, .flags=0, .info=FN_interpuplevel },
-    { "value",  InterpValueCmd,   1,  2, "var:string, level:number=0", .help="Lookup value of variable at stack level", .retType=(uint)JSI_TT_ANY },
+    { "value",  InterpValueCmd,   1,  2, "varName:string, level:number=0", .help="Lookup value of variable at stack level", .retType=(uint)JSI_TT_ANY },
     { NULL,     0,0,0,0, .help="Commands for accessing interps" }
 };
 

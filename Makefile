@@ -442,7 +442,7 @@ ref:
 	$(MAKE) -C www
 	$(MAKE) -C md
 
-release: stubs ref src/jsi.c src/jsiOne.c
+release: stubs ref src/jsi.c src/jsiOne.c testsys test
 
 printconf:
 	@echo $(EXPECT_CONFIG_VER)
@@ -452,7 +452,9 @@ uchroot: src/uchroot.c
 	
 test:
 	./jsish -u tests
-#	tools/testjs.sh tests
+
+testsys:
+	tools/testsys.sh
 
 # This requires building with memdebug.
 testmem:

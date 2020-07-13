@@ -13,7 +13,7 @@ function jsi_mktoc(args:array, conf:object) {
     parseOpts(self, options, conf);
     
     function mk1toc(fname:string) {
-        var rc = '', lst = [], idlst = [], lev = 0, prev = 0, cur = 0, res, lev, top = 0;
+        var rc = '', lst = [], idlst = [], lev = 0, prev = 0, cur = 0, res, top = 0;
         var id, lbl, intoc = false, sawtoc = false, line = 0, tpre = '', tpost = '', oldtoc = '';
         var errs = 0, s, s0, fp = new Channel(fname);
         while ((s0=fp.gets()) !== undefined) {

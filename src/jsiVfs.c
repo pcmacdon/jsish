@@ -832,7 +832,7 @@ static Jsi_RC VfsExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
 
 
 static Jsi_CmdSpec vfsCmds[] = {
-    { "conf",       VfsConfCmd,     1,  2, "mount:string, string|options:object|string=void",  .help="Configure mount", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=VfsOptions },
+    { "conf",       VfsConfCmd,     1,  2, "mount:string, options:string|object|string=void",  .help="Configure mount", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=VfsOptions },
     { "exec",       VfsExecCmd,     1,  1, "cmd:string",  .help="Safe mode exec for VFS support cmds eg. fossil info/ls/cat", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=VfsFileOptions },
     { "fileconf",   VfsFileConfCmd, 2,  3, "mount:string, path:string, options:string|object=void",  .help="Configure file info which is same info as in fileList", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=VfsFileOptions },
     { "list",       VfsListCmd,     0,  0, "",  .help="Return list of all vfs mounts", .retType=(uint)JSI_TT_ARRAY, .flags=0 },

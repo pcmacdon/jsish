@@ -96,8 +96,8 @@ function Wget(fileargs:array|string, conf:object=void) {
             self.protocol = 'post';
 
         if (self.sslDir) {
-            if (self.sslFnKey != '') sself.sslkey = File.join(self.sslDir, self.sslFnKey);
-            if (self.sslFnCert != '') sself.sslcert = File.join(self.sslDir, self.sslFnCert);
+            if (self.sslFnKey != '') self.sslkey = File.join(self.sslDir, self.sslFnKey);
+            if (self.sslFnCert != '') self.sslcert = File.join(self.sslDir, self.sslFnCert);
             self.ssl = true;
         }
         
@@ -111,8 +111,8 @@ function Wget(fileargs:array|string, conf:object=void) {
             address:self.address,
             protocol:self.protocol,
             clientHost:self.address,
-            sslCert:self.sslCert,
-            sslKey:self.sslKey,
+            sslCert:self.sslcert,
+            sslKey:self.sslkey,
             ssl:self.ssl,
         };
         for (var i in self.wsOpts)

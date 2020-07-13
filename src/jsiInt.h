@@ -1117,6 +1117,7 @@ struct Jsi_Interp {
     Jsi_Value *jsppCallback;
     bool noConfig;
     bool noLoad;
+    bool noEval;
     bool noAutoLoad;
     bool noStderr;
     bool noSubInterps;

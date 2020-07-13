@@ -53,7 +53,7 @@ function mouseStopped(ev) {
     if (self.uioptions.varTooltip)
         id.title = '.';
     //AddOutput('GET '+word+'\n');
-    WsSend('varget', {name:word})
+    WsSend('varget', {name:word});
 }
 
 // Start function.
@@ -95,7 +95,7 @@ function onload()
     self.dbfile.onmousemove = function(e) {
         if (self.uiddbfile) clearInterval(self.uiddbfile);
         self.uiddbfile = setTimeout(function () { mouseStopped(e); }, 500);
-    }
+    };
     TogglePanel("uibutton", null);
 }
 

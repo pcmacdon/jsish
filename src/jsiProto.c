@@ -628,7 +628,7 @@ Jsi_Value *jsi_ProtoValueNew(Jsi_Interp *interp, const char *name, const char *p
 static Jsi_CmdSpec functionCmds[] = {
     { "Function",  jsi_Function_constructor,   0, 0,  "", .help="Function constructor (unimplemented)", .retType=(uint)JSI_TT_FUNCTION, .flags=JSI_CMD_IS_CONSTRUCTOR },
     { "apply",     jsi_FunctionApplyCmd,       1, 2,  "thisArg:null|object|function, args:array=void", .help="Call function passing args array", .retType=(uint)JSI_TT_ANY },
-    { "bind",      jsi_FunctionBindCmd,        0, -1, "thisArg:object|function=null,arg,...", .help="Return function that calls bound function prepended with thisArg+arguments", .retType=(uint)JSI_TT_ANY },
+    { "bind",      jsi_FunctionBindCmd,        0, -1, "thisArg:object|function=null,...", .help="Return function that calls bound function prepended with thisArg+arguments", .retType=(uint)JSI_TT_ANY },
     { "call",      jsi_FunctionCallCmd,        1, -1, "thisArg:null|object|function, arg1, ...", .help="Call function with args", .retType=(uint)JSI_TT_ANY },
     { NULL, 0,0,0,0, .help="Commands for accessing functions" }
 };

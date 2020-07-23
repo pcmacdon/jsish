@@ -979,6 +979,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>toLocaleString</td><td>toLocaleString(quote:boolean=false):string </td><td>Convert to string.</td></tr>
 <tr><td>toString</td><td>toString(quote:boolean=false):string </td><td>Convert to string.</td></tr>
 <tr><td>valueOf</td><td>valueOf() </td><td>Returns primitive value.</td></tr>
+<tr><td>values</td><td>values(obj:object=void):array </td><td>Return the  values of an object.</td></tr>
 </table>
 <a name="Objectend"></a>
 <p><a href="#TOC">Return to top</a>

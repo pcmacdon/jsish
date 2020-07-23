@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 29
+#define JSI_VERSION_RELEASE 30
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -481,6 +481,7 @@ JSI_EXTERN Jsi_IterObj* Jsi_IterObjNew(Jsi_Interp *interp, Jsi_IterProc *iterPro
 JSI_EXTERN void Jsi_IterObjFree(Jsi_IterObj *iobj); /*STUB = 413*/
 JSI_EXTERN void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth); /*STUB = 414*/
 JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
+JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val); /*STUB = 420*/ /*LAST*/
 
 struct Jsi_IterObj {
     Jsi_Interp *interp;
@@ -514,7 +515,7 @@ JSI_EXTERN Jsi_Value* Jsi_ValueNewStringConst(Jsi_Interp *interp, const char *s,
 JSI_EXTERN Jsi_Value* Jsi_ValueNewStringDup(Jsi_Interp *interp, const char *s); /*STUB = 106*/
 JSI_EXTERN Jsi_Value* Jsi_ValueNewArray(Jsi_Interp *interp, const char **items, int count); /*STUB = 107*/
 JSI_EXTERN Jsi_Value* Jsi_ValueNewObj(Jsi_Interp *interp, Jsi_Obj *o) ; /*STUB = 108*/
-JSI_EXTERN Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt, const char* modifiers); /*STUB = 419*/ /*LAST*/
+JSI_EXTERN Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt, const char* modifiers); /*STUB = 419*/
 #define Jsi_ValueNewBlobString(interp, s) Jsi_ValueNewBlob(interp, (uchar*)s, Jsi_Strlen(s))
 #define Jsi_ValueNewArrayObj(interp, items, count, copy) Jsi_ValueNewObj(interp, Jsi_ObjNewArray(interp, items, count, copy))
 

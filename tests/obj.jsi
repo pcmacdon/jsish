@@ -8,6 +8,7 @@ var o, O;
 ;o.f(1);
 ;Object.keys(o);
 ;o.keys();
+;Object.values(O);
 
 /*
 =!EXPECTSTART!=
@@ -17,5 +18,6 @@ o.x ==> 1
 o.f(1) ==> 2
 Object.keys(o) ==> [ "f", "x", "y" ]
 o.keys() ==> [ "f", "x", "y" ]
+Object.values(O) ==> [ "function (n) {...}", 1, 2 ]
 =!EXPECTEND!=
 */

@@ -112,6 +112,25 @@ void Jsi_ObjListifyArray(Jsi_Interp *interp, Jsi_Obj *obj)
     } while (interp->delRBCnt);
 }
 
+static Jsi_RC ObjListifyValuesCallback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *data)
+{
+    Jsi_Interp *interp = tree->opts.interp;
+    Jsi_Obj *obj = (Jsi_Obj*)data;
+    Jsi_Value *val = Jsi_TreeValueGet(hPtr);
+    if (!val || Jsi_ObjArrayAdd(interp, obj, val) != JSI_OK) 
+        return JSI_ERROR;
+    return JSI_OK;
+}
+
+Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val)
+{
+    if (!Jsi_ValueIsObjType(interp, val, JSI_OT_ARRAY))
+        return Jsi_LogError("Dest is not an array");
+
+    Jsi_TreeWalk(obj->tree, ObjListifyValuesCallback, Jsi_ValueGetObj(interp, val), 0);
+    return JSI_OK;
+}
+
 void Jsi_IterObjFree(Jsi_IterObj *iobj)
 {
     if (!iobj->isArrayList) {

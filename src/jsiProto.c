@@ -371,6 +371,23 @@ static Jsi_RC ObjectKeysCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     return rc;
 }
 
+static Jsi_RC ObjectValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+   int argc = Jsi_ValueGetLength(interp, args);
+   Jsi_Value *val = _this;
+   
+   if (argc>0)
+        val = Jsi_ValueArrayIndex(interp, args, 0);
+
+    Jsi_RC rc = Jsi_ValueGetKeys(interp, val, *ret);
+    if (!Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
+        Jsi_LogError("can not call values() with non-object");
+    Jsi_ValueMakeArrayObject(interp, ret, NULL);
+    Jsi_ObjGetValues(interp, Jsi_ValueGetObj(interp, val), *ret);
+    return rc;
+}
+
 Jsi_RC jsi_ObjectToStringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
@@ -659,6 +676,7 @@ static Jsi_CmdSpec objectCmds[] = {
 #endif
     { "toLocaleString", ObjectToLocaleStringCmd,0, 1, "quote:boolean=false", .help="Convert to string", .retType=(uint)JSI_TT_STRING },
     { "toString",       jsi_ObjectToStringCmd,  0, 1, "quote:boolean=false", .help="Convert to string", .retType=(uint)JSI_TT_STRING }, 
+    { "values",         ObjectValuesCmd,        0, 1, "obj:object=void", .help="Return the  values of an object", .retType=(uint)JSI_TT_ARRAY },
     { "valueOf",        ObjectValueOfCmd,       0, 0, "", .help="Returns primitive value", .retType=(uint)JSI_TT_ANY },
     { NULL, 0,0,0,0, .help="Commands for accessing Objects" }
 #endif

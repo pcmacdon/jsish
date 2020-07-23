@@ -87,16 +87,11 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
 int jsi_fatalexit = JSI_LOG_BUG;
 const char *jsi_GetCurFile(Jsi_Interp *interp)
 {
-    const char *curFile = NULL;
     if (!interp)
-        return NULL;
+        return "";
     if (interp->inParse)
-        curFile = interp->curFile;
-    else
-        curFile = (interp->curIp && interp->curIp->fname? interp->curIp->fname:interp->curFile);
-    if (!curFile) curFile = interp->framePtr->fileName;
-    if (!curFile) curFile = "";
-    return curFile;
+        return interp->parsePs->filePtr->fileName;
+    return interp->framePtr->filePtr->fileName;
 }
 extern void jsi_TypeMismatch(Jsi_Interp* interp)
 {
@@ -224,7 +219,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
             jsi_Frame *fptr = interp->framePtr->parent;
             line = fptr->line;
             lofs = 0;
-            curFile = fptr->fileName;
+            curFile = fptr->filePtr->fileName;
         } else {
             line = interp->curIp->Line;
             lofs = interp->curIp->Lofs;

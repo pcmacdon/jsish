@@ -339,6 +339,15 @@ typedef struct {
 #endif
 } Jsi_InterpDebug;
 
+typedef struct {
+    char *origFile; /* Short file name. */
+    char *fileName; /* Fully qualified name. */
+    char *dirName;  /* Directory name. */
+    const char *str; /* File data. */
+    int useCnt;
+    int logflag;
+} jsi_FileInfo;
+
 
 /* stack change */
 /* 0  nothing change */
@@ -434,7 +443,7 @@ typedef struct jsi_OpCode {
     unsigned char isof:1;
     unsigned char local:1;
     jsi_OpLogFlags logflag:3;
-    const char *fname;
+    jsi_FileInfo* filePtr;
 } jsi_OpCode;
 
 
@@ -680,19 +689,10 @@ typedef struct Jsi_ScopeStrs {
     int retType;
 } Jsi_ScopeStrs;
 
-typedef struct {
-    char *origFile; /* Short file name. */
-    char *fileName; /* Fully qualified name. */
-    char *dirName;  /* Directory name. */
-    const char *str; /* File data. */
-    int useCnt;
-    int logflag;
-} jsi_FileInfo;
-
 // Eval stack-frame.
 typedef struct jsi_Frame {
     int level;
-    const char *fileName;
+    //const char *fileName;
     const char *funcName;
     const char *dirName;
     jsi_FileInfo *filePtr;
@@ -731,6 +731,7 @@ typedef struct jsi_Pstate {
     Jsi_Hash *strTbl;
     int argType;                // Used during parsing to aggregate type.
     Jsi_ScopeStrs *args;        // Last push.
+    jsi_FileInfo *filePtr;
 } jsi_Pstate;
 
 
@@ -849,7 +850,8 @@ struct Jsi_Func {
     Jsi_CmdSpec *parentSpec;
     uint retType;  /* Type name: or of Jsi_otype*/
     int callCnt;
-    const char *script, *scriptFile;  /* Script created in. */
+    const char *scriptData;
+    //const char *script, *scriptFile;  /* Script created in. */
     jsi_Pline bodyline; /* Body line info. */
     const char *bodyStr; // Non-builtin func script body.
     int endPos, startPos;
@@ -1193,7 +1195,7 @@ struct Jsi_Interp {
     const char *scriptStr;
     jsi_Frame topFrame;
     jsi_FileInfo topFile;
-    const char *curFile;
+    //const char *curFile;
     const char *curFunction;
     const char *homeDir;
     const char *historyFile;

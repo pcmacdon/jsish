@@ -172,15 +172,16 @@ const char *jsiFuncInfo(Jsi_Interp *interp, Jsi_DString *dStr, Jsi_Func* func, J
         Jsi_DSPrintf(dStr, ", in call to '%s'", func->name);
     else
         Jsi_DSPrintf(dStr, ", in call to function");
-    if (func->script) {
-        const char *cp = Jsi_Strrchr(func->script, '/');
+    const char *file = interp->framePtr->filePtr->fileName;
+    if (file[0]) {
+        const char *cp = Jsi_Strrchr(file, '/');
         if (cp)
             cp++;
         else
-            cp = func->script;
+            cp = file;
         Jsi_DSPrintf(dStr, " declared at %s:%d.%d", cp, func->bodyline.first_line, func->bodyline.first_column);
     }
-        if (arg) {
+    if (arg) {
         Jsi_DSAppend(dStr, " <", NULL);
         Jsi_ValueGetDString(interp, arg, dStr, 0);
         Jsi_DSAppend(dStr, ">.", NULL);
@@ -508,12 +509,12 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
     f->opcodes = ops;
     f->argnames = args;
     f->localnames = localvar;
-    f->script = interp->curFile;
+    //f->script = interp->curFile;
     f->bodyline = *line;
     f->retType = (Jsi_otype)args->retType;
-    if (!pstate->eval_flag) {
+    /*if (!pstate->eval_flag) {
         f->scriptFile = f->script;
-    }
+    }*/
     if (l->ltype == LT_STRING)
         f->bodyStr = l->d.str;
     f->endPos = l->cur;
@@ -578,7 +579,7 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
                     if (!jsi_FuncSigsMatch(pstate, f, fo)) {
                         if (line)
                             interp->parseLine = line;
-                        Jsi_LogWarn("possible signature mismatch for function '%s' at %.120s:%d", name, fo->script, fo->bodyline.first_line);
+                        Jsi_LogWarn("possible signature mismatch for function '%s' at %.120s:%d", name, fo->filePtr->fileName, fo->bodyline.first_line);
                         if (line)
                             interp->parseLine = NULL;
                         jsi_TypeMismatch(interp);
@@ -719,7 +720,7 @@ Jsi_Value *jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const ch
         if (name)
             f->cmdSpec->name = (char*)Jsi_KeyAdd(interp, name);
     }
-    f->script = interp->curFile;
+    //f->script = interp->curFile;
     f->callback = callback;
     return Jsi_ValueMakeObject(interp, toVal, o);
 }
@@ -734,7 +735,7 @@ Jsi_Value *jsi_MakeFuncValueSpec(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, void 
     f->callback = cmdSpec->proc;
     f->privData = privData;
     f->f.flags = (cmdSpec->flags & JSI_CMD_MASK);
-    f->script = interp->curFile;
+    //f->script = interp->curFile;
     o->d.fobj = jsi_FuncObjNew(interp, f);
     return Jsi_ValueMakeObject(interp, NULL, o);
 }
@@ -969,7 +970,7 @@ void jsi_FuncFree(Jsi_Interp *interp, Jsi_Func *func)
     if (profile || cover) {
         Jsi_DString dStr;
         Jsi_DSInit(&dStr);
-        const char *file = func->script;
+        const char *file = func->filePtr->fileName;
         if (!file)
             file = "";
         int line = func->bodyline.last_line;
@@ -1076,7 +1077,7 @@ Jsi_Func *jsi_FuncNew(Jsi_Interp *interp)
      SIGINIT(func, FUNC);
      func->hPtr = Jsi_HashSet(interp->funcsTbl, func, func);
      func->refCnt = 1;
-     func->filePtr = interp->framePtr->filePtr;
+     func->filePtr = (interp->inParse? interp->parsePs->filePtr: interp->framePtr->filePtr);
      interp->funcCnt++;
      return func;
 }

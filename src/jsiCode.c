@@ -155,7 +155,7 @@ static int codes_insertln(Jsi_OpCodes *c, jsi_Eopcode code, void *extra, jsi_Pst
     c->codes[c->code_len].data = extra;
     c->codes[c->code_len].Line = line->first_line;
     c->codes[c->code_len].Lofs = line->first_column;
-    c->codes[c->code_len].fname = jsi_PstateGetFilename(pstate);
+    c->codes[c->code_len].filePtr = pstate->filePtr;
     c->codes[c->code_len].alloc = doalloc;
     c->code_len ++;
     return 0;

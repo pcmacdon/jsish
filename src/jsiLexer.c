@@ -514,7 +514,7 @@ void yyerror(YYLTYPE *yylloc, jsi_Pstate *ps, const char *msg)
     Jsi_Interp *interp = ps->interp;
     interp->errLine = yylloc->first_line;
     interp->errCol = yylloc->first_column;
-    Jsi_LogParse("%s:%d.%d: error: %s", interp->curFile?interp->curFile:"@", yylloc->first_line, 
+    Jsi_LogParse("%s:%d.%d: error: %s", interp->framePtr->filePtr->fileName, yylloc->first_line, 
         yylloc->first_column, msg);
     /*if (interp->curFile)
         fprintf(stderr, "%s:%d.%d: %s\n",  interp->curFile, yylloc->first_line, yylloc->first_column, msg);

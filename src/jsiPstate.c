@@ -204,12 +204,6 @@ jsi_Pstate *jsi_PstateNew(Jsi_Interp *interp)
     return ps;
 }
 
-const char *jsi_PstateGetFilename(jsi_Pstate *ps)
-{
-    Jsi_Interp *interp = ps->interp;
-    return interp->curFile;
-}
-
 void jsi_PstateClear(jsi_Pstate *ps)
 {
     jsi_Lexer* l = ps->lexer;

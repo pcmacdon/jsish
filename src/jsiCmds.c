@@ -688,7 +688,7 @@ static Jsi_RC jsi_PkgLoad(Jsi_Interp *interp, const char *name, Jsi_Number ver) 
             goto done;
     }
     // Check script dir.
-    if ((path = interp->framePtr->fileName) || (interp->argv0 && (path = Jsi_ValueString(interp, interp->argv0, NULL)))) {
+    if (*(path = interp->framePtr->filePtr->fileName) || (interp->argv0 && (path = Jsi_ValueString(interp, interp->argv0, NULL)))) {
         if ((cp = Jsi_Strrchr(path, '/'))) {
             len = (cp-path);
             rc = jsi_PkgLoadOne(interp, name, path, len, &fval, ver);
@@ -991,8 +991,8 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
             if (popts->info)
                 Jsi_IncrRefCount(interp, popts->info);
         }
-        if (interp->framePtr->fileName && !initProc)
-            ptr->loadFile = Jsi_KeyAdd(interp->topInterp, interp->framePtr->fileName);
+        if (interp->framePtr->filePtr->fileName[0] && !initProc)
+            ptr->loadFile = Jsi_KeyAdd(interp->topInterp, interp->framePtr->filePtr->fileName);
         Jsi_HashSet(interp->packageHash, (void*)name, ptr);
         if (initProc && interp->parent) { // Provide C extensions to topInterp.
             ptr = jsi_PkgGet(interp->topInterp, name);
@@ -1554,7 +1554,7 @@ static Jsi_RC SysExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
 void jsi_SysPutsCmdPrefix(Jsi_Interp *interp, jsi_LogOptions *popts,Jsi_DString *dStr, int* quote, const char **fnPtr) {
     int didx = 0;
     const char *cp;
-    const char *fn = interp->curIp->fname;
+    const char *fn = interp->curIp->filePtr->fileName;
     if (fn && !popts->full && (cp=Jsi_Strrchr(fn, '/')))
         fn = cp +1;
     if (popts->time || (didx=popts->date)) {
@@ -2379,10 +2379,10 @@ dumpfunc:
     if (func->retType)
         Jsi_ObjInsert(interp, nobj, "retType", Jsi_ValueNewStringKey(interp, jsi_typeName(interp, func->retType, &dStr)), 0);
     Jsi_DSFree(&dStr);
-    if (func->script) {
-        lval = Jsi_ValueNewStringKey(interp, func->script);
+    if (func->scriptData) {
+        lval = Jsi_ValueNewStringKey(interp, func->scriptData);
         Jsi_ObjInsert(interp, nobj, "script", lval, 0);
-        const char *ftype = (func->scriptFile?"script":"eval");
+        const char *ftype = (func->scriptData?"eval":"script");
         if (!func->opcodes) {
             ftype = (func->callback == jsi_AliasInvoke ? "alias" : "builtin");
         } else {
@@ -2461,7 +2461,7 @@ static Jsi_RC InfoLevelCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     //int line = (f != interp->framePtr ? f->line : (interp->curIp ? interp->curIp->Line : 0));
     int line = (f->line ? f->line : (interp->curIp ? interp->curIp->Line : 0));
     snprintf(buf, sizeof(buf), "{funcName:\"%s\", fileName:\"%s\", line:%d, level:%d, tryDepth:%d, withDepth:%d}",
-        f->funcName?f->funcName:"", f->fileName?f->fileName:"", line, f->level, f->tryDepth, f->withDepth
+        f->funcName?f->funcName:"", f->filePtr->fileName, line, f->level, f->tryDepth, f->withDepth
         );
     
     Jsi_RC rc = Jsi_JSONParse(interp, buf, ret, 0);
@@ -2632,7 +2632,7 @@ static Jsi_RC InfoVersionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
 static bool jsi_isMain(Jsi_Interp *interp) {
     int isi = (interp->isMain);
     if (isi == 0) {
-        const char *c2 = interp->curFile;
+        const char *c2 = interp->framePtr->filePtr->fileName;
         Jsi_Value *v1 = interp->argv0;
         if (c2 && v1 && Jsi_ValueIsString(interp, v1)) {
             char *c1 = Jsi_ValueString(interp, v1, NULL);
@@ -2679,7 +2679,7 @@ static Jsi_RC DebugAddCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args, 0);
     if (Jsi_ValueGetNumber(interp, v, &vnum) == JSI_OK) {
         bp.line = (int)vnum;
-        bp.file = interp->curFile;
+        bp.file = interp->framePtr->filePtr->fileName;
     } else {
         const char *val = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
         const char *cp;
@@ -2687,7 +2687,7 @@ static Jsi_RC DebugAddCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         if (isdigit(val[0])) {
             if (Jsi_GetInt(interp, val, &bp.line, 0) != JSI_OK) 
                 return Jsi_LogError("bad number");
-            bp.file = interp->curFile;
+            bp.file = interp->framePtr->filePtr->fileName;
         } else if ((cp = Jsi_Strchr(val, ':'))) {
             if (Jsi_GetInt(interp, cp+1, &bp.line, 0) != JSI_OK) 
                 return Jsi_LogError("bad number");
@@ -2802,7 +2802,7 @@ static Jsi_RC InfoScriptCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     } else {
         if (arg->vt == JSI_VT_OBJECT) {
             switch (arg->d.obj->ot) {
-                case JSI_OT_FUNCTION: name = arg->d.obj->d.fobj->func->script; break;
+                case JSI_OT_FUNCTION: name = arg->d.obj->d.fobj->func->filePtr->fileName; break;
                 case JSI_OT_REGEXP: isreg = 1; break;
                 default: break;
             }
@@ -3650,13 +3650,10 @@ bool jsi_CommandArgCheck(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, Jsi_Func *f, 
     }
     if (f->argnames==NULL && cmdSpec->argStr) {
         // At least give a clue where the problem is.
-        const char *ocfile = interp->curFile;
         jsi_Pline *opl = interp->parseLine, pline;
         interp->parseLine = &pline;
         pline.first_line = 1;
-        interp->curFile = cmdSpec->name;
         f->argnames = jsi_ParseArgStr(interp, cmdSpec->argStr);
-        interp->curFile = ocfile;
         interp->parseLine = opl;
     }
     return rc;
@@ -4415,9 +4412,9 @@ static Jsi_RC SysRunModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (v2 && !Jsi_ValueIsObjType(interp, v2, JSI_OT_ARRAY))
         return Jsi_LogError("arg 2: expected array|undefined");
     if (!v1 || Jsi_ValueIsNull(interp, v1)) {
-        mod = interp->framePtr->fileName;
-        if (mod) mod = Jsi_Strrchr(mod, '/');
-        if (!mod) return JSI_ERROR;
+        mod = interp->framePtr->filePtr->fileName;
+        if (*mod) mod = Jsi_Strrchr(mod, '/');
+        if (!*mod) return JSI_ERROR;
         mod++;
         cp = Jsi_Strrchr(mod, '.');
         int len = (cp?(cp-mod):(int)Jsi_Strlen(mod));
@@ -4624,7 +4621,7 @@ static Jsi_RC SysParseOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 
             if (cnt == 1 && !Jsi_Strcmp(key, "help") && v3->d.obj->tree->numEntries==1) {
                 int isLong = 1;//Jsi_ValueIsTrue(interp, val);
-                const char *help = "", *es = NULL, *fstr = NULL, *fname = interp->framePtr->ip->fname;
+                const char *help = "", *es = NULL, *fstr = NULL, *fname = interp->framePtr->ip->filePtr->fileName;
                 Jsi_TreeSearchDone(&search);
                 if (fname) {
                     jsi_FileInfo  *fi = (typeof(fi))Jsi_HashGet(interp->fileTbl, fname, 0);
@@ -4640,7 +4637,7 @@ static Jsi_RC SysParseOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
                     help = Jsi_DSAppendLen(&hStr, fstr+1, es-fstr-1);
                     fstr = es;
                 }
-                const char *mod = (fname?fname:interp->framePtr->fileName);
+                const char *mod = (fname?fname:interp->framePtr->filePtr->fileName);
                 if (mod && (mod = Jsi_Strrchr(mod, '/')))
                     mod++;
                 while (help && isspace(help[0])) help++;

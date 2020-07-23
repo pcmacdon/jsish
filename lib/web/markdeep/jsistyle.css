@@ -1,7 +1,0 @@
-.md .mediumTOC {background:#fff; border:1px solid #ccc; padding-right:3px;}
-.md .mediumTOC center { display:none; }
-.md h1,.md h2,.md h3,.md h4 { clear:none; padding:0px; }
-.md .tocNumber {display:none; }
-.md h1::before, .md h2::before, .md h3::before,.md h4::before { display:none; }
-.md .output { background:#000; color:#fff; }
-.md .markdeepFooter { visibility:hidden; }

@@ -44,6 +44,7 @@ function Websrv(args:string|array, conf:object=void):void
         url         :"",        // The file/url to serve out and clears timeout.
         urlPrefix   :'/Websrv', // Prefix for urls
         useridPass  :'',        // USER:PASS for web GUI.
+        vueConvert  :false,     // Util to convert file .vue files to .js, output in -rootdir
         wsdebug     :0,         // Debug option for websockets.
         wsOpts      :{},        // Websocket options.
         zip         :'',        // A .zip, .sqlar, or .fossil file to mount and use as rootdir.
@@ -109,11 +110,10 @@ function Websrv(args:string|array, conf:object=void):void
         return true;
     }
     
-    function wsSend(chan:string, id:number, cmd:string, obj:object, opts:object=void) {
+    function wsSend(mod:string, id:number, cmd:string, obj:object, opts:object=void) {
         if (!opts) opts = {};
-        var data = { chan:chan, cmd:cmd, data:obj, opts:opts };
+        var data = { mod:mod, cmd:cmd, data:obj, opts:opts };
         data = JSON.stringify(data);
-        puts("SEND:",data);
         LogTrace("SENDING: "+data);
         self.ws.send(id, data);
     }
@@ -297,8 +297,8 @@ function Websrv(args:string|array, conf:object=void):void
     }
     
     function onModify(ws:userobj, fname:string) {
-        puts("MODIFY");
-        setTimeout(function() { wsSend('!', -1, 'reload', {}); }, 300);
+        LogDebug("onModify", fname);
+        setTimeout(function() { wsSend('!', -1, 'reload', {fname:fname}); }, 300);
     }
 
     function WebAdmin(ws:userobj, id:number, url:string, query:array) {
@@ -349,10 +349,42 @@ function Websrv(args:string|array, conf:object=void):void
         self.done = 1;
     }
     
+    function ConvertVue(fn:string) { // Now builtin.
+        // Simple conversion of .vue file to js module.
+        var s = File.read(fn);
+        var ts = s.indexOf('<template>');
+        var te = s.lastIndexOf('\n</template>');
+        var sxs = '<script>\nexport default {';
+        var sx = s.indexOf(sxs);
+        var se = s.lastIndexOf('\n</script>');
+        if (ts<0||te<0||se<0||sx<0) puts('bad template:',fn);
+        var tmpl = s.substr(ts+10, te-ts-9);
+        var sxb = sx+sxs.length;
+        var scr = s.substr(sxb, se-sxb);
+        var out = s.substr(0, ts)+'let template=`' + tmpl + '`;\n\nexport default {\n  template, '+scr + s.substr(se+10);
+        return out;
+    }
+    
+    function vueConvAll(args:array) {
+        for (var f of args) {
+            var fb = File.rootname(f);
+            if (File.extension(f) !== '.vue')
+                throw('file extension must be .vue'+f);
+            var to = fb+'.js';
+            if (self.rootdir)
+                to = File.join(self.rootdir, File.tail(to));
+            var out = ConvertVue(f);
+            File.write(to, out);
+        }
+    }
+    
     function main() {
         var urlarg, urlOrig = self.url;
         if (typeof args === 'string')
             args = [args];
+        if (self.vueConvert) {
+            return vueConvAll(args);
+        }
         urlarg = args[0];
         args.shift();
         if (urlarg) {
@@ -465,7 +497,9 @@ function Websrv(args:string|array, conf:object=void):void
         for (var i in self.wsOpts)
             wo[i] = self.wsOpts[i];
 
-        OpenWebsock();        
+        OpenWebsock();
+        if (!self.ws.conf('extHandlers'))
+            self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
         LogTrace("Listening on port:",self.port);
         
         if (!self.noGui && self.url && self.url.length) {

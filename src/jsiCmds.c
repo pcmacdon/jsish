@@ -4712,23 +4712,24 @@ static Jsi_RC SysParseOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         }
         Jsi_TreeSearchDone(&search);
     }
-    if (rc == JSI_OK) {
+    if (rc == JSI_OK && interp->framePtr->filePtr) {
         jsi_Frame *fptr = interp->framePtr;
+        jsi_FileInfo *cptr = fptr->filePtr;
         Jsi_Func *pf = interp->prevActiveFunc;
         Jsi_ModuleConf *mo = NULL;
         if (pf && pf->pkg)
             mo = &pf->pkg->popts.modConf;
         if (jsi_ModLogEnabled(interp, v1, "Debug") || (mo && mo->Debug)) {
             jsi_evalStrFile(interp, NULL, "this.LogDebug = console.log.bind(null, 'DEBUG:');", 0, fptr->level);
-            fptr->logflag |= (1<<jsi_Oplf_debug);
+            cptr->logflag |= (1<<jsi_Oplf_debug);
         }
         if (jsi_ModLogEnabled(interp, v1, "Trace") || (mo && mo->Trace)) {
             jsi_evalStrFile(interp, NULL, "this.LogTrace = console.log.bind(null, 'TRACE:');", 0, fptr->level);
-            fptr->logflag |= (1<<jsi_Oplf_trace);
+            cptr->logflag |= (1<<jsi_Oplf_trace);
         }
         if (jsi_ModLogEnabled(interp, v1, "Test") || (mo && mo->Test)) {
             jsi_evalStrFile(interp, NULL, "this.LogTest = console.log.bind(null, 'TEST: ');", 0, fptr->level);
-            fptr->logflag |= (1<<jsi_Oplf_test);
+            cptr->logflag |= (1<<jsi_Oplf_test);
         }
     }
     return rc;

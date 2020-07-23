@@ -226,13 +226,17 @@ typedef struct {
     int unused;
 } jsi_wsUser;
 
+typedef Jsi_RC (*jsi_wsHandlerCmd)(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, Jsi_Value *fn, Jsi_DString *tStr);
+
 typedef struct {
+    jsi_wsHandlerCmd proc;
     Jsi_Value *val, *objVar;
     int triedLoad;
     int flags;
 } jsi_wsHander;
 
 typedef struct {
+    const char *fname;
     Jsi_Value *fileVal;
     time_t loadLast, loadFirst;
     int flags;
@@ -861,6 +865,7 @@ static Jsi_RC jsi_wsFileAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
             else {
                 fPtr = (jsi_wsFile *)Jsi_Calloc(1, sizeof(*fPtr));
                 fPtr->fileVal = name;
+                fPtr->fname = sname;
                 fPtr->loadFirst = time(NULL);
                 Jsi_IncrRefCount(interp, name);
                 fPtr->flags = 0;
@@ -872,7 +877,7 @@ static Jsi_RC jsi_wsFileAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
     return JSI_OK;
 }
 
-// Read only native files inside the rootdir.
+// Read files inside the rootdir.
 static Jsi_RC jsi_wsFileRead(Jsi_Interp *interp, Jsi_Value *name, Jsi_DString *dStr, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss) {
     Jsi_StatBuf sb;
     Jsi_RC rc = JSI_ERROR;
@@ -948,7 +953,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
     }
     
     char *cp, *se, pref[] = "<!--#", suffix[] = "-->";
-    const char *sp, *msg = NULL;
+    const char *sp, *msg = NULL, *seq;
     struct {
         int inif, inelse, matched, elide;
     } II[11] = {};
@@ -1002,25 +1007,38 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                     rc = JSI_OK;
                 Jsi_DecrRefCount(interp, fval);
             }
-        } else if (!Jsi_Strncmp(cp, "#echo \"${", 9)) {
-            if (cp[llen-1] != '"' || cp[llen-2] != '}') { msg = "missing end quote"; break; }
-            Jsi_DSSetLength(&lStr, llen-2);
-            cp += 9;
-            llen -= 9;
-            if (!Jsi_Strcmp(cp, "#")) {
-                if (!pss->key[0])
-                    snprintf(pss->key, sizeof(pss->key), "%d%p%d", pss->wid, pss, (int)cmdPtr->startTime);
-                Jsi_DSPrintf(dStr, "'%s'", pss->key);
-            } else {
-                Jsi_Value *val = NULL;
-                if (!cmdPtr->udata) {
-                    val = Jsi_ValueObjLookup(interp, cmdPtr->udata, cp, 0);
-                    if (!val) { msg = "udata lookup failure"; break; }
-                    cp = Jsi_ValueString(interp, val, NULL);
-                    Jsi_DSPrintf(dStr, "'%s'", cp);
+        } else if (cmdPtr->udata && !Jsi_Strncmp(cp, "#set ", 5) && cp[5] != '=' && ((seq=Jsi_Strchr(cp,'='))) && (seq[1]=='\'' || seq[1]=='\"') && cp[llen-1]==seq[1] ) {
+            Jsi_DSSetLength(&lStr, llen-1);
+            Jsi_Value *val = Jsi_ValueNewStringDup(interp, (seq+2));
+            Jsi_DString tStr = {};
+            const char *key = Jsi_DSAppendLen(&tStr, cp+5, seq-cp-5);
+            Jsi_ValueInsert(interp, cmdPtr->udata, key, val, 0);
+            Jsi_DSFree(&tStr);
+        } else if (!Jsi_Strncmp(cp, "#echo ", 6) && (cp[6]=='\'' || cp[6]=='\"') && cp[llen-1]==cp[6] ) {
+            char *esq, *vsq = Jsi_Strstr(cp,"${");
+            int ptlen = (vsq?((vsq-cp)-7):llen-8);
+            if (vsq && !(esq=Jsi_Strchr(vsq+2,'}'))) { msg = "'${' missing end brace '}'"; break; }
+            Jsi_DSAppendLen(dStr, cp+7, ptlen);
+            if (vsq) {
+                Jsi_DSSetLength(&lStr, llen-1);
+                cp = vsq+2;
+                *esq = 0;
+                if (cp[0]== '#' && !cp[1]) {
+                    if (!pss->key[0])
+                        snprintf(pss->key, sizeof(pss->key), "%d%p%d", pss->wid, pss, (int)cmdPtr->startTime);
+                    Jsi_DSPrintf(dStr, "'%s'", pss->key);
+                } else {
+                    Jsi_Value *val = NULL;
+                    if (cmdPtr->udata) {
+                        val = Jsi_ValueObjLookup(interp, cmdPtr->udata, cp, 0);
+                        if (!val) { msg = "udata lookup failure"; break; }
+                        cp = Jsi_ValueString(interp, val, NULL);
+                        Jsi_DSAppend(dStr, cp, NULL);
+                    }
                 }
+                Jsi_DSAppend(dStr, esq+1, NULL);
             }
-
+    
         } else if (!Jsi_Strncmp(cp, "#if expr=\"", 10) || !Jsi_Strncmp(cp, "#elif expr=\"", 12)) {
             if (llen<11 || cp[llen-1] != '"' || cp[llen-2] == '=') { msg = "missing end quote"; break; }
             Jsi_DSSetLength(&lStr, llen-1);
@@ -1101,7 +1119,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
             if (ii>0)
                 ii--;
         } else {
-            msg = "expected directive #include/#if/#elif/#else/#endif";
+            msg = "expected directive #include/#if/#elif/#else/#endif/#echo/#set";
             break;
         }
         cs = se + 3;
@@ -1206,6 +1224,7 @@ static const char* jsi_ws_mtypes[] = {
     "jsi", "application/x-javascript", "cssi", "text/css",
     "shtml", "text/html",  "scss", "text/css", "vtt", "text/vtt",
     "sjs", "application/x-javascript",
+    "vue", "application/x-javascript",
     0, 0
 };
 
@@ -1450,7 +1469,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
 
         isSSI = jsi_wsIsSSIExt(interp, cmdPtr, pss, eext);
 
-        if ((hPtr = Jsi_HashEntryFind(cmdPtr->handlers, ext)) && !cmdPtr->deleted) {
+        if (eext && (hPtr = Jsi_HashEntryFind(cmdPtr->handlers, eext)) && !cmdPtr->deleted) {
             /* Use interprete html eg. using jsi_wpp preprocessor */
             Jsi_DString jStr = {};
             Jsi_Value *vrc = NULL;
@@ -1462,6 +1481,20 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             if (Jsi_Strchr(buf, '\'') || Jsi_Strchr(buf, '\"')) {
                 jsi_wsServeString(pss, wsi, "Can not handle quotes in url", 404, NULL, NULL);
                 return -1;
+            }
+            if (hdlPtr->proc) {
+                fname = Jsi_ValueNewStringDup(interp, buf);
+                Jsi_IncrRefCount(interp, fname);
+                Jsi_DString tStr = {};
+                rc = hdlPtr->proc(interp, cmdPtr, pss, fname, &tStr);
+                if (rc != JSI_OK)
+                    hrc = -1;
+                else {
+                    hrc = jsi_wsServeString(pss, wsi, Jsi_DSValue(&tStr), 0, NULL, mime);
+                    jsi_wsFileAdd(interp, cmdPtr, fname);
+                }
+                Jsi_DecrRefCount(interp, fname);
+                return hrc;
             }
             cmdPtr->handlersPkg=1;
 
@@ -1548,6 +1581,12 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 Jsi_DecrRefCount(interp, vrc);
             if (hrc<=0)
                 return -1;
+            if (cmdPtr->onModify) {
+                fname = Jsi_ValueNewStringDup(interp, buf);
+                Jsi_IncrRefCount(interp, fname);
+                jsi_wsFileAdd(interp, cmdPtr, fname);
+                Jsi_DecrRefCount(interp, fname);
+            }
             return 1;
         }
     }
@@ -2547,18 +2586,44 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     return rc;
 }
 
+static Jsi_RC jsi_wsHandleVue(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, Jsi_Value *fn, Jsi_DString *tStr) {
+    // Simple conversion of .vue file to js module.
+    Jsi_DString dStr = {};
+    Jsi_RC rc = jsi_wsFileRead(interp, fn, &dStr, cmdPtr, pss);
+    if (rc != JSI_OK)
+        return JSI_ERROR;
+    char *s = Jsi_DSValue(&dStr),
+        *ts = Jsi_Strstr(s, "<template>"),
+        *te = Jsi_Strrstr(s, "\n</template>"),
+        *sxs = "<script>\nexport default {",
+        *sx = Jsi_Strstr(s, sxs), *sxb,
+        *se = Jsi_Strstr(s, "\n</script>");
+    if (ts<0||te<0||se<0||sx<0)
+        rc = Jsi_LogError("bad template: %s", Jsi_ValueString(interp, fn, NULL));
+    else {
+        Jsi_DSAppendLen(tStr, s, ts-s);
+        Jsi_DSAppend(tStr, "let template=`", NULL);
+        Jsi_DSAppendLen(tStr, ts+10, te-ts-9);
+        Jsi_DSAppend(tStr, "`;\n\nexport default {\n  template, ", NULL);
+        sxb = sx+Jsi_Strlen(sxs);
+        Jsi_DSAppendLen(tStr, sxb, se-sxb);
+        Jsi_DSAppend(tStr, se+10, NULL);
+    }
+    return rc;
+}
 
-static Jsi_RC jsi_wsHandlerAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const char *ext, const char *cmd, int flags)
+static Jsi_RC jsi_wsHandlerAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const char *ext, const char *cmd, int flags, jsi_wsHandlerCmd proc)
 {
     Jsi_HashEntry *hPtr;
     jsi_wsHander *hdlPtr;
-    Jsi_Value *valPtr = Jsi_ValueNewStringDup(interp, cmd);
+    Jsi_Value *valPtr = Jsi_ValueNewStringDup(interp, (cmd?cmd:""));
     hPtr = Jsi_HashEntryNew(cmdPtr->handlers, ext, NULL);
     if (!hPtr)
         return JSI_ERROR;
     hdlPtr = (jsi_wsHander *)Jsi_Calloc(1, sizeof(*hdlPtr));
     hdlPtr->val = valPtr;
     hdlPtr->flags = flags;
+    hdlPtr->proc = proc;
     Jsi_HashValueSet(hPtr, hdlPtr);
     Jsi_IncrRefCount(interp, valPtr);
     return JSI_OK;
@@ -2598,6 +2663,8 @@ static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         return JSI_OK;
     }
     const char *key = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+    if (!key || !*key)
+        return Jsi_LogError("handler: extension key must not be empty: %s", key);
     Jsi_Value *valPtr = Jsi_ValueArrayIndex(interp, args, 1);
     if (Jsi_ValueIsNull(interp, valPtr)) {
         hPtr = Jsi_HashEntryFind(cmdPtr->handlers, key);
@@ -2625,7 +2692,7 @@ static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     if (!hPtr)
         return JSI_ERROR;
     hdlPtr = (jsi_wsHander *)Jsi_Calloc(1, sizeof(*hdlPtr));
-    Jsi_Value *flagPtr = Jsi_ValueArrayIndex(interp, args, 1);
+    Jsi_Value *flagPtr = Jsi_ValueArrayIndex(interp, args, 3);
     Jsi_Number fl = 0;
     if (flagPtr && Jsi_ValueIsNumber(interp, flagPtr))
         Jsi_ValueGetNumber(interp, flagPtr, &fl);
@@ -2729,6 +2796,7 @@ static void jsi_wsOnModify(jsi_wsCmdObj *cmdPtr) {
             int n = Jsi_Stat(interp, fPtr->fileVal, &sb);
             if (!n && sb.st_mtime > ll) {
                 changed = fPtr->fileVal;
+                cmdPtr->lastModifyNotify = sb.st_mtime;
                 break;
             }
         }
@@ -2755,7 +2823,7 @@ static void jsi_wsOnModify(jsi_wsCmdObj *cmdPtr) {
         cmdPtr->onModify = NULL;
     }
     cmdPtr->lastModifyCheck = time(NULL);
-    cmdPtr->lastModifyNotify = time(NULL);
+    //cmdPtr->lastModifyNotify = time(NULL);
 }
 
 static int jsi_wsService(jsi_wsCmdObj *cmdPtr)
@@ -3208,9 +3276,10 @@ fail:
 
     cmdPtr->handlers = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_wsfreeHandlers);
     if (cmdPtr->extHandlers) {
-        jsi_wsHandlerAdd(interp, cmdPtr, ".jsi",   "Jspp",     1);
-        jsi_wsHandlerAdd(interp, cmdPtr, ".htmli", "Htmlpp",   1);
-        jsi_wsHandlerAdd(interp, cmdPtr, ".cssi",  "Csspp",    1);
+        jsi_wsHandlerAdd(interp, cmdPtr, "jsi",   "Jspp",     1, NULL);
+        jsi_wsHandlerAdd(interp, cmdPtr, "htmli", "Htmlpp",   1, NULL);
+        jsi_wsHandlerAdd(interp, cmdPtr, "cssi",  "Csspp",    1, NULL);
+        jsi_wsHandlerAdd(interp, cmdPtr, "vue",   NULL,       1, jsi_wsHandleVue);
     }
     cmdPtr->fobj = fobj;
 #ifdef LWS_LIBRARY_VERSION_NUMBER

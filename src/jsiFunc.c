@@ -1076,6 +1076,7 @@ Jsi_Func *jsi_FuncNew(Jsi_Interp *interp)
      SIGINIT(func, FUNC);
      func->hPtr = Jsi_HashSet(interp->funcsTbl, func, func);
      func->refCnt = 1;
+     func->filePtr = interp->framePtr->filePtr;
      interp->funcCnt++;
      return func;
 }

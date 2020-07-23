@@ -32,7 +32,6 @@ Jsi_Auto.Vfs        = 'source("'+Info.scriptDir()+'/Jsi_VFS.jsi")';
 Jsi_Auto.Archive    = 'source("'+Info.scriptDir()+'/Archive.jsi")';
 Jsi_Auto.Module     = 'source("'+Info.scriptDir()+'/Module.jsi")';
 Jsi_Auto.Help       = 'source("'+Info.scriptDir()+'/Help.jsi")';
-Jsi_Auto.GenDeep    = 'source("'+Info.scriptDir()+'/GenDeep.jsi")';
 Jsi_Auto.DebugUI        = 'source("'+Info.scriptDir()+'/DebugUI/DebugUI.jsi")';
 Jsi_Auto.SqliteUI       = 'source("'+Info.scriptDir()+'/SqliteUI/SqliteUI.jsi")';
 

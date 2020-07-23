@@ -1,3 +1,6 @@
+<!--#set pig='METOO'-->
+<!--#echo 'Echo Me'-->
+<!--#echo 'Echo Me ${pig}'-->
 <!-- File: index.shtml -->
 <!--#include file="header.html"-->
 <!--#include file="body.shtml"-->

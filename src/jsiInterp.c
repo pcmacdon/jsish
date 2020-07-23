@@ -782,7 +782,6 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "  -c\t\tCData: generate .c or JSON output from a .jsc description.\n"
           "  -d\t\tDebug: console script debugger.\n"
           "  -e CODE ...\tEvaluate javascript CODE.\n"
-          "  -g\t\tGendeep: generate html output from markdeep source.\n"
           "  -h ?CMD?\tHelp: show help for jsish or its commands.\n"
           "  -m\t\tModule: utility create/manage/invoke a Module.\n"
           "  -s\t\tSafe: runs script in safe sub-interp.\n"
@@ -828,9 +827,6 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                         goto dofile;
                     }
                 }
-                break;
-            case 'g':
-                rc = Jsi_EvalString(interp, "runModule('GenDeep');", JSI_EVAL_ISMAIN);
                 break;
             case 'h':
                 goto dohelp;
@@ -1132,8 +1128,10 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     if (opts && parent && (Jsi_ValueIsObjType(parent, opts, JSI_OT_OBJECT)==0 ||
         Jsi_TreeSize(opts->d.obj->tree)<=0))
         opts = NULL;
-    interp = (Jsi_Interp *)Jsi_Calloc(1,sizeof(*interp) + sizeof(jsi_Frame));
-    interp->framePtr = (jsi_Frame*)(((uchar*)interp)+sizeof(*interp));
+    interp = (Jsi_Interp *)Jsi_Calloc(1,sizeof(*interp));
+    interp->framePtr = &interp->topFrame;
+    interp->framePtr->filePtr = &interp->topFile;
+    interp->topFile.fileName = interp->topFile.dirName = interp->topFile.origFile ="";
     if (!parent)
         interp->maxInterpDepth = JSI_MAX_SUBINTERP_DEPTH;
     else {

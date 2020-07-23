@@ -213,7 +213,7 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
         int as_cons = funcPtr->callflags.bits.iscons;
         if (funcPtr->type == FC_NORMAL) {
             rc = jsi_evalcode(interp->ps, funcPtr, funcPtr->opcodes, callee->d.obj->d.fobj->scope, 
-                       args, fthis, ret);
+                       args, fthis, ret, funcPtr->filePtr);
             interp->funcCallCnt++;
         } else if (!funcPtr->callback) {
             rc = Jsi_LogError("can not call:\"%s()\"", funcPtr->name);

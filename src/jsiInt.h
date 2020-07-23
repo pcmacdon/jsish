@@ -680,12 +680,22 @@ typedef struct Jsi_ScopeStrs {
     int retType;
 } Jsi_ScopeStrs;
 
+typedef struct {
+    char *origFile; /* Short file name. */
+    char *fileName; /* Fully qualified name. */
+    char *dirName;  /* Directory name. */
+    const char *str; /* File data. */
+    int useCnt;
+    int logflag;
+} jsi_FileInfo;
+
 // Eval stack-frame.
 typedef struct jsi_Frame {
     int level;
     const char *fileName;
     const char *funcName;
     const char *dirName;
+    jsi_FileInfo *filePtr;
     int line;
     jsi_OpCode *ip;
     int Sp;
@@ -696,7 +706,6 @@ typedef struct jsi_Frame {
     Jsi_Value *inthis;
     Jsi_OpCodes *opcodes;
     struct jsi_Pstate *ps;
-    int logflag;
     Jsi_Func *evalFuncPtr;
     struct jsi_Frame *parent, *child;
     Jsi_Value *arguments; // Set when arguments are accessed.
@@ -849,15 +858,8 @@ struct Jsi_Func {
     Jsi_FuncObj *fobj;
     struct jsi_PkgInfo *pkg;
     bool isArrow;
+    jsi_FileInfo* filePtr;
 };
-
-typedef struct {
-    char *origFile; /* Short file name. */
-    char *fileName; /* Fully qualified name. */
-    char *dirName;  /* Directory name. */
-    const char *str; /* File data. */
-    int useCnt;
-} jsi_FileInfo;
 
 enum {
     STACK_INIT_SIZE=1024, STACK_INCR_SIZE=1024, STACK_MIN_PAD=100,
@@ -1189,6 +1191,8 @@ struct Jsi_Interp {
     Jsi_Value *console;
     Jsi_Value *scriptFile;  /* Start script returned by info.argv0(). */
     const char *scriptStr;
+    jsi_Frame topFrame;
+    jsi_FileInfo topFile;
     const char *curFile;
     const char *curFunction;
     const char *homeDir;
@@ -1400,7 +1404,7 @@ bool jsi_SignalIsSet(Jsi_Interp *interp, int sigNum);
 extern Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes, 
         jsi_ScopeChain *scope, Jsi_Value *currentScope,
         Jsi_Value *_this,
-        Jsi_Value **vret);
+        Jsi_Value **vret, jsi_FileInfo* fi);
         
 typedef Jsi_RC (*Jsi_Constructor)(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, int flags, void *privData);

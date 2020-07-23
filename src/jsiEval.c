@@ -69,7 +69,7 @@ static Jsi_RC jsiEvalOp(Jsi_Interp* interp, jsi_Pstate *ps, char *program,
         int oef = newps->eval_flag;
         newps->eval_flag = 1;
         interp->ps = newps;
-        r = jsi_evalcode(newps, NULL, newps->opcodes, scope, currentScope, _this, ret);
+        r = jsi_evalcode(newps, NULL, newps->opcodes, scope, currentScope, _this, ret, interp->framePtr->filePtr);
         if (r) {
             Jsi_ValueDup2(interp, &ps->last_exception, newps->last_exception);
         }
@@ -1069,7 +1069,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
       }}\
     continue;\
 }
-#define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && !(interp->framePtr->logflag &(1<<n))) _JSI_BI_OP_SKIP_SUB(n)
+#define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && (interp->framePtr->filePtr && !(interp->framePtr->filePtr->logflag &(1<<n)))) _JSI_BI_OP_SKIP_SUB(n)
 
         if (ip->logflag) { // Mask out LogDebug, etc if not enabled.
             interp->curIp = ip;
@@ -2017,7 +2017,7 @@ done:
 Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes, 
          jsi_ScopeChain *scope, Jsi_Value *fargs,
          Jsi_Value *_this,
-         Jsi_Value **vret)
+         Jsi_Value **vret, jsi_FileInfo* fi)
 {
     Jsi_Interp *interp = ps->interp;
     if (interp->exited)
@@ -2032,13 +2032,10 @@ Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
     frame.incsc = fargs;
     frame.inthis = _this;
     frame.opcodes = opcodes;
+    frame.filePtr = fi;
     frame.fileName = ((func && func->script)?func->script:interp->curFile);
     frame.funcName = interp->curFunction;
     frame.dirName = interp->curDir;
-    if (frame.fileName && frame.fileName == frame.parent->fileName)
-        frame.logflag = frame.parent->logflag;
-    else
-        frame.logflag = 0;
     frame.level = frame.parent->level+1;
     frame.evalFuncPtr = func;
     frame.arguments = NULL;
@@ -2161,13 +2158,13 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
     int oldSp, uskip = 0, fncOfs = 0, fnLen;
     int oldef = interp->evalFlags;
     jsi_Pstate *oldps = interp->ps;
+    jsi_FileInfo *fi = interp->framePtr->filePtr;
     const char *oldFile = interp->curFile;
     char *origFile = Jsi_ValueString(interp, path, &fnLen);
     const char *fname = origFile;
     char *oldDir = interp->curDir, *cp;
     char dirBuf[PATH_MAX];
     jsi_Pstate *ps = NULL;
-    jsi_FileInfo *fi = NULL;
     int exists = (flags&JSI_EVAL_EXISTS);
     int ignore = (flags&JSI_EVAL_ERRIGNORE);
     if (flags & JSI_EVAL_GLOBAL)
@@ -2364,7 +2361,7 @@ cont:
         const char *curFile = interp->curFile;
 
         if (level <= 0)
-            rc = jsi_evalcode(ps, NULL, ps->opcodes, interp->gsc, interp->csc, interp->csc, &retValue);
+            rc = jsi_evalcode(ps, NULL, ps->opcodes, interp->gsc, interp->csc, interp->csc, &retValue, fi);
         else {
             jsi_Frame *fptr = interp->framePtr;
             while (fptr && fptr->level > level)
@@ -2372,7 +2369,7 @@ cont:
             if (!fptr)
                 rc = JSI_ERROR;
             else
-                rc = jsi_evalcode(ps, NULL, ps->opcodes, fptr->ingsc, fptr->incsc, fptr->inthis, &retValue);
+                rc = jsi_evalcode(ps, NULL, ps->opcodes, fptr->ingsc, fptr->incsc, fptr->inthis, &retValue, fi);
         }
         interp->curFile = curFile;
         if (rc != JSI_OK)

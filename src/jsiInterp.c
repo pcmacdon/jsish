@@ -2835,8 +2835,6 @@ static Jsi_RC InterpConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     } else {
         //sinterp->framePtr->tryDepth++;
         if (sinterp->scriptStr != 0) {
-            /*if (sinterp->scriptFile && !interp->curFile)
-                sinterp->curFile = Jsi_ValueString(sinterp, sinterp->scriptFile, NULL);*/
             rc = Jsi_EvalString(sinterp, sinterp->scriptStr, JSI_EVAL_ISMAIN);
         } else if (sinterp->scriptFile && !sinterp->debugOpts.debugCallback) {
             int len;

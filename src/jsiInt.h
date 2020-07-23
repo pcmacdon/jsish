@@ -692,9 +692,7 @@ typedef struct Jsi_ScopeStrs {
 // Eval stack-frame.
 typedef struct jsi_Frame {
     int level;
-    //const char *fileName;
     const char *funcName;
-    const char *dirName;
     jsi_FileInfo *filePtr;
     int line;
     jsi_OpCode *ip;
@@ -748,7 +746,6 @@ Jsi_ScopeStrs *jsi_ScopeGetVarlist(jsi_Pstate *ps);
 void jsi_PstateFree(jsi_Pstate *ps);
 jsi_Pstate *jsi_PstateNew(Jsi_Interp *interp);
 void jsi_PstateClear(jsi_Pstate *ps);
-const char * jsi_PstateGetFilename(jsi_Pstate *ps);
 int jsi_PstateSetFile(jsi_Pstate *ps, Jsi_Channel fp, int skipbang);
 int jsi_PstateSetString(jsi_Pstate *ps, const char *str);
 
@@ -851,7 +848,6 @@ struct Jsi_Func {
     uint retType;  /* Type name: or of Jsi_otype*/
     int callCnt;
     const char *scriptData;
-    //const char *script, *scriptFile;  /* Script created in. */
     jsi_Pline bodyline; /* Body line info. */
     const char *bodyStr; // Non-builtin func script body.
     int endPos, startPos;
@@ -878,7 +874,6 @@ typedef struct InterpStrEvent_ {
 #endif
     int rc, isExec, tryDepth, errLine;
     const char *errFile;
-//    Jsi_Value *objData;
     Jsi_DString func;
     Jsi_DString data;
     struct InterpStrEvent_ *next;
@@ -1195,7 +1190,6 @@ struct Jsi_Interp {
     const char *scriptStr;
     jsi_Frame topFrame;
     jsi_FileInfo topFile;
-    //const char *curFile;
     const char *curFunction;
     const char *homeDir;
     const char *historyFile;

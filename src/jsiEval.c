@@ -579,8 +579,6 @@ Jsi_Value *jsi_LoadFunction(Jsi_Interp *interp, const char *str, Jsi_Value *tret
     Jsi_DString dStr = {};
     Jsi_Value *v;
     int i;
-    //const char *curFile = interp->curFile;
-    //interp->curFile = "<jsiLoadFunction>";
     for (i=0; i<2; i++) {
         Jsi_DSAppend(&dStr, "Jsi_Auto.", str, NULL);
         Jsi_VarLookup(interp, Jsi_DSValue(&dStr));
@@ -619,7 +617,6 @@ Jsi_Value *jsi_LoadFunction(Jsi_Interp *interp, const char *str, Jsi_Value *tret
             interp->autoLoaded++;
         }
     }
-    //interp->curFile = curFile;
     return tret;
 }
 
@@ -1146,7 +1143,6 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             ip->filePtr = interp->framePtr->filePtr;
         curFile = ip->filePtr->fileName;
         if (interp->debugOpts.hook) {
-            //interp->framePtr->filePtr->fileName = curFile;
             interp->framePtr->line = curLine;
             if ((rc = (*interp->debugOpts.hook)(interp, curFile, curLine, interp->framePtr->level, interp->curFunction, jsi_opcode_string(ip->op), ip, NULL)) != JSI_OK)
                 break;
@@ -2033,9 +2029,7 @@ Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
     frame.inthis = _this;
     frame.opcodes = opcodes;
     frame.filePtr = fi;
-    //frame.fileName = ((func && func->script)?func->script:interp->curFile);
     frame.funcName = interp->curFunction;
-    frame.dirName = interp->curDir;
     frame.level = frame.parent->level+1;
     frame.evalFuncPtr = func;
     frame.arguments = NULL;
@@ -2159,7 +2153,6 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
     int oldef = interp->evalFlags;
     jsi_Pstate *oldps = interp->ps;
     jsi_FileInfo *fi = interp->framePtr->filePtr;
-    //const char *oldFile = interp->curFile;
     char *origFile = Jsi_ValueString(interp, path, &fnLen);
     const char *fname = origFile;
     char *oldDir = interp->curDir, *cp;
@@ -2266,7 +2259,6 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                 }
                 fi = (jsi_FileInfo *)Jsi_HashValueGet(hPtr);
                 if (!fi) goto bail;
-                //interp->curFile = fi->fileName;
                 interp->curDir = fi->dirName;
                 
             } else {
@@ -2274,7 +2266,6 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                 if (!fi) goto bail;
                 Jsi_HashValueSet(hPtr, fi);
                 fi->origFile = (char*)Jsi_KeyAdd(interp, origFile);
-                //interp->curFile = 
                 fi->fileName = (char*)Jsi_KeyAdd(interp, fname);
                 char *dfname = Jsi_Strdup(fname);
                 if ((cp = Jsi_Strrchr(dfname,'/')))
@@ -2359,7 +2350,6 @@ cont:
         Jsi_Value *retValue = interp->retValue;
         if (!interp->strict)
             interp->strict = (jsi_GetDirective(interp, ps->opcodes, "use strict")!=NULL);
-        //const char *curFile = interp->curFile;
 
         if (level <= 0)
             rc = jsi_evalcode(ps, NULL, ps->opcodes, interp->gsc, interp->csc, interp->csc, &retValue, fi);
@@ -2384,7 +2374,6 @@ cont:
     }
     
 bail:
-    //interp->curFile = oldFile;
     interp->curDir = oldDir;
     interp->framePtr->Sp = oldSp;
     interp->isMain = oisi;

@@ -509,12 +509,8 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
     f->opcodes = ops;
     f->argnames = args;
     f->localnames = localvar;
-    //f->script = interp->curFile;
     f->bodyline = *line;
     f->retType = (Jsi_otype)args->retType;
-    /*if (!pstate->eval_flag) {
-        f->scriptFile = f->script;
-    }*/
     if (l->ltype == LT_STRING)
         f->bodyStr = l->d.str;
     f->endPos = l->cur;
@@ -720,7 +716,6 @@ Jsi_Value *jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const ch
         if (name)
             f->cmdSpec->name = (char*)Jsi_KeyAdd(interp, name);
     }
-    //f->script = interp->curFile;
     f->callback = callback;
     return Jsi_ValueMakeObject(interp, toVal, o);
 }
@@ -735,7 +730,6 @@ Jsi_Value *jsi_MakeFuncValueSpec(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, void 
     f->callback = cmdSpec->proc;
     f->privData = privData;
     f->f.flags = (cmdSpec->flags & JSI_CMD_MASK);
-    //f->script = interp->curFile;
     o->d.fobj = jsi_FuncObjNew(interp, f);
     return Jsi_ValueMakeObject(interp, NULL, o);
 }

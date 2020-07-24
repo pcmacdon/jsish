@@ -513,7 +513,7 @@ Otherwise second argument must be a set of options.</td></tr>
 <tr><td>execZip</td><td>execZip():string|void </td><td>If executing a .zip file, return file name.</td></tr>
 <tr><td>executable</td><td>executable():string </td><td>Return name of executable.</td></tr>
 <tr><td>files</td><td>files():array </td><td>Return list of all sourced files.</td></tr>
-<tr><td>funcs</td><td>funcs(arg:string|regexp|object=void):array|object </td><td>Return details or list of matching functions.</td></tr>
+<tr><td>funcs</td><td>funcs(arg:string|regexp|function|object=void):array|object </td><td>Return details or list of matching functions.</td></tr>
 <tr><td>interp</td><td>interp(interp:userobj=void):object </td><td>Return info on given or current interp.</td></tr>
 <tr><td>isMain</td><td>isMain():boolean </td><td>Return true if current script was the main script invoked from command-line.</td></tr>
 <tr><td>keywords</td><td>keywords(isSql=false, name:string=void):boolean|array </td><td>Return/lookup reserved keyword.</td></tr>
@@ -1328,7 +1328,7 @@ By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or
 <tr><td>isMain</td><td>isMain():boolean </td><td>Return true if current script was the main script invoked from command-line.</td></tr>
 <tr><td>isNaN</td><td>isNaN(val):boolean </td><td>Return true if not a number.</td></tr>
 <tr><td>load</td><td>load(shlib:string):void </td><td>Load a shared executable and invoke its _Init call.</td></tr>
-<tr><td>log</td><td>log(val, ...):void </td><td>Same as puts, but includes file:line.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Same as puts, but includes file:line. If first argument is a boolean, output appears only if true.</td></tr>
 <tr><td>matchObj</td><td>matchObj(obj:object, match:string=void, partial=false, noerror=false):string|boolean </td><td>Validate that object matches given name:type string. With single arg returns generated string.</td></tr>
 <tr><td>noOp</td><td>noOp() </td><td>A No-Op. A zero overhead command call that is useful for debugging.</td></tr>
 <tr><td>parseFloat</td><td>parseFloat(val):number </td><td>Convert string to a double.</td></tr>
@@ -1409,6 +1409,7 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <tr><td>global</td><td><i>BOOL</i></td><td>File is to be sourced in global frame rather than local.</td><td><i></i></td></tr>
 <tr><td>isMain</td><td><i>BOOL</i></td><td>Coerce to true the value of Info.isMain().</td><td><i></i></td></tr>
 <tr><td>level</td><td><i>UINT</i></td><td>Frame to source file in.</td><td><i></i></td></tr>
+<tr><td>noEval</td><td><i>BOOL</i></td><td>Disable eval: just parses file to check syntax.</td><td><i></i></td></tr>
 <tr><td>noError</td><td><i>BOOL</i></td><td>Ignore errors in sourced file.</td><td><i></i></td></tr>
 <tr><td>once</td><td><i>BOOL</i></td><td>Source file only if not already sourced (Default: Interp.debugOpts.includeOnce).</td><td><i></i></td></tr>
 <tr><td>trace</td><td><i>BOOL</i></td><td>Trace include statements (Default: Interp.debugOpts.includeTrace).</td><td><i></i></td></tr>
@@ -1805,7 +1806,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#console.assertOptions'>options</a>:object=void):void </td><td>Same as System.assert().</td></tr>
 <tr><td>error</td><td>error(val, ...):void </td><td>Same as log.</td></tr>
 <tr><td>input</td><td>input():string|void </td><td>Read input from the console.</td></tr>
-<tr><td>log</td><td>log(val, ...):void </td><td>Same as System.puts, but goes to stderr and includes file:line.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Same as System.puts, but goes to stderr and includes file:line. If first argument is a boolean, output appears only if true.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Same as System.printf but goes to stderr.</td></tr>
 <tr><td>puts</td><td>puts(val, ...):void </td><td>Same as System.puts, but goes to stderr.</td></tr>
 <tr><td>warn</td><td>warn(val, ...):void </td><td>Same as log.</td></tr>

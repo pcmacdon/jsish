@@ -1131,7 +1131,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp = (Jsi_Interp *)Jsi_Calloc(1,sizeof(*interp));
     interp->framePtr = &interp->topFrame;
     interp->framePtr->filePtr = &interp->topFile;
-    interp->topFile.fileName = interp->topFile.dirName = interp->topFile.origFile ="";
+    interp->topFile.fileName = interp->topFile.dirName = "";
     if (!parent)
         interp->maxInterpDepth = JSI_MAX_SUBINTERP_DEPTH;
     else {

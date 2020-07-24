@@ -340,7 +340,6 @@ typedef struct {
 } Jsi_InterpDebug;
 
 typedef struct {
-    char *origFile; /* Short file name. */
     char *fileName; /* Fully qualified name. */
     char *dirName;  /* Directory name. */
     const char *str; /* File data. */

@@ -52,6 +52,7 @@ typedef struct {
     bool trace;
     bool once;
     bool noError;
+    bool noEval;
     bool autoIndex;
     bool isMain;
     bool global;
@@ -65,6 +66,7 @@ static Jsi_OptionSpec SourceOptions[] = {
     JSI_OPT(BOOL,   SourceData, global, .help="File is to be sourced in global frame rather than local" ),
     JSI_OPT(BOOL,   SourceData, isMain, .help="Coerce to true the value of Info.isMain()" ),
     JSI_OPT(UINT,   SourceData, level,  .help="Frame to source file in" ),
+    JSI_OPT(BOOL,   SourceData, noEval, .help="Disable eval: just parses file to check syntax" ),
     JSI_OPT(BOOL,   SourceData, noError,.help="Ignore errors in sourced file" ),
     JSI_OPT(BOOL,   SourceData, once,   .help="Source file only if not already sourced (Default: Interp.debugOpts.includeOnce)" ),
     JSI_OPT(BOOL,   SourceData, trace,  .help="Trace include statements (Default: Interp.debugOpts.includeTrace)" ),
@@ -101,6 +103,8 @@ static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         flags|= JSI_EVAL_EXISTS;
     if (data.noError)
         flags|= JSI_EVAL_ERRIGNORE;
+    if (data.noEval)
+        flags|= JSI_EVAL_NOEVAL;
     if (data.global) {
         flags|= JSI_EVAL_GLOBAL;
         if (data.level)
@@ -1581,11 +1585,19 @@ void jsi_SysPutsCmdPrefix(Jsi_Interp *interp, jsi_LogOptions *popts,Jsi_DString 
 }
 
 static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
-    Jsi_Func *funcPtr, bool stdErr, jsi_LogOptions *popts, const char *argStr, bool conLog)
+    Jsi_Func *funcPtr, bool stdErr, jsi_LogOptions *popts, const char *argStr, bool conLog, bool islog)
 {
-    int i, cnt = 0, quote = (popts->file);
+    int i = 0, cnt = 0, quote = (popts->file);
     const char *fn = NULL;
     Jsi_DString dStr, oStr;
+    Jsi_Value *v;
+    if (islog) {
+        v = Jsi_ValueArrayIndex(interp, args, 0);
+        if (Jsi_ValueIsBoolean(interp, v)) {
+            i++;
+            if (Jsi_ValueIsFalse(interp, v)) return JSI_OK;
+        }
+    }
     if (interp->noStderr)
         stdErr = 0;
     Jsi_Chan *chan = (stdErr ? jsi_Stderr : jsi_Stdout);
@@ -1611,9 +1623,8 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                 || (!interp->logOpts.Info && jsi_PrefixMatch(argStr, "INFO: ")))
                 goto done;
         }
- 
-        for (i = 0; i < argc; ++i) {
-            Jsi_Value *v = Jsi_ValueArrayIndex(interp, args, i);
+        for (; i < argc; ++i) {
+            v = Jsi_ValueArrayIndex(interp, args, i);
             if (!v) continue;
             int len = 0;
             if (cnt++)
@@ -1675,18 +1686,20 @@ static Jsi_RC consolePrintfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     return SysPrintfCmd_(interp, args, _this, ret, funcPtr, jsi_Stderr);
 }
 
+#define FN_logputs "\
+If first argument is a boolean, output appears only if true."
 static Jsi_RC consoleLogCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
     int conLog = ((!interp->logOpts.Error) || (!interp->logOpts.Warn) || (!interp->logOpts.Info));
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, NULL, conLog);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, NULL, conLog, 1);
 }
 
 static Jsi_RC consolePutsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
     jsi_LogOptions lo = {};
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0, 0);
 }
 
 #define FN_puts JSI_INFO("\
@@ -1695,13 +1708,13 @@ static Jsi_RC SysPutsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, 
     Jsi_Func *funcPtr)
 {
     jsi_LogOptions lo = {};
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0, 0);
 }
 
 static Jsi_RC SysLogCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, &interp->logOpts, NULL, 0);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, &interp->logOpts, NULL, 0, 1);
 }
 
 typedef struct {
@@ -1804,7 +1817,7 @@ Jsi_RC jsi_AssertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
             jsi_LogOptions lo = {}, *loPtr = ((udata.mode==jsi_AssertModeLog || interp->tracePuts)?&interp->logOpts:&lo);
             Jsi_DSInit(&dStr);
             const char *imsg = Jsi_DSAppend(&dStr, msg, NULL);
-            SysPutsCmd_(interp, NULL, _this, ret, funcPtr, !udata.noStderr, loPtr, imsg, 0);
+            SysPutsCmd_(interp, NULL, _this, ret, funcPtr, !udata.noStderr, loPtr, imsg, 0, 0);
             Jsi_DSFree(&dStr);
         } else
             rv = Jsi_LogError("%s", msg);
@@ -4736,7 +4749,7 @@ static Jsi_CmdSpec consoleCmds[] = {
     { "assert", jsi_AssertCmd,      1,  3, "expr:boolean|number|function, msg:string=void, options:object=void",  .help="Same as System.assert()", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=AssertOptions},
     { "error",  consoleLogCmd,      1, -1, "val, ...", .help="Same as log", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "input",  consoleInputCmd,    0,  0, "", .help="Read input from the console", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
-    { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Same as System.puts, but goes to stderr and includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
+    { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Same as System.puts, but goes to stderr and includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_logputs },
     { "printf", consolePrintfCmd,   1, -1, "format:string, ...", .help="Same as System.printf but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "puts",   consolePutsCmd,     1, -1, "val, ...", .help="Same as System.puts, but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "warn",   consoleLogCmd,      1, -1, "val, ...", .help="Same as log", .retType=(uint)JSI_TT_VOID, .flags=0 },
@@ -4777,7 +4790,7 @@ static Jsi_CmdSpec infoCmds[] = {
     { "executable", InfoExecutableCmd,  0,  0, "", .help="Return name of executable", .retType=(uint)JSI_TT_STRING },
     { "execZip",    InfoExecZipCmd,     0,  0, "", .help="If executing a .zip file, return file name", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
     { "files",      InfoFilesCmd,       0,  0, "", .help="Return list of all sourced files", .retType=(uint)JSI_TT_ARRAY },
-    { "funcs",      InfoFuncsCmd,       0,  1, "arg:string|regexp|object=void", .help="Return details or list of matching functions", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT },
+    { "funcs",      InfoFuncsCmd,       0,  1, "arg:string|regexp|function|object=void", .help="Return details or list of matching functions", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT },
     { "locals",     InfoLocalsCmd,      0,  1, "filter:boolean=void", .help="Return locals; use filter=true/false just vars/functions", .retType=(uint)JSI_TT_OBJECT },
     { "interp",     jsi_InterpInfo,     0,  1, "interp:userobj=void", .help="Return info on given or current interp", .retType=(uint)JSI_TT_OBJECT },
     { "isMain",     InfoIsMainCmd,      0,  0, "", .help="Return true if current script was the main script invoked from command-line", .retType=(uint)JSI_TT_BOOLEAN },
@@ -4868,7 +4881,7 @@ static Jsi_CmdSpec sysCmds[] = {
 #ifndef JSI_OMIT_LOAD
     { "load",       jsi_LoadLoadCmd, 1,  1, "shlib:string", .help="Load a shared executable and invoke its _Init call", .retType=(uint)JSI_TT_VOID },
 #endif
-    { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
+    { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_logputs },
     { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Validate that object matches given name:type string. With single arg returns generated string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },

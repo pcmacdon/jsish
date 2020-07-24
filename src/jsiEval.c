@@ -2265,12 +2265,11 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                 fi = (jsi_FileInfo *)Jsi_Calloc(1,sizeof(*fi));
                 if (!fi) goto bail;
                 Jsi_HashValueSet(hPtr, fi);
-                fi->origFile = (char*)Jsi_KeyAdd(interp, origFile);
                 fi->fileName = (char*)Jsi_KeyAdd(interp, fname);
                 char *dfname = Jsi_Strdup(fname);
                 if ((cp = Jsi_Strrchr(dfname,'/')))
                     *cp = 0;
-                interp->curDir = fi->dirName = (char*)Jsi_KeyAdd(interp, dfname);
+                fi->dirName = interp->curDir = (char*)Jsi_KeyAdd(interp, dfname);
                 Jsi_Free(dfname);
             }
             if (!input->fname)
@@ -2344,7 +2343,7 @@ cont:
     interp->evalFlags = flags;
     if (!ps)
         rc = JSI_ERROR;
-    else if (!interp->noEval) {
+    else if (!interp->noEval && !(flags&JSI_EVAL_NOEVAL)) {
         Jsi_ValueMakeUndef(interp, &interp->retValue);
         interp->ps = ps;
         Jsi_Value *retValue = interp->retValue;

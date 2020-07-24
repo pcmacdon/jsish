@@ -123,7 +123,7 @@ void jsi_ValueDebugUpdate_(Jsi_Interp *interp, jsi_ValueDebug *vd, void *v, Jsi_
     if (vd->ip) {
         vd->ipLine = vd->ip->Line;
         vd->ipOp = vd->ip->op;
-        vd->ipFname = vd->ip->fname;
+        vd->ipFname = (vd->ip->filePtr?vd->ip->filePtr->fileName:0);
     }
     vd->interp = interp;
     if (jsi_memDebugBreakIdx && jsi_memDebugBreakIdx == vd->Idx)

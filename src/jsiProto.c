@@ -380,12 +380,10 @@ static Jsi_RC ObjectValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
    if (argc>0)
         val = Jsi_ValueArrayIndex(interp, args, 0);
 
-    Jsi_RC rc = Jsi_ValueGetKeys(interp, val, *ret);
     if (!Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
-        Jsi_LogError("can not call values() with non-object");
+        return Jsi_LogError("can not call values() with non-object");
     Jsi_ValueMakeArrayObject(interp, ret, NULL);
-    Jsi_ObjGetValues(interp, Jsi_ValueGetObj(interp, val), *ret);
-    return rc;
+    return Jsi_ObjGetValues(interp, Jsi_ValueGetObj(interp, val), *ret);
 }
 
 Jsi_RC jsi_ObjectToStringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,

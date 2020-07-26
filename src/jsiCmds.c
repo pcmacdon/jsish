@@ -1613,9 +1613,9 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     }
     if (interp->curIp)
         jsi_SysPutsCmdPrefix(interp, popts, &dStr, &quote, &fn);
-    if (!args)
-        Jsi_DSAppend(&dStr, argStr?argStr:"", NULL);
-    else {
+    if (argStr)
+        Jsi_DSAppend(&dStr, argStr, NULL);
+    if (args) {
         int argc = Jsi_ValueGetLength(interp, args);
         if (conLog && argc>0 && (argStr=Jsi_ValueString(interp, Jsi_ValueArrayIndex(interp, args, 0), NULL))) {
             if ((!interp->logOpts.Error && jsi_PrefixMatch(argStr, "ERROR: ")) 
@@ -1684,6 +1684,13 @@ static Jsi_RC consolePrintfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Func *funcPtr)
 {
     return SysPrintfCmd_(interp, args, _this, ret, funcPtr, jsi_Stderr);
+}
+
+static Jsi_RC consoleErrorCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
+    Jsi_Func *funcPtr)
+{
+    int conLog = ((!interp->logOpts.Error) || (!interp->logOpts.Warn) || (!interp->logOpts.Info));
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "ERROR: ", conLog, 1);
 }
 
 #define FN_logputs "\
@@ -4747,9 +4754,9 @@ static Jsi_RC SysParseOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 
 static Jsi_CmdSpec consoleCmds[] = {
     { "assert", jsi_AssertCmd,      1,  3, "expr:boolean|number|function, msg:string=void, options:object=void",  .help="Same as System.assert()", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=AssertOptions},
-    { "error",  consoleLogCmd,      1, -1, "val, ...", .help="Same as log", .retType=(uint)JSI_TT_VOID, .flags=0 },
+    { "error",  consoleErrorCmd,    1, -1, "val, ...", .help="Same as log but adding prefix ERROR:", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "input",  consoleInputCmd,    0,  0, "", .help="Read input from the console", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
-    { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Same as System.puts, but goes to stderr and includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_logputs },
+    { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Like System.puts, but goes to stderr and includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_logputs },
     { "printf", consolePrintfCmd,   1, -1, "format:string, ...", .help="Same as System.printf but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "puts",   consolePutsCmd,     1, -1, "val, ...", .help="Same as System.puts, but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "warn",   consoleLogCmd,      1, -1, "val, ...", .help="Same as log", .retType=(uint)JSI_TT_VOID, .flags=0 },

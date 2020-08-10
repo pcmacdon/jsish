@@ -1205,7 +1205,7 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
         if (rc == JSI_OK) {
              if (interp->retValue->vt != JSI_VT_UNDEF || interp->subOpts.outUndef) {
                 Jsi_DString eStr = {};
-                fputs(Jsi_ValueGetDString(interp, interp->retValue, &eStr, hasHelp?0:quote), stdout);
+                fputs(Jsi_ValueGetDString(interp, interp->retValue, &eStr, wantHelp?0:quote), stdout);
                 Jsi_DSFree(&eStr);
                 fputs("\n", stdout);
              }

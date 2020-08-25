@@ -15,6 +15,7 @@ function syntaxjs(args:array, conf:object=void) {
     };
     
     parseOpts(self, options, conf);
+    if (!args[0]) throw('expected file');
     
     function htmlEntities(str) {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -65,7 +66,5 @@ function syntaxjs(args:array, conf:object=void) {
 }
 
 provide('syntaxjs');
-
-if (Info.isMain())
-    puts(Jsi_Main('syntaxjs'));
-    
+runModule();
+  

@@ -126,8 +126,5 @@ function Safe(fileargs:array, conf:object=void) {
     return main();
 }
 
-provide(Safe, 1);
-
-
-if (isMain())
-    runModule(Safe);
+provide(Safe);
+runModule(Safe);

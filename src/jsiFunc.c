@@ -193,6 +193,7 @@ const char *jsiFuncInfo(Jsi_Interp *interp, Jsi_DString *dStr, Jsi_Func* func, J
 Jsi_RC jsi_ArgTypeCheck(Jsi_Interp *interp, int typ,  Jsi_Value *arg, const char *p1,
     const char *p2, int index, Jsi_Func *func, bool isdefault) {
     Jsi_RC rc = JSI_OK;
+    if (interp->typeCheck.none) return JSI_OK;
     char idxBuf[JSI_MAX_NUMBER_STRING*2];
     idxBuf[0] = 0;
     if (func && arg->vt == JSI_VT_UNDEF && !interp->typeCheck.noundef && index>0 && !isdefault && !(typ&JSI_TT_UNDEFINED)) {
@@ -333,6 +334,7 @@ int jsiPopArgs(Jsi_OpCodes *argCodes, int i)
 Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const char *name, jsi_Pline *line, Jsi_OpCodes *argCodes, bool isParse)
 {
     Jsi_RC rc = JSI_OK;
+    if (interp->typeCheck.none) return JSI_OK;
     if (interp->typeCheck.all==0) {
         if (!argCodes ? (interp->typeCheck.run==0) : (interp->typeCheck.parse==0))
             return JSI_OK;
@@ -427,6 +429,7 @@ int jsi_BuiltinCmd(Jsi_Interp *interp, const char *name)
 void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, const char *name, const char *namePre, Jsi_OpCodes *argCodes)
 {
     Jsi_Interp *interp = p->interp;
+    if (interp->typeCheck.none) return;
     if (name == NULL || !(interp->typeCheck.funcsig|interp->typeCheck.all|interp->typeCheck.parse))
         return;
     if (name && isdigit(name[0]))

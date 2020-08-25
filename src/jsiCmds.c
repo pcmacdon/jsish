@@ -1024,8 +1024,8 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
     return JSI_OK;
 }
         
-static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr)
+static Jsi_RC SysProvideCmdInt(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr, bool isInt)
 {
     Jsi_Number n = 1;
     const char *name = NULL, *cp;
@@ -1034,7 +1034,8 @@ static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
     Jsi_Func *f = NULL;
-    if (!vname) {
+    jsi_PkgInfo *pkg;
+    if (!vname || Jsi_ValueIsNull(interp, vname)) {
         name = jsi_GetCurFile(interp);
         if (!name)
             return JSI_ERROR;
@@ -1045,6 +1046,13 @@ static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         else
             Jsi_DSAppend(&dStr, name, NULL);
         name = Jsi_DSValue(&dStr);
+pkg:
+        if (isInt && (pkg=jsi_PkgGet(interp, name))) {
+            if (pkg->loadFile && pkg->loadFile == interp->framePtr->filePtr->fileName) {
+                Jsi_DSFree(&dStr);
+                return JSI_OK;
+            }
+        }
     } else if (Jsi_ValueIsString(interp, vname)) {
         name = Jsi_ValueString(interp, vname, NULL);
         if (!Jsi_StrIsAlnum(name))
@@ -1052,6 +1060,8 @@ static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     } else if (Jsi_ValueIsFunction(interp, vname)) {
         f = vname->d.obj->d.fobj->func;
         name = f->name;
+        if (isInt && name)
+            goto pkg;
     }
     if (!name) 
         rc = Jsi_LogError("invalid or missing package name");
@@ -1069,6 +1079,11 @@ static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     if (rc == JSI_OK && f)
         f->pkg = jsi_PkgGet(interp, name);
     return rc;
+}
+
+static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr) {
+    return SysProvideCmdInt(interp, args, _this, ret, funcPtr, 0);
 }
 
 Jsi_RC jsi_NoOpCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
@@ -4415,7 +4430,12 @@ static Jsi_RC SysRunModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *v1 = Jsi_ValueArrayIndex(interp, args, 0),
-    *v2 = Jsi_ValueArrayIndex(interp, args, 1);
+        *v2 = Jsi_ValueArrayIndex(interp, args, 1);
+    int argc = Jsi_ValueGetLength(interp, args);
+    if (!argc) {
+        if (SysProvideCmdInt(interp, args, _this, ret, funcPtr, 1) != JSI_OK)
+            return JSI_ERROR;
+    }
     const char *cp, *mod = NULL;
     Jsi_RC rc = JSI_OK;
     Jsi_DString dStr = {}, nStr = {};
@@ -4425,13 +4445,14 @@ static Jsi_RC SysRunModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Value **arr;
     Jsi_Obj *obj;
     const char *anam;
-    bool isMain = jsi_isMain(interp);
+    bool oisMain = interp->isMain, isMain = jsi_isMain(interp);
     if (interp->isMain)
         interp->isMain = 0;
     
     if (v2 && !Jsi_ValueIsObjType(interp, v2, JSI_OT_ARRAY))
         return Jsi_LogError("arg 2: expected array|undefined");
     if (!v1 || Jsi_ValueIsNull(interp, v1)) {
+        if (!isMain) goto done;
         mod = interp->framePtr->filePtr->fileName;
         if (*mod) mod = Jsi_Strrchr(mod, '/');
         if (!*mod) return JSI_ERROR;
@@ -4442,9 +4463,11 @@ static Jsi_RC SysRunModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     } else {
         mod = Jsi_ValueString(interp, v1, NULL);
         if (!mod) {
-            if (Jsi_ValueIsObjType(interp, v1, JSI_OT_FUNCTION))
+            if (Jsi_ValueIsObjType(interp, v1, JSI_OT_FUNCTION)) {
+                if (SysProvideCmdInt(interp, args, _this, ret, funcPtr, 2) != JSI_OK)
+                    return JSI_ERROR;
                 cmd = v1;
-            else
+            } else
                 return Jsi_LogError("arg 1: expected string|function|undefined");
         }
     }
@@ -4460,6 +4483,9 @@ static Jsi_RC SysRunModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         rc = Jsi_LogError("unknown command: %s", (mod?mod:""));
         goto done;
     }
+    if (!isMain && cmd->d.obj->d.fobj->func->filePtr->fileName == interp->framePtr->filePtr->fileName)
+        goto done;
+
     
     if (!v2) {
         obj = Jsi_ObjNewArray(interp, NULL, 0, 0);
@@ -4531,6 +4557,7 @@ static Jsi_RC SysRunModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     }
 
 done:
+    interp->isMain = oisMain;
     Jsi_DSFree(&dStr);
     Jsi_DSFree(&nStr);
     return rc;
@@ -4895,12 +4922,12 @@ static Jsi_CmdSpec sysCmds[] = {
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
     { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse options", .retType=(uint)JSI_TT_ANY, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "provide",    SysProvideCmd,   0,  3, "name:string|function=void, version:number|string=1.0, opts:object|function=void", .help="Provide a package for use with require. Default is the file tail-rootname", .retType=(uint)JSI_TT_VOID },
+    { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, opts:object|function=void", .help="Provide a package for use with require. Default is the file tail-rootname", .retType=(uint)JSI_TT_VOID },
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },
-    { "runMain",    SysRunMainCmd,   0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="If isMain invokes runModule", .retType=(uint)JSI_TT_ANY, .flags=0},
-    { "runModule",  SysRunModuleCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain and no args givine parses console.args", .retType=(uint)JSI_TT_ANY, .flags=0},
+    { "runMain",    SysRunMainCmd,   0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke a runModule. If cmd is null/void uses file name,  and if !isMain does nothing", .retType=(uint)JSI_TT_ANY, .flags=0},
+    { "runModule",  SysRunModuleCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide", .retType=(uint)JSI_TT_ANY, .flags=0},
     { "sleep",      SysSleepCmd,     0,  1, "secs:number=1.0",  .help="sleep for N milliseconds, minimum .001", .retType=(uint)JSI_TT_VOID },
 #ifndef JSI_OMIT_EVENT
     { "setInterval",setIntervalCmd,  2,  2, "callback:function, ms:number", .help="Setup recurring function to run every given millisecs", .retType=(uint)JSI_TT_NUMBER },

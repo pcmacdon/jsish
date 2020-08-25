@@ -1,5 +1,30 @@
 #!/usr/bin/env jsish
-// Create the Master index file for the wiki.
+// Create the Master index file for .md.
+function mkindex(args:array|string, opts:object) {
+
+    var options = { // Generate master index.
+        html       :false         // Generate for html
+    };
+    var self = {};
+    parseOpts(self, options, conf);
+    var i, rv = '', lst = File.glob('*.md').sort();
+    if (!self.html) {
+        rv += '# Jsi Index\n';
+        for (i of lst)
+            rv += '- ['+i+']('+i+')\n';
+    } else {
+        rv += '<h1>Jsi Index</h1>\n';
+        rv += '<ul>\n';
+        for (i of lst)
+            rv += '<li><a href="'+i+'">'+i+'</a></li>\n';
+        rv += '</ul>\n';
+    }
+    return rv;
+}
+
+runModule(mkindex);
+
+/*
 
 var flst = [], clst = [], jlst = [], lst = File.glob('*.wiki');
 
@@ -46,3 +71,4 @@ for (i in clst.sort()) {
     puts('  *  <a href='+clst[i]+'>'+ttl+'</a>');
 }
 puts("</td></tr></table>");
+*/

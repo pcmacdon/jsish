@@ -129,6 +129,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     int maxUpload;
     int maxDownload;
     int bufferPwr2;
+    int flags;
     jsi_wsStatData stats;
     char *iface;
     const char* urlPrefix, *urlRedirect;
@@ -312,6 +313,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(STRKEY, jsi_wsCmdObj, formParams, .help="Comma seperated list of upload form param names ('text,send,file,upload')", jsi_IIRO),
     JSI_OPT(BOOL,   jsi_wsCmdObj, extHandlers,.help="Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi", jsi_IIOF),
     JSI_OPT(OBJ,    jsi_wsCmdObj, extOpts,    .help="Key/value store for extension-handlers options", jsi_IIOF),
+    JSI_OPT(INT,    jsi_wsCmdObj, flags,      .help="Flags for future use."),
     JSI_OPT(REGEXP, jsi_wsCmdObj, getRegexp,  .help="Call onGet() only if Url matches pattern"),
 //    JSI_OPT(CUSTOM, jsi_wsCmdObj, handlersPkg,.help="Handlers use package() to upgrade string to function object"),
     JSI_OPT(ARRAY,  jsi_wsCmdObj, headers,    .help="Headers to send to browser: name/value pairs", jsi_IIOF),
@@ -358,8 +360,8 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(TIME_T, jsi_wsCmdObj, startTime,  .help="Time of websocket start", jsi_IIRO),
     JSI_OPT(STRKEY, jsi_wsCmdObj, includeFile,.help="Default file when no extension given (include.shtml)"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, udata,      .help="User data"),
-    JSI_OPT(STRKEY, jsi_wsCmdObj, urlPrefix,  .help="Prefix in url to strip from path; for reverse proxy"),
-    JSI_OPT(STRKEY, jsi_wsCmdObj, urlRedirect,.help="Redirect when no url or / is given. Must match urlPrefix, if given"),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, urlPrefix,  .help="Prefix in url to strip from path; for reverse proxy."),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, urlRedirect,.help="Redirect when no url or /, and adds cookie sessionJsi."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, useridPass, .help="The USERID:PASSWORD to use for basic authentication"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, version,    .help="WebSocket version info", jsi_IIRO),
     JSI_OPT_END(jsi_wsCmdObj, .help="Websocket options")
@@ -384,6 +386,10 @@ jsi_wscallback_websock(struct lws *wsi,
 static Jsi_RC jsi_wsfreeFile(Jsi_Interp *interp, Jsi_HashEntry* hPtr, void *ptr);
 static bool jsi_wsAddHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi, Jsi_Value *hdrs,
     Jsi_DString *hStr);
+
+static void wss_MakeSessionKey( jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss) {
+    snprintf(pss->key, sizeof(pss->key), "sessionJsi=%d%p%d", pss->wid, pss, (int)cmdPtr->startTime);
+}
     
 // Allocate per-connection data using file descriptor.
 static jsi_wsPss*
@@ -425,7 +431,7 @@ jsi_wsgetPss(jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user, int create, int 
         //pss->sfd = sfd;
         pss->udata = Jsi_ValueNewObj(cmdPtr->interp, NULL);
         Jsi_IncrRefCount(cmdPtr->interp, pss->udata);
-
+        wss_MakeSessionKey(cmdPtr, pss);
         if (cmdPtr->debug>2)
             fprintf(stderr, "PSS CREATE: %p/%p/%p (http=%d) = %d\n", pss, user, wsi, ishttp, sid);
         if (!ishttp) {
@@ -1025,8 +1031,9 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                 *esq = 0;
                 if (cp[0]== '#' && !cp[1]) {
                     if (!pss->key[0])
-                        snprintf(pss->key, sizeof(pss->key), "%d%p%d", pss->wid, pss, (int)cmdPtr->startTime);
-                    Jsi_DSPrintf(dStr, "'%s'", pss->key);
+                        wss_MakeSessionKey(cmdPtr, pss);
+                    if (pss->key && (cp=Jsi_Strchr(pss->key,'=')))
+                        Jsi_DSPrintf(dStr, "'%s'", cp+1);
                 } else {
                     Jsi_Value *val = NULL;
                     if (cmdPtr->udata) {
@@ -1662,6 +1669,13 @@ serve:
             (unsigned char *)buffer + sizeof(buffer)))
             return 1;
     }*/
+    if (cmdPtr->urlRedirect && !pss->key && !Jsi_Strcmp(mime, "text/html"))
+        wss_MakeSessionKey(cmdPtr, pss);
+
+    if (pss->key && lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_SET_COOKIE,
+            (uchar *)pss->key, Jsi_Strlen(pss->key), &p,  (uchar *)buffer + sizeof(buffer)))
+        goto bail;
+
     static const char stsStr[] = "max-age=15768000 ; includeSubDomains";
     if (lws_is_ssl(wsi) && lws_add_http_header_by_name(wsi,
                     (uchar *) "Strict-Transport-Security:",
@@ -2595,7 +2609,7 @@ static Jsi_RC jsi_wsHandleVue(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPs
     char *s = Jsi_DSValue(&dStr),
         *ts = Jsi_Strstr(s, "<template>"),
         *te = Jsi_Strrstr(s, "\n</template>"),
-        *sxs = "<script>\nexport default {",
+        *sxs = (char*)"<script>\nexport default {",
         *sx = Jsi_Strstr(s, sxs), *sxb,
         *se = Jsi_Strstr(s, "\n</script>");
     if (ts<0||te<0||se<0||sx<0)

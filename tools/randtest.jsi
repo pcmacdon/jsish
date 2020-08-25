@@ -3,7 +3,7 @@
 // Use with sanitize to detect memory leaks, etc.
 // TODO: call with varying numbers of args.
 
-function randTest() {
+function randtest(...) {
 
     var pargs = [-1, 'a', null, false];
     
@@ -74,6 +74,5 @@ function randTest() {
     return;
 }
 
-if (Info.isMain()) {
-    puts(randTest());
-}
+runModule(randtest);
+

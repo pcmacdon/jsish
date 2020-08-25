@@ -123,8 +123,6 @@ function Csspp(files:array|string=null, conf:object=undefined):string|object
     return self;
 }
 
-provide(Csspp, 1.0);
-
-if (isMain())
-    runModule(Csspp);
+provide(Csspp);
+runModule(Csspp);
 

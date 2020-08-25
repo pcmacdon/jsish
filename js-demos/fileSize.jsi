@@ -1,5 +1,5 @@
 #!/usr/bin/env jsish
-function fileSize(fargs:array|string=void, conf:object=void) {
+function fileSize(fargs, conf) {
 
     var options = { // Count bytes in files
         Debug       :false, // LogDebug output
@@ -33,7 +33,4 @@ function fileSize(fargs:array|string=void, conf:object=void) {
     return self;
 }
 
-provide(fileSize);
-
-if (isMain()) 
-    runModule(fileSize);
+runModule(fileSize);

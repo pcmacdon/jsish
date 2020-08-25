@@ -273,8 +273,6 @@ function Proxy(args:array, conf:object=void):void
     
 }
 
-provide(Proxy, 0.1);
-
-if (isMain()) 
-    runModule(Proxy);
+provide(Proxy);
+runModule(Proxy);
 

@@ -116,7 +116,7 @@ static Jsi_RC ObjListifyValuesCallback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void
 {
     Jsi_Interp *interp = tree->opts.interp;
     Jsi_Obj *obj = (Jsi_Obj*)data;
-    Jsi_Value *val = Jsi_TreeValueGet(hPtr);
+    Jsi_Value *val = (Jsi_Value*)Jsi_TreeValueGet(hPtr);
     if (!val || Jsi_ObjArrayAdd(interp, obj, val) != JSI_OK) 
         return JSI_ERROR;
     return JSI_OK;

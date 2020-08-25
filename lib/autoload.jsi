@@ -27,7 +27,6 @@ Jsi_Auto.Debug      = 'source("'+Info.scriptDir()+'/Debug.jsi")';
 Jsi_Auto.Safe       = 'source("'+Info.scriptDir()+'/Safe.jsi")';
 Jsi_Auto.Zip        = 'source("'+Info.scriptDir()+'/Zip.jsi")';
 Jsi_Auto.UnitTest   = 'source("'+Info.scriptDir()+'/UnitTest.jsi")';
-Jsi_Auto.Make       = 'source("'+Info.scriptDir()+'/Make.jsi")';
 Jsi_Auto.Vfs        = 'source("'+Info.scriptDir()+'/Jsi_VFS.jsi")';
 Jsi_Auto.Archive    = 'source("'+Info.scriptDir()+'/Archive.jsi")';
 Jsi_Auto.Module     = 'source("'+Info.scriptDir()+'/Module.jsi")';

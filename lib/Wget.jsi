@@ -148,7 +148,6 @@ function Wget(fileargs:array|string, conf:object=void) {
 
 provide(Wget, "1.2");
 
-if (isMain())
-    runModule(Wget);
+runModule(Wget);
 
 

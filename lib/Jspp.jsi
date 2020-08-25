@@ -171,8 +171,6 @@ function Jspp(files:array|string=null, conf:object=undefined):string|object
     return self;
 }
 
-provide(Jspp, 1);
-
-if (isMain()) 
-    runModule(Jspp);
+provide(Jspp);
+runModule(Jspp);
 

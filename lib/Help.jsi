@@ -2,7 +2,7 @@
 
 require('Jsish');
 
-function Help(args:array, conf:object=void) {
+function Help(args, conf) {
 
     var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Provide help for Jsi commands.
@@ -374,8 +374,5 @@ function Help(args:array, conf:object=void) {
     return main();
 }
 
-provide(Help, 1);
-
-
-if (isMain())
-    runModule(Help);
+provide(Help);
+runModule(Help);

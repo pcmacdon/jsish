@@ -945,6 +945,7 @@ typedef union jsi_numUnion {
 } jsi_numUnion;
 
 typedef struct {
+    uint none:1;
     uint parse:1;
     uint run:1;
     uint all:1;     

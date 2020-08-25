@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.31
+//JSI Command Prototypes: version 3.0.34
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -300,7 +300,7 @@ System.prototype.parseFloat = function(val):number {};
 System.prototype.parseInt = function(val:any, base:number=10):number {};
 System.prototype.parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined):any {};
 System.prototype.printf = function(format:string, ...):void {};
-System.prototype.provide = function(name:string|function=void, version:number|string=1.0, opts:object|function=void):void {};
+System.prototype.provide = function(name:string|null|function=void, version:number|string=void, opts:object|function=void):void {};
 System.prototype.puts = function(val, ...):void {};
 System.prototype.quote = function(val:string):string {};
 System.prototype.require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};
@@ -392,7 +392,7 @@ var parseFloat = function(val):number {};
 var parseInt = function(val:any, base:number=10):number {};
 var parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined):any {};
 var printf = function(format:string, ...):void {};
-var provide = function(name:string|function=void, version:number|string=1.0, opts:object|function=void):void {};
+var provide = function(name:string|null|function=void, version:number|string=void, opts:object|function=void):void {};
 var puts = function(val, ...):void {};
 var quote = function(val:string):string {};
 var require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};
@@ -407,4 +407,3 @@ var strptime = function(val:string=void, options:string|object=void):number {};
 var times = function(callback:function|boolean, count:number=1):number {};
 var unload = function(shlib:string):void {};
 var update = function(options:number|object=void):number {};
-

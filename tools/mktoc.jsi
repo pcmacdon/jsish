@@ -1,16 +1,15 @@
 #!/usr/bin/env jsish
 // Generate documentation table of contents from headers <h1> <h2>...
 
-function jsi_mktoc(args:array, conf:object) {
+function mktoc(args:array, conf:object) {
 
     var options = {// Generate documentation table of contents from headers <h1> <h2>...
         debug:true,         // Enable debugging
         numberHdrs:false,   // Add section numbers to headers
         update:false        // Update file in place.
     };
-    var self = {
-    };
-    parseOpts(self, options, conf);
+    var self = {};
+    parseOpts(self, options, arguments[1]);
     
     function mk1toc(fname:string) {
         var rc = '', lst = [], idlst = [], lev = 0, prev = 0, cur = 0, res, top = 0;
@@ -122,6 +121,5 @@ function jsi_mktoc(args:array, conf:object) {
 
 }
 
-if (isMain())
-    Jsi_Main('jsi_mktoc');
+runModule(mktoc);
 

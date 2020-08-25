@@ -7,9 +7,10 @@ function Module(args:array, conf:object=void) {
     var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Run or create a Jsi module.
         create  :'',        // Create a Jsi module template with this name.
-        output  :'',        // Override the output filename default of create + .jsi.
         force   :false,     // Remove output if exists.
+        output  :'',        // Override the output filename default of create + .jsi.
         quiet   :false,     // No messages.
+        setup   :'',        // Download and setup fossil repos from jsish.org.
         web     :false      // Use websock server template.
     };
     var self = {
@@ -18,12 +19,22 @@ function Module(args:array, conf:object=void) {
 
     parseOpts(self, options, conf);
     
+    function setupApp(app) {
+        if (app !== 'pdq') LogWarn('app is not pdq');
+        //Wget('http://jsish.org/fossil/pdq/zip/pdq', {O:'pdq.zip'});
+        //Wget('http://jsish.org/bin/fossil', {O:'fossil'}); exec('chmod u+x fossil');;
+        exec('fossil clone http://jsish.org/fossil/'+app+' '+app+'.fossil');
+        File.write('run_'+app+'.sh', "#!\njsish -a -update true "+app+'.fossil $*\n');
+    }
+    
     function main() {
         LogTrace('Starting');
         if (self.rootdir === '')
             self.rootdir=Info.scriptDir();
         debugger;
         var ext, fn = self.create;
+        if (self.setup !== '')
+            return setupApp(self.setup);
         if (fn === '') {
             var lst = File.glob('/zvfs/lib/*'), rc = [];
             for (var i of lst) {
@@ -61,7 +72,5 @@ function Module(args:array, conf:object=void) {
     return main();
 }
 
-provide(Module, 1);
-
-if (isMain())
-    runModule(Module);
+provide(Module);
+runModule(Module);

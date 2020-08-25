@@ -1,7 +1,7 @@
 #!/usr/bin/env jsish
 // Generate function prototypes for Jsi builtin cmds.
 
-function jsi_mkproto() {
+function mkproto(...) {
 
     function DumpArgs(ci:object) {
         var argStr = ci.args;
@@ -62,6 +62,4 @@ function jsi_mkproto() {
     return '//JSI Command Prototypes: version '+ver+'\nthrow("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");\n\n' + rv;
 }
 
-if (Info.isMain()) {
-    puts(jsi_mkproto());
-}
+runModule(mkproto);

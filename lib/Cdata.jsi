@@ -1704,7 +1704,5 @@ int main(int argc, char *argv[])
 }
 
 provide(Cdata, "2");
-
-if (isMain())
-    runModule(Cdata);
+runModule(Cdata);
 

@@ -502,7 +502,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
         _JSI_OPT_CHECKNULL(argValue);
         if (argValue->vt != JSI_VT_OBJECT || argValue->d.obj->ot != JSI_OT_FUNCTION) 
             goto bail;
-        if (specPtr->data && (interp->typeCheck.run|interp->typeCheck.all))
+        if (specPtr->data && !interp->typeCheck.none && (interp->typeCheck.run|interp->typeCheck.all))
             if (!jsi_FuncArgCheck(interp, argValue->d.obj->d.fobj->func, (char*)specPtr->data)) 
                 return Jsi_LogError("failed setting func pointer for %s", specPtr->name);
 

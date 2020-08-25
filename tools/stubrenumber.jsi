@@ -1,7 +1,7 @@
 #!/usr/bin/env jsish
 // Renumber stubs.
 
-function jsi_stubrenumber(args:array|string, opts:object) {
+function stubrenumber(args:array|string, opts:object) {
     var rc = '', i = 1, sp, ep;
     var fname = (typeof(args)==='array'?args[0]:args);
     if (!fname)
@@ -17,6 +17,5 @@ function jsi_stubrenumber(args:array|string, opts:object) {
     return rc;
 }
 
-if (Info.isMain()) {
-    puts(Jsi_Main('jsi_stubrenumber'));
-}
+runModule(stubrenumber);
+

@@ -2,7 +2,7 @@
 // The preprocessor to generate struct/enums from defs.   Outputs .h or .c files.
 // Define C-structures and enums for access from Jsi.
 
-function jsi_structpp(args:array, conf:object)
+function structpp(args:array, conf:object)
 {
     var self = {}; // Function access to self[].
     var pdq = {
@@ -504,6 +504,5 @@ function jsi_structpp(args:array, conf:object)
     return '';
 }
 
-if (isMain())
-    runModule(jsi_structpp);
+runModule(structpp);
 

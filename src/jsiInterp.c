@@ -77,7 +77,7 @@ static Jsi_OptionSpec InterpSubOptions[] = {
 };
 
 static const char *jsi_SafeModeStrs[] = { "none", "read", "write", "writeRead", "lockdown", NULL };
-static const char *jsi_TypeChkStrs[] = { "parse", "run", "all", "error", "strict", "noundef", "nowith", "funcsig", NULL };
+static const char *jsi_TypeChkStrs[] = { "none", "parse", "run", "all", "error", "strict", "noundef", "nowith", "funcsig", NULL };
 const char *jsi_callTraceStrs[] = { "funcs", "cmds", "new", "return", "args", "notrunc", "noparent", "full", "before", NULL};
 const char *jsi_AssertModeStrs[] = { "throw", "log", "puts", NULL};
 
@@ -1131,7 +1131,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp = (Jsi_Interp *)Jsi_Calloc(1,sizeof(*interp));
     interp->framePtr = &interp->topFrame;
     interp->framePtr->filePtr = &interp->topFile;
-    interp->topFile.fileName = interp->topFile.dirName = "";
+    interp->topFile.fileName = interp->topFile.dirName = (char*)"";
     if (!parent)
         interp->maxInterpDepth = JSI_MAX_SUBINTERP_DEPTH;
     else {

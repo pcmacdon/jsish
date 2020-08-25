@@ -275,8 +275,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
     return self;
 };
 
-provide(Htmlpp, 1);
 
-if (isMain())
-    runModule(Htmlpp);
+provide(Htmlpp);
+runModule(Htmlpp);
 

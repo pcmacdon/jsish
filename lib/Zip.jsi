@@ -158,9 +158,5 @@ function Zip(args:string|array, conf:object=void) {
     throw(emsg); 
 }
 
-provide(Zip, 1.0);
-
-if (Info.isMain()) {
-    //exit(Zip(console.args));
-    runModule(Zip);
-}
+provide(Zip);
+runModule(Zip);

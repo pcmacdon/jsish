@@ -116,13 +116,13 @@
 
 <h1>CData</h1>
 
-<font color=red>Synopsis:new CData(options:string&verbar;object=void, inits:object=undefined):userobj
+<font color=red>Synopsis:new CData(options:string&#124;object=void, inits:object=undefined):userobj
 
 </font><p>
 <h2>Methods for "CData"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>CData</td><td>new CData(<a href='#new CDataOptions'>options</a>:string|object=void, inits:object=undefined):userobj </td><td>Create a new struct or map/array of structs.The 2nd arg is used for function option parsing and will report errors at the callers file:line</td></tr>
+<tr><td>CData</td><td>new CData(<a href='#newCDataOptions'>options</a>:string|object=void, inits:object=undefined):userobj </td><td>Create a new struct or map/array of structs.The 2nd arg is used for function option parsing and will report errors at the callers file:line</td></tr>
 <tr><td>conf</td><td>conf(<a href='#CData.confOptions'>options</a>:object|string=void) </td><td>Configure options for c-data.</td></tr>
 <tr><td>get</td><td>get(key:string|number|object=null, field:string=void) </td><td>Get struct/map/array value.</td></tr>
 <tr><td>incr</td><td>incr(key:string|number|object|null, field:object|string, value:number=1):number </td><td>Increment a numeric field: returns the new value.</td></tr>
@@ -592,7 +592,7 @@ The topmost level is 1, and 0 is the current level, and a negative level transla
 <h2>Methods for "Interp"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>Interp</td><td>new Interp(<a href='#new InterpOptions'>options</a>:object=void):userobj </td><td>Create a new interp.</td></tr>
+<tr><td>Interp</td><td>new Interp(<a href='#newInterpOptions'>options</a>:object=void):userobj </td><td>Create a new interp.</td></tr>
 <tr><td>alias</td><td>alias(name:string=void, func:function|null=void, args:array|null=void, async=false) </td><td>Set/get global alias bindings for command in an interp. With 0 args, returns list of all aliases in interp.
 With 1 arg returns func for given alias name.
 With 2 args where arg2 == null, returns args for given alias name .
@@ -670,7 +670,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
 <tr><td>traceOp</td><td><i>INT</i></td><td>Set debugging level for OPCODE execution.</td><td><i></i></td></tr>
 <tr><td>tracePuts</td><td><i>BOOL</i></td><td>Trace puts by making it use logOpts.</td><td><i></i></td></tr>
-<tr><td>typeCheck</td><td><i>ARRAY</i></td><td>Type-check control options. (zero or more of: <b>parse</b>, <b>run</b>, <b>all</b>, <b>error</b>, <b>strict</b>, <b>noundef</b>, <b>nowith</b>, <b>funcsig</b>)</td><td><i></i></td></tr>
+<tr><td>typeCheck</td><td><i>ARRAY</i></td><td>Type-check control options. (zero or more of: <b>none</b>, <b>parse</b>, <b>run</b>, <b>all</b>, <b>error</b>, <b>strict</b>, <b>noundef</b>, <b>nowith</b>, <b>funcsig</b>)</td><td><i></i></td></tr>
 <tr><td>typeWarnMax</td><td><i>INT</i></td><td>Type checking is silently disabled after this many warnings (50).</td><td><i></i></td></tr>
 <tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
 <tr><td>unitTest</td><td><i>UINT</i></td><td>Unit test control bits: 1=subst, 2=Puts with file:line prefix.</td><td><i></i></td></tr>
@@ -812,7 +812,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <h2>Methods for "MySql"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>MySql</td><td>new MySql(<a href='#new MySqlOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to a MySql database:.</td></tr>
+<tr><td>MySql</td><td>new MySql(<a href='#newMySqlOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to a MySql database:.</td></tr>
 <tr><td>affectedRows</td><td>affectedRows():number </td><td>Return affected rows.</td></tr>
 <tr><td>complete</td><td>complete(sql:string):boolean </td><td>Return true if sql is complete.</td></tr>
 <tr><td>conf</td><td>conf(<a href='#MySql.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
@@ -958,7 +958,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 
 <h1>Object</h1>
 
-<font color=red>Synopsis:new Object(val:object&verbar;function|null=void):object
+<font color=red>Synopsis:new Object(val:object&#124;function&#124;null=void):object
 
 </font><p>Commands for accessing Objects.
 
@@ -990,7 +990,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 
 <h1>RegExp</h1>
 
-<font color=red>Synopsis:new RegExp(val:regexp&verbar;string, flags:string):regexp
+<font color=red>Synopsis:new RegExp(val:regexp&#124;string, flags:string):regexp
 
 </font><p>Commands for managing reqular expression objects.
 
@@ -1044,7 +1044,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <h2>Methods for "Socket"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>Socket</td><td>new Socket(<a href='#new SocketOptions'>options</a>:object=void):userobj </td><td>Create socket server/client object.Create a socket server or client object.</td></tr>
+<tr><td>Socket</td><td>new Socket(<a href='#newSocketOptions'>options</a>:object=void):userobj </td><td>Create socket server/client object.Create a socket server or client object.</td></tr>
 <tr><td>close</td><td>close():void </td><td>Close socket(s).</td></tr>
 <tr><td>conf</td><td>conf(<a href='#Socket.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
 <tr><td>idconf</td><td>idconf(id:number=void, <a href='#Socket.idconfOptions'>options</a>:string|object=void) </td><td>Configure options for a connection id, or return list of ids.</td></tr>
@@ -1150,7 +1150,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 
 <h1>Sqlite</h1>
 
-<font color=red>Synopsis:new Sqlite(file:null&verbar;string=void, options:object=void):userobj
+<font color=red>Synopsis:new Sqlite(file:null&#124;string=void, options:object=void):userobj
 
 </font><p>Commands for accessing sqlite databases.
 
@@ -1158,7 +1158,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <h2>Methods for "Sqlite"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>Sqlite</td><td>new Sqlite(file:null|string=void, <a href='#new SqliteOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to the named file or :memory:.</td></tr>
+<tr><td>Sqlite</td><td>new Sqlite(file:null|string=void, <a href='#newSqliteOptions'>options</a>:object=void):userobj </td><td>Create a new db connection to the named file or :memory:.</td></tr>
 <tr><td>backup</td><td>backup(file:string, dbname:string='main'):void </td><td>Backup db to file. Open or create a database file named FILENAME.
 Transfer the content of local database DATABASE (default: 'main') into the FILENAME database.</td></tr>
 <tr><td>collate</td><td>collate(name:string, callback:function):void </td><td>Create new SQL collation command.</td></tr>
@@ -1368,7 +1368,7 @@ By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or
 <tr><td>parseInt</td><td>parseInt(val:any, base:number=10):number </td><td>Convert string to an integer.</td></tr>
 <tr><td>parseOpts</td><td>parseOpts(self:object|userobj, options:object, conf:object|null|undefined) </td><td>Parse options.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Formatted output to stdout.</td></tr>
-<tr><td>provide</td><td>provide(name:string|function=void, version:number|string=1.0, opts:object|function=void):void </td><td>Provide a package for use with require. Default is the file tail-rootname.</td></tr>
+<tr><td>provide</td><td>provide(name:string|null|function=void, version:number|string=void, opts:object|function=void):void </td><td>Provide a package for use with require. Default is the file tail-rootname.</td></tr>
 <tr><td>puts</td><td>puts(val, ...):void </td><td>Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.</td></tr>
 <tr><td>quote</td><td>quote(val:string):string </td><td>Return quoted string.</td></tr>
 <tr><td>require</td><td>require(name:string=void, version:number|string=1, <a href='#System.requireOptions'>options</a>:object=void):number|array|object </td><td>Load/query packages. With no arguments, returns the list of all loaded packages.
@@ -1376,8 +1376,8 @@ With one argument, loads the package (if necessary) and returns its version.
 With two arguments, returns object containing: version, loadFile, func.
 A third argument sets options for package or module.
 Note an error is thrown if requested version is greater than actual version.</td></tr>
-<tr><td>runMain</td><td>runMain(cmd:string|null|function=void, conf:array=undefined) </td><td>If isMain invokes runModule.</td></tr>
-<tr><td>runModule</td><td>runModule(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke named module. If name is empty, uses file basename. If isMain and no args givine parses console.args.</td></tr>
+<tr><td>runMain</td><td>runMain(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke a runModule. If cmd is null/void uses file name,  and if !isMain does nothing.</td></tr>
+<tr><td>runModule</td><td>runModule(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.</td></tr>
 <tr><td>setInterval</td><td>setInterval(callback:function, ms:number):number </td><td>Setup recurring function to run every given millisecs.</td></tr>
 <tr><td>setTimeout</td><td>setTimeout(callback:function, ms:number):number </td><td>Setup function to run after given millisecs.</td></tr>
 <tr><td>sleep</td><td>sleep(secs:number=1.0):void </td><td>sleep for N milliseconds, minimum .001.</td></tr>
@@ -1649,7 +1649,7 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <h2>Methods for "WebSocket"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>WebSocket</td><td>new WebSocket(<a href='#new WebSocketOptions'>options</a>:object=void):userobj </td><td>Create websocket server/client object.Create a websocket server/client object.  The server serves out pages to a web browser,
+<tr><td>WebSocket</td><td>new WebSocket(<a href='#newWebSocketOptions'>options</a>:object=void):userobj </td><td>Create websocket server/client object.Create a websocket server/client object.  The server serves out pages to a web browser,
 which can use javascript to upgrade connection to a bidirectional websocket.</td></tr>
 <tr><td>conf</td><td>conf(<a href='#WebSocket.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
 <tr><td>file</td><td>file(name:string=void):array|void </td><td>Add file to hash, or with no args return file hash.</td></tr>
@@ -1683,6 +1683,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>formParams</td><td><i>STRKEY</i></td><td>Comma seperated list of upload form param names ('text,send,file,upload').</td><td><i>readOnly</i></td></tr>
 <tr><td>extHandlers</td><td><i>BOOL</i></td><td>Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi.</td><td><i>initOnly</i></td></tr>
 <tr><td>extOpts</td><td><i>OBJ</i></td><td>Key/value store for extension-handlers options.</td><td><i>initOnly</i></td></tr>
+<tr><td>flags</td><td><i>INT</i></td><td>Flags for future use..</td><td><i></i></td></tr>
 <tr><td>getRegexp</td><td><i>REGEXP</i></td><td>Call onGet() only if Url matches pattern.</td><td><i></i></td></tr>
 <tr><td>headers</td><td><i>ARRAY</i></td><td>Headers to send to browser: name/value pairs.</td><td><i>initOnly</i></td></tr>
 <tr><td>jsiFnPattern</td><td><i>STRKEY</i></td><td>A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsig*.js).</td><td><i>readOnly</i></td></tr>
@@ -1728,8 +1729,8 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>startTime</td><td><i>TIME_T</i></td><td>Time of websocket start.</td><td><i>readOnly</i></td></tr>
 <tr><td>includeFile</td><td><i>STRKEY</i></td><td>Default file when no extension given (include.shtml).</td><td><i></i></td></tr>
 <tr><td>udata</td><td><i>OBJ</i></td><td>User data.</td><td><i></i></td></tr>
-<tr><td>urlPrefix</td><td><i>STRKEY</i></td><td>Prefix in url to strip from path; for reverse proxy.</td><td><i></i></td></tr>
-<tr><td>urlRedirect</td><td><i>STRKEY</i></td><td>Redirect when no url or / is given. Must match urlPrefix, if given.</td><td><i></i></td></tr>
+<tr><td>urlPrefix</td><td><i>STRKEY</i></td><td>Prefix in url to strip from path; for reverse proxy..</td><td><i></i></td></tr>
+<tr><td>urlRedirect</td><td><i>STRKEY</i></td><td>Redirect when no url or /, and adds cookie sessionJsi..</td><td><i></i></td></tr>
 <tr><td>useridPass</td><td><i>STRKEY</i></td><td>The USERID:PASSWORD to use for basic authentication.</td><td><i></i></td></tr>
 <tr><td>version</td><td><i>OBJ</i></td><td>WebSocket version info.</td><td><i>readOnly</i></td></tr>
 </table>
@@ -1837,9 +1838,9 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
 <tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#console.assertOptions'>options</a>:object=void):void </td><td>Same as System.assert().</td></tr>
-<tr><td>error</td><td>error(val, ...):void </td><td>Same as log.</td></tr>
+<tr><td>error</td><td>error(val, ...):void </td><td>Same as log but adding prefix ERROR:.</td></tr>
 <tr><td>input</td><td>input():string|void </td><td>Read input from the console.</td></tr>
-<tr><td>log</td><td>log(val, ...):void </td><td>Same as System.puts, but goes to stderr and includes file:line. If first argument is a boolean, output appears only if true.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Like System.puts, but goes to stderr and includes file:line. If first argument is a boolean, output appears only if true.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Same as System.printf but goes to stderr.</td></tr>
 <tr><td>puts</td><td>puts(val, ...):void </td><td>Same as System.puts, but goes to stderr.</td></tr>
 <tr><td>warn</td><td>warn(val, ...):void </td><td>Same as log.</td></tr>

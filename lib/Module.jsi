@@ -4,7 +4,6 @@ require('Jsi', '2.4');
 
 function Module(args:array, conf:object=void) {
 
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Run or create a Jsi module.
         create  :'',        // Create a Jsi module template with this name.
         force   :false,     // Remove output if exists.
@@ -14,10 +13,11 @@ function Module(args:array, conf:object=void) {
         web     :false      // Use websock server template.
     };
     var self = {
-        rootdir      :''    // Root directory.
+        rootdir      :'',   // Root directory.
+        Trace       :false,
     };
 
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     
     function setupApp(app) {
         if (app !== 'pdq') LogWarn('app is not pdq');
@@ -73,4 +73,4 @@ function Module(args:array, conf:object=void) {
 }
 
 provide(Module);
-runModule(Module);
+moduleRun(Module);

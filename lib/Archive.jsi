@@ -8,10 +8,10 @@ require('Jsi_Vfs');
 
 function Archive(args:array, conf:object=void)
 {
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var self = {
         app         :'',
-        cnt         :0
+        cnt         :0,
+        Trace       :false,
     };
     var options = { // Run application from a zip, sqlar or fossil repository.
         mainFile    :'main.jsi',// File to execute, if no module given.
@@ -23,7 +23,7 @@ function Archive(args:array, conf:object=void)
         version     :'tip'         // Version or commit
     };
 
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     
     function main() {
         if (args.length<1)
@@ -85,7 +85,7 @@ function Archive(args:array, conf:object=void)
             require(self.app);
             if (self.noRun)
                 return mnt;
-            return runModule(self.app, args.slice(2));
+            return moduleRun(self.app, args.slice(2));
         }
         if (self.noRun)
             return mnt;
@@ -104,5 +104,5 @@ function Archive(args:array, conf:object=void)
 }
 
 provide(Archive);
-runModule(Archive);
+moduleRun(Archive);
 

@@ -260,6 +260,9 @@ typedef enum {
 } jsi_Sig;
 
 #define Jsi_LogType(fmt,...) Jsi_LogMsg(interp, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define jsi_LogDefMaskVal (uint)~((1<<JSI_LOG_DEBUG)|(1<<JSI_LOG_TRACE)|(1<<JSI_LOG_TEST)|(1<<JSI_LOG_ASSERT))
+extern const char *jsi_LogCodes[], *jsi_LogCodesU[];
+extern uint jsi_GetLogFlag(Jsi_Interp *interp, uint mask);
 
 struct jsi_OpCode;
 
@@ -339,12 +342,14 @@ typedef struct {
 #endif
 } Jsi_InterpDebug;
 
+struct jsi_PkgInfo;
 typedef struct {
     char *fileName; /* Fully qualified name. */
     char *dirName;  /* Directory name. */
     const char *str; /* File data. */
     int useCnt;
-    int logflag;
+    uint log;
+    struct jsi_PkgInfo* pkg;
 } jsi_FileInfo;
 
 
@@ -429,8 +434,6 @@ typedef enum {      /* SC   type of data    comment                             
     OP_LASTOP       /* 0    -               END OF OPCODE                                       */
 } jsi_Eopcode;
 
-typedef enum { jsi_Oplf_none=0, jsi_Oplf_assert=1, jsi_Oplf_debug=2, jsi_Oplf_trace=3, jsi_Oplf_test=4 } jsi_OpLogFlags;
-
 typedef struct jsi_OpCode {
     jsi_Eopcode op;
     void *data;
@@ -441,7 +444,7 @@ typedef struct jsi_OpCode {
     unsigned char hit:1;
     unsigned char isof:1;
     unsigned char local:1;
-    jsi_OpLogFlags logflag:3;
+    unsigned char logidx:3;
     jsi_FileInfo* filePtr;
 } jsi_OpCode;
 
@@ -705,7 +708,7 @@ typedef struct jsi_Frame {
     struct jsi_Pstate *ps;
     Jsi_Func *evalFuncPtr;
     struct jsi_Frame *parent, *child;
-    Jsi_Value *arguments; // Set when arguments are accessed.
+    Jsi_Value *arguments; // Set when arguments are accessed or via moduleRun
 } jsi_Frame;
 
 /* Program/parse state(context) */
@@ -814,7 +817,6 @@ typedef struct {
 } jsi_FastVar;
 
 typedef enum { FC_NORMAL, FC_BUILDIN } Jsi_Func_Type;
-struct jsi_PkgInfo;
 
 /* raw function data, with script function or system Jsi_CmdProc */
 struct Jsi_Func {
@@ -855,6 +857,7 @@ struct Jsi_Func {
     Jsi_FuncObj *fobj;
     struct jsi_PkgInfo *pkg;
     bool isArrow;
+    //uint logmask, log;
     jsi_FileInfo* filePtr;
 };
 
@@ -901,6 +904,8 @@ typedef struct jsi_PkgInfo {
     bool needInit;  // If a C-extension and _Init func needs calling in this interp.
     Jsi_Value *info;
     Jsi_PkgOpts popts;
+    jsi_FileInfo* filePtr;
+    int log, logmask;
 } jsi_PkgInfo;
 
 typedef struct {
@@ -958,9 +963,9 @@ typedef struct {
 } Jsi_TypeCheck;
 
 typedef enum {
-    jsi_AssertModeThrow,
     jsi_AssertModeLog,
-    jsi_AssertModePuts
+    jsi_AssertModePuts,
+    jsi_AssertModeThrow
 } jsi_AssertMode;
 
 typedef struct {
@@ -1002,12 +1007,12 @@ typedef struct {
     bool full;    // Show full file path.
     bool ftail;   // Show tail of file only, even in LogWarn, etc.
     bool func;    // Ouput function at end.
-    bool Debug;
+/*    bool Debug;
     bool Trace;
     bool Test;
     bool Info;
     bool Warn;
-    bool Error;
+    bool Error;*/
     bool time;    // Prefix with time
     bool date;    // Prefix with date
     bool before;  // Print file:line before message instead of at end.
@@ -1072,6 +1077,7 @@ typedef struct jsi_TryList {
     bool inFinal;
 } jsi_TryList;
 
+
 typedef enum {
     jsi_safe_None,
     jsi_safe_Read,
@@ -1107,7 +1113,6 @@ struct Jsi_Interp {
     bool coverage;
     bool profile;
     int profileCnt;
-    bool asserts;
     bool noNetwork;
     bool noInput;
     jsi_AssertMode assertMode;
@@ -1123,7 +1128,7 @@ struct Jsi_Interp {
     bool tracePuts;
     bool isMain;
     bool subthread;
-    bool strict;
+   // bool strict;
     bool protoInit;
     bool hasOpenSSL;
     bool isHelp;
@@ -1136,6 +1141,7 @@ struct Jsi_Interp {
     Jsi_Value *stdoutStr;
     Jsi_TypeCheck typeCheck;
     jsi_LogOptions logOpts;
+    uint log;
     int typeWarnMax;
     int typeMismatchCnt;
     Jsi_InterpOpts opts;
@@ -1507,7 +1513,6 @@ extern Jsi_Value* jsi_AccessFile(Jsi_Interp *interp, const char *name, int mode)
 extern double jsi_GetTimestamp(void);
 extern const char *jsi_GetCurFile(Jsi_Interp *interp);
 extern void jsi_TypeMismatch(Jsi_Interp* interp);
-extern const char* jsi_GetDirective(Jsi_Interp *interp, Jsi_OpCodes *ops, const char *str);
 extern Jsi_Value* jsi_CommandCreate(Jsi_Interp *interp, const char *name, Jsi_CmdProc *cmdProc, void *privData, int flags, Jsi_CmdSpec *cspec);
 extern Jsi_RC jsi_ParseTypeCheckStr(Jsi_Interp *interp, const char *str);
 extern Jsi_Interp *jsi_DoExit(Jsi_Interp *interp, int rc);

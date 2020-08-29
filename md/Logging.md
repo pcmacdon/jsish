@@ -117,15 +117,6 @@ Logging can be controlled via options from command-line:
 
     jsish --T Debug,Trace mydebug.jsi
 
-or programatically with a ***use*** directive or [Interp.conf](Interp.md):
-
-    $ jsish
-    "use !Debug";
-    LogDebug("can't appear");
-    Interp.conf({logOpts:{Debug:true, Info:false}});
-    LogDebug("can appear");
-    LogInfo("can't appear");
-
 
 ### Modules
 Larger applications in Jsi make use of [modules](Coding.md#modules),
@@ -238,7 +229,6 @@ The assert command is used for constraint checking.
 
 eg.
 
-    "use asserts";
     var m = 1, n = -1;
     assert(m>0, "too small");
     assert(n>=0 && n<100, "passed bad n", true);
@@ -246,7 +236,7 @@ eg.
 There are several control options for **assert**,
 including using *puts* instead of throwing an error:
     
-    $ jsish --T asserts
+    $ jsish --L asserts
     var m = 0;
     assert(++m<0, 'bad stuff', {mode:'puts'});
     puts(m);

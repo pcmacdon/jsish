@@ -339,7 +339,7 @@ Jsi_Value *Jsi_ValueObjLookup(Jsi_Interp *interp, Jsi_Value *target, const char 
         }
     }
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->strict)
+        if (interp->typeCheck.strict)
             Jsi_LogWarn("Target is not object: %d", target->vt);
         return NULL;
     }
@@ -702,7 +702,7 @@ Jsi_RC Jsi_ValueToObject(Jsi_Interp *interp, Jsi_Value *v)
     switch(v->vt) {
         case JSI_VT_UNDEF:
         case JSI_VT_NULL:
-            if (interp->strict)
+            if (interp->typeCheck.strict)
                 rc = Jsi_LogError("converting a undefined/null value to object");
             o->d.num = 0;
             o->ot = JSI_OT_NUMBER;
@@ -980,7 +980,7 @@ void jsi_ValueObjSet(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi
 {
     Jsi_TreeEntry *hPtr;
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->strict)
+        if (interp->typeCheck.strict)
             Jsi_LogWarn("Target is not object: %d", target->vt);
         return;
     }
@@ -1182,7 +1182,7 @@ void jsi_ValueObjGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *ret, 
             io->isArrayList = 1;
             io->count = to->arrCnt;
         } else {
-            if (isof &&interp->strict)
+            if (isof &&interp->typeCheck.strict)
                 Jsi_LogWarn("non-array in 'for...of'");
             Jsi_IterGetKeys(interp, target, io, 0);
         }
@@ -1319,7 +1319,7 @@ Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, J
     if (target == NULL)
         target = interp->csc;
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->strict)
+        if (interp->typeCheck.strict)
             Jsi_LogWarn("Target is not object");
         return JSI_ERROR;
     }
@@ -1332,7 +1332,7 @@ Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, J
 Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_Value *val, int flags)
 {
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->strict)
+        if (interp->typeCheck.strict)
             Jsi_LogWarn("Target is not object");
         return JSI_ERROR;
     }
@@ -1407,7 +1407,7 @@ void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj
 {
     if (!target) return;
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->strict)
+        if (interp->typeCheck.strict)
             Jsi_LogWarn("operand is not a object");
         return;
     }

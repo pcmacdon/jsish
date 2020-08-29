@@ -4,7 +4,6 @@ require('Jsish');
 
 function Safe(fileargs:array, conf:object=void) {
 
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Run a safe sub-interp on script arg: when arg is ommitted or a dir, runs interactively.
         evalStr     :'',        // Code-string to eval instead of sourcing filearg.
         msgCmd      :null,      // Command to relay Interp.msgCallback..
@@ -18,14 +17,15 @@ function Safe(fileargs:array, conf:object=void) {
     };
     var self = {
         srcFile:null,
-        version:1.0
+        version:1.0,
+        Trace       :false,
     };
     var all = {
         putsVal:'',
         msgVal:[]
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     
     function msgFunc(msg:string, type:string, file:string, line:number, col:number) {
         puts("GOT MSG", msg);
@@ -127,4 +127,4 @@ function Safe(fileargs:array, conf:object=void) {
 }
 
 provide(Safe);
-runModule(Safe);
+moduleRun(Safe);

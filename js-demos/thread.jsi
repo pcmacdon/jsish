@@ -1,5 +1,5 @@
 #!/usr/bin/env jsish 
-"use strict";
+
 // Threaded interp with call, eval and alias.
 
 function MySuper(x,y) { puts('MySuper', x,y); }

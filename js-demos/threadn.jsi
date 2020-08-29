@@ -1,5 +1,4 @@
 #!/usr/local/bin/jsish --U
-"use strict";
 // Threaded interp with call, eval and alias.
 
 function MySuper(x,y) {

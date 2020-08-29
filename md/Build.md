@@ -207,8 +207,9 @@ To see the supported switches in jsish use -h
       --C FILE	    Option file of config options.
       --F           Trace all function calls/returns.
       --I OPT:VAL   Interp option: equivalent to Interp.conf({OPT:VAL}).
-      --L PATH	    Set safeMode to "lockdown" using PATH for safe(Read/Write)Dirs.
-      --T OPT       Typecheck option: equivalent to "use OPT".
+      --L OPT	    Logging options:.
+      --S PATH	    Set safeMode to "lockdown" using PATH for safe(Read/Write)Dirs.
+      --T OPT       Typecheck option: equivalent.
       --U           Display unittest output, minus pass/fail compare.
       --V           Same as --U, but adds file and line number to output.
     

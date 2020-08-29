@@ -294,24 +294,23 @@ static Jsi_OpCodes *code_fcall(jsi_Pstate *p, jsi_Pline *line, int argc, const c
     int i;
     if (!name || !codes || !pref)
         return codes;
-    jsi_OpLogFlags logflag = jsi_Oplf_none;
+    int logflag = 0;
     if (name[0] == 'a' && !Jsi_Strcmp(name, "assert"))
-        logflag = jsi_Oplf_assert;
-    else if (name[0] == 'L' && name[1] == 'o') {
-        if (!Jsi_Strcmp(name, "LogDebug"))
-            logflag = jsi_Oplf_debug;
-        else if (!Jsi_Strcmp(name, "LogTrace"))
-            logflag = jsi_Oplf_trace;
-        else if (!Jsi_Strcmp(name, "LogTest"))
-            logflag = jsi_Oplf_test;
+        logflag = JSI_LOG_ASSERT;
+    else if (name[0] == 'L' && name[1] == 'o' && name[2] == 'g') {
+        for (i=JSI_LOG_DEBUG;jsi_LogCodesU[i]; i++)
+            if (!Jsi_Strcmp(name+3, jsi_LogCodesU[i])) {
+                logflag = i;
+                break;
+            }
     }
     if (logflag) {
-        codes->codes[0].logflag = logflag;
+        codes->codes[0].logidx = logflag;
         if (argCodes)
             for (i=0; i<argCodes->code_len; i++)
-                argCodes->codes[i].logflag = logflag;
+                argCodes->codes[i].logidx = logflag;
         for (i=0; i<pref->code_len; i++)
-            pref->codes[i].logflag = logflag;
+            pref->codes[i].logidx = logflag;
     }
     return codes;
 }

@@ -67,7 +67,9 @@ void  Jsi_Free(void *n) { Assert(n); free(n); }
 #define Jsi_Free(ptr) free(ptr)
 #endif
 
-static const char *jsi_LogCodes[] = { "bug", "error", "warn", "info", "unused", "parse", "test", "debug", "trace", 0 };
+const char *jsi_LogCodes[]  = { "bug", "assert", "debug", "trace", "test", "info", "warn", "error", "parse", NULL };
+const char *jsi_LogCodesU[] = { "Bug", "Assert", "Debug", "Trace", "Test", "Info", "Warn", "Error", "Parse", NULL };
+
 jsi_IntData jsiIntData = {};
 
 #ifdef JSI_LITE_ONLY
@@ -104,18 +106,6 @@ extern void jsi_TypeMismatch(Jsi_Interp* interp)
     }
 }
 
-static bool jsi_LogEnabled(Jsi_Interp *interp, uint code) {
-    if (!interp->activeFunc) return 0;
-    Jsi_CmdSpec *cs = interp->activeFunc->cmdSpec;
-    if (!cs)
-        return 0;
-    if (interp->activeFunc->parentSpec)
-        cs = interp->activeFunc->parentSpec;
-    int cofs = (code - JSI_LOG_TEST);
-    int ac = (cs->flags & (JSI_CMD_LOG_TEST<<cofs));
-    return (ac)!=0;
-}
-
 static void (*logHook)(const char *buf, va_list va) = NULL;
 
 // Format message: always returns JSI_ERROR.
@@ -137,7 +127,9 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
     Jsi_OptionSpec *oep = interp->parseMsgSpec;
     const char *pps = "", *curFile = "";
     char *ss = interp->lastPushStr;
-    
+    uint log = jsi_GetLogFlag(interp, code);
+    if (!log)
+        return JSI_OK;
     if (interp==NULL)
         interp = jsiIntData.mainInterp;
     LastInterp = interp;
@@ -157,36 +149,26 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
         return JSI_ERROR;
     }
     curFile = jsi_GetCurFile(interp);
-    switch (code) {
-        case JSI_LOG_INFO:  if (!interp->logOpts.Info) goto bail; break;
-        case JSI_LOG_WARN:  if (!interp->logOpts.Warn) goto bail; break;
-        case JSI_LOG_DEBUG: if (!interp->logOpts.Debug && !jsi_LogEnabled(interp, code)) goto bail; break;
-        case JSI_LOG_TRACE: if (!interp->logOpts.Trace && !jsi_LogEnabled(interp, code)) goto bail; break;
-        case JSI_LOG_TEST:  if (!interp->logOpts.Test && !jsi_LogEnabled(interp, code)) goto bail; break;
-        case JSI_LOG_PARSE: break; //if (!interp->parent) goto nullInterp; break;
-        case JSI_LOG_ERROR: {
-            if (!interp->logOpts.Error) goto bail;
-            if ((interp->framePtr->tryDepth - interp->framePtr->withDepth)>0 && interp->inParse<=0 
-                && (!interp->tryList || !(interp->tryList->inCatch|interp->tryList->inFinal))) { 
-                /* Should only do the first or traceback? */
-                if (!interp->errMsgBuf[0]) {
-                    vsnprintf(interp->errMsgBuf, sizeof(interp->errMsgBuf), format, va);
-                    //interp->errMsgBuf[sizeof(interp->errMsgBuf)-1] = 0;
-                    interp->errFile =  jsi_GetCurFile(interp);
-                    interp->errLine = (interp->curIp?interp->curIp->Line:0);
-                    emsg = interp->errMsgBuf;
-                }
-                goto done;
+    if (code == JSI_LOG_ERROR) {
+        if ((interp->framePtr->tryDepth - interp->framePtr->withDepth)>0 && interp->inParse<=0 
+            && (!interp->tryList || !(interp->tryList->inCatch|interp->tryList->inFinal))) { 
+            /* Should only do the first or traceback? */
+            if (!interp->errMsgBuf[0]) {
+                vsnprintf(interp->errMsgBuf, sizeof(interp->errMsgBuf), format, va);
+                //interp->errMsgBuf[sizeof(interp->errMsgBuf)-1] = 0;
+                interp->errFile =  jsi_GetCurFile(interp);
+                interp->errLine = (interp->curIp?interp->curIp->Line:0);
+                emsg = interp->errMsgBuf;
             }
-            interp->logErrorCnt++;
-            break;
+            goto done;
         }
+        interp->logErrorCnt++;
     }
     mt = (code <= JSI__LOGLAST ? jsi_LogCodes[code] : "");
     if (isHelp) mt = "help";
     assert((JSI__LOGLAST+2) == (sizeof(jsi_LogCodes)/sizeof(jsi_LogCodes[0])));
     if (!Jsi_Strchr(format,'\n')) term = "\n";
-    if (interp->strict && interp->lastParseOpt)
+    if (interp->typeCheck.strict && interp->lastParseOpt)
         ss = (char*)Jsi_ValueToString(interp, interp->lastParseOpt, NULL);
     if (code != JSI_LOG_INFO && code < JSI_LOG_TEST && interp && ss && ss[0]) {
         char psbuf[JSI_BUFSIZ/6];
@@ -297,7 +279,7 @@ done:
     if ((code & jsi_fatalexit) && !interp->opts.no_exit)
         jsi_DoExit(interp, 1);
     return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
-bail:
+//bail:
     va_end(va);
     return JSI_OK;
 }
@@ -1088,7 +1070,7 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
   signal(SIGINT, jsi_InteractiveSignal); 
 #endif
     interp->typeCheck.parse = interp->typeCheck.run = interp->typeCheck.all = 1;
-    interp->strict = 1;
+    interp->typeCheck.strict = 1;
     interp->isInteractive = 1;
     jsi_interactiveInterp = interp;
     interp->subOpts.istty = 1;
@@ -1974,7 +1956,7 @@ Jsi_GetIndex( Jsi_Interp *interp, const char *str,
   while (*cp != 0) {
     i++;
     c = *cp;
-    if (c[0] != str[0]) { cp++; continue; }
+    if (tolower(c[0]) != tolower(str[0])) { cp++; continue; }
     if (!nocase)
         cond = (exact ? Jsi_Strcmp(c,str) : Jsi_Strncmp(c,str,slen));
     else {
@@ -2561,7 +2543,7 @@ Jsi_RC Jsi_GetLongFromValue(Jsi_Interp* interp, Jsi_Value *value, long *n)
     /* TODO: inefficient to convert to double then back. */
     if (!value)
         return JSI_ERROR;
-    if (!interp->strict)
+    if (!interp->typeCheck.strict)
         jsi_ValueToOInt32(interp, value);
     if (!Jsi_ValueIsNumber(interp, value))
     
@@ -2574,7 +2556,7 @@ Jsi_RC Jsi_GetWideFromValue(Jsi_Interp* interp, Jsi_Value *value, Jsi_Wide *n)
 {
     if (!value)
         return JSI_ERROR;
-    if (!interp->strict)
+    if (!interp->typeCheck.strict)
         jsi_ValueToOInt32(interp, value);
     if (!Jsi_ValueIsNumber(interp, value))
     
@@ -2588,7 +2570,7 @@ Jsi_RC Jsi_GetDoubleFromValue(Jsi_Interp* interp, Jsi_Value *value, Jsi_Number *
 {
     if (!value)
         return JSI_ERROR;
-    if (!interp->strict)
+    if (!interp->typeCheck.strict)
         Jsi_ValueToNumber(interp, value);
     if (!Jsi_ValueIsNumber(interp, value))
     

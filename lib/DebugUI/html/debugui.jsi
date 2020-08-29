@@ -1,6 +1,5 @@
 // Web browser side of the user interface communicating with DebugUI.jsi.
 // This file is preprocessed to support function parameters with types.
-"use strict";
 
 var self = {
     autosel:true,

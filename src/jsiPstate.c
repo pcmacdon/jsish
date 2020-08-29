@@ -154,7 +154,7 @@ void jsi_PstateAddVar(jsi_Pstate *ps, jsi_Pline *line, const char *str)
     for (i = 0; i < interp->scopes[interp->cur_scope]->count; ++i) {
         if (Jsi_Strcmp(str, interp->scopes[interp->cur_scope]->args[i].name) == 0) {
             Jsi_Interp *interp = ps->interp;
-            if (interp && interp->strict) {
+            if (interp && interp->typeCheck.strict) {
                 interp->parseLine = line;
                 Jsi_LogWarn("duplicate var: %s", str);
                 interp->parseLine = NULL;

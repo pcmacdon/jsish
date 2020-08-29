@@ -151,12 +151,12 @@ static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Valu
 {
     Jsi_Value *v;
     if (dst->vt != JSI_VT_VARIABLE) {
-        if (interp->strict) 
+        if (interp->typeCheck.strict) 
             return Jsi_LogError("operand not a left value");
     } else {
         v = dst->d.lval;
         SIGASSERT(v, VALUE);
-        int strict = interp->strict;
+        int strict = interp->typeCheck.strict;
         if (strict && lop == OP_PUSHFUN && interp->curIp[-1].local)
             dst->f.bits.local = 1;
         if (strict && dst->f.bits.local==0) {
@@ -171,7 +171,7 @@ static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Valu
         if (v == src)
             return JSI_OK;
         if (v->f.bits.readonly) {
-            if (interp->strict) 
+            if (interp->typeCheck.strict) 
                 return Jsi_LogError("assign to readonly variable");
             return JSI_OK;
         }
@@ -239,7 +239,7 @@ static void jsiVarDeref(Jsi_Interp* interp, int n) {
 static Jsi_RC jsiLogicLess(Jsi_Interp* interp, int i1, int i2) {
     Jsi_Value *v, *v1 = _jsi_STACK[interp->framePtr->Sp-i1], *v2 = _jsi_STACK[interp->framePtr->Sp-i2], *res = _jsi_TOQ;
     int val = 0, l1 = 0, l2 = 0; 
-    bool strict = interp->strict;
+    bool strict = interp->typeCheck.strict;
     Jsi_RC rc = JSI_OK;
     rc = _jsi_StrictUChk2(v1, v2);
     if (rc != JSI_OK)
@@ -750,7 +750,7 @@ empty_func:
         jsi_NoOpCmd(interp, NULL, NULL, NULL, NULL);
         goto empty_func;
     }
-    if (!interp->asserts && funcPtr->callback == jsi_AssertCmd)
+    if (!jsi_GetLogFlag(interp, JSI_LOG_ASSERT) && funcPtr->callback == jsi_AssertCmd)
         goto empty_func;
     const char *onam = funcPtr->name;
 //        if (!onam) // Override blank name with last index.
@@ -1038,13 +1038,12 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
      Jsi_Value *_this, Jsi_Value *vret)
 {
     Jsi_Interp* interp = ps->interp;
-    jsi_OpCode *ip = &opcodes->codes[0];
     Jsi_RC rc = JSI_OK;
-    int curLine = 0;
-    int context_id = ps->_context_id++, lop = -1;
-    jsi_OpCode *end = &opcodes->codes[opcodes->code_len];
+    int curLine = 0, context_id = ps->_context_id++, lop = -1;
+    jsi_OpCode *ip = &opcodes->codes[0], *end = &opcodes->codes[opcodes->code_len];
     jsi_TryList  *trylist = NULL;
-    bool strict = interp->strict;
+    jsi_Frame *fp = interp->framePtr;
+    bool strict = interp->typeCheck.strict;
     const char *curFile = NULL;
     
     if (currentScope->vt != JSI_VT_OBJECT) {
@@ -1057,7 +1056,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     while(ip < end && rc == JSI_OK) {
         int plop = ip->op;
 
-#define _JSI_BI_OP_SKIP_SUB(n) {\
+/* #define _JSI_BI_OP_SKIP_SUB(n) {\
     ip++;\
     if (ip->logflag != n)  {\
         if (ip->op == OP_POP) ip++; \
@@ -1067,30 +1066,27 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
       }}\
     continue;\
 }
-#define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && (interp->framePtr->filePtr && !(interp->framePtr->filePtr->logflag &(1<<n)))) _JSI_BI_OP_SKIP_SUB(n)
+#define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && !(logflag &(1<<n))) _JSI_BI_OP_SKIP_SUB(n)*/
 
-        if (ip->logflag) { // Mask out LogDebug, etc if not enabled.
+        if (ip->logidx) { // Mask out LogDebug, etc if not enabled.
+            uint oli = ip->logidx, logflag2 = jsi_GetLogFlag(interp, ip->logidx);
             interp->curIp = ip;
-            switch (ip->logflag) {
-                case jsi_Oplf_assert:
-                    if (!interp->asserts) { _JSI_BI_OP_SKIP_SUB(jsi_Oplf_assert) }
-                    break;
-                case jsi_Oplf_debug:
-                    _JSI_BI_OP_SKIP(Debug, jsi_Oplf_debug)
-                    break;
-                case jsi_Oplf_test:
-                    _JSI_BI_OP_SKIP(Test, jsi_Oplf_test)
-                    break;
-                case jsi_Oplf_trace:
-                    _JSI_BI_OP_SKIP(Trace, jsi_Oplf_trace)
-                    break;
-                default:
-                    break;
+            if (!logflag2) {
+                ip++;
+                while (ip->logidx==oli && ip != end)
+                    ip++;
+                if (ip->op == OP_POP)
+                    ip++;
+                else if (ip->op == OP_RET || ip->op == OP_ASSIGN) {
+                    rc = Jsi_LogError("invalid use of =/return here");
+                    ip++;
+                }
+                continue;
             }
         }
         if (interp->interrupted) {
-            if (!interp->framePtr->tryDepth) {
-                Jsi_LogError("program interrupted: function=%s", interp->framePtr->funcName);
+            if (!fp->tryDepth) {
+                Jsi_LogError("program interrupted: function=%s", fp->funcName);
                 interp->interrupted = 0;
             } else {
                 interp->interrupted++;
@@ -1129,7 +1125,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
         }
         ip->hit=1;
 #ifndef USE_STATIC_STACK
-        if ((interp->maxStack-interp->framePtr->Sp)<STACK_MIN_PAD)
+        if ((interp->maxStack-fp->Sp)<STACK_MIN_PAD)
             jsiSetupStack(interp);
 #endif
         jsiPush(interp,0);
@@ -1140,11 +1136,11 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
         else
             curLine = ip->Line;
         if (!ip->filePtr)
-            ip->filePtr = interp->framePtr->filePtr;
+            ip->filePtr = fp->filePtr;
         curFile = ip->filePtr->fileName;
         if (interp->debugOpts.hook) {
-            interp->framePtr->line = curLine;
-            if ((rc = (*interp->debugOpts.hook)(interp, curFile, curLine, interp->framePtr->level, interp->curFunction, jsi_opcode_string(ip->op), ip, NULL)) != JSI_OK)
+            fp->line = curLine;
+            if ((rc = (*interp->debugOpts.hook)(interp, curFile, curLine, fp->level, interp->curFunction, jsi_opcode_string(ip->op), ip, NULL)) != JSI_OK)
                 break;
         }
 
@@ -1153,23 +1149,23 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_LASTOP:
                 break;
             case OP_PUSHUND:
-                Jsi_ValueMakeUndef(interp, &_jsi_STACKIDX(interp->framePtr->Sp));
+                Jsi_ValueMakeUndef(interp, &_jsi_STACKIDX(fp->Sp));
                 jsiPush(interp,1);
                 break;
             case OP_PUSHNULL:
-                Jsi_ValueMakeNull(interp, &_jsi_STACKIDX(interp->framePtr->Sp));
+                Jsi_ValueMakeNull(interp, &_jsi_STACKIDX(fp->Sp));
                 jsiPush(interp,1);
                 break;
             case OP_PUSHBOO:
-                Jsi_ValueMakeBool(interp, &_jsi_STACKIDX(interp->framePtr->Sp), (uintptr_t)ip->data);
+                Jsi_ValueMakeBool(interp, &_jsi_STACKIDX(fp->Sp), (uintptr_t)ip->data);
                 jsiPush(interp,1);
                 break;
             case OP_PUSHNUM:
-                Jsi_ValueMakeNumber(interp, &_jsi_STACKIDX(interp->framePtr->Sp), (*((Jsi_Number *)ip->data)));
+                Jsi_ValueMakeNumber(interp, &_jsi_STACKIDX(fp->Sp), (*((Jsi_Number *)ip->data)));
                 jsiPush(interp,1);
                 break;
             case OP_PUSHSTR: {
-                Jsi_Value **v = &_jsi_STACKIDX(interp->framePtr->Sp);
+                Jsi_Value **v = &_jsi_STACKIDX(fp->Sp);
                 Jsi_ValueMakeStringKey(interp, v, (char*)ip->data);
                 interp->lastPushStr = Jsi_ValueString(interp, *v, NULL);
                 jsiPush(interp,1);
@@ -1177,7 +1173,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             }
             case OP_PUSHVSTR: {
                 Jsi_String *s = (Jsi_String *)ip->data;
-                Jsi_Value **v = &_jsi_STACKIDX(interp->framePtr->Sp);
+                Jsi_Value **v = &_jsi_STACKIDX(fp->Sp);
                 if (s->flags&1)
                     jsi_ValueMakeBlobDup(interp,v, (uchar*)s->str, s->len);
                 else {
@@ -1206,14 +1202,14 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 switch (jsiEvalFunction(ps, ip, discard)) {        /* throw an execption */
                     case JSI_OK: break;
                     case JSI_BREAK:
-                        if (interp->framePtr->tryDepth<=0)
+                        if (fp->tryDepth<=0)
                             interp->isHelp = 1;
                         JSI_DO_THROW("help");
                         break;
                     default:  
                         JSI_DO_THROW("fcall");
                 }
-                strict = interp->strict;
+                strict = interp->typeCheck.strict;
                 /* TODO: new Function return a function without scopechain, add here */
                 break;
             }
@@ -1232,7 +1228,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     jsiPop(interp,1);
                 } else {
                     jsiVarDeref(interp, 3);
-                    Jsi_Value *v3 = _jsi_STACKIDX(interp->framePtr->Sp-3);
+                    Jsi_Value *v3 = _jsi_STACKIDX(fp->Sp-3);
                     if (v3->vt == JSI_VT_OBJECT) {
                         if (strict && sval->vt == JSI_VT_UNDEF)
                             rc = jsiValueAssignCheck(interp, sval, lop);
@@ -1245,7 +1241,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     dval = v3;
                     jsiPop(interp, 2);
                 }
-                if (interp->framePtr->level<=1 && globThis && rc == JSI_OK && dval && dval->vt == JSI_VT_VARIABLE) {
+                if (fp->level<=1 && globThis && rc == JSI_OK && dval && dval->vt == JSI_VT_VARIABLE) {
                     dval = dval->d.lval;
                     //printf("GLOBAL THIS: %p\n", dval);
                     Jsi_HashSet(interp->genValueTbl, dval, dval);
@@ -1255,24 +1251,24 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_PUSHREG: {
                 Jsi_Obj *obj = Jsi_ObjNewType(interp, JSI_OT_REGEXP);
                 obj->d.robj = (Jsi_Regex *)ip->data;
-                Jsi_ValueMakeObject(interp, &_jsi_STACKIDX(interp->framePtr->Sp), obj);
+                Jsi_ValueMakeObject(interp, &_jsi_STACKIDX(fp->Sp), obj);
                 jsiPush(interp,1);
                 break;
             }
             case OP_PUSHARG:
-                //Jsi_ValueCopy(interp,_jsi_STACKIDX(interp->framePtr->Sp), currentScope);
+                //Jsi_ValueCopy(interp,_jsi_STACKIDX(fp->Sp), currentScope);
                 
-                if (!interp->framePtr->arguments) {
-                    interp->framePtr->arguments = Jsi_ValueNewObj(interp,
+                if (!fp->arguments) {
+                    fp->arguments = Jsi_ValueNewObj(interp,
                         Jsi_ObjNewArray(interp, currentScope->d.obj->arr, currentScope->d.obj->arrCnt, 0));
-                    Jsi_IncrRefCount(interp, interp->framePtr->arguments);
-                    // interp->framePtr->arguments->d.obj->__proto__ = interp->Object_prototype; // ecma
+                    Jsi_IncrRefCount(interp, fp->arguments);
+                    // fp->arguments->d.obj->__proto__ = interp->Object_prototype; // ecma
                 }
-                Jsi_ValueCopy(interp,_jsi_STACKIDX(interp->framePtr->Sp), interp->framePtr->arguments);
+                Jsi_ValueCopy(interp,_jsi_STACKIDX(fp->Sp), fp->arguments);
                 jsiPush(interp,1);
                 break;
             case OP_PUSHTHS: { //TODO: Value copy can cause memory leak!
-                Jsi_Value *tval = _jsi_STACKIDX(interp->framePtr->Sp);
+                Jsi_Value *tval = _jsi_STACKIDX(fp->Sp);
                 Jsi_ValueCopy(interp, tval, _this);
                 /*if (interp->csc == _this)
                     Jsi_ValueDup2(interp, &tval, _this);
@@ -1282,15 +1278,15 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_PUSHTOP:
-                Jsi_ValueCopy(interp,_jsi_STACKIDX(interp->framePtr->Sp), _jsi_TOP);
+                Jsi_ValueCopy(interp,_jsi_STACKIDX(fp->Sp), _jsi_TOP);
                 jsiPush(interp,1);
                 break;
             case OP_UNREF:
                 jsiVarDeref(interp,1);
                 break;
             case OP_PUSHTOP2: {
-                Jsi_Value *vp1 = _jsi_STACKIDX(interp->framePtr->Sp);
-                Jsi_Value *vp2 = _jsi_STACKIDX(interp->framePtr->Sp+1);
+                Jsi_Value *vp1 = _jsi_STACKIDX(fp->Sp);
+                Jsi_Value *vp2 = _jsi_STACKIDX(fp->Sp+1);
                 if (!vp1 || !vp2)
                     rc = Jsi_LogError("Invalid lookup/push");
                 else {
@@ -1302,7 +1298,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             }
             case OP_CHTHIS: {
                 if (ip->data) {
-                    int t = interp->framePtr->Sp - 2;
+                    int t = fp->Sp - 2;
                     Assert(t>=0);
                     Jsi_Value *v = _jsi_THISIDX(t);
                     jsiClearThis(interp, t);
@@ -1550,7 +1546,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     Jsi_ValueToObject(interp, _jsi_TOP);
                 Jsi_Value *spret = Jsi_ValueNew1(interp);
                 jsi_ValueObjGetKeys(interp, _jsi_TOP, spret, ip->isof);
-                Jsi_ValueReplace(interp, _jsi_STACK+interp->framePtr->Sp, spret);  
+                Jsi_ValueReplace(interp, _jsi_STACK+fp->Sp, spret);  
                 Jsi_DecrRefCount(interp, spret);  
                 jsiPush(interp,1);
                 break;
@@ -1574,11 +1570,11 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 
                 Jsi_IterObj *io = toq->d.obj->d.iobj;
                 if (io->iterCmd) {
-                    io->iterCmd(io, top, _jsi_STACKIDX(interp->framePtr->Sp-3), io->iter++);
+                    io->iterCmd(io, top, _jsi_STACKIDX(fp->Sp-3), io->iter++);
                 } else {
                     while (io->iter < io->count) {
                         if (!io->isArrayList) {
-                            if (Jsi_ValueKeyPresent(interp, _jsi_STACKIDX(interp->framePtr->Sp-3), io->keys[io->iter],1)) 
+                            if (Jsi_ValueKeyPresent(interp, _jsi_STACKIDX(fp->Sp-3), io->keys[io->iter],1)) 
                                 break;
                         } else {
                             while (io->cur < io->obj->arrCnt) {
@@ -1719,23 +1715,23 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 int r = 0;
                 Jsi_Value *spPtr = Jsi_ValueNew1(interp);
                 if (stackargc > 0) {
-                    if (_jsi_STACKIDX(interp->framePtr->Sp - stackargc)->vt == JSI_VT_UNDEF) {
+                    if (_jsi_STACKIDX(fp->Sp - stackargc)->vt == JSI_VT_UNDEF) {
                         Jsi_LogError("undefined value to eval()");
                         goto undef_eval;
                     }
                     int plen;
-                    char *pro = Jsi_ValueString(interp, _jsi_STACKIDX(interp->framePtr->Sp - stackargc), &plen);
+                    char *pro = Jsi_ValueString(interp, _jsi_STACKIDX(fp->Sp - stackargc), &plen);
                     if (pro) {
                         pro = Jsi_StrdupLen(pro, plen);
                         r = jsiEvalOp(interp, ps, pro, scope, currentScope, _this, &spPtr);
                         Jsi_Free(pro);
                     } else {
-                        Jsi_ValueCopy(interp, spPtr, _jsi_STACKIDX(interp->framePtr->Sp - stackargc));
+                        Jsi_ValueCopy(interp, spPtr, _jsi_STACKIDX(fp->Sp - stackargc));
                     }
                 }
 undef_eval:
                 jsiPop(interp, stackargc);
-                Jsi_ValueCopy(interp, _jsi_STACK[interp->framePtr->Sp], spPtr); /*TODO: is this correct?*/
+                Jsi_ValueCopy(interp, _jsi_STACK[fp->Sp], spPtr); /*TODO: is this correct?*/
                 Jsi_DecrRefCount(interp, spPtr);
                 jsiPush(interp,1);
 
@@ -1745,7 +1741,7 @@ undef_eval:
                 break;
             }
             case OP_RET: {
-                if (interp->framePtr->Sp>=1 && ip->data) {
+                if (fp->Sp>=1 && ip->data) {
                     jsiVarDeref(interp,1);
                     Jsi_ValueMove(interp, vret, _jsi_TOP);
                 }
@@ -1781,7 +1777,7 @@ undef_eval:
                     jsiPop(interp,1);
                 } else if (count == 2) {
                     jsiVarDeref(interp,2);
-                    assert(interp->framePtr->Sp>=2);
+                    assert(fp->Sp>=2);
                     if (strict) {
                         if (_jsi_TOQ->vt != JSI_VT_OBJECT) Jsi_LogWarn("delete non-object key, ignore");
                         if (_jsi_TOQ->d.obj == currentScope->d.obj) Jsi_LogWarn("Delete arguments");
@@ -1796,7 +1792,7 @@ undef_eval:
                 int itemcount = (uintptr_t)ip->data;
                 Assert(itemcount>=0);
                 jsiVarDeref(interp, itemcount * 2);
-                Jsi_Obj *obj = Jsi_ObjNewObj(interp, _jsi_STACK+(interp->framePtr->Sp-itemcount*2), itemcount*2);
+                Jsi_Obj *obj = Jsi_ObjNewObj(interp, _jsi_STACK+(fp->Sp-itemcount*2), itemcount*2);
                 jsiPop(interp, itemcount * 2 - 1);       /* one left */
                 jsiClearStack(interp,1);
                 Jsi_ValueMakeObject(interp, &_jsi_TOP, obj);
@@ -1806,7 +1802,7 @@ undef_eval:
                 int itemcount = (uintptr_t)ip->data;
                 Assert(itemcount>=0);
                 jsiVarDeref(interp, itemcount);
-                Jsi_Obj *obj = Jsi_ObjNewArray(interp, _jsi_STACK+(interp->framePtr->Sp-itemcount), itemcount, 1);
+                Jsi_Obj *obj = Jsi_ObjNewArray(interp, _jsi_STACK+(fp->Sp-itemcount), itemcount, 1);
                 jsiPop(interp, itemcount - 1);
                 jsiClearStack(interp,1);
                 Jsi_ValueMakeObject(interp, &_jsi_TOP, obj);
@@ -1822,7 +1818,7 @@ undef_eval:
                 n->d.td.cend = n->d.td.tend + ti->catchlen;
                 n->d.td.fstart = n->d.td.cend + 1;
                 n->d.td.fend = n->d.td.cend + ti->finallen;
-                n->d.td.tsp = interp->framePtr->Sp;
+                n->d.td.tsp = fp->Sp;
                 n->inCatch=0;
                 n->inFinal=0;
 
@@ -1847,8 +1843,8 @@ undef_eval:
                     /* new scope and make var */
                     scope = jsi_ScopeChainDupNext(interp, scope, currentScope);
                     currentScope = jsi_ObjValueNew(interp);
-                    interp->framePtr->ingsc = scope;  //TODO: changing frame
-                    interp->framePtr->incsc = currentScope;
+                    fp->ingsc = scope;  //TODO: changing frame
+                    fp->incsc = currentScope;
                     Jsi_IncrRefCount(interp, currentScope);
                     Jsi_Value *excpt = Jsi_ValueNew1(interp);
                     if (ps->last_exception && ps->last_exception->vt != JSI_VT_UNDEF) {
@@ -1941,7 +1937,7 @@ undef_eval:
                 static int warnwith = 1;
                 if (strict && warnwith && interp->typeCheck.nowith) {
                     warnwith = 0;
-                    rc = Jsi_LogError("use of with is illegal due to \"use nowith\"");
+                    rc = Jsi_LogError("use of with is illegal");
                     break;
                 }
                 jsiVarDeref(interp,1);
@@ -1953,13 +1949,13 @@ undef_eval:
                 n->d.wd.wend = n->d.wd.wstart + (uintptr_t)ip->data;
 
                 jsiPushTry(interp, &trylist, n);
-                interp->framePtr->withDepth++;
+                fp->withDepth++;
                 
                 /* make expr to top of scope chain */
                 scope = jsi_ScopeChainDupNext(interp, scope, currentScope);
                 currentScope = Jsi_ValueNew1(interp);
-                interp->framePtr->ingsc = scope;
-                interp->framePtr->incsc = currentScope;
+                fp->ingsc = scope;
+                fp->incsc = currentScope;
                 Jsi_ValueCopy(interp, currentScope, _jsi_TOP);
                 jsiPop(interp,1);
                 
@@ -1973,7 +1969,7 @@ undef_eval:
                 JSI_RESTORE_SCOPE();
                 
                 pop_try(trylist);
-                interp->framePtr->withDepth--;
+                fp->withDepth--;
                 break;
             }
             case OP_DEBUG: {
@@ -2146,10 +2142,10 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
     Jsi_Channel tinput = NULL, input = Jsi_GetStdChannel(interp, 0);
     Jsi_Value *npath = path;
     Jsi_RC rc = JSI_ERROR;
-    const char *ustr = NULL, *ostr = str;
+    const char *ostr = str;
     if (Jsi_MutexLock(interp, interp->Mutex) != JSI_OK)
         return rc;
-    int oldSp, uskip = 0, fncOfs = 0, fnLen;
+    int oldSp, fnLen;
     int oldef = interp->evalFlags;
     jsi_Pstate *oldps = interp->ps;
     jsi_FileInfo *fi = interp->framePtr->filePtr;
@@ -2247,7 +2243,7 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
             cp = Jsi_Strrchr(fname, '.');
             if (cp && !Jsi_Strcmp(cp, ".jsi") && interp->isMain) {
                 interp->typeCheck.parse = interp->typeCheck.run = interp->typeCheck.all = 1;
-                interp->strict = 1;
+                interp->typeCheck.strict = 1;
             }
             bool isNew;
             Jsi_HashEntry *hPtr;
@@ -2284,7 +2280,6 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                     break;
                 if (++cnt==1 && (!(flags&JSI_EVAL_NOSKIPBANG)) && (buf[0] == '#' && buf[1] == '!')) {
                     Jsi_DSAppend(&dStr, "\n", NULL);
-                    uskip=1;
                     continue;
                 }
                 if (!noncmt) {
@@ -2295,8 +2290,9 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                     if (!buf[bi])
                         goto cont;
                 }
-                if (!noncmt++)
-                    fncOfs = Jsi_DSLength(&dStr)-uskip;
+                noncmt++;
+                //if (!noncmt++)
+                //    fncOfs = Jsi_DSLength(&dStr)-uskip;
                 jpp = interp->jsppChars;
                 if (jpp || interp->unitTest)
                     ilen = Jsi_Strlen(buf);
@@ -2318,38 +2314,20 @@ cont:
         if (interp->curDir && (flags&JSI_EVAL_AUTOINDEX))
             Jsi_AddAutoFiles(interp, interp->curDir);
     }
-    ustr = str + fncOfs;
-    // See if "use XXX" is on first non // or empty line (or second if there is a #! on first line)
-    if (ustr && *ustr && !Jsi_Strncmp(ustr+uskip, "\"use ", 5)) {
-        ustr += 5+uskip;
-        const char *cpe = ustr;
-        while (*cpe && *cpe != '\"' && *cpe != '\n' && (isalpha(*cpe) || *cpe ==',' || *cpe =='!')) cpe++;
-        if (*cpe == '\"') {
-            Jsi_DString cStr;
-            Jsi_DSInit(&cStr);
-            cpe = Jsi_DSAppendLen(&cStr, ustr, (cpe-ustr));
-            rc = jsi_ParseTypeCheckStr(interp, cpe);
-            Jsi_DSFree(&cStr);
-            if (rc != JSI_OK)
-                goto bail;
-        }
-    }
-
     /* TODO: cleanup interp->framePtr->Sp stuff. */
     oldSp = interp->framePtr->Sp;
     // Evaluate code.
     rc = JSI_OK;
     ps = jsiNewParser(interp, str, input, 0, fi);
     interp->evalFlags = flags;
-    if (!ps)
+    if (!ps) {
         rc = JSI_ERROR;
-    else if (!interp->noEval && !(flags&JSI_EVAL_NOEVAL)) {
+        goto bail;
+    }
+    if (!interp->noEval && !(flags&JSI_EVAL_NOEVAL)) {
         Jsi_ValueMakeUndef(interp, &interp->retValue);
         interp->ps = ps;
         Jsi_Value *retValue = interp->retValue;
-        if (!interp->strict)
-            interp->strict = (jsi_GetDirective(interp, ps->opcodes, "use strict")!=NULL);
-
         if (level <= 0)
             rc = jsi_evalcode(ps, NULL, ps->opcodes, interp->gsc, interp->csc, interp->csc, &retValue, fi);
         else {

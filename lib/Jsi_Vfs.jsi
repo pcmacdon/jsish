@@ -2,7 +2,6 @@
 
 function Jsi_Vfs(args:array=void, conf:object=void):void
 {
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Mount a zip, sqlar, or fossil repository as Virtual File System
         dumpVers    :false,     // Dump version info.
         quiet       :false,     // Suppress info msgs.
@@ -11,10 +10,11 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
     };
 
     var self = {
-        exec:System.exec
+        exec:System.exec,
+        Trace       :false,
     };
 
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     LogTrace('Starting');
     
     if (Interp.conf('isSafe') || self.safe)
@@ -62,7 +62,7 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
                 version :''
             };
 
-            parseOpts(info, moptions, mnt.param);
+            moduleOpts(info, moptions, mnt.param);
             if (self.version === '')
                 self.version = mnt.version;
             
@@ -239,6 +239,6 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
 provide(Jsi_Vfs, 1);
 
 if (isMain())
-    runModule(Jsi_Vfs);
+    moduleRun(Jsi_Vfs);
 else
     Jsi_Vfs();

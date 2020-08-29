@@ -1,5 +1,4 @@
 // JS for Web browser side of SqliteUI user interface.
-"use strict";
 
 var self = {
     debug:0,

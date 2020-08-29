@@ -1508,7 +1508,7 @@ static Jsi_RC CDataSetCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     if (op==2 && argc==2)
         Jsi_DecrRefCount(interp, arg3);
     if (op == 2 && rc == JSI_OK) {
-        if (interp->strict && Jsi_NumberIsNaN(interp->cdataIncrVal))
+        if (interp->typeCheck.strict && Jsi_NumberIsNaN(interp->cdataIncrVal))
             return Jsi_LogError("result is NaN");
         Jsi_ValueMakeNumber(interp, ret, interp->cdataIncrVal);
     }

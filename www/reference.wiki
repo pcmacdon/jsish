@@ -617,7 +617,6 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <table border="1" class="optstbl table">
 <tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
 <tr><td>args</td><td><i>ARRAY</i></td><td>The console.arguments for interp.</td><td><i>initOnly</i></td></tr>
-<tr><td>asserts</td><td><i>BOOL</i></td><td>Enable assert.</td><td><i></i></td></tr>
 <tr><td>assertMode</td><td><i>STRKEY</i></td><td>Action upon assert failure. (one of: <b>throw</b>, <b>log</b>, <b>puts</b>)</td><td><i></i></td></tr>
 <tr><td>autoFiles</td><td><i>ARRAY</i></td><td>File(s) to source for loading Jsi_Auto to handle unknown commands.</td><td><i></i></td></tr>
 <tr><td>busyCallback</td><td><i>CUSTOM</i></td><td>Command in parent interp (or noOp) to periodically call.</td><td><i></i></td></tr>
@@ -633,6 +632,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>jsppCallback</td><td><i>FUNC</i></td><td>Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number).</td><td><i></i></td></tr>
 <tr><td>lockTimeout</td><td><i>INT</i></td><td>Thread time-out for mutex lock acquires (milliseconds).</td><td><i></i></td></tr>
 <tr><td>logOpts</td><td><i><a href='#logOptsOptions'>options</a></i></td><td>Options for log output to add file/line/time.</td><td><i></i></td></tr>
+<tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>maxDepth</td><td><i>INT</i></td><td>Depth limit of recursive function calls (1000).</td><td><i></i></td></tr>
 <tr><td>maxArrayList</td><td><i>UINT</i></td><td>Maximum array convertable to list (100000).</td><td><i></i></td></tr>
 <tr><td>maxIncDepth</td><td><i>INT</i></td><td>Maximum allowed source/require nesting depth (50).</td><td><i></i></td></tr>
@@ -664,7 +664,6 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>scriptFile</td><td><i>STRING</i></td><td>Interp init script file.</td><td><i></i></td></tr>
 <tr><td>stdinStr</td><td><i>STRING</i></td><td>String to use as stdin for console.input().</td><td><i></i></td></tr>
 <tr><td>stdoutStr</td><td><i>STRING</i></td><td>String to collect stdout for puts().</td><td><i></i></td></tr>
-<tr><td>strict</td><td><i>BOOL</i></td><td>Globally enable strict: same as 'use strict' in main program.</td><td><i></i></td></tr>
 <tr><td>subOpts</td><td><i><a href='#subOptsOptions'>options</a></i></td><td>Infrequently used sub-options.</td><td><i></i></td></tr>
 <tr><td>subthread</td><td><i>BOOL</i></td><td>Create a threaded Interp.</td><td><i>initOnly</i></td></tr>
 <tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
@@ -699,12 +698,6 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <h2>Options for "logOpts"</h2>
 <table border="1" class="optstbl table">
 <tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>Test</td><td><i>BOOL</i></td><td>Enable LogTest messages.</td><td><i></i></td></tr>
-<tr><td>Debug</td><td><i>BOOL</i></td><td>Enable LogDebug messages.</td><td><i></i></td></tr>
-<tr><td>Trace</td><td><i>BOOL</i></td><td>Enable LogTrace messages.</td><td><i></i></td></tr>
-<tr><td>Info</td><td><i>BOOL</i></td><td>Enable LogInfo messages.</td><td><i></i></td></tr>
-<tr><td>Warn</td><td><i>BOOL</i></td><td>Enable LogWarn messages.</td><td><i></i></td></tr>
-<tr><td>Error</td><td><i>BOOL</i></td><td>Enable LogError messages.</td><td><i></i></td></tr>
 <tr><td>time</td><td><i>BOOL</i></td><td>Prefix with time.</td><td><i></i></td></tr>
 <tr><td>date</td><td><i>BOOL</i></td><td>Prefix with date.</td><td><i></i></td></tr>
 <tr><td>file</td><td><i>BOOL</i></td><td>Ouptut contains file:line.</td><td><i></i></td></tr>
@@ -1348,7 +1341,7 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <h2>Methods for "System"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
-<tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#System.assertOptions'>options</a>:object=void):void </td><td>Throw or output msg if expr is false. Assert does nothing by default, but can be enabled with "use assert" or setting Interp.asserts.</td></tr>
+<tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#System.assertOptions'>options</a>:object=void):void </td><td>Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.</td></tr>
 <tr><td>clearInterval</td><td>clearInterval(id:number):void </td><td>Delete event id returned from setInterval/setTimeout/info.events().</td></tr>
 <tr><td>decodeURI</td><td>decodeURI(val:string):string </td><td>Decode an HTTP URL.</td></tr>
 <tr><td>encodeURI</td><td>encodeURI(val:string):string </td><td>Encode an HTTP URL.</td></tr>
@@ -1361,12 +1354,14 @@ By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or
 <tr><td>isMain</td><td>isMain():boolean </td><td>Return true if current script was the main script invoked from command-line.</td></tr>
 <tr><td>isNaN</td><td>isNaN(val):boolean </td><td>Return true if not a number.</td></tr>
 <tr><td>load</td><td>load(shlib:string):void </td><td>Load a shared executable and invoke its _Init call.</td></tr>
-<tr><td>log</td><td>log(val, ...):void </td><td>Same as puts, but includes file:line. If first argument is a boolean, output appears only if true.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Same as puts, but includes file:line.</td></tr>
 <tr><td>matchObj</td><td>matchObj(obj:object, match:string=void, partial=false, noerror=false):string|boolean </td><td>Validate that object matches given name:type string. With single arg returns generated string.</td></tr>
+<tr><td>moduleOpts</td><td>moduleOpts(self:object|userobj=void, options:object=void, conf:object|null|undefined=void):object </td><td>Parse module options.</td></tr>
+<tr><td>moduleRun</td><td>moduleRun(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.</td></tr>
 <tr><td>noOp</td><td>noOp() </td><td>A No-Op. A zero overhead command call that is useful for debugging.</td></tr>
 <tr><td>parseFloat</td><td>parseFloat(val):number </td><td>Convert string to a double.</td></tr>
 <tr><td>parseInt</td><td>parseInt(val:any, base:number=10):number </td><td>Convert string to an integer.</td></tr>
-<tr><td>parseOpts</td><td>parseOpts(self:object|userobj, options:object, conf:object|null|undefined) </td><td>Parse options.</td></tr>
+<tr><td>parseOpts</td><td>parseOpts(self:object|userobj, options:object, conf:object|null|undefined=void):object </td><td>Parse module options: same as moduleOpts.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Formatted output to stdout.</td></tr>
 <tr><td>provide</td><td>provide(name:string|null|function=void, version:number|string=void, opts:object|function=void):void </td><td>Provide a package for use with require. Default is the file tail-rootname.</td></tr>
 <tr><td>puts</td><td>puts(val, ...):void </td><td>Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.</td></tr>
@@ -1376,7 +1371,6 @@ With one argument, loads the package (if necessary) and returns its version.
 With two arguments, returns object containing: version, loadFile, func.
 A third argument sets options for package or module.
 Note an error is thrown if requested version is greater than actual version.</td></tr>
-<tr><td>runMain</td><td>runMain(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke a runModule. If cmd is null/void uses file name,  and if !isMain does nothing.</td></tr>
 <tr><td>runModule</td><td>runModule(cmd:string|null|function=void, conf:array=undefined) </td><td>Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.</td></tr>
 <tr><td>setInterval</td><td>setInterval(callback:function, ms:number):number </td><td>Setup recurring function to run every given millisecs.</td></tr>
 <tr><td>setTimeout</td><td>setTimeout(callback:function, ms:number):number </td><td>Setup function to run after given millisecs.</td></tr>
@@ -1423,9 +1417,8 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <h2>Options for "System.require"</h2>
 <table border="1" class="optstbl table">
 <tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
-<tr><td>Debug</td><td><i>BOOL</i></td><td>Enable LogDebug messages for module.</td><td><i></i></td></tr>
-<tr><td>Test</td><td><i>BOOL</i></td><td>Enable LogTest messages for module.</td><td><i></i></td></tr>
-<tr><td>Trace</td><td><i>BOOL</i></td><td>Enable LogTrace messages for module.</td><td><i></i></td></tr>
+<tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
+<tr><td>logmask</td><td><i>ARRAY</i></td><td>Logging mask flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
 <tr><td>profile</td><td><i>BOOL</i></td><td>On exit generate profile of function calls.</td><td><i></i></td></tr>
 <tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
@@ -1840,7 +1833,8 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#console.assertOptions'>options</a>:object=void):void </td><td>Same as System.assert().</td></tr>
 <tr><td>error</td><td>error(val, ...):void </td><td>Same as log but adding prefix ERROR:.</td></tr>
 <tr><td>input</td><td>input():string|void </td><td>Read input from the console.</td></tr>
-<tr><td>log</td><td>log(val, ...):void </td><td>Like System.puts, but goes to stderr and includes file:line. If first argument is a boolean, output appears only if true.</td></tr>
+<tr><td>log</td><td>log(val, ...):void </td><td>Like System.puts, but goes to stderr and includes file:line..</td></tr>
+<tr><td>logp</td><td>logp(val, ...):void </td><td>Same as console.log, but first arg is string prefix and if second is a boolean it controls output.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Same as System.printf but goes to stderr.</td></tr>
 <tr><td>puts</td><td>puts(val, ...):void </td><td>Same as System.puts, but goes to stderr.</td></tr>
 <tr><td>warn</td><td>warn(val, ...):void </td><td>Same as log.</td></tr>

@@ -521,20 +521,6 @@ code thought to be working suddenly starts throwing errors.
 
 Below are some of the things you can do to minimise this in Jsi.
 
-Strict Mode
-----
-To reduce coding errors and enable maximal checking,
-use [strict mode](doc/tip/md/Debug.md#Strict Mode) by starting with:
- 
-    "use strict";
-    //...
-
-or
-
-    #!/usr/bin/env jsish
-    "use strict";
-    //...
-
 
 Expressions
 ----
@@ -553,7 +539,6 @@ Conditionals
 ----
 Jsi will check for undefined vars used on the left-hand side (LHS) of conditional expressions.  To such avoid errors, put the var on the RHS. 
 
-    "use strict";
     var x;
     if ('' === x) puts('x empty'); //OK.
     if (x === '') puts('x empty');

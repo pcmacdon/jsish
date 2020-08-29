@@ -346,7 +346,6 @@ Misc
 Note that asserts are normally disabled in Jsi, but not in *test-mode*:
 
     #!/usr/local/bin/jsish -u %s
-    "use asserts"; // note: test mode already enables this.
     
     assert(true,'true');
     assert(2*3 == 6,'math');

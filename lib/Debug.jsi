@@ -31,7 +31,7 @@ function Debug(fileargs:array, conf:object=void):number {
         version:1.0
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(self, options, conf);
     
     var commands = {
         "break":"Break execution at a named function, line or file", 
@@ -497,4 +497,4 @@ function Debug(fileargs:array, conf:object=void):number {
 provide(Debug, 1.0);
 
 if (isMain())
-    exit( runModule(Debug) );
+    exit( moduleRun(Debug) );

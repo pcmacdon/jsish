@@ -490,6 +490,7 @@ int jsi_FuncSigsMatch(jsi_Pstate *pstate, Jsi_Func *f1, Jsi_Func *f2)
     return 1;
 }
 
+#if 0
 // Return directive from first instruction.
 const char* jsi_GetDirective(Jsi_Interp *interp, Jsi_OpCodes *ops, const char *str) {
     if (!ops) return NULL;
@@ -498,6 +499,7 @@ const char* jsi_GetDirective(Jsi_Interp *interp, Jsi_OpCodes *ops, const char *s
     if (Jsi_Strncmp((char*)ops->codes[0].data, str, Jsi_Strlen(str))) return NULL;
     return (char*)ops->codes[0].data;
 }
+#endif
 
 /* TODO: if not in a file (an eval) save copy of body string from pstate->lexer??? */
 Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops, jsi_Pline* line, const char *name, int isArrow)
@@ -522,7 +524,7 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
         Jsi_LogWarn("invalid use of 'undefined' in a return type: %s", name?name:"");
     
     pstate->argType = 0;
-    if (localvar && args && (interp->strict)) {
+    if (localvar && args && (interp->typeCheck.strict)) {
         int i, j;
         for (i=0; i<args->count; i++) {
             for (j=0; j<args->count; j++) {

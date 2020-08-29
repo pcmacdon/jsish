@@ -1,8 +1,8 @@
 #!/usr/bin/env jsish
-"use strict,!error";
 // DebugUI: A jsi debugger with a web user interface.
 // This module combines code from Debug and Websrv.
 
+Interp.conf({typeCheck:'!error'});
 require('Jsish');
 require('Sqlite');
 require('WebSocket', '2');

@@ -349,7 +349,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
         switch (specPtr->id) {
 #define _JSI_OPTSETNTYP(typ, n, ptr) if (!argValue) *(typ*)ptr = 0; else { if (isIncr) n += *((typ *)ptr); \
             interp->cdataIncrVal = *((typ *)ptr) = (typ)(n); \
-            if (interp->strict && Jsi_NumberIsNaN((Jsi_Number)(*((typ *)ptr)))) return Jsi_LogError("not a number"); }
+            if (interp->typeCheck.strict && Jsi_NumberIsNaN((Jsi_Number)(*((typ *)ptr)))) return Jsi_LogError("not a number"); }
 
             case JSI_OPTION_NUMBER: _JSI_OPTSETNTYP(Jsi_Number, nv, ptr); break;
             case JSI_OPTION_LDOUBLE: _JSI_OPTSETNTYP(ldouble, nv, ptr); break;
@@ -1585,7 +1585,7 @@ static Jsi_RC jsi_ValueToBitset(Jsi_Interp *interp, Jsi_OptionSpec* spec, Jsi_Va
         default: 
             return Jsi_LogError("bitset size must be 1, 2, 4, or 8: %s", spec->name);
     }
-
+    // Support set with either string or object. 
 #ifndef JSI_LITE_ONLY
     if (!inStr && Jsi_ValueIsString(interp, inValue))
         inStr = Jsi_ValueString(interp, inValue, NULL);
@@ -1795,7 +1795,7 @@ static Jsi_RC jsi_ValueToParentFunc(Jsi_Interp *interp, Jsi_OptionSpec* spec, Js
         return Jsi_LogError("value not found in parent: %s", s);
     if (!Jsi_ValueIsFunction(pinterp, val))
         return Jsi_LogError("expected a func value");
-    if (spec->data && (interp->strict || pinterp->strict))
+    if (spec->data && (interp->typeCheck.strict || pinterp->typeCheck.strict))
         if (!jsi_FuncIsNoop(pinterp, val)
             && !jsi_FuncArgCheck(pinterp, val->d.obj->d.fobj->func, (char*)spec->data)) 
             return Jsi_LogError("failed setting func pointer for %s", spec->name);

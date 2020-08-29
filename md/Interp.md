@@ -8,11 +8,10 @@ Options
 Interp take numerous [options](Reference.md#new InterpOptions)
 set-able via the command-line:
 
-    jsish --T error foo.jsi
+    jsish --T none foo.jsi
 
 or programatically:
-
-    "use strict,error";    
+   
     var i = new Interp({name:'sub'});
 
 Some options may only be set at interpreter creation time.
@@ -25,7 +24,7 @@ Various interp options can be set from the command-line:
 
     jsish --I isSafe
     jsish --I traceCall:cmds tests/while2.jsi
-    jsish --T Debug
+    jsish --L Debug
 
 While other sensitive options can not be modified when in safe mode:
 
@@ -159,7 +158,6 @@ Function-calls between threaded interps use **call** and **alias**, as in this
 [example](https://jsish.org/jsi/file/js-demos/thread.jsi):
 
     #!/usr/bin/env jsish
-    "use strict";
     // Threaded interp with call, eval and alias.
 
     function MySuper(x,y) { puts('MySuper', x,y); }

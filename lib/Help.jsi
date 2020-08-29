@@ -2,9 +2,8 @@
 
 require('Jsish');
 
-function Help(args, conf) {
+function Help(args, ...) {
 
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Provide help for Jsi commands.
         max         :32,        // Max lines to output, if not web
         timeout     :10000,     // Time to wait for browser to open with -web.
@@ -12,12 +11,13 @@ function Help(args, conf) {
         wiki        :false      // For -web, return instead of opening browser.
     };
     var self = {
-        rootdir:null
+        rootdir:null,
+        Trace       :false,
     };
     var index = "";
     var optsDumped = [];
     
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
 
     function DumpOpts(opts:array, hlp:string, nam:string, nam2:string=void) {
         var web = self.web, sbt='', ebt='';
@@ -314,7 +314,7 @@ function Help(args, conf) {
                     rv = 'no such command "'+anam+'"';
                     try {
                         require(anam);
-                        runModule(anam, ['-help', true]);
+                        moduleRun(anam, ['-help', true]);
                     } catch (e) {
                         rv = e;
                     }
@@ -375,4 +375,4 @@ function Help(args, conf) {
 }
 
 provide(Help);
-runModule(Help);
+moduleRun(Help);

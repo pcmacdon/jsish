@@ -4,7 +4,6 @@ require('Jsish');
 
 function UnitTest(fileargs:array, conf:object=void):number {
 
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Run script(s) as unit-tests; return code is the number of failed tests.
         args        :'',        // Argument string to call script with
         context     :99,         // Number of context lines for DIFF (>3 forces dir diff).
@@ -29,10 +28,10 @@ function UnitTest(fileargs:array, conf:object=void):number {
         flst:[],
         outfile:'/tmp/utest.txt',
         startTime:0,
-        version:1.0
+        version:1.0,
+//        Trace:false,
     };
-    
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     
     function testFmt(cmd:string, lineno:number) {
         var ecp;
@@ -72,10 +71,10 @@ function UnitTest(fileargs:array, conf:object=void):number {
 
         if (self.args === '' && asm)
             self.args = asm[1];
-        var tcmd = Info.executable() + ' -Iasserts true';
+        var tcmd = Info.executable() + ' --L assert';
         var ut = 1;
         var sint = null;
-        var siargs = {asserts:true};
+        var siargs = {log:{assert:true}};
 
         if (self.times)
             siargs.debugOpts = {testFmtCallback:'testFmt'};
@@ -247,6 +246,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
             self.rootdir=Info.scriptDir();
         if (self.echo && self.verbose)
             throw('can not use both verbose and echo');
+        LogTrace('Files', fileargs);
         if (fileargs.length === 1) {
             fileargs = fileargs[0];
             if (!File.isdir(fileargs)) {
@@ -272,6 +272,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
         }
         //puts(self.flst);
         for (var i of self.flst) {
+            LogTrace('Doing', i);
             self.cnt++;
             self.fails += runOne(i);
             if (self.failMax && self.fails>=self.failMax)
@@ -290,6 +291,4 @@ function UnitTest(fileargs:array, conf:object=void):number {
 
 provide(UnitTest, 1);
 
-
-if (isMain())
-    exit(runModule(UnitTest));
+moduleRun(UnitTest);

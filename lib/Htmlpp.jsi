@@ -10,9 +10,7 @@ require('Jsish');
 var JsiHtmlpp_callback = null;
 
 function Htmlpp(files:array|string=null, conf:object=undefined):string|object
-{
-    var LogTrace = function(...) {}; // Comment out for debugging.
-    
+{    
     var options = { // Preprocess html evaluating Jsi code between  <? ?> tags (like php).
         delInterp   :true,      // Delete interp when done.
         incsMax     :1000,      // Maximum number of includes
@@ -28,12 +26,13 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
         package:"Htmlpp",
         intOpts:{},
         rc:'', files:[], files:[], chpos:0, rootdir:'', curdir:'', data:'', errs:'', dir:'',
-        jsifiles:[], cssfiles:[], mdfiles:[]
+        jsifiles:[], cssfiles:[], mdfiles:[],
+        Trace       :false,
     };
     var ws;
     
     self.rootdir = File.pwd();
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     
     if (self.interpOptStr.length)
         self.intOpts = JSON.parse(self.interpOptStr);
@@ -91,7 +90,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
             ifExists:false  // Quietly ignore files that don't exist.
         };
         var iself = {};
-        parseOpts(iself, ioptions, iconf);
+        moduleOpts(iself, ioptions);
         LogTrace('INCLUDE:', args); 
         var ai, fn;
         var odata = self.data, oargs = args;
@@ -277,5 +276,5 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
 
 
 provide(Htmlpp);
-runModule(Htmlpp);
+moduleRun(Htmlpp);
 

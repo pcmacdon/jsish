@@ -2,7 +2,6 @@
 
 function Wget(fileargs:array|string, conf:object=void) {
     
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var options = { // Web client for downloading files from url
         force       : false,        // Overwrite output file, if exists.
         headers     : [],           // Header fields to send.
@@ -30,9 +29,10 @@ function Wget(fileargs:array|string, conf:object=void) {
         ssl         :false,
         sslcert     :null,
         sslkey      :null,
+        LogTrace    :false,  // Disable global
     };
 
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     
     if (self.port === -1)
         self.port = 80;
@@ -148,6 +148,6 @@ function Wget(fileargs:array|string, conf:object=void) {
 
 provide(Wget, "1.2");
 
-runModule(Wget);
+moduleRun(Wget);
 
 

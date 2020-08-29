@@ -36,7 +36,7 @@ function Jspp(files:array|string=null, conf:object=undefined):string|object
     };
     var ws;
  
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
 
     self.typeNameStr = "number string boolean array function object regexp any userobj void null undefined";
     self.typeNameList = self.typeNameStr.split(' ');
@@ -172,5 +172,5 @@ function Jspp(files:array|string=null, conf:object=undefined):string|object
 }
 
 provide(Jspp);
-runModule(Jspp);
+moduleRun(Jspp);
 

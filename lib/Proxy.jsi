@@ -9,9 +9,9 @@ require('Jsi_Vfs');
 
 function Proxy(args:array, conf:object=void):void
 {
-    //var LogTrace = function(...) {}; // Comment out for debugging.
     var self = {
-        wsOpts:{}
+        wsOpts:{},
+        Trace       :false,
     };
     var options = { // Run a proxy web server.
         closeTimeout:0,         // Milliseconds til we exit after close of final client websocket.
@@ -30,7 +30,7 @@ function Proxy(args:array, conf:object=void):void
         wsdebug     :0,         // Debug option for websockets.
         wsOptStr    :''         // Websocket options to add in JSON
     };
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
      
     function DoExit()   // Notify all going down, then exit.
     {
@@ -274,5 +274,5 @@ function Proxy(args:array, conf:object=void):void
 }
 
 provide(Proxy);
-runModule(Proxy);
+moduleRun(Proxy);
 

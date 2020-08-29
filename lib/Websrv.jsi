@@ -5,12 +5,12 @@ require('WebSocket', '2');
 
 function Websrv(args:string|array, conf:object=void)
 {
-    var LogTrace = function(...) {}; // Comment out for debugging.
     var self = {
         chans   :{},
         ssl     :false,
         sslcert :null,
         sslkey  :null,
+        Trace       :false,
     };
     var options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
@@ -51,9 +51,9 @@ function Websrv(args:string|array, conf:object=void)
         zipVer      :'',        // Version to mount in fossil.
     };
 
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     if (self.confFile != '')
-        parseOpts(self, options, JSON.parse(File.read(self.confFile)));
+        moduleOpts(self, options, JSON.parse(File.read(self.confFile)));
     
     function DoExit()   // Notify all going down, then exit.
     {
@@ -167,7 +167,7 @@ function Websrv(args:string|array, conf:object=void)
                 case 'run':
                     var app = dat.data;
                     require(app);
-                    var rv = runModule(app, []);
+                    var rv = moduleRun(app, []);
                     WsSend(id, 'run', rv?rv:{});
                     break;
                 case 'save': 
@@ -526,4 +526,4 @@ function Websrv(args:string|array, conf:object=void)
 }
 
 provide(Websrv, '1.2.3');
-runModule(Websrv);
+moduleRun(Websrv);

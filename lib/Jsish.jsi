@@ -15,7 +15,7 @@ RC=1 { a:3, b:1, c:2 }
    which invokes:
      command([arg1,arg2,...],{opt1:val1,opt2:val2,...});*/
 function Jsi_Run(cmd:string=void, conf:array=undefined) {
-    puts("NOTE: Jsi_Run has been deprecated by runModule");
+    puts("NOTE: Jsi_Run has been deprecated by moduleRun");
     if (!cmd) {
         cmd = Info.level(1).fileName;
         cmd = File.rootname(File.tail(cmd));
@@ -141,7 +141,7 @@ function Jsi_ThrowHelp(self:object, options:object) {
 
 // A general option parser. conf is an object or an array of form: -nam1 val1 -nam2 val2
 function Jsi_Conf (self:object, options:object, opts:object|null=undefined):object {
-    puts("NOTE: Jsi_Conf has been deprecated by parseOpts");
+    puts("NOTE: Jsi_Conf has been deprecated by moduleOpts");
     var i, isarr, len, topts = {};
     for (i in options)
         self[i] = options[i];
@@ -194,11 +194,11 @@ function Jsi_Conf (self:object, options:object, opts:object|null=undefined):obje
     var scope = Info.level(-1).scope;
     if (scope) {
         if (self.debug)
-            scope.LogDebug = console.log.bind(null, "DEBUG:");
+            scope.LogDebug = console.logp.bind(null, "DEBUG:");
         if (self.trace)
-            scope.LogTrace = console.log.bind(null, "TRACE:");
+            scope.LogTrace = console.logp.bind(null, "TRACE:");
         if (self.test)
-            scope.LogTest  = console.log.bind(null, "TEST: ");
+            scope.LogTest  = console.logp.bind(null, "TEST: ");
     }
     return self;
 };
@@ -265,7 +265,7 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
         objOpts     :{},        // Options for objOpts
         verbose     :false
     };
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     var cols = db.query('PRAGMA table_info("'+table+'")');
     if (!cols.length) {
         if (!self.noCreate)
@@ -311,19 +311,19 @@ function Jsi__Init() {
     // Module-level Log functions, aliased if not in debugger.
     if (Interp.conf('debugOpts.debugCallback')) {
         var scope = Info.level(1).scope;
-        scope.LogDebug = console.log.bind(null, "DEBUG:");
-        scope.LogTrace = console.log.bind(null, "TRACE:");
-        scope.LogTest  = console.log.bind(null, "TEST: ");
-        scope.LogWarn  = console.log.bind(null, "WARN: ");
-        scope.LogInfo  = console.log.bind(null, "INFO: ");
-        scope.LogError = console.log.bind(null, "ERROR:");
+        scope.LogDebug = console.logp.bind(null, "DEBUG:");
+        scope.LogTrace = console.logp.bind(null, "TRACE:");
+        scope.LogTest  = console.logp.bind(null, "TEST: ");
+        scope.LogWarn  = console.logp.bind(null, "WARN: ");
+        scope.LogInfo  = console.logp.bind(null, "INFO: ");
+        scope.LogError = console.logp.bind(null, "ERROR:");
     } else {
-        Interp.alias('LogTrace', console.log, ["TRACE:"]);
-        Interp.alias('LogDebug', console.log, ["DEBUG:"]);
-        Interp.alias('LogTest',  console.log, ["TEST: "]);
-        Interp.alias('LogWarn',  console.log, ["WARN: "]);
-        Interp.alias('LogInfo',  console.log, ["INFO: "]);
-        Interp.alias('LogError', console.log, ["ERROR:"]);
+        Interp.alias('LogTrace', console.logp, ["TRACE:"]);
+        Interp.alias('LogDebug', console.logp, ["DEBUG:"]);
+        Interp.alias('LogTest',  console.logp, ["TEST: "]);
+        Interp.alias('LogWarn',  console.logp, ["WARN: "]);
+        Interp.alias('LogInfo',  console.logp, ["INFO: "]);
+        Interp.alias('LogError', console.logp, ["ERROR:"]);
     }
     Interp.conf({logOpts:{file:true, func:true, before:true}});
 }

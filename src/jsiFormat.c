@@ -278,7 +278,7 @@ Jsi_RC Jsi_FormatString(Jsi_Interp *interp, Jsi_Value *args, Jsi_DString *dStr)
             goto doprec;
         case 's':
             v = Jsi_ValueArrayIndex(interp, args, argIndex);
-            if (interp->strict && !Jsi_ValueIsString(interp, v)) {
+            if (interp->typeCheck.strict && !Jsi_ValueIsString(interp, v)) {
                 msg = "expected string argument";
                 goto error;
             } else
@@ -347,7 +347,7 @@ doprec:
                 p += sprintf(p, ".%ld", precision);
             }
             v = Jsi_ValueArrayIndex(interp, args, argIndex);
-            if (interp->strict && !Jsi_ValueIsNumber(interp, v)) {
+            if (interp->typeCheck.strict && !Jsi_ValueIsNumber(interp, v)) {
                 msg = "expected number argument";
                 goto error;
             }

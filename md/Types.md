@@ -209,14 +209,7 @@ Whereas one that can return anything uses **any**:
 Strict Mode
 ----
 Strict mode, which is enormously helpful in finding bugs, is enabled
-if the main file has a **.jsi** extension,
-or by adding **use strict** at the top of a file:
-
-    "use strict";
-    function foo (a:number, b:string='ok'):number {}
-
-This directive must go on the *first* line, or *second* after ***#!***:
-*it is not supported inside individual functions*.
+by default.
 
 Strict-mode will generates errors for:
 
@@ -227,15 +220,6 @@ Strict-mode will generates errors for:
 Strict-mode also enables *type-checking* for functions, eg:
 
     function foo (a:number, b:string='ok'):number {}
-
-Note also that **use** can take multiple comma separated options:
-
-    "use run,error";
-    function foo (a:number, b:string='ok'):number {}
-
-The "!" prefix can be used to invert a flag:
-
-    "use strict,!error";
 
 The various checking modes are described below.
 
@@ -286,7 +270,7 @@ Type checking will silently disables itself after 50 warnings, or the value set 
 
 Limitations
 ----
-Although parse time checking is enabled with ["use strict"](#Strict Mode),
+Although parse time checking can be enabled,
 this is no where close to the kind of type-checking available in C.
 
 The first reason for this is that function arguments are frequently

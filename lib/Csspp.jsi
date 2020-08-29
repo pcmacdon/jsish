@@ -38,7 +38,7 @@ function Csspp(files:array|string=null, conf:object=undefined):string|object
         tail:''             // Basename of file.
     };
     var ws;
-    parseOpts(self, options, conf);
+    moduleOpts(self, options);
     self.curFile = '';
     
     // Function called on any error.
@@ -124,5 +124,5 @@ function Csspp(files:array|string=null, conf:object=undefined):string|object
 }
 
 provide(Csspp);
-runModule(Csspp);
+moduleRun(Csspp);
 

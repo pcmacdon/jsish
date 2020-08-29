@@ -1,5 +1,5 @@
 #!/usr/local/bin/jsish -u %s
-"use strict,parse";
+
 
 //var x = 1;
 function foo() {

@@ -40,12 +40,12 @@ static Jsi_OptionSpec InterpDebugOptions[] = {
 };
 
 Jsi_OptionSpec jsi_InterpLogOptions[] = {
-    JSI_OPT(BOOL,   jsi_LogOptions, Test,    .help="Enable LogTest messages" ),
+    /*JSI_OPT(BOOL,   jsi_LogOptions, Test,    .help="Enable LogTest messages" ),
     JSI_OPT(BOOL,   jsi_LogOptions, Debug,   .help="Enable LogDebug messages" ),
     JSI_OPT(BOOL,   jsi_LogOptions, Trace,   .help="Enable LogTrace messages" ),
     JSI_OPT(BOOL,   jsi_LogOptions, Info,    .help="Enable LogInfo messages" ),
     JSI_OPT(BOOL,   jsi_LogOptions, Warn,    .help="Enable LogWarn messages" ),
-    JSI_OPT(BOOL,   jsi_LogOptions, Error,   .help="Enable LogError messages" ),
+    JSI_OPT(BOOL,   jsi_LogOptions, Error,   .help="Enable LogError messages" ),*/
     JSI_OPT(BOOL,   jsi_LogOptions, time,    .help="Prefix with time" ),
     JSI_OPT(BOOL,   jsi_LogOptions, date,    .help="Prefix with date" ),
     JSI_OPT(BOOL,   jsi_LogOptions, file,    .help="Ouptut contains file:line" ),
@@ -83,7 +83,6 @@ const char *jsi_AssertModeStrs[] = { "throw", "log", "puts", NULL};
 
 static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(ARRAY, Jsi_Interp, args,        .help="The console.arguments for interp", jsi_IIOF),
-    JSI_OPT(BOOL,  Jsi_Interp, asserts,     .help="Enable assert" ),
     JSI_OPT(CUSTOM,Jsi_Interp, assertMode,  .help="Action upon assert failure", .flags=0, .custom=Jsi_Opt_SwitchEnum, .data=jsi_AssertModeStrs ),
     JSI_OPT(ARRAY, Jsi_Interp, autoFiles,   .help="File(s) to source for loading Jsi_Auto to handle unknown commands"),
     JSI_OPT(CUSTOM,Jsi_Interp, busyCallback,.help="Command in parent interp (or noOp) to periodically call", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"interpName:string, opCnt:number"),
@@ -99,6 +98,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(FUNC,  Jsi_Interp, jsppCallback,.help="Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number)"),
     JSI_OPT(INT,   Jsi_Interp, lockTimeout, .help="Thread time-out for mutex lock acquires (milliseconds)" ),
     JSI_OPT(CUSTOM,Jsi_Interp, logOpts,     .help="Options for log output to add file/line/time", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=jsi_InterpLogOptions),
+    JSI_OPT(CUSTOM,Jsi_Interp, log,         .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(INT,   Jsi_Interp, maxDepth,    .help="Depth limit of recursive function calls (1000)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(UINT,  Jsi_Interp, maxArrayList,.help="Maximum array convertable to list (100000)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(INT,   Jsi_Interp, maxIncDepth, .help="Maximum allowed source/require nesting depth (50)", .flags=JSI_OPT_LOCKSAFE),
@@ -130,7 +130,6 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(STRING,Jsi_Interp, scriptFile,  .help="Interp init script file"),
     JSI_OPT(STRING,Jsi_Interp, stdinStr,    .help="String to use as stdin for console.input()"),
     JSI_OPT(STRING,Jsi_Interp, stdoutStr,   .help="String to collect stdout for puts()"),
-    JSI_OPT(BOOL,  Jsi_Interp, strict,      .help="Globally enable strict: same as 'use strict' in main program"),
     JSI_OPT(CUSTOM,Jsi_Interp, subOpts,     .help="Infrequently used sub-options", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=InterpSubOptions),
     JSI_OPT(BOOL,  Jsi_Interp, subthread,   .help="Create a threaded Interp", jsi_IIOF|JSI_OPT_LOCKSAFE),
     JSI_OPT(CUSTOM,Jsi_Interp, traceCall,   .help="Trace commands", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_callTraceStrs),
@@ -773,8 +772,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "  --C FILE\tOption file of config options.\n"
           "  --F\t\tTrace all function calls and returns.\n"
           "  --I OPT:VAL\tInterp option: equivalent to Interp.conf({OPT:VAL}).\n"
-          "  --L PATH\tSet safeMode to \"lockdown\" using PATH for safe(Read/Write)Dirs.\n"
-          "  --T OPT\tTypecheck option: equivalent to \"use OPT\".\n"
+          "  --L OPT\tLog settings: equivalent to Interp.conf({log:'+XXX'})..\n"
+          "  --S PATH\tSet safeMode to \"lockdown\" using PATH for safe(Read/Write)Dirs.\n"
           "  --U\t\tDisplay unittest output, minus pass/fail compare.\n"
           "  --V\t\tSame as --U, but adds file and line number to output.\n"
           "\nCOMMAND-OPTS:\n"
@@ -819,13 +818,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 if (argc < 3)
                     rc = Jsi_LogError("missing argument");
                 else {
+                    Jsi_ShiftArgs(interp, NULL);
                     rc = Jsi_EvalString(interp, argv[2], JSI_EVAL_ISMAIN|JSI_EVAL_NOSKIPBANG);
-                    if (rc == JSI_OK && argc>3) {
-                        first += 2;
-                        Jsi_ShiftArgs(interp, NULL);
-                        Jsi_ShiftArgs(interp, NULL);
-                        goto dofile;
-                    }
                 }
                 break;
             case 'h':
@@ -887,12 +881,12 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "runModule('Zip');", JSI_EVAL_ISMAIN);
                 break;
             default:
-                puts("usage: jsish [  --C FILE | --I OPT:VAL | --L PATH | --T OPT | --U | --V | --F ] | -e STRING |\n\t"
+                puts("usage: jsish [  --C FILE | --I OPT:VAL | --L OPT | --T OPT | --S PATH | --U | --V | --F ] | -e STRING |\n\t"
                 "| -a | -c | -d | -D | -h | -m | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
                 return jsi_DoExit(interp, 1);
         }
     } else {
-dofile:
+//dofile:
         ext = Jsi_Strrchr(argv[first], '.');
 
         /* Support running "main.jsi" from a zip file. */
@@ -1058,68 +1052,10 @@ done:
     return rc;
 }
 
-Jsi_RC jsi_ParseTypeCheckStr(Jsi_Interp *interp, const char *str) {
-    uint *iptr = (uint*)&interp->typeCheck;
-    const char *wcp = str, *wcn = wcp;
-    while (wcn && wcp) {
-        int isnot = 0;
-        if (*wcp == '!') { isnot = 1; wcp++; }
-        wcn = Jsi_Strchr(wcp, ',');
-        int ti, wlen = (wcn?(wcn-wcp):(int)Jsi_Strlen(wcp));
-#define _JSIPARSETYPES(nam, field) \
-        if (wlen == (sizeof(#nam)-1) && !Jsi_Strncmp(#nam, wcp, (sizeof(#nam)-1))) { \
-            interp->field = (1-isnot); \
-            wcp = (wcn?wcn+1:NULL); \
-            continue; \
-        }
-        _JSIPARSETYPES(Debug, logOpts.Debug)
-        _JSIPARSETYPES(Trace, logOpts.Trace)
-        _JSIPARSETYPES(Test,  logOpts.Test)
-        _JSIPARSETYPES(Info, logOpts.Info)
-        _JSIPARSETYPES(Warn, logOpts.Warn)
-        _JSIPARSETYPES(Error,  logOpts.Error)
-        _JSIPARSETYPES(full,  logOpts.full)
-        _JSIPARSETYPES(before,  logOpts.before)
-        _JSIPARSETYPES(time,  logOpts.time)
-        _JSIPARSETYPES(date,  logOpts.date)
-        _JSIPARSETYPES(asserts, asserts)
-        _JSIPARSETYPES(assert, asserts)
-        _JSIPARSETYPES(noproto, subOpts.noproto)
-
-        const char **tstrs = jsi_TypeChkStrs;
-        for (ti=0; tstrs[ti]; ti++) {
-            wlen = Jsi_Strlen(tstrs[ti]);
-            if (!Jsi_Strncmp(tstrs[ti], wcp, wlen) && (!tstrs[ti][wlen] || tstrs[ti][wlen] == ',')) break;
-        }
-        if (tstrs[ti]) {
-            if (isnot)
-                *iptr &= ~(1<<ti);
-            else {
-                *iptr |= (1<<ti);
-                if (!Jsi_Strcmp(tstrs[ti], "all"))
-                    interp->typeCheck.parse = interp->typeCheck.run = 1;
-                if (!Jsi_Strcmp(tstrs[ti], "strict")) {
-                    interp->typeCheck.parse = interp->typeCheck.run = interp->typeCheck.all = 1;
-                    if (interp->framePtr->level<=0 || interp->isMain)
-                        interp->strict = 1;
-                }
-            }
-        } else {
-            Jsi_DString wStr = {};
-            int i;
-            tstrs = jsi_TypeChkStrs;
-            for (i=0; tstrs[i]; i++) Jsi_DSAppend(&wStr, i?", ":"", tstrs[i], NULL);
-            Jsi_LogWarn("unknown typeCheck warn option(s) \"%s\" not in: Debug, Trace, Test, Info, Warn, Error, assert, %s, noproto, full, before, time, date", str, Jsi_DSValue(&wStr));
-            Jsi_DSFree(&wStr);
-        }
-        wcp = (wcn?wcn+1:NULL);
-    }
-    return JSI_OK;
-}
-
 static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_InterpOpts *iopts)
 {
     Jsi_Interp* interp;
+    Jsi_RC rc = JSI_OK;
     if (parent && parent->noSubInterps) {
         interp = parent;
         Jsi_LogError("subinterps disallowed");
@@ -1159,9 +1095,8 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     }
     interp->logOpts.file = 1;
     interp->logOpts.func = 1;
-    interp->logOpts.Info = 1;
-    interp->logOpts.Warn = 1;
-    interp->logOpts.Error = 1;
+    interp->typeCheck.strict = 1;
+    interp->log = jsi_LogDefMaskVal;
     int argc = interp->opts.argc;
     char **argv = interp->opts.argv;
     char *argv0 = (argv?argv[0]:NULL);
@@ -1198,25 +1133,30 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
 #define JSI_CONF_ARGS ""
 #endif
     interp->confArgs = JSI_CONF_ARGS;
-    for (iocnt = 1; (iocnt+1)<argc; iocnt+=2)
-    {
+    bool done = 0;
+    for (iocnt = 1; (iocnt+1)<argc; iocnt+=2) {
         const char *aio = argv[iocnt];
-        if (Jsi_Strcmp(aio, "--T") == 0 || Jsi_Strcmp(aio, "--C") == 0 || Jsi_Strcmp(aio, "--L") == 0) {
-            continue;
+        int alen = Jsi_Strlen(aio);
+        if (!(alen == 3 && aio[0] == '-' && aio[1] == '-'))
+            break;
+        else {
+            switch (aio[2]) {
+                case 'T': case 'S': case 'C': case 'L':
+                    continue;
+                case 'F': case 'U': case 'V':  iocnt--;
+                    continue;
+                case 'I': {
+                    const char *aio2 = argv[iocnt+1];
+                    if (!Jsi_Strncmp("memDebug:", aio2, sizeof("memDebug")))
+                        interp->memDebug=strtol(aio2+sizeof("memDebug"), NULL, 0);
+                    else if (!Jsi_Strncmp("compat", aio2, sizeof("compat")))
+                        interp->subOpts.compat=strtol(aio2+sizeof("compat"), NULL, 0);
+                    continue;
+                }
+                default: done = 1;
+            }
         }
-        if (Jsi_Strcmp(aio, "--F") == 0 || Jsi_Strcmp(aio, "--U") == 0 || Jsi_Strcmp(aio, "--V") == 0) {
-            iocnt--;
-            continue;
-        }
-        if (!Jsi_Strcmp(aio, "--I")) {
-            const char *aio2 = argv[iocnt+1];
-            if (!Jsi_Strncmp("memDebug:", aio2, sizeof("memDebug")))
-                interp->memDebug=strtol(aio2+sizeof("memDebug"), NULL, 0);
-            else if (!Jsi_Strncmp("compat", aio2, sizeof("compat")))
-                interp->subOpts.compat=strtol(aio2+sizeof("compat"), NULL, 0);
-            continue;
-        }
-        break;
+        if (done) break;
     }
     SIGINIT(interp,INTERP);
     interp->NullValue = Jsi_ValueNewNull(interp);
@@ -1264,109 +1204,128 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
         interp->subOpts.privKeys = 1;
     }
     // Handle interp options: -T value and -Ixxx value
+    done = 0;
     for (iocnt = 1; (iocnt+1)<argc && !interp->parent; iocnt+=2)
     {
         const char *aio = argv[iocnt];
-        if (Jsi_Strcmp(aio, "--F") == 0) {
-            interp->traceCall |= (jsi_callTraceFuncs |jsi_callTraceArgs |jsi_callTraceReturn | jsi_callTraceBefore | jsi_callTraceFullPath);
-            iocnt--;
-            interp->iskips++;
-            continue;
-        }
-        if (Jsi_Strcmp(aio, "--U") == 0) {
-            interp->asserts = 1;
-            interp->unitTest = 1;
-            iocnt--;
-            interp->iskips++;
-            continue;
-        }
-        if (Jsi_Strcmp(aio, "--V") == 0) {
-            interp->asserts = 1;
-            interp->unitTest = 5;
-            interp->tracePuts = 1;
-            iocnt--;
-            interp->iskips++;
-            continue;
-        }
-        if (Jsi_Strcmp(aio, "--C") == 0) {
-            if (interp->confFile)
-               Jsi_LogWarn("overriding confFile: %s", interp->confFile);
-            interp->confFile = argv[iocnt+1];
-            interp->iskips+=2;
-            continue;
-        }
-        if (Jsi_Strcmp(aio, "--L") == 0) {
-            struct stat sb;
-            const char* path = argv[iocnt+1]; //TODO: convert to Jsi_Value first?
-            if (!path || stat(path, &sb)
-                || !((S_ISREG(sb.st_mode) && !access(path, W_OK)) || (S_ISDIR(sb.st_mode) && !access(path, X_OK)))) {
-                Jsi_LogError("Lockdown path must exist and be a writable file or executable dir: %s", path);
-                Jsi_InterpDelete(interp);
-                return NULL;
-            }
-            interp->isSafe = true;
-            interp->safeMode = jsi_safe_Lockdown;
-            if (interp->safeWriteDirs) {
-                Jsi_LogWarn("Overriding safeWriteDirs");
-                Jsi_DecrRefCount(interp, interp->safeWriteDirs);
-            }
-            const char *vda[2] = {};
-            char npath[PATH_MAX];
-            vda[0] = Jsi_FileRealpathStr(interp, path, npath);
-            interp->safeWriteDirs = Jsi_ValueNewArray(interp, vda, 1);
-            Jsi_IncrRefCount(interp, interp->safeWriteDirs);
-            if (!interp->safeReadDirs) {
-                interp->safeReadDirs = interp->safeWriteDirs;
-                Jsi_IncrRefCount(interp, interp->safeReadDirs);
-            }
-            interp->iskips+=2;
-            continue;
-        }
-        if (Jsi_Strcmp(aio, "--T") == 0) {
-            if (jsi_ParseTypeCheckStr(interp, argv[iocnt+1]) != JSI_OK) {
-                Jsi_InterpDelete(interp);
-                return NULL;
-            }
-            interp->iskips+=2;
-            continue;
-        }
-        if (!Jsi_Strcmp(aio, "--I"))  {
-            bool bv = 1;
-            char *aio2 = argv[iocnt+1], *aioc = Jsi_Strchr(aio2, ':'),
-                argNamS[50], *argNam = aio2;
-            if (!aioc)
-                aioc = Jsi_Strchr(aio2, '=');
-            const char *argVal;
-            if (!Jsi_Strcmp("traceCall", aio2))
-                interp->traceCall |= (jsi_callTraceFuncs |jsi_callTraceArgs |jsi_callTraceReturn | jsi_callTraceBefore | jsi_callTraceFullPath);
-            else {
-                if (aioc) {
-                    argNam = argNamS;
-                    argVal = aioc+1;
-                    snprintf(argNamS, sizeof(argNamS), "%.*s", (int)(aioc-aio2), aio2);
+        if (!(Jsi_Strlen(aio) == 3 && aio[0] == '-' && aio[1]=='-'))
+            break;
+        else {
+            switch (aio[2]) {
+                case 'F':
+                    interp->traceCall |= (jsi_callTraceFuncs |jsi_callTraceArgs |jsi_callTraceReturn | jsi_callTraceBefore | jsi_callTraceFullPath);
+                    iocnt--;
+                    interp->iskips++;
+                    continue;
+                case 'U':
+                    interp->log |= JSI_LOG_ASSERT;
+                    interp->unitTest = 1;
+                    iocnt--;
+                    interp->iskips++;
+                    continue;
+                case 'V':
+                    interp->log |= JSI_LOG_ASSERT;
+                    interp->unitTest = 5;
+                    interp->tracePuts = 1;
+                    iocnt--;
+                    interp->iskips++;
+                    continue;
+                case 'C':
+                    if (interp->confFile)
+                       Jsi_LogWarn("overriding confFile: %s", interp->confFile);
+                    interp->confFile = argv[iocnt+1];
+                    interp->iskips+=2;
+                    continue;
+                case 'S': {
+                    struct stat sb;
+                    const char* path = argv[iocnt+1]; //TODO: convert to Jsi_Value first?
+                    if (!path || stat(path, &sb)
+                        || !((S_ISREG(sb.st_mode) && !access(path, W_OK)) || (S_ISDIR(sb.st_mode) && !access(path, X_OK)))) {
+                        Jsi_LogError("Lockdown path must exist and be a writable file or executable dir: %s", path);
+                        Jsi_InterpDelete(interp);
+                        return NULL;
+                    }
+                    interp->isSafe = true;
+                    interp->safeMode = jsi_safe_Lockdown;
+                    if (interp->safeWriteDirs) {
+                        Jsi_LogWarn("Overriding safeWriteDirs");
+                        Jsi_DecrRefCount(interp, interp->safeWriteDirs);
+                    }
+                    const char *vda[2] = {};
+                    char npath[PATH_MAX];
+                    vda[0] = Jsi_FileRealpathStr(interp, path, npath);
+                    interp->safeWriteDirs = Jsi_ValueNewArray(interp, vda, 1);
+                    Jsi_IncrRefCount(interp, interp->safeWriteDirs);
+                    if (!interp->safeReadDirs) {
+                        interp->safeReadDirs = interp->safeWriteDirs;
+                        Jsi_IncrRefCount(interp, interp->safeReadDirs);
+                    }
+                    interp->iskips+=2;
+                    continue;
                 }
-                
-                DECL_VALINIT(argV);
-                Jsi_Value *argValue = &argV;
-                Jsi_Number dv;
-                if (!aioc || Jsi_GetBool(interp, argVal, &bv) == JSI_OK) {
-                    Jsi_ValueMakeBool(interp, &argValue, bv);
-                } else if (!Jsi_Strcmp("null", argVal)) {
-                    Jsi_ValueMakeNull(interp, &argValue);
-                } else if (Jsi_GetDouble(interp, argVal, &dv) == JSI_OK) {
-                    Jsi_ValueMakeNumber(interp, &argValue, dv);
-                } else {
-                    Jsi_ValueMakeStringKey(interp, &argValue, argVal);
+                case 'T': case 'L': {
+                    Jsi_DString tStr = {};
+                    if (argv[iocnt+1][0]=='=')
+                        Jsi_DSAppend(&tStr, argv[iocnt+1]+1, NULL);
+                    else
+                        Jsi_DSAppend(&tStr, "+", argv[iocnt+1], NULL);
+                    Jsi_Value *lv = Jsi_ValueNewStringConst(interp, Jsi_DSValue(&tStr), -1);
+                    Jsi_IncrRefCount(interp, lv);
+                    if (aio[2]=='L')
+                        rc = Jsi_OptionsSet(interp, InterpOptions, interp, "log", lv, 0);
+                    else
+                        rc = Jsi_OptionsSet(interp, InterpOptions, interp, "typeCheck", lv, 0);
+                    Jsi_DecrRefCount(interp, lv);
+                    Jsi_DSFree(&tStr);
+                    if (JSI_OK != rc) {
+                    //if (jsi_ParseTypeCheckStr(interp, argv[iocnt+1]) != JSI_OK)
+                        Jsi_InterpDelete(interp);
+                        return NULL;
+                    }
+                    interp->iskips+=2;
+                    continue;
                 }
-                if (JSI_OK != Jsi_OptionsSet(interp, InterpOptions, interp, argNam, argValue, 0)) {
-                    Jsi_InterpDelete(interp);
-                    return NULL;
+                case 'I':  {
+                    bool bv = 1;
+                    char *aio2 = argv[iocnt+1], *aioc = Jsi_Strchr(aio2, ':'),
+                        argNamS[50], *argNam = aio2;
+                    if (!aioc)
+                        aioc = Jsi_Strchr(aio2, '=');
+                    const char *argVal;
+                    if (!Jsi_Strcmp("traceCall", aio2))
+                        interp->traceCall |= (jsi_callTraceFuncs |jsi_callTraceArgs |jsi_callTraceReturn | jsi_callTraceBefore | jsi_callTraceFullPath);
+                    else {
+                        if (aioc) {
+                            argNam = argNamS;
+                            argVal = aioc+1;
+                            snprintf(argNamS, sizeof(argNamS), "%.*s", (int)(aioc-aio2), aio2);
+                        }
+                        
+                        DECL_VALINIT(argV);
+                        Jsi_Value *argValue = &argV;
+                        Jsi_Number dv;
+                        if (!aioc || Jsi_GetBool(interp, argVal, &bv) == JSI_OK) {
+                            Jsi_ValueMakeBool(interp, &argValue, bv);
+                        } else if (!Jsi_Strcmp("null", argVal)) {
+                            Jsi_ValueMakeNull(interp, &argValue);
+                        } else if (Jsi_GetDouble(interp, argVal, &dv) == JSI_OK) {
+                            Jsi_ValueMakeNumber(interp, &argValue, dv);
+                        } else {
+                            Jsi_ValueMakeStringKey(interp, &argValue, argVal);
+                        }
+                        if (JSI_OK != Jsi_OptionsSet(interp, InterpOptions, interp, argNam, argValue, 0)) {
+                            Jsi_InterpDelete(interp);
+                            return NULL;
+                        }
+                    }
+                    interp->iskips+=2;
+                    continue;
                 }
+                default:
+                    done = 1;
             }
-            interp->iskips+=2;
-            continue;
         }
-        break;
+        if (done) break;
     }
     if (!interp->strKeyTbl)
         interp->strKeyTbl = jsiIntData.mainInterp->strKeyTbl;
@@ -2154,8 +2113,9 @@ static Jsi_RC InterpEvalCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     if (interp->subOpts.mutexUnlock) Jsi_MutexUnlock(interp, interp->Mutex);
     if (!isthrd) {
-        int ostrict = sinterp->strict;
-        sinterp->strict = !interp->isSafe;
+        int ostrict = sinterp->typeCheck.strict;
+        if (interp->isSafe)
+            sinterp->typeCheck.strict = 1;
         sinterp->level++;
         if (interp->framePtr->tryDepth)
             sinterp->framePtr->tryDepth++;
@@ -2175,7 +2135,7 @@ static Jsi_RC InterpEvalCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
         else {
             rc = (jsi_evalStrFile(sinterp, NULL, cp, 0, lev) == 0 ? JSI_OK : JSI_ERROR);
         }
-        sinterp->strict = ostrict;
+        sinterp->typeCheck.strict = ostrict;
         if (interp->framePtr->tryDepth) {
             sinterp->framePtr->tryDepth--;
             if (rc != JSI_OK && interp != sinterp) {

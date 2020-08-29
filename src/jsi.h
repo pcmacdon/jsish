@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 34
+#define JSI_VERSION_RELEASE 35
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -151,9 +151,6 @@ typedef enum {
     JSI_CMD_HAS_ATTR        = 0x100,
     JSI_CMD_IS_CONSTRUCTOR  = 0x200,
     JSI_CMD_IS_OBJ          = 0x400,
-    JSI_CMD_LOG_TEST        = 0x1000,
-    JSI_CMD_LOG_DEBUG       = 0x2000,
-    JSI_CMD_LOG_TRACE       = 0x4000,
     JSI_CMD_MASK            = 0xffff,
     
     JSI_OM_READONLY         = 0x01,     /* ecma read-only */
@@ -172,10 +169,10 @@ typedef enum {
     JSI_INTACCESS_MAININTERP= 0x4,
     JSI_INTACCESS_CREATE    = 0x5,
     
-    JSI_LOG_BUG=0,   JSI_LOG_ERROR,   JSI_LOG_WARN,
-    JSI_LOG_INFO,    JSI_LOG_UNUSED,  JSI_LOG_PARSE,
-    JSI_LOG_TEST,    JSI_LOG_DEBUG,   JSI_LOG_TRACE,
-    JSI__LOGLAST=JSI_LOG_TRACE,
+    JSI_LOG_BUG=0,   JSI_LOG_ASSERT,  JSI_LOG_DEBUG,
+    JSI_LOG_TRACE,   JSI_LOG_TEST,    JSI_LOG_INFO,  
+    JSI_LOG_WARN,    JSI_LOG_ERROR,   JSI_LOG_PARSE,
+    JSI__LOGLAST=JSI_LOG_PARSE,
     
     JSI_SORT_NOCASE = 0x1, JSI_SORT_DESCEND = 0x2, JSI_SORT_DICT = 0x4,
     
@@ -395,9 +392,7 @@ typedef struct Jsi_CmdSpec {
 } Jsi_CmdSpec;
 
 typedef struct {
-    bool Test;
-    bool Debug;
-    bool Trace;
+    int log, logmask;
     int traceCall;
     bool coverage;
     bool profile;

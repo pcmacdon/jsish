@@ -237,17 +237,6 @@ The sources are here:
 Debugging Aids
 ----
 
-### Strict Mode
-Strict-mode, which helps find bugs in scripts, is enabled adding **use strict** to the top of the file:
-
-    "use strict";
-    function foo (a:number, b:string='ok'):number {}
-
-Best to do this, before resorting to a debugger.
-
-See [Strict Mode](Types.md#Strict Mode).
-
-
 
 ### Error Diagnostics
 Jsi does not generate tracebacks upon error.  Instead it provides gcc style warnings that

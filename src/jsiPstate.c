@@ -171,19 +171,6 @@ Jsi_ScopeStrs *jsi_ScopeGetVarlist(jsi_Pstate *ps)
     return jsi_ScopeStrsDup(ps, interp->scopes[interp->cur_scope]);
 }
 
-#if 0
-static int fastVarFree(Jsi_Interp *interp, void *ptr) {
-    FastVar *fv = ptr;
-    Jsi_Value *v = fv->var.lval;
-    if (v) {
-        //printf("FV FREE: %p (%d/%d)\n", fv, v->refCnt, v->vt == JSI_VT_OBJECT?v->d.obj->refcnt:-99);
-        //Jsi_DecrRefCount(interp, v);
-    }
-    return JSI_OK;
-}
-#endif
-
-
 static Jsi_RC jsi_StringFree(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *d) {
     Jsi_String *s = (Jsi_String *)d;
     if (s->flags&1)

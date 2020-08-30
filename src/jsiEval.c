@@ -710,7 +710,7 @@ static Jsi_RC jsiFunctionSubCall(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     Jsi_Value **ret, Jsi_Value *tocall, int discard)
 {
     Jsi_RC rc = JSI_OK;
-    const char *oldCurFunc = interp->curFunction, *spnam = "";
+    const char *spnam = "";
     jsi_OpCode *ip = interp->curIp;
     int adds, as_constructor = (ip->op == OP_NEWFCALL);
     int calltrc = 0;
@@ -736,7 +736,6 @@ empty_func:
         //jsiPop(interp, stackargc);
         //jsiClearStack(interp,1);
         //Jsi_ValueMakeUndef(interp, &_jsi_TOP);
-        interp->curFunction = oldCurFunc;
         Jsi_DecrRefCount(interp, _this);
         if (rc==JSI_OK)
             rc = JSI_CONTINUE;
@@ -762,8 +761,6 @@ empty_func:
     if (adds && (cs->flags&JSI_CMDSPEC_NONTHIS))
         adds = 0;
 
-    Jsi_Func *pprevActive = interp->prevActiveFunc;
-    interp->prevActiveFunc = interp->activeFunc;
     
     if (as_constructor) {                       /* new Constructor */
         Jsi_Obj *newobj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);
@@ -790,7 +787,6 @@ empty_func:
 
     if (!onam)
         funcPtr->name = NULL;
-    interp->prevActiveFunc = pprevActive;
     if (as_constructor && rc == JSI_OK) {
         if (_this->vt == JSI_VT_OBJECT)
             _this->d.obj->constructor = tocall->d.obj;
@@ -801,7 +797,6 @@ empty_func:
     }
 
     Jsi_DecrRefCount(interp, _this);
-    interp->curFunction = oldCurFunc;
 
     return rc;
 }
@@ -2003,6 +1998,56 @@ done:
         pop_try(trylist);
     }
     return rc;
+}
+
+void jsi_DumpStackTrace(Jsi_Interp *interp) {
+    int firstLev = 1, max = interp->maxDumpStack, amax=interp->maxDumpArgs;
+    if (interp->dumpedStack || !max) return;
+    interp->dumpedStack = 1;
+    jsi_Frame *fp = interp->topFrame.child;
+    Jsi_DString dStr = {}, aStr = {};
+    Jsi_DSAppend(&dStr, "CALL BACKTRACE:\n", NULL);
+    if (interp->framePtr->level > max) {
+        firstLev = (interp->framePtr->level-max);
+        while (fp && fp->level<firstLev)
+            fp = fp->child;
+    }
+    while (fp) {
+        const char *fn = fp->filePtr->fileName, *func = fp->funcName, *cp;
+        int line = fp->line;
+        Jsi_Value *args = fp->incsc;
+        if (func && fp->level == 1 && interp->args && !Jsi_Strcmp(func, "moduleRun")) {
+            args = interp->args;
+            if (!*fn && fp->child && fp->child->filePtr) {
+                fn = fp->child->filePtr->fileName;
+                line = fp->child->filePtr->pkg->loadLine;
+            }
+        }
+        if (fn && ((cp=Jsi_Strrchr(fn, '/'))))
+            fn = cp +1;
+        Jsi_DSPrintf(&dStr, "#%d: %s:%d: ", fp->level, fn, line);
+        if (func && fp->incsc) {
+            Jsi_ValueGetDString(interp, args, &aStr, 1);
+            char *sp = Jsi_DSValue(&aStr);
+            int len = Jsi_Strlen(sp);
+            if (len>1) {
+                sp[0] = '(';
+                sp[len-1]=')';
+            }
+            if (len>amax) {
+                Jsi_DSSetLength(&aStr, amax);
+                cp = Jsi_DSAppend(&aStr, " ...)", NULL);
+            }
+            Jsi_DSPrintf(&dStr, " in %s%s",  func, sp);
+        }
+        Jsi_DSAppend(&dStr, "\n", NULL);
+        Jsi_DSSetLength(&aStr, 0);
+        fp = fp->child;
+    }
+    Jsi_DSAppend(&dStr, "\n", NULL);
+    fputs(Jsi_DSValue(&dStr), stderr);
+    Jsi_DSFree(&aStr);
+    Jsi_DSFree(&dStr);
 }
 
 // Bottom-most eval() routine creates stack frame.

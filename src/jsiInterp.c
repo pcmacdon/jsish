@@ -100,6 +100,8 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(CUSTOM,Jsi_Interp, logOpts,     .help="Options for log output to add file/line/time", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=jsi_InterpLogOptions),
     JSI_OPT(CUSTOM,Jsi_Interp, log,         .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(INT,   Jsi_Interp, maxDepth,    .help="Depth limit of recursive function calls (1000)", .flags=JSI_OPT_LOCKSAFE),
+    JSI_OPT(UINT,  Jsi_Interp, maxDumpStack,.help="Maximum stack dump length (100)", .flags=JSI_OPT_LOCKSAFE),
+    JSI_OPT(UINT,  Jsi_Interp, maxDumpArgs, .help="Maximum arg length in stack dump (80)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(UINT,  Jsi_Interp, maxArrayList,.help="Maximum array convertable to list (100000)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(INT,   Jsi_Interp, maxIncDepth, .help="Maximum allowed source/require nesting depth (50)", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(INT,   Jsi_Interp, maxInterpDepth,.help="Maximum nested subinterp create depth (10)", .flags=JSI_OPT_LOCKSAFE),
@@ -743,7 +745,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
 #endif
     const char *ext = NULL, *ai1, *iext = (argc<=1?NULL:Jsi_Strrchr(argv[1], '.'));
     if (interp->selfZvfs && iext && Jsi_Strcmp(iext,".fossil")==0) {
-        rc = Jsi_EvalString(interp, "runModule('Archive');", JSI_EVAL_ISMAIN);
+        rc = Jsi_EvalString(interp, "moduleRun('Archive');", JSI_EVAL_ISMAIN);
         goto done;
     }
     Jsi_ShiftArgs(interp, NULL);
@@ -758,7 +760,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
         if (argc>2) {
             if (Jsi_PkgRequire(interp, "Help", 0)>=0) {
                 char tbuf[BUFSIZ];
-                snprintf(tbuf, sizeof(tbuf), "return runModule('Help', '%s'.trim().split(null));", argv[2]);
+                snprintf(tbuf, sizeof(tbuf), "return moduleRun('Help', '%s'.trim().split(null));", argv[2]);
                 Jsi_RC rc = Jsi_EvalString(interp, tbuf, 0);
                 const char *hstr = Jsi_ValueToString(interp, interp->retValue, NULL);
                 if (rc == JSI_OK)
@@ -771,11 +773,13 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "\nPREFIX-OPTS:\n"
           "  --C FILE\tOption file of config options.\n"
           "  --F\t\tTrace all function calls and returns.\n"
-          "  --I OPT:VAL\tInterp option: equivalent to Interp.conf({OPT:VAL}).\n"
-          "  --L OPT\tLog settings: equivalent to Interp.conf({log:'+XXX'})..\n"
+          "  --I OPT=VAL\tInterp option bits: equivalent to Interp.conf({OPT:VAL}).\n"
+          "  --L OPT\tLogging bits: equivalent to Interp.conf({log:'XXX'})..\n"
           "  --S PATH\tSet safeMode to \"lockdown\" using PATH for safe(Read/Write)Dirs.\n"
+          "  --T OPT\tTypechecking bits: equivalent to Interp.conf({typeCheck:'XXX'})..\n"
           "  --U\t\tDisplay unittest output, minus pass/fail compare.\n"
           "  --V\t\tSame as --U, but adds file and line number to output.\n"
+          "  --X OPT\tTracing bits: equivalent to Interp.conf({traceCall:'XXX'})..\n"
           "\nCOMMAND-OPTS:\n"
           "  -a\t\tArchive: mount an archive (zip, sqlar or fossil repo) and run module.\n"
           "  -c\t\tCData: generate .c or JSON output from a .jsc description.\n"
@@ -801,18 +805,18 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
     if (ai1[0] == '-') {
         switch (ai1[1]) {
             case 'a':
-                rc = Jsi_EvalString(interp, "runModule('Archive');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Archive');", JSI_EVAL_ISMAIN);
                 break;
             case 'c':
-                rc = Jsi_EvalString(interp, "runModule('Cdata');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Cdata');", JSI_EVAL_ISMAIN);
                 break;
             case 'd':
                 interp->debugOpts.isDebugger = 1;
-                rc = Jsi_EvalString(interp, "runModule('Debug');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Debug');", JSI_EVAL_ISMAIN);
                 break;
             case 'D':
                 interp->debugOpts.isDebugger = 1;
-                rc = Jsi_EvalString(interp, "runModule('DebugUI');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('DebugUI');", JSI_EVAL_ISMAIN);
                 break;
             case 'e':
                 if (argc < 3)
@@ -825,11 +829,11 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             case 'h':
                 goto dohelp;
             case 'J':
-                rc = Jsi_EvalString(interp, "runModule('Jspp');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Jspp');", JSI_EVAL_ISMAIN);
                 break;
             case 'm':
                 if (argc <= 2 || argv[2][0] == '-')
-                    rc = Jsi_EvalString(interp, "runModule('Module');", JSI_EVAL_ISMAIN);
+                    rc = Jsi_EvalString(interp, "moduleRun('Module');", JSI_EVAL_ISMAIN);
                 else {
                     Jsi_DString dStr = {}, eStr = {};
                     const char *cps, *cpe;
@@ -841,20 +845,20 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                         Jsi_DSPrintf(&dStr, "source(\"%s\");", argv[2]);
                     else
                         Jsi_DSPrintf(&dStr, "require(\"%s\");", argv[2]);
-                    Jsi_DSPrintf(&dStr, "puts(runModule(\"%.*s\",console.args.slice(1)));", len, cps);
+                    Jsi_DSPrintf(&dStr, "puts(moduleRun(\"%.*s\",console.args.slice(1)));", len, cps);
                     rc = Jsi_EvalString(interp, Jsi_DSValue(&dStr), JSI_EVAL_NOSKIPBANG);
                     Jsi_DSFree(&dStr);
                     Jsi_DSFree(&eStr);
                 }
                 break;
             case 's':
-                rc = Jsi_EvalString(interp, "runModule('Safe');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Safe');", JSI_EVAL_ISMAIN);
                 break;
             case 'S':
-                rc = Jsi_EvalString(interp, "runModule('SqliteUI');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('SqliteUI');", JSI_EVAL_ISMAIN);
                 break;
             case 'u':
-                rc = Jsi_EvalString(interp, "exit(runModule('UnitTest'));", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "exit(moduleRun('UnitTest'));", JSI_EVAL_ISMAIN);
                 break;
             case 'v': {
                 char str[200] = "\n";
@@ -872,16 +876,16 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 return jsi_DoExit(interp, 1);
             }
             case 'w':
-                rc = Jsi_EvalString(interp, "runModule('Wget');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Wget');", JSI_EVAL_ISMAIN);
                 break;
             case 'W':
-                rc = Jsi_EvalString(interp, "runModule('Websrv');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Websrv');", JSI_EVAL_ISMAIN);
                 break;
             case 'z':
-                rc = Jsi_EvalString(interp, "runModule('Zip');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Zip');", JSI_EVAL_ISMAIN);
                 break;
             default:
-                puts("usage: jsish [  --C FILE | --I OPT:VAL | --L OPT | --T OPT | --S PATH | --U | --V | --F ] | -e STRING |\n\t"
+                puts("usage: jsish [  --C FILE | --I OPT:VAL | --L OPT | --T OPT | --X OPT | --S PATH | --U | --V | --F ] | -e STRING |\n\t"
                 "| -a | -c | -d | -D | -h | -m | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
                 return jsi_DoExit(interp, 1);
         }
@@ -902,7 +906,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             }
         } else if (ext && !Jsi_Strcmp(ext,".jsc")) {
             Jsi_DString dStr = {};
-            Jsi_DSPrintf(&dStr, "console.args.unshift('%s'); runModule('CData');", argv[first]);
+            Jsi_DSPrintf(&dStr, "console.args.unshift('%s'); moduleRun('CData');", argv[first]);
             rc = Jsi_EvalString(interp, Jsi_DSValue(&dStr), JSI_EVAL_ISMAIN|JSI_EVAL_NOSKIPBANG);
             Jsi_DSFree(&dStr);
 
@@ -1083,6 +1087,8 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->maxDepth = JSI_MAX_EVAL_DEPTH;
     interp->maxIncDepth = JSI_MAX_INCLUDE_DEPTH;
     interp->maxArrayList = MAX_ARRAY_LIST;
+    interp->maxDumpStack = 100;
+    interp->maxDumpArgs = 80;
     interp->typeWarnMax = 50;
     interp->subOpts.dblPrec = __DBL_DECIMAL_DIG__-1;
     interp->subOpts.prompt = "$ ";
@@ -1141,7 +1147,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
             break;
         else {
             switch (aio[2]) {
-                case 'T': case 'S': case 'C': case 'L':
+                case 'T': case 'S': case 'C': case 'L': case 'X':
                     continue;
                 case 'F': case 'U': case 'V':  iocnt--;
                     continue;
@@ -1263,20 +1269,16 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
                     interp->iskips+=2;
                     continue;
                 }
-                case 'T': case 'L': {
-                    Jsi_DString tStr = {};
-                    if (argv[iocnt+1][0]=='=')
-                        Jsi_DSAppend(&tStr, argv[iocnt+1]+1, NULL);
-                    else
-                        Jsi_DSAppend(&tStr, "+", argv[iocnt+1], NULL);
-                    Jsi_Value *lv = Jsi_ValueNewStringConst(interp, Jsi_DSValue(&tStr), -1);
+                case 'T': case 'L': case 'X': {
+                    Jsi_Value *lv = Jsi_ValueNewStringConst(interp, argv[iocnt+1], -1);
                     Jsi_IncrRefCount(interp, lv);
                     if (aio[2]=='L')
                         rc = Jsi_OptionsSet(interp, InterpOptions, interp, "log", lv, 0);
-                    else
+                    else if (aio[2]=='T')
                         rc = Jsi_OptionsSet(interp, InterpOptions, interp, "typeCheck", lv, 0);
+                    else
+                        rc = Jsi_OptionsSet(interp, InterpOptions, interp, "traceCall", lv, 0);
                     Jsi_DecrRefCount(interp, lv);
-                    Jsi_DSFree(&tStr);
                     if (JSI_OK != rc) {
                     //if (jsi_ParseTypeCheckStr(interp, argv[iocnt+1]) != JSI_OK)
                         Jsi_InterpDelete(interp);

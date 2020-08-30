@@ -8,8 +8,6 @@ require('WebSocket', '2');
 function SqliteUI(files:array|string, conf:object=void)
 {
     var options = { // Provide an sqlite user interface via a browser.
-        Debug       :false,             // LogDebug output.
-        Trace       :false,             // LogTrace output.
         closeTimeout:5000,              // Time til exit after close of final client websocket (ms).
         browser     :'',                // Browser program to use.
         dump        :false,             // Dump database.
@@ -555,6 +553,7 @@ function SqliteUI(files:array|string, conf:object=void)
     
     function main() {
         debugger;
+        LogTrace('Starting', files);
         self.done = 0;
         var req = require("SqliteUI", 1.0);
         if (!self.rootdir)

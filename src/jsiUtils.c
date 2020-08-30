@@ -128,6 +128,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
     const char *pps = "", *curFile = "";
     char *ss = interp->lastPushStr;
     uint log = jsi_GetLogFlag(interp, code);
+    jsi_Frame *fp = interp->framePtr;
     if (!log)
         return JSI_OK;
     if (interp==NULL)
@@ -135,7 +136,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
     LastInterp = interp;
     if (lastInterp != interp)
         noDups = 1;
-    
+   
     /* Filter out try/catch (TODO: and non-syntax errors??). */
     if (interp == NULL) {
 //nullInterp:
@@ -150,7 +151,10 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
     }
     curFile = jsi_GetCurFile(interp);
     if (code == JSI_LOG_ERROR) {
-        if ((interp->framePtr->tryDepth - interp->framePtr->withDepth)>0 && interp->inParse<=0 
+        if (interp->framePtr->level > 1 && !fp->tryDepth)
+            jsi_DumpStackTrace(interp);
+
+        if ((fp->tryDepth - fp->withDepth)>0 && interp->inParse<=0 
             && (!interp->tryList || !(interp->tryList->inCatch|interp->tryList->inFinal))) { 
             /* Should only do the first or traceback? */
             if (!interp->errMsgBuf[0]) {
@@ -197,8 +201,8 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
         line = interp->parsePs->lexer->cur_line;
         lofs = interp->parsePs->lexer->cur_char;
     } else if (interp->curIp) {
-        if (interp->callerErr && interp->framePtr && interp->framePtr->parent) {
-            jsi_Frame *fptr = interp->framePtr->parent;
+        if (interp->callerErr && fp && fp->parent) {
+            jsi_Frame *fptr = fp->parent;
             line = fptr->line;
             lofs = 0;
             curFile = fptr->filePtr->fileName;
@@ -206,7 +210,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
             line = interp->curIp->Line;
             lofs = interp->curIp->Lofs;
             if (line<=0)
-                line = interp->framePtr->line;
+                line = fp->line;
         }
     }
     islog = (interp->parent && interp->debugOpts.msgCallback && code != JSI_LOG_BUG);
@@ -1152,7 +1156,7 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
                 if (hasHelp) {
                     wantHelp = 1;
                     char tbuf[BUFSIZ];
-                    snprintf(tbuf, sizeof(tbuf), "return runModule('Help', '%s'.trim().split(null));", buf+4);
+                    snprintf(tbuf, sizeof(tbuf), "return moduleRun('Help', '%s'.trim().split(null));", buf+4);
                     rc = Jsi_EvalString(interp, tbuf, JSI_RETURN);
                 }
             }

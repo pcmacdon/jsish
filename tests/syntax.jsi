@@ -1,6 +1,6 @@
 #!/usr/local/bin/jsish -u %s
 
-Interp.conf({typeCheck:['error']});
+Interp.conf({typeCheck:['error'], maxDumpStack:0});
 function foo() {
   var i = Info; // Prevents static type check detections.
   i.cmds(1,2,3,4);
@@ -13,6 +13,6 @@ try {
 
 /*
 =!EXPECTSTART!=
-foo() ==> e ==> extra args, expected "cmds(val:string|regexp='*', options:object=void)" 
+foo() ==> e ==> got 4 args, expected 0-2, calling function cmds(val:string|regexp='*', options:object=void)
 =!EXPECTEND!=
 */

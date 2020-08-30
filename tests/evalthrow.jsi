@@ -1,5 +1,6 @@
 #!/usr/local/bin/jsish -u %s
 
+Interp.conf({maxDumpStack:0});
 try {
     eval("throw('abc');");
 } catch(e) {

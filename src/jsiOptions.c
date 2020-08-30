@@ -1569,7 +1569,8 @@ static Jsi_OptionCustom jsi_OptSwitchEnum = {
 static Jsi_RC jsi_ValueToBitset(Jsi_Interp *interp, Jsi_OptionSpec* spec, Jsi_Value *inValue, const char *inStr, void *record, Jsi_Wide flags)
 {
     // TODO: change this to not use byte instead of int...
-    int i, argc, n;
+    Jsi_RC rc = JSI_OK;
+    int i, argc, n, ass;
     char *s =(((char*)record) + spec->offset);
     char **argv;
     const char *cp, **list = (const char**)spec->data;
@@ -1591,10 +1592,10 @@ static Jsi_RC jsi_ValueToBitset(Jsi_Interp *interp, Jsi_OptionSpec* spec, Jsi_Va
         inStr = Jsi_ValueString(interp, inValue, NULL);
 #endif
     if (inStr) {
-        if (*inStr == '+') {
+        if ((ass=(*inStr == '=')))
             inStr++;
+        else
             m = im;
-        }
         if (*inStr) {
             Jsi_DString sStr;
             Jsi_DSInit(&sStr);
@@ -1603,20 +1604,27 @@ static Jsi_RC jsi_ValueToBitset(Jsi_Interp *interp, Jsi_OptionSpec* spec, Jsi_Va
             for (i=0; i<argc; i++) {
                 int isnot = 0;
                 cp = argv[i];
-                if (*cp == '!') { isnot = 1; cp++; }
+                if (*cp == '!') {
+                    if (ass)
+                        rc = Jsi_LogError("Can not use '!' in a string starting with '='");
+                    isnot = 1; cp++;
+                }
                 if (JSI_OK != Jsi_GetIndex(interp, cp, list, "enum", fflags, &n))
-                    return JSI_ERROR;
+                    rc = JSI_ERROR;
                 if (n >= (int)(spec->size*8)) 
-                    return Jsi_LogError("list larger than field size: %s", spec->name);
+                    rc = Jsi_LogError("list larger than field size: %s", spec->name);
                 if (isnot)
                     m &= ~(1<<n);
                 else
                     m |= (1<<n);
             }
             Jsi_DSFree(&sStr);
+            if (rc != JSI_OK)
+                return rc;
         }
     } else {
 #ifndef JSI_LITE_ONLY
+        // Supports object for update, or array for replace (or update when first string is just a '=')
         if (!inValue) {
             *s = 0;
             return JSI_OK;
@@ -1663,10 +1671,10 @@ static Jsi_RC jsi_ValueToBitset(Jsi_Interp *interp, Jsi_OptionSpec* spec, Jsi_Va
             if (!cp) 
                 return Jsi_LogError("expected string");
             if (i == 0) {
-                if (*cp == '+' && !cp[1]) {
-                    m = im;
+                if (*cp == '=' && !cp[1])
                     continue;
-                }
+                else
+                    m = im;
             }
             if (*cp == '!') { isnot = 1; cp++; }
             if (JSI_OK != Jsi_GetIndex(interp, cp, list, "bitset", fflags, &n))

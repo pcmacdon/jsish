@@ -29,7 +29,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
         outfile:'/tmp/utest.txt',
         startTime:0,
         version:1.0,
-//        Trace:false,
+        Trace:false,
     };
     moduleOpts(self, options);
     

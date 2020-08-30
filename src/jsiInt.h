@@ -228,7 +228,7 @@
 #define __DBL_DECIMAL_DIG__ 17
 #endif
 
-#if 0
+#ifdef __JSI_DEF_UNSIGNED__
 #ifndef uint
 typedef unsigned int uint;
 #endif
@@ -857,7 +857,6 @@ struct Jsi_Func {
     Jsi_FuncObj *fobj;
     struct jsi_PkgInfo *pkg;
     bool isArrow;
-    //uint logmask, log;
     jsi_FileInfo* filePtr;
 };
 
@@ -905,7 +904,8 @@ typedef struct jsi_PkgInfo {
     Jsi_Value *info;
     Jsi_PkgOpts popts;
     jsi_FileInfo* filePtr;
-    int log, logmask;
+    int log, logmask; // Runtime values set by moduleOps.
+    int loadLine; // set by moduleRun
 } jsi_PkgInfo;
 
 typedef struct {
@@ -963,9 +963,9 @@ typedef struct {
 } Jsi_TypeCheck;
 
 typedef enum {
+    jsi_AssertModeThrow,
     jsi_AssertModeLog,
-    jsi_AssertModePuts,
-    jsi_AssertModeThrow
+    jsi_AssertModePuts
 } jsi_AssertMode;
 
 typedef struct {
@@ -1267,6 +1267,7 @@ struct Jsi_Interp {
     Jsi_ScopeStrs *scopes[JSI_MAX_SCOPE];
     int cur_scope;
     uint maxArrayList;
+    uint maxDumpStack, maxDumpArgs;
     int delRBCnt;
     Jsi_Func *activeFunc;  // Currently active function call.
     Jsi_Func *prevActiveFunc;  // Prev active function call.
@@ -1298,6 +1299,7 @@ struct Jsi_Interp {
     InterpStrEvent *interpStrEvents;
 
     bool typeInit;
+    bool dumpedStack;
     Jsi_Number cdataIncrVal;
     Jsi_CData_Static *statics;
     Jsi_VarSpec *cdataNewVal;
@@ -1523,7 +1525,7 @@ extern const char* jsi_FuncGetCode(Jsi_Interp *interp, Jsi_Func *func, int *lenP
 extern Jsi_RC jsi_RegExpMatches(Jsi_Interp *interp, Jsi_Value *pattern, const char *str, int slen, Jsi_Value *ret, int *ofs, bool match);
 extern Jsi_RC Jsi_CleanValue(Jsi_Interp *interp, Jsi_Interp *tointerp, Jsi_Value *val, Jsi_Value **ret); //TODO: EXPORT
 extern void jsi_SysPutsCmdPrefix(Jsi_Interp *interp, jsi_LogOptions *popts,Jsi_DString *dStr, int* quote, const char **fnPtr);
-
+extern void jsi_DumpStackTrace(Jsi_Interp *interp);
 extern char jsi_toHexChar(char code);
 extern char jsi_fromHexChar(char ch);
 extern bool Jsi_StrIsAlnum(const char *cp);

@@ -2645,7 +2645,7 @@ static Jsi_RC jsi_wsHandlerAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const c
 
 #define FN_wshandler JSI_INFO("\
 With no args, returns list of handlers.  With one arg, returns value for that handler.\n\
-Otherwise, sets the handler. When cmd is a string, the call is via runModule([cmd], arg).\n\
+Otherwise, sets the handler. When cmd is a string, the call is via moduleRun([cmd], arg).\n\
 If a cmd is a function, it is called with a single arg: the file name.")
 static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)

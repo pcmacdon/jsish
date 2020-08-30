@@ -1602,12 +1602,14 @@ void jsi_SysPutsCmdPrefix(Jsi_Interp *interp, jsi_LogOptions *popts,Jsi_DString 
 static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr, bool stdErr, jsi_LogOptions *popts, const char *argStr, bool conLog, int islog)
 {
-    int i = 0, cnt = 0, quote = (popts->file);
+    int i = 0, cnt = 0, argc = 0, quote = (popts->file);
     bool isbool = 0;
     const char *fn = NULL;
     Jsi_DString dStr, oStr;
     Jsi_Value *v;
-    if (islog == 2) {
+    if (args)
+        argc = Jsi_ValueGetLength(interp, args);
+    if (islog == 2 && argc > 2) {
         v = Jsi_ValueArrayIndex(interp, args, 1);
         if ((isbool=Jsi_ValueIsBoolean(interp, v)))
             if (Jsi_ValueIsFalse(interp, v)) return JSI_OK;
@@ -1629,8 +1631,7 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         jsi_SysPutsCmdPrefix(interp, popts, &dStr, &quote, &fn);
     if (argStr)
         Jsi_DSAppend(&dStr, argStr, NULL);
-    if (args) {
-        int argc = Jsi_ValueGetLength(interp, args);
+    if (args) { // Assert may call with a null args
         if (conLog && argc>0 && (argStr=Jsi_ValueString(interp, Jsi_ValueArrayIndex(interp, args, 0), NULL))) {
             if (   ((!(interp->log&(1<<JSI_LOG_ERROR))) && jsi_PrefixMatch(argStr, "ERROR: "))
                 || ((!(interp->log&(1<<JSI_LOG_WARN))) && jsi_PrefixMatch(argStr, "WARN: "))
@@ -1953,19 +1954,6 @@ Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, i
             ms = atof(rv+1);
             rv += 4;
         }
-#if 0
-        if (!isUtc) {
-#ifdef __WIN32
-#ifdef JSI_IS64BIT
-            t = internal_timegm(&tm);
-#else
-            t = _mkgmtime(&tm); // TODO: undefined in mingw 64
-#endif
-#else
-            t = timegm(&tm);
-#endif
-        } else
-#endif
         {
             int th, ts;
             char ss[3];
@@ -4505,9 +4493,10 @@ static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         rc = Jsi_LogError("unknown command: %s", (mod?mod:""));
         goto done;
     }
-    if (!isMain && cmd->d.obj->d.fobj->func->filePtr->fileName == interp->framePtr->filePtr->fileName)
+    if (!isMain && cmd->d.obj->d.fobj->func->filePtr->fileName == interp->framePtr->filePtr->fileName) {
+        interp->framePtr->filePtr->pkg->loadLine = interp->curIp->Line; // for backtrace.
         goto done;
-
+    }
     
     if (!v2) {
         obj = Jsi_ObjNewArray(interp, NULL, 0, 0);
@@ -4805,9 +4794,11 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             pf->pkg->log = mo->log;
         }
         uint i;
-        for (i=JSI_LOG_DEBUG; mo && i<=JSI_LOG_TEST; i++) {
+        for (i=JSI_LOG_ASSERT; mo && i<=JSI_LOG_TEST; i++) {
             Jsi_Value *vlv;
             uint iff = (1<<i);
+            if ((mo->log&iff))
+                continue;
             if ((vlv = Jsi_ValueObjLookup(interp, v1, jsi_LogCodesU[i], 0))) {
                  if (Jsi_ValueIsFalse(interp, vlv)) {
                      pf->pkg->logmask |= iff;

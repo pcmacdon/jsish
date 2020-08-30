@@ -31,7 +31,7 @@ puts('done');
 /*
 =!EXPECTSTART!=
 "Starting", logging.jsi:3, 
-"DEBUG:  testing 1, 2, 3: call2", logging.jsi:6, test()
+"DEBUG:  testing 1, 2, 3: call2", logging.jsi:6, 
 Interp.conf({noStderr:true}) ==> undefined
 log('hello worm') ==> "hello worm", logging.jsi:14, foo()
 undefined

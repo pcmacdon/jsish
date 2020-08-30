@@ -403,15 +403,6 @@ static Jsi_RC mdbEvalStepSub(MyDbEvalContext *eval, int release, int *erc) {
     if (m) 
         return Jsi_LogError("fetch failed: %s", mysql_error(jdb->db));
     return JSI_OK;
-#if 0
-    if( eval->pArray ) {
-        mdbEvalRowInfo(eval, 0, 0, 0);
-    }
-    if (release==0)
-        return JSI_BREAK;
-    eval->prep = 0;
-    return JSI_OK;
-#endif
 }
 
 static void mdbRelease1Stmt( MySqlObj *jdb, MysqlPrep *prep ) {

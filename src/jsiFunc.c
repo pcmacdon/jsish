@@ -490,17 +490,6 @@ int jsi_FuncSigsMatch(jsi_Pstate *pstate, Jsi_Func *f1, Jsi_Func *f2)
     return 1;
 }
 
-#if 0
-// Return directive from first instruction.
-const char* jsi_GetDirective(Jsi_Interp *interp, Jsi_OpCodes *ops, const char *str) {
-    if (!ops) return NULL;
-    if (!ops->code_len) return NULL;
-    if (ops->codes[0].op != OP_PUSHSTR || !ops->codes[0].data) return NULL;
-    if (Jsi_Strncmp((char*)ops->codes[0].data, str, Jsi_Strlen(str))) return NULL;
-    return (char*)ops->codes[0].data;
-}
-#endif
-
 /* TODO: if not in a file (an eval) save copy of body string from pstate->lexer??? */
 Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops, jsi_Pline* line, const char *name, int isArrow)
 {

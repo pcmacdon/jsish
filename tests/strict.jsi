@@ -1,6 +1,6 @@
 #!/usr/local/bin/jsish -u %s
 
-
+Interp.conf({maxDumpStack:0});
 //var x = 1;
 function foo() {
   x = 1;

@@ -634,6 +634,8 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>logOpts</td><td><i><a href='#logOptsOptions'>options</a></i></td><td>Options for log output to add file/line/time.</td><td><i></i></td></tr>
 <tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>maxDepth</td><td><i>INT</i></td><td>Depth limit of recursive function calls (1000).</td><td><i></i></td></tr>
+<tr><td>maxDumpStack</td><td><i>UINT</i></td><td>Maximum stack dump length (100).</td><td><i></i></td></tr>
+<tr><td>maxDumpArgs</td><td><i>UINT</i></td><td>Maximum arg length in stack dump (80).</td><td><i></i></td></tr>
 <tr><td>maxArrayList</td><td><i>UINT</i></td><td>Maximum array convertable to list (100000).</td><td><i></i></td></tr>
 <tr><td>maxIncDepth</td><td><i>INT</i></td><td>Maximum allowed source/require nesting depth (50).</td><td><i></i></td></tr>
 <tr><td>maxInterpDepth</td><td><i>INT</i></td><td>Maximum nested subinterp create depth (10).</td><td><i></i></td></tr>
@@ -1647,7 +1649,7 @@ which can use javascript to upgrade connection to a bidirectional websocket.</td
 <tr><td>conf</td><td>conf(<a href='#WebSocket.confOptions'>options</a>:string|object=void) </td><td>Configure options.</td></tr>
 <tr><td>file</td><td>file(name:string=void):array|void </td><td>Add file to hash, or with no args return file hash.</td></tr>
 <tr><td>handler</td><td>handler(extension:string=void, cmd:string|function=void, flags:number=0):string|array|function|void </td><td>Get/Set handler command for an extension. With no args, returns list of handlers.  With one arg, returns value for that handler.
-Otherwise, sets the handler. When cmd is a string, the call is via runModule([cmd], arg).
+Otherwise, sets the handler. When cmd is a string, the call is via moduleRun([cmd], arg).
 If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><td>header</td><td>header(id:number, name:string=void):string|array|void </td><td>Get one or all input headers for connect id.</td></tr>
 <tr><td>idconf</td><td>idconf(id:number, <a href='#WebSocket.idconfOptions'>options</a>:string|object=void) </td><td>Configure options for connect id.</td></tr>

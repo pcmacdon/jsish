@@ -171,12 +171,17 @@ static Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func
 Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     Jsi_Value **ret, Jsi_Func *funcPtr, Jsi_Value *fthis, int calltrc)
 {
+    Jsi_Func *pprevActive = interp->prevActiveFunc;
     Jsi_Func *prevActive = interp->activeFunc;
-    interp->activeFunc = funcPtr;
     Jsi_IncrRefCount(interp, args);
     Jsi_RC rc = jsi_SharedArgs(interp, args, funcPtr, 1);
+    const char *oldCurFunc = interp->curFunction;
+    if (funcPtr->name && funcPtr->name[0] && funcPtr->type == FC_NORMAL)
+        interp->curFunction = funcPtr->name;
     if (rc == JSI_OK) {
     
+        interp->prevActiveFunc = interp->activeFunc;
+        interp->activeFunc = funcPtr;
         int profile = interp->profile, coverage = interp->coverage;
         int tc = interp->traceCall;
         double timStart = 0;
@@ -260,7 +265,9 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     }
 
     jsi_SharedArgs(interp, args, funcPtr, 0);
+    interp->curFunction = oldCurFunc;
     interp->activeFunc = prevActive;
+    interp->prevActiveFunc = pprevActive;
     Jsi_DecrRefCount(interp, args);
     return rc;
 }

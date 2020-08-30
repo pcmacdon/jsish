@@ -51,6 +51,8 @@ function DebugUI(fileargs:array, conf:object=void)
         stopped:false,
         toplev:0,
         version:1.0,
+        Debug:false,
+        Trace:false,
 
         browsers: {                     // Not used, yet.
             unix:[ "xdg-open", "gnome-open", "firefox", "google-chrome" ],

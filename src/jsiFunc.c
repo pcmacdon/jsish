@@ -807,11 +807,11 @@ bool jsi_FuncArgCheck(Jsi_Interp *interp, Jsi_Func *f, const char *argStr)
         goto done;
     }
     if ((cp=Jsi_Strchr(argStr, '='))) {
-        Jsi_LogWarn("may not have default value in option, expected: %s", argStr);
+        Jsi_LogWarn("may not have default value in option, expected: (%s)", argStr);
         goto done;
     }
     if (Jsi_Strstr(argStr, "...")) {
-        Jsi_LogWarn("may not have ... in args, expected: %s", argStr);
+        Jsi_LogWarn("may not have ... in args, expected: (%s)", argStr);
         goto done;
     }
     if (argStr[0]) {
@@ -821,20 +821,20 @@ bool jsi_FuncArgCheck(Jsi_Interp *interp, Jsi_Func *f, const char *argStr)
     }
     if (!f->argnames) {
         if (argStr[0])
-            Jsi_LogWarn("function has no args, expected: %s", argStr);
+            Jsi_LogWarn("function has no args, expected: (%s)", argStr);
         else
             rc = 1;
         goto done;
     } else {
         if (f->argnames->varargs) { // TODO: could allow varargs...
             if (argc < f->argnames->argCnt) {
-                Jsi_LogWarn("vararg argument mismatch, expected: %s", argStr);
+                Jsi_LogWarn("vararg argument mismatch, expected: (%s)", argStr);
                 goto done;
             }
         }
         else if (f->argnames->argCnt != argc) {
             if (argc)
-                Jsi_LogWarn("argument mismatch, expected: %s", argStr);
+                Jsi_LogWarn("argument mismatch, expected: (%s)", argStr);
             else
                 Jsi_LogWarn("function should have no arguments");
             goto done;

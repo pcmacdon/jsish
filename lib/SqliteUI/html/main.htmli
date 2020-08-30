@@ -16,6 +16,9 @@ include(['sqlite.jsi', 'sqlite.cssi']);
 </head>
 
 <body id=body_main'>
+<noscript>
+<h1>SORRY: THIS SITE REQUIRES JAVASCRIPT!!!</h1>
+</noscript>
 
 
 <div id=frame_main>

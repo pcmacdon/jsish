@@ -13,6 +13,10 @@
 ?>
   </head>
   <body id="body" onload="onload()" style="display: flex; height: 97%; flex-direction: column; margin:3px">
+<noscript>
+<h1>SORRY: THIS SITE REQUIRES JAVASCRIPT!!!</h1>
+</noscript>
+
     <div>
       <button class="topmenu panel" id="mainbut" class="mainbuts" onclick='TogglePanel("uibutton",this)' title="Click to toggle menu visibility">Jsi Debug-</button>
       <div id="uibutton" style="display: none;">

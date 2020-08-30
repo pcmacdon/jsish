@@ -626,7 +626,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>debugOpts</td><td><i><a href='#debugOptsOptions'>options</a></i></td><td>Options for debugging.</td><td><i></i></td></tr>
 <tr><td>interactive</td><td><i>BOOL</i></td><td>Force interactive mode. ie. ignore no_interactive flag.</td><td><i>initOnly</i></td></tr>
 <tr><td>hasOpenSSL</td><td><i>BOOL</i></td><td>WebSocket compiled with SSL is available.</td><td><i>initOnly</i></td></tr>
-<tr><td>historyFile</td><td><i>STRKEY</i></td><td>In interactive mode, file to use for history (~/.jsish_history).</td><td><i>initOnly</i></td></tr>
+<tr><td>historyFile</td><td><i>STRKEY</i></td><td>For readline, file to use for history (~/.jsish_history).</td><td><i></i></td></tr>
 <tr><td>isSafe</td><td><i>BOOL</i></td><td>Is this a safe interp (ie. with limited or no file access).</td><td><i>initOnly</i></td></tr>
 <tr><td>jsppChars</td><td><i>STRKEY</i></td><td>Line preprocessor when sourcing files. Line starts with first char, and either ends with it, or matches string.</td><td><i></i></td></tr>
 <tr><td>jsppCallback</td><td><i>FUNC</i></td><td>Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number).</td><td><i></i></td></tr>
@@ -1834,7 +1834,7 @@ If a cmd is a function, it is called with a single arg: the file name.</td></tr>
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
 <tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#console.assertOptions'>options</a>:object=void):void </td><td>Same as System.assert().</td></tr>
 <tr><td>error</td><td>error(val, ...):void </td><td>Same as log but adding prefix ERROR:.</td></tr>
-<tr><td>input</td><td>input():string|void </td><td>Read input from the console.</td></tr>
+<tr><td>input</td><td>input(prompt:null|string=''):string|void </td><td>Read input from the console: if prompt uses linenoise line editing.</td></tr>
 <tr><td>log</td><td>log(val, ...):void </td><td>Like System.puts, but goes to stderr and includes file:line..</td></tr>
 <tr><td>logp</td><td>logp(val, ...):void </td><td>Same as console.log, but first arg is string prefix and if second is a boolean it controls output.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Same as System.printf but goes to stderr.</td></tr>

@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.36
+//JSI Command Prototypes: version 3.0.37
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -372,7 +372,7 @@ var clearInterval = function(id:number):void {};
 var console = function(cmd,args) {};
 console.prototype.assert = function(expr:boolean|number|function, msg:string=void, options:object=void):void {};
 console.prototype.error = function(val, ...):void {};
-console.prototype.input = function():string|void {};
+console.prototype.input = function(prompt:null|string=''):string|void {};
 console.prototype.log = function(val, ...):void {};
 console.prototype.logp = function(val, ...):void {};
 console.prototype.printf = function(format:string, ...):void {};

@@ -1490,6 +1490,7 @@ extern Jsi_RC jsi_ArglistFree(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr
 extern void jsi_FuncFree(Jsi_Interp *interp, Jsi_Func *func);
 extern void jsi_ToHexStr(const uchar *indata, int dlen, char *out);
 extern bool jsi_StrIsBalanced(char *str);
+extern char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt);
 
 #ifndef _JSI_MEMCLEAR
 #ifndef JSI_MEM_DEBUG

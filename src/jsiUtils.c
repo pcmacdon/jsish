@@ -890,6 +890,7 @@ static char *get_inputline(Jsi_Interp *interp, int istty, const char *prompt)
     }
     res = Jsi_Strdup(Jsi_DSValue(&dStr));
     Jsi_DSFree(&dStr);
+    printf("READ: %s\n", res);
     return res;
 }
 
@@ -1060,7 +1061,7 @@ static void jsi_InteractiveSignal(int sig){
         jsi_interactiveInterp->interrupted = 1;
 }
 #endif
- 
+
 /* Collect and execute code from stdin.  The first byte of flags are passed to Jsi_ValueGetDString(). */
 Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags) 
 {
@@ -1222,6 +1223,35 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
     }
     jsi_interactiveInterp = NULL;
     return rc;
+}
+
+char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt) 
+{
+    int istty;
+    static int init = 0;
+    if (interp->isSafe)
+        return NULL;
+#ifndef __WIN32
+    istty = isatty(fileno(stdin));
+#else
+    istty = _isatty(_fileno(stdin));
+#endif
+    if(!prompt || (!init && interp->subOpts.noReadline == 0 && !interp->parent))
+    {
+        init = 1;
+        Jsi_DString dStr = {};
+        const char *hfile = (interp->historyFile ? interp->historyFile : "~/.jsish_history");
+        const char *hist = Jsi_NormalPath(interp, hfile, &dStr);
+        
+        if (!prompt) {
+            jsi_sh_stifle_history(100);
+            jsi_sh_write_history(hist); 
+            return NULL;
+        } else if (hist)
+            jsi_sh_read_history(hist);
+        Jsi_DSFree(&dStr);
+    }
+    return get_inputline(interp, istty, (prompt?prompt:"$ "));
 }
 
 Jsi_RC Jsi_ThisDataSet(Jsi_Interp *interp, Jsi_Value *_this, void *value)

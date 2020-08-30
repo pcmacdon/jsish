@@ -19,6 +19,22 @@ static Jsi_RC consoleInputCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     char buf[1024];
     char *cp, *p = buf;
     buf[0] = 0;
+    Jsi_Value *v = Jsi_ValueArrayIndex(interp, args, 0);
+    if (v) {
+        if (interp->isSafe)
+            return Jsi_LogError("line edit not available in safe mode");
+        if (Jsi_ValueIsNull(interp, v)) {
+            jsi_RlGetLine(interp, NULL);
+            return JSI_OK;
+        }
+        cp = Jsi_ValueString(interp, v, NULL);
+        if (cp) {
+            p  = jsi_RlGetLine(interp, cp);
+            if (p)
+                Jsi_ValueMakeString(interp, ret, p);
+            return JSI_OK;
+        }
+    }
     if (!interp->stdinStr)
         p=fgets(buf, sizeof(buf), stdin);
     else {
@@ -4844,7 +4860,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 static Jsi_CmdSpec consoleCmds[] = {
     { "assert", jsi_AssertCmd,      1,  3, "expr:boolean|number|function, msg:string=void, options:object=void",  .help="Same as System.assert()", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=AssertOptions},
     { "error",  consoleErrorCmd,    1, -1, "val, ...", .help="Same as log but adding prefix ERROR:", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "input",  consoleInputCmd,    0,  0, "", .help="Read input from the console", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
+    { "input",  consoleInputCmd,    0,  1, "prompt:null|string=''", .help="Read input from the console: if prompt uses linenoise line editing", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
     { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Like System.puts, but goes to stderr and includes file:line.", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "logp",   consoleLogPCmd,     1, -1, "val, ...", .help="Same as console.log, but first arg is string prefix and if second is a boolean it controls output", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "printf", consolePrintfCmd,   1, -1, "format:string, ...", .help="Same as System.printf but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },

@@ -397,8 +397,8 @@ function Debug(fileargs:array, conf:object=void):number {
         // Process user commands until done.
         var done = false;
         while (!done) {
-            printf("#%d==> ", self.curlev?self.curlev:level);
-            var inp = console.input();
+            var prompt = format("#%d==> ", self.curlev?self.curlev:level);
+            var inp = console.input(prompt);
             update(); // Handle signals.
             if (self.stopSig) {
                 self.stopSig = false;
@@ -436,7 +436,7 @@ function Debug(fileargs:array, conf:object=void):number {
                 case 'locals':  cmdEval('eval Info.level(0).locals', false); break;
                 case 'next':    done=true; self.interp.conf({debugOpts:{minLevel:level}}); self.minLevel = level; break;
                 case 'print':   cmdPrint(inlst); break;
-                case 'quit':    exit(0); break;
+                case 'quit':    console.input(null); exit(0); break;
                 case 'step':    done=true; break;
                 case 'tbreak':  cmdBreak(inlst,line,func,file,true); break;
                 case 'up':      cmdLevel(inlst, true); break;
@@ -472,7 +472,7 @@ function Debug(fileargs:array, conf:object=void):number {
             } catch(e) {}
         }
 
-
+        Interp.conf({historyFile:'~/.jsish_debug'});
         var dopts = {
             debugOpts:{debugCallback:'callback'},
             args:self.args,

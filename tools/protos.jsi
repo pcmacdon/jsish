@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.38
+//JSI Command Prototypes: version 3.0.39
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -164,6 +164,12 @@ var JSON = function(cmd,args) {};
 JSON.prototype.check = function(str:string, strict:boolean=true):boolean {};
 JSON.prototype.parse = function(str:string, strict:boolean=true):any {};
 JSON.prototype.stringify = function(value:any,  strict:boolean=true):string {};
+var LogDebug = function(str:string|boolean,...):void {};
+var LogError = function(str:string|boolean,...):void {};
+var LogInfo = function(str:string|boolean,...):void {};
+var LogTest = function(str:string|boolean,...):void {};
+var LogTrace = function(str:string|boolean,...):void {};
+var LogWarn = function(str:string|boolean,...):void {};
 var Math = function(cmd,args) {};
 Math.prototype.abs = function(num:number):number {};
 Math.prototype.acos = function(num:number):number {};
@@ -282,6 +288,12 @@ String.prototype.trim = function(chars:string):string {};
 String.prototype.trimLeft = function(chars:string):string {};
 String.prototype.trimRight = function(chars:string):string {};
 var System = function(cmd,args) {};
+System.prototype.LogDebug = function(str:string|boolean,...):void {};
+System.prototype.LogError = function(str:string|boolean,...):void {};
+System.prototype.LogInfo = function(str:string|boolean,...):void {};
+System.prototype.LogTest = function(str:string|boolean,...):void {};
+System.prototype.LogTrace = function(str:string|boolean,...):void {};
+System.prototype.LogWarn = function(str:string|boolean,...):void {};
 System.prototype.assert = function(expr:boolean|number|function, msg:string=void, options:object=void):void {};
 System.prototype.clearInterval = function(id:number):void {};
 System.prototype.decodeURI = function(val:string):string {};

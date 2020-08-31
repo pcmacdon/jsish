@@ -306,30 +306,6 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
     return false;
 }
 
-
-function Jsi__Init() {    
-    // Module-level Log functions, aliased if not in debugger.
-    if (Interp.conf('debugOpts.debugCallback')) {
-        var scope = Info.level(1).scope;
-        scope.LogDebug = console.logp.bind(null, "DEBUG:");
-        scope.LogTrace = console.logp.bind(null, "TRACE:");
-        scope.LogTest  = console.logp.bind(null, "TEST: ");
-        scope.LogWarn  = console.logp.bind(null, "WARN: ");
-        scope.LogInfo  = console.logp.bind(null, "INFO: ");
-        scope.LogError = console.logp.bind(null, "ERROR:");
-    } else {
-        Interp.alias('LogTrace', console.logp, ["TRACE:"]);
-        Interp.alias('LogDebug', console.logp, ["DEBUG:"]);
-        Interp.alias('LogTest',  console.logp, ["TEST: "]);
-        Interp.alias('LogWarn',  console.logp, ["WARN: "]);
-        Interp.alias('LogInfo',  console.logp, ["INFO: "]);
-        Interp.alias('LogError', console.logp, ["ERROR:"]);
-    }
-    Interp.conf({logOpts:{file:true, func:true, before:true}});
-}
-
-Jsi__Init();
-
 if (Info.isMain()) {
     /* Self test for Jsi_Conf. */
     var self = {};

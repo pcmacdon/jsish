@@ -30,16 +30,16 @@ puts('done');
 
 /*
 =!EXPECTSTART!=
-"Starting", logging.jsi:3, 
-"DEBUG:  testing 1, 2, 3: call2", logging.jsi:6, 
+logging.jsi:3:   "Starting", 
+logging.jsi:6:   "DEBUG:  testing 1, 2, 3: call2", 
 Interp.conf({noStderr:true}) ==> undefined
-log('hello worm') ==> "hello worm", logging.jsi:14, foo()
+log('hello worm') ==> logging.jsi:14:  "hello worm", foo()
 undefined
 console.puts('hello cat') ==> hello cat
 undefined
-console.log('hello bird') ==> "hello bird", logging.jsi:16, foo()
+console.log('hello bird') ==> logging.jsi:16:  "hello bird", foo()
 undefined
-console.log('hello dog') ==> "hello dog", logging.jsi:17, foo()
+console.log('hello dog') ==> logging.jsi:17:  "hello dog", foo()
 undefined
 console.printf('hello %s', 'snail') ==> hello snailundefined
 console.puts('MANKY:', 'hello', 'slug') ==> MANKY: hello slug

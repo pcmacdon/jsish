@@ -62,4 +62,4 @@ function mkproto(...) {
     return '//JSI Command Prototypes: version '+ver+'\nthrow("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");\n\n' + rv;
 }
 
-runModule(mkproto);
+moduleRun(mkproto);

@@ -2,12 +2,7 @@
 // which sets-up Jsi_Auto with entries for loading code on-demand.
 if (Jsi_Auto.__autoloaded__)
     return;
-Jsi_Auto.LogTrace       =
-Jsi_Auto.LogDebug       =
-Jsi_Auto.LogTest        =
-Jsi_Auto.LogInfo        =
-Jsi_Auto.LogWarn        =
-Jsi_Auto.LogError       =
+
 Jsi_Auto.Jsi_AutoMake   =
 Jsi_Auto.Jsi_AutoPkg    =
 Jsi_Auto.Jsi_Main       =
@@ -41,7 +36,7 @@ Jsi_Auto.Socket         = 'require("Socket");';
 Jsi_Auto.DebugUI        = 'require("DebugUI");';
 
 source(Info.scriptDir()+'/user/autoload.jsi', {exists:true, once:true});
-source(File.pwd()+'/autoload.jsi', {exists:true, once:true});
+//source(File.pwd()+'/autoload.jsi', {exists:true, once:true});
 
 Jsi_Auto.__autoloaded__ =true;
 

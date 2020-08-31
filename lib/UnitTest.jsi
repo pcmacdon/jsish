@@ -291,4 +291,5 @@ function UnitTest(fileargs:array, conf:object=void):number {
 
 provide(UnitTest, 1);
 
-moduleRun(UnitTest);
+if (Info.isMain())
+    exit(moduleRun(UnitTest));

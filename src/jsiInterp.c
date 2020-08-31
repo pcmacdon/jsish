@@ -1101,6 +1101,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     }
     interp->logOpts.file = 1;
     interp->logOpts.func = 1;
+    interp->logOpts.before = 1;
     interp->typeCheck.strict = 1;
     interp->log = jsi_LogDefMaskVal;
     int argc = interp->opts.argc;

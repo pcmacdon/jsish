@@ -1343,6 +1343,12 @@ Or if no new transation was started, do nothing. pass the exception on up the st
 <h2>Methods for "System"</h2>
 <table border="1"class="cmdstbl table">
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
+<tr><td>LogDebug</td><td>LogDebug(str:string|boolean,...):void </td><td>Debug logging command.</td></tr>
+<tr><td>LogError</td><td>LogError(str:string|boolean,...):void </td><td>Debug logging command.</td></tr>
+<tr><td>LogInfo</td><td>LogInfo(str:string|boolean,...):void </td><td>Debug logging command.</td></tr>
+<tr><td>LogTest</td><td>LogTest(str:string|boolean,...):void </td><td>Debug logging command.</td></tr>
+<tr><td>LogTrace</td><td>LogTrace(str:string|boolean,...):void </td><td>Debug logging command.</td></tr>
+<tr><td>LogWarn</td><td>LogWarn(str:string|boolean,...):void </td><td>Debug logging command.</td></tr>
 <tr><td>assert</td><td>assert(expr:boolean|number|function, msg:string=void, <a href='#System.assertOptions'>options</a>:object=void):void </td><td>Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.</td></tr>
 <tr><td>clearInterval</td><td>clearInterval(id:number):void </td><td>Delete event id returned from setInterval/setTimeout/info.events().</td></tr>
 <tr><td>decodeURI</td><td>decodeURI(val:string):string </td><td>Decode an HTTP URL.</td></tr>

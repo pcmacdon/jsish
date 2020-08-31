@@ -1648,12 +1648,12 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     if (argStr)
         Jsi_DSAppend(&dStr, argStr, NULL);
     if (args) { // Assert may call with a null args
-        if (conLog && argc>0 && (argStr=Jsi_ValueString(interp, Jsi_ValueArrayIndex(interp, args, 0), NULL))) {
+        /*if (conLog && argc>0 && (argStr=Jsi_ValueString(interp, Jsi_ValueArrayIndex(interp, args, 0), NULL))) {
             if (   ((!(interp->log&(1<<JSI_LOG_ERROR))) && jsi_PrefixMatch(argStr, "ERROR: "))
                 || ((!(interp->log&(1<<JSI_LOG_WARN))) && jsi_PrefixMatch(argStr, "WARN: "))
                 || ((!(interp->log&(1<<JSI_LOG_INFO))) && jsi_PrefixMatch(argStr, "INFO: ")))
                 goto done;
-        }
+        }*/
         for (; i < argc; ++i) {
             if (isbool && i==1)
                 continue;
@@ -1685,7 +1685,7 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     }
     Jsi_DSAppend(&dStr, "\n", NULL);
     Jsi_Puts(interp, chan, Jsi_DSValue(&dStr), Jsi_DSLength(&dStr));
-done:
+//done:
     Jsi_DSFree(&dStr);
     Jsi_DSFree(&oStr);
     return JSI_OK;
@@ -4954,6 +4954,20 @@ static Jsi_RC SysSqlValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     return JSI_OK;
 }
 
+static Jsi_RC SysLogDebugCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "DEBUG: ", 3, 2); }
+static Jsi_RC SysLogTraceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "TRACE: ", 3, 2); }
+static Jsi_RC SysLogTestCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "TEST: ", 3, 2); }
+static Jsi_RC SysLogInfoCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "INFO: ", 3, 2); }
+static Jsi_RC SysLogWarnCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "WARN: ", 3, 2); }
+static Jsi_RC SysLogErrorCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "ERROR: ", 3, 2); }
+
+
 static Jsi_CmdSpec utilCmds[] = {
 #ifndef JSI_OMIT_BASE64
     { "argArray",   SysArgArrayCmd,  1,  1, "arg:any|undefined", .help="Coerces non-null to an array, if necessary", .retType=(uint)JSI_TT_ARRAY|JSI_TT_NULL },
@@ -5023,6 +5037,12 @@ static Jsi_CmdSpec sysCmds[] = {
 #ifndef JSI_OMIT_EVENT
     { "update",     SysUpdateCmd,    0,  1, "options:number|object=void", .help="Service all events, eg. setInterval/setTimeout", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=FN_update, .opts=jsiUpdateOptions },
 #endif
+    { "LogDebug",   SysLogDebugCmd,  1,  -1, "str:string|boolean,...", .help="Debug logging command", .retType=(uint)JSI_TT_VOID },
+    { "LogTrace",   SysLogTraceCmd,  1,  -1, "str:string|boolean,...", .help="Debug logging command", .retType=(uint)JSI_TT_VOID },
+    { "LogTest",    SysLogTestCmd,   1,  -1, "str:string|boolean,...", .help="Debug logging command", .retType=(uint)JSI_TT_VOID },
+    { "LogInfo",    SysLogInfoCmd,   1,  -1, "str:string|boolean,...", .help="Debug logging command", .retType=(uint)JSI_TT_VOID },
+    { "LogWarn",    SysLogWarnCmd,   1,  -1, "str:string|boolean,...", .help="Debug logging command", .retType=(uint)JSI_TT_VOID },
+    { "LogError",   SysLogErrorCmd,  1,  -1, "str:string|boolean,...", .help="Debug logging command", .retType=(uint)JSI_TT_VOID },
     { NULL, 0,0,0,0, .help="Builtin system commands. All methods are exported as global" }
 };
 

@@ -2501,7 +2501,8 @@ Jsi_RC Jsi_InitMySql(Jsi_Interp *interp, int release)
 
     Jsi_Value *info = Jsi_ValueNew1(interp);
     Jsi_JSONParseFmt(interp, &info, "{pkgVer:%d}", MYSQL_VERSION_ID);
-    Jsi_PkgOpts dbPkgOpts = { .spec=mydb_ObjCmd_Specs, .data=&mydb_PkgStatus, .cmdSpec=mysqlCmds, .info=info};
+    Jsi_ModuleConf modConf = {  .info=info, .logmask=Jsi_LogProdMask};
+    Jsi_PkgOpts dbPkgOpts = { .spec=mydb_ObjCmd_Specs, .data=&mydb_PkgStatus, .cmdSpec=mysqlCmds,.conf=modConf};
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "MySql", 1.1, Jsi_InitMySql, &dbPkgOpts);
     Jsi_DecrRefCount(interp, info);
     if (rc != JSI_OK)

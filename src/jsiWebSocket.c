@@ -3347,7 +3347,8 @@ Jsi_RC Jsi_InitWebSocket(Jsi_Interp *interp, int release)
 #endif
     Jsi_JSONParseFmt(interp, &info, "{libVer:\"%s\", hdrVer:\"%s\", pkgVer:%d, ssl:%s, sslVer:%ld, sslVerStr:\"%s\", sslCompat:%ld}",
         libver, LWS_LIBRARY_VERSION, jsi_WsPkgVersion, (hasSSL?"true":"false"), sslVer, sslVerStr, sslCompat);
-    Jsi_PkgOpts wsPkgOpts = { .spec=wsObjCmd_Specs, .data=&ws_PkgStatus, .cmdSpec=websockCmds, .info=info };
+    Jsi_ModuleConf modConf = { .info=info, .logmask=Jsi_LogProdMask};
+    Jsi_PkgOpts wsPkgOpts = { .spec=wsObjCmd_Specs, .data=&ws_PkgStatus, .cmdSpec=websockCmds, .conf=modConf };
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "WebSocket", jsi_WsPkgVersion, Jsi_InitWebSocket, &wsPkgOpts);
     Jsi_DecrRefCount(interp, info);
     if (rc != JSI_OK)

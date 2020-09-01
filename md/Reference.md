@@ -1429,8 +1429,10 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>logmask</td><td><i>ARRAY</i></td><td>Logging mask flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
+<tr><td>info</td><td><i>OBJ</i></td><td>Info provided by module.</td><td><i>initOnly</i></td></tr>
 <tr><td>profile</td><td><i>BOOL</i></td><td>On exit generate profile of function calls.</td><td><i></i></td></tr>
 <tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data settable by require.</td><td><i></i></td></tr>
 </table>
 
 

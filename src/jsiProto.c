@@ -187,9 +187,9 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
         double timStart = 0;
         jsi_PkgInfo *pkg = funcPtr->pkg;
         if (pkg) {
-            tc |= pkg->popts.modConf.traceCall;
-            profile |= pkg->popts.modConf.profile;
-            coverage |= pkg->popts.modConf.coverage;
+            tc |= pkg->popts.conf.traceCall;
+            profile |= pkg->popts.conf.profile;
+            coverage |= pkg->popts.conf.coverage;
         }
     
         interp->callDepth++;

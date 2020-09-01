@@ -260,9 +260,8 @@ typedef enum {
 } jsi_Sig;
 
 #define Jsi_LogType(fmt,...) Jsi_LogMsgExt(interp, NULL, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
-#define jsi_LogDefVal (uint)((1<<JSI_LOG_DEBUG)|(1<<JSI_LOG_TRACE)|(1<<JSI_LOG_TEST)|(1<<JSI_LOG_ASSERT))
 extern const char *jsi_LogCodes[], *jsi_LogCodesU[];
-extern uint jsi_GetLogFlag(Jsi_Interp *interp, uint mask);
+extern uint jsi_GetLogFlag(Jsi_Interp *interp, uint mask, Jsi_PkgOpts* popts);
 
 struct jsi_OpCode;
 
@@ -901,7 +900,6 @@ typedef struct jsi_PkgInfo {
     const char *loadFile;  // Full path of file name loaded.
     Jsi_InitProc *initProc; // For C-extensions.
     bool needInit;  // If a C-extension and _Init func needs calling in this interp.
-    Jsi_Value *info;
     Jsi_PkgOpts popts;
     jsi_FileInfo* filePtr;
     int log, logmask; // Runtime values set by moduleOps.

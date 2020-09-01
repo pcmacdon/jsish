@@ -749,7 +749,7 @@ empty_func:
         jsi_NoOpCmd(interp, NULL, NULL, NULL, NULL);
         goto empty_func;
     }
-    if (!jsi_GetLogFlag(interp, JSI_LOG_ASSERT) && funcPtr->callback == jsi_AssertCmd)
+    if (!jsi_GetLogFlag(interp, JSI_LOG_ASSERT, NULL) && funcPtr->callback == jsi_AssertCmd)
         goto empty_func;
     const char *onam = funcPtr->name;
 //        if (!onam) // Override blank name with last index.
@@ -1064,7 +1064,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
 #define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && !(logflag &(1<<n))) _JSI_BI_OP_SKIP_SUB(n)*/
 
         if (ip->logidx) { // Mask out LogDebug, etc if not enabled.
-            uint oli = ip->logidx, logflag2 = jsi_GetLogFlag(interp, ip->logidx);
+            uint oli = ip->logidx, logflag2 = jsi_GetLogFlag(interp, ip->logidx, NULL);
             interp->curIp = ip;
             if (!logflag2) {
                 ip++;

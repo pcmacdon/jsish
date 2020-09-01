@@ -953,8 +953,8 @@ void jsi_FuncFree(Jsi_Interp *interp, Jsi_Func *func)
     if (--func->refCnt > 0)
         return;
     jsi_PkgInfo *pkg = func->pkg;
-    bool profile = (interp->profile || (pkg?pkg->popts.modConf.profile:0)), 
-        cover = (interp->coverage || (pkg?pkg->popts.modConf.coverage:0));
+    bool profile = (interp->profile || (pkg?pkg->popts.conf.profile:0)), 
+        cover = (interp->coverage || (pkg?pkg->popts.conf.coverage:0));
     if (profile || cover) {
         Jsi_DString dStr;
         Jsi_DSInit(&dStr);

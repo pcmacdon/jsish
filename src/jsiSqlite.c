@@ -4653,7 +4653,8 @@ Jsi_RC Jsi_InitSqlite(Jsi_Interp *interp, int release)
     Jsi_Value *info = Jsi_ValueNew1(interp);
     Jsi_JSONParseFmt(interp, &info, "{libVer:\"%s\", hdrVer:\"%s\", hdrNum:%d, hdrSrcId:\"%s\", pkgVer:%d}",
         (char *)sqlite3_libversion(), SQLITE_VERSION, SQLITE_VERSION_NUMBER, SQLITE_SOURCE_ID, jsi_DbPkgVersion);
-    Jsi_PkgOpts dbPkgOpts = { .spec=db_ObjCmd_Specs, .data=&db_PkgStatus, .cmdSpec=sqliteCmds, .info=info };
+    Jsi_ModuleConf modConf = { .info=info, .logmask=Jsi_LogProdMask};
+    Jsi_PkgOpts dbPkgOpts = { .spec=db_ObjCmd_Specs, .data=&db_PkgStatus, .cmdSpec=sqliteCmds, .conf=modConf };
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "Sqlite", jsi_DbPkgVersion, Jsi_InitSqlite, &dbPkgOpts);
     Jsi_DecrRefCount(interp, info);
     if (rc != JSI_OK)

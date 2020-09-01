@@ -106,6 +106,25 @@ extern void jsi_TypeMismatch(Jsi_Interp* interp)
     }
 }
 
+uint jsi_GetLogFlag(Jsi_Interp *interp, uint maskidx, Jsi_PkgOpts* popts) {
+    uint log = 0, mask = 0, ilog = interp->log;
+    jsi_Frame* fp = interp->framePtr;
+     if (popts) {
+        mask = popts->conf.logmask;
+        log = popts->conf.log;
+     } else if (fp->filePtr) {
+        log = fp->filePtr->log;
+        if (fp->filePtr->pkg) {
+            log |= fp->filePtr->pkg->log;
+            mask |= fp->filePtr->pkg->logmask;
+        }
+     }
+     log |= (ilog&~mask);
+     if (maskidx)
+        log &= (1<<maskidx);
+    return log;
+}
+ 
 static void (*logHook)(const char *buf, va_list va) = NULL;
 
 // Format message: always returns JSI_ERROR.
@@ -113,13 +132,13 @@ Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const ch
     if (!interp || Jsi_InterpGone(interp))
         return JSI_ERROR;
     bool isExt = 0, ftail = interp->logOpts.ftail;
-    uint log = 0, mask, cshift = (1<<code);
-    if (!popts)
-        log = jsi_GetLogFlag(interp, code);
-    else {
+    //uint mask, cshift = (1<<code),
+    uint log = jsi_GetLogFlag(interp, code, popts);
+/*    else {
         mask = popts->modConf.logmask;
-        log = popts->modConf.log;
-        log = ((~mask|log)&cshift);
+        log = popts->modConf.log|interp->log;
+        log = ((~mask&log)&cshift);*/
+    if (popts) {
         isExt = 1;
         ftail = 1;
     }

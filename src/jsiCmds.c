@@ -855,8 +855,10 @@ static Jsi_OptionSpec jsiModuleOptions[] = {
     JSI_OPT(CUSTOM,Jsi_ModuleConf, log,     .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, logmask, .help="Logging mask flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(BOOL,  Jsi_ModuleConf, coverage,.help="On exit generate detailed code coverage for function calls (with profile)" ),
+    JSI_OPT(OBJ,   Jsi_ModuleConf, info,    .help="Info provided by module", .flags=JSI_OPT_INIT_ONLY ),
     JSI_OPT(BOOL,  Jsi_ModuleConf, profile, .help="On exit generate profile of function calls" ),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, traceCall,.help="Trace commands", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_callTraceStrs),
+    JSI_OPT(OBJ,   Jsi_ModuleConf, udata,   .help="User data settable by require" ),
     JSI_OPT_END(Jsi_ModuleConf, .help="Options for require command")
 };
 
@@ -874,22 +876,10 @@ Jsi_RC jsi_PkgDumpInfo(Jsi_Interp *interp, const char *name, Jsi_Value **ret) {
         Jsi_ObjInsert(interp, nobj, "verStr", Jsi_ValueNewStringDup(interp, buf), 0);
         const char *cp = (ptr->loadFile?ptr->loadFile:"");
         Jsi_ObjInsert(interp, nobj, "loadFile", Jsi_ValueNewStringDup(interp, cp), 0);
-        Jsi_Value *fval2, *fval = Jsi_NameLookup(interp, name);
+        Jsi_Value *fval = Jsi_NameLookup(interp, name);
         if (!fval || !Jsi_ValueIsFunction(interp, fval))
             fval = Jsi_ValueNewNull(interp);
         Jsi_ObjInsert(interp, nobj, "func", fval, 0);
-        fval = ptr->popts.info;
-        if (!fval) fval = interp->NullValue;
-        if (!Jsi_ValueIsObjType(interp, fval, JSI_OT_FUNCTION))
-            Jsi_ObjInsert(interp, nobj, "info", fval, 0);
-        else {
-            fval2 = Jsi_ValueNew1(interp);
-            Jsi_RC rc = Jsi_FunctionInvoke(interp, fval, NULL, &fval2, NULL);
-            if (rc != JSI_OK)
-                Jsi_LogWarn("status call failed");
-            Jsi_ObjInsert(interp, nobj, "info", fval2, 0);
-            Jsi_DecrRefCount(interp, fval2);
-        }
         fval = interp->NullValue;
         if (ptr->popts.spec && ptr->popts.data) {
             fval = Jsi_ValueNew1(interp);
@@ -900,8 +890,8 @@ Jsi_RC jsi_PkgDumpInfo(Jsi_Interp *interp, const char *name, Jsi_Value **ret) {
             Jsi_DecrRefCount(interp, fval);
 
         fval = Jsi_ValueNew1(interp);
-        Jsi_OptionsConf(interp, jsiModuleOptions, &ptr->popts.modConf, NULL, &fval, 0);
-        Jsi_ObjInsert(interp, nobj, "moduleOpts", fval, 0);
+        Jsi_OptionsConf(interp, jsiModuleOptions, &ptr->popts.conf, NULL, &fval, 0);
+        Jsi_ObjInsert(interp, nobj, "conf", fval, 0);
         Jsi_DecrRefCount(interp, fval);
 
         return JSI_OK;
@@ -955,7 +945,7 @@ static Jsi_RC SysRequireCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         return JSI_ERROR;
     Jsi_RC rc = JSI_OK;
     if (argc==2) {
-        if (ver < n) 
+        if (ver < n)
             rc = Jsi_LogType("package '%s' downlevel: %." JSI_NUMGFMT " < %." JSI_VERFMT_LEN JSI_NUMGFMT, name, ver, n);
         if (rc != JSI_OK)
             return rc;
@@ -966,8 +956,8 @@ static Jsi_RC SysRequireCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     if (opts != NULL) {
         jsi_PkgInfo *pkg = jsi_PkgGet(interp, name);
         if (!pkg) return JSI_ERROR;
-        Jsi_ModuleConf *mptr = &pkg->popts.modConf;
-        if (Jsi_OptionsProcess(interp, jsiModuleOptions, mptr, opts, 0) < 0)
+        Jsi_ModuleConf *mptr = &pkg->popts.conf;
+        if (Jsi_OptionsProcess(interp, jsiModuleOptions, mptr, opts, JSI_OPTS_IS_UPDATE) < 0)
             return JSI_ERROR;
     }
 
@@ -980,7 +970,7 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
 {
     jsi_PkgInfo *ptr;
     Jsi_HashEntry *hPtr = Jsi_HashEntryFind(interp->packageHash, name);
-    Jsi_Value *opts = (popts?popts->info:NULL);
+    Jsi_Value *opts = (popts?popts->conf.info:NULL);
     jsi_Frame *fp = interp->framePtr;
     if (version<0) {
         if (hPtr) {
@@ -1008,8 +998,10 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
         ptr->initProc = initProc;
         if (popts) {
             ptr->popts = *popts;
-            if (popts->info)
-                Jsi_IncrRefCount(interp, popts->info);
+            if (popts->conf.info)
+                Jsi_IncrRefCount(interp, popts->conf.info);
+            if (popts->conf.udata)
+                Jsi_IncrRefCount(interp, popts->conf.udata);
         }
         if (!initProc && fp->filePtr && fp->filePtr->fileName && fp->filePtr->fileName[0]) {
             ptr->filePtr = fp->filePtr;
@@ -1028,7 +1020,7 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
                 if (opts) {
                     nopts = Jsi_ValueNew1(interp->topInterp);
                     Jsi_CleanValue(interp, interp->topInterp, opts, &nopts);
-                    po.info = nopts;
+                    po.conf.info = nopts;
                 }
                 Jsi_RC rc = Jsi_PkgProvideEx(interp->topInterp, name, version, initProc, &po);
                 if (nopts)
@@ -1093,8 +1085,15 @@ pkg:
             return JSI_ERROR;
         if (rc == JSI_OK) {
             Jsi_PkgOpts po = {};
-            po.info = Jsi_ValueArrayIndex(interp, args, 2);
-            rc = Jsi_PkgProvideEx(interp, name, n, NULL, &po);
+            v = Jsi_ValueArrayIndex(interp, args, 2);
+            if (v && Jsi_OptionsProcess(interp, jsiModuleOptions, &po.conf, v, 0) < 0)
+                rc = JSI_ERROR;
+            else
+                rc = Jsi_PkgProvideEx(interp, name, n, NULL, &po);
+            if (po.conf.info)
+                Jsi_DecrRefCount(interp, po.conf.info);
+            if (po.conf.udata)
+                Jsi_DecrRefCount(interp, po.conf.udata);
         }
     }
     Jsi_DSFree(&dStr);
@@ -1785,28 +1784,12 @@ static char *jsi_GetCurPSLine(Jsi_Interp *interp) {
     return cp;
 }
 
-uint jsi_GetLogFlag(Jsi_Interp *interp, uint maskidx) {
-    uint logflag = interp->log, logmask = 0;
-    jsi_Frame* fp = interp->framePtr;
-     if (fp->filePtr) {
-        logflag |= fp->filePtr->log;
-        if (fp->filePtr->pkg) {
-            logflag |= fp->filePtr->pkg->log;
-            logmask |= fp->filePtr->pkg->logmask;
-        }
-     }
-    logflag &= ~logmask;
-    if (maskidx)
-        logflag = logflag&(1<<maskidx);
-    return logflag;
-}
- 
 #define FN_assert JSI_INFO("\
 Assertions.  Enable with jsish --I Assert or using the -Assert module option.")
 Jsi_RC jsi_AssertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    if (!jsi_GetLogFlag(interp,JSI_LOG_ASSERT))
+    if (!jsi_GetLogFlag(interp,JSI_LOG_ASSERT, NULL))
         return JSI_OK;
     int rc = 0;
     Jsi_RC rv = JSI_OK;
@@ -3990,7 +3973,7 @@ static Jsi_RC SysMatchObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
         }
 mismatch:
         ok = 0;
-        if (jsi_GetLogFlag(interp, JSI_LOG_ASSERT) && !noerror)
+        if (jsi_GetLogFlag(interp, JSI_LOG_ASSERT, NULL) && !noerror)
             rc = Jsi_LogError("matchobj failed: expected '%s', not '%s'", sp, cp); 
         else
             Jsi_LogWarn("matchobj failed: expected '%s', not '%s'", sp, cp);
@@ -4778,7 +4761,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         Jsi_Func *pf = interp->prevActiveFunc;
         Jsi_ModuleConf *mo = NULL;
         if (pf && pf->pkg) {
-            mo = &pf->pkg->popts.modConf;
+            mo = &pf->pkg->popts.conf;
             pf->pkg->logmask = mo->logmask;
             pf->pkg->log = mo->log;
         }

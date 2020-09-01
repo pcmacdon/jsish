@@ -573,7 +573,8 @@ Jsi_RC jsi_HashFree(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr) {
 
 static Jsi_RC packageHashFree(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr) {
     jsi_PkgInfo *p = (jsi_PkgInfo*)ptr;
-    if (p->popts.info) Jsi_DecrRefCount(interp, p->popts.info);
+    if (p->popts.conf.info) Jsi_DecrRefCount(interp, p->popts.conf.info);
+    if (p->popts.conf.udata) Jsi_DecrRefCount(interp, p->popts.conf.udata);
     Jsi_Free(p);
     return JSI_OK;
 }
@@ -1110,7 +1111,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->logOpts.func = 1;
     interp->logOpts.before = 1;
     interp->typeCheck.strict = 1;
-    interp->log = ~jsi_LogDefVal;
+    interp->log = Jsi_LogDefVal;
     int argc = interp->opts.argc;
     char **argv = interp->opts.argv;
     char *argv0 = (argv?argv[0]:NULL);

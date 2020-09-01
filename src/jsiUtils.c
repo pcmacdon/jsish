@@ -123,12 +123,9 @@ Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const ch
         isExt = 1;
         ftail = 1;
     }
-    if (!log) {
-        if (code == JSI_LOG_ERROR)
-            puts("FUCK");
-        else
-            return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
-    }
+    if (!log)
+        return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
+
     char pbuf[JSI_BUFSIZ/8] = "";
     char buf[JSI_BUFSIZ/2];
     const char *term = "", *pterm=pbuf;

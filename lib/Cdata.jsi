@@ -19,7 +19,6 @@ function Cdata(args:array, conf:object=void)
         name        :null,  // Name of group
         noline      :false, // Do not add #line to c output file
         O           :'',    // Output file, or '-' to return string. Default is FILE.c.
-        prod        :false, // Set production mode: masks out --I log=debug,trace,test,assert
         unkType     :true,  // Warn of unknown struct fields self will be ignored.
         varSuffix   :'_Data'// Suffix to add to data used for object config.
     };
@@ -1656,8 +1655,6 @@ Jsi_RC Jsi_InitDemo(Jsi_Interp *interp, int isRelease)
         vr.spec = Demo__Specs;
         vr.data = ddPtr;
         vr.cmdSpec = DemoCmds;
-        if (self.prod)
-            vr.conf.logmask = Jsi_LogProdMask;
         if (Demo_PkgInfo) {
             vr.conf.info = Jsi_ValueNew1(interp);
             rc = Jsi_JSONParse(interp, Demo_PkgInfo, &vr.conf.info, 0);

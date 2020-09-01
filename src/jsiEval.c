@@ -12,7 +12,7 @@
 #define _jsi_THIS (interp->Obj_this)
 #define _jsi_THISIDX(s) interp->Obj_this[s]
 
-static Jsi_RC jsiEvalLogErr(Jsi_Interp *interp, const char *str) { Jsi_LogMsg(interp, JSI_ERROR, "%s", str); return JSI_ERROR; }
+static Jsi_RC jsiEvalLogErr(Jsi_Interp *interp, const char *str) { return Jsi_LogError("Eval error: %s", str); }
 
 #define _jsi_StrictChk(v) ((strict==0 || !Jsi_NumberIsNaN(v->d.num)) ? JSI_OK : jsiEvalLogErr(interp, "value is NaN"))
 #define _jsi_StrictChk2(v1,v2)  ((strict==0  || (Jsi_NumberIsNaN(v1->d.num)==0 && Jsi_NumberIsNaN(v2->d.num)==0))  ? JSI_OK : jsiEvalLogErr(interp, "value is NaN"))
@@ -347,7 +347,7 @@ static void jsiRestoreScope(Jsi_Interp* interp, jsi_Pstate *ps, jsi_TryList* try
     *context_id = ps->_context_id++; 
 }
 
-#define JSI_DO_THROW(nam) if (jsiDoThrow(interp, ps, &ip, &trylist,&scope, &currentScope, &context_id, (interp->framePtr->Sp?_jsi_TOP:NULL), nam) != JSI_OK) { rc = JSI_ERROR; break; }
+#define JSI_DO_THROW(nam) if ((rc=jsiDoThrow(interp, ps, &ip, &trylist,&scope, &currentScope, &context_id, (interp->framePtr->Sp?_jsi_TOP:NULL), nam)) != JSI_OK) break;
 
 static int jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, jsi_TryList **tlp,
      jsi_ScopeChain **scope, Jsi_Value **currentScope, int *context_id, Jsi_Value *top, const char *nam) {
@@ -411,7 +411,7 @@ static void jsiDumpInstr(Jsi_Interp *interp, jsi_Pstate *ps, Jsi_Value *_this,
         Jsi_Printf(interp, jsi_Stderr, "%s%s", (i>0?", ":""), jsiEvalPrint(_jsi_STACKIDX(i)));
     }
     Jsi_Printf(interp, jsi_Stderr, "]");
-    if (ip->filePtr->fileName[0]) {
+    if (ip->filePtr && ip->filePtr->fileName[0]) {
         const char *fn = ip->filePtr->fileName,  *cp = Jsi_Strrchr(fn, '/');
         if (cp) fn = cp+1;
         Jsi_Printf(interp, jsi_Stderr, ", %s:%d", fn, ip->Line);
@@ -1988,6 +1988,10 @@ undef_eval:
             default:
                 Jsi_LogBug("invalid op ceod: %d", ip->op);
 #endif
+        }
+        if (rc == JSI_ERROR) {
+            JSI_DO_THROW("error");
+            rc = JSI_OK;
         }
         lop = plop;
         ip++;

@@ -1,4 +1,5 @@
 #if JSI__MYSQL==1
+#define JSI_EXT_OPTS jdb->popts
 /* JSI Javascript Interface to MySql. */
 
 typedef enum { MYSQL_SIG_DB = 0xbeefdeaa, MYSQL_SIG_FUNC, MYSQL_SIG_EXEC, MYSQL_SIG_STMT } MySql_Sig;
@@ -45,20 +46,20 @@ JSI_EXTENSION_INI
 #define JSI_DBQUERY_PRINTF(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #endif
 
-typedef struct mydb_ObjCmd {
+typedef struct mydb_Pkg_Status {
     int init;
     int activeCnt;  /* Count of active objects. */ 
     int newCnt;  /* Total number of new. */ 
-} mydb_ObjCmd;
+} mydb_Pkg_Status;
 
-static mydb_ObjCmd mydbObjCmd = {};
+static mydb_Pkg_Status mydb_PkgStatus = {};
 
 static Jsi_OptionSpec mydb_ObjCmd_Specs[] =
 {
-    JSI_OPT(INT,   mydb_ObjCmd, init, .help="Init counter"),
-    JSI_OPT(INT,   mydb_ObjCmd, activeCnt, .help="Number of active objects"),
-    JSI_OPT(INT,   mydb_ObjCmd, newCnt,    .help="Number of new calls"),
-    JSI_OPT_END(mydb_ObjCmd, .help="Options for Sqlite module")
+    JSI_OPT(INT,   mydb_Pkg_Status, init, .help="Init counter"),
+    JSI_OPT(INT,   mydb_Pkg_Status, activeCnt, .help="Number of active objects"),
+    JSI_OPT(INT,   mydb_Pkg_Status, newCnt,    .help="Number of new calls"),
+    JSI_OPT_END(mydb_Pkg_Status, .help="Options for Sqlite module")
 };
 
 /*
@@ -189,7 +190,7 @@ typedef struct MySqlObj {
     MySql_Sig sig;
     MYSQL  *db;               /* The "real" database structure. MUST BE FIRST */
     Jsi_Interp *interp;        /* The interpreter used for this database */
-    mydb_ObjCmd *_;
+    mydb_Pkg_Status *_;
     Jsi_Value *host;
     const char *user;
     const char *password;
@@ -224,6 +225,7 @@ typedef struct MySqlObj {
     Jsi_Value* udata;
     Jsi_Value *sslKey, *sslCert, *sslCA, *sslCAPath, *sslCipher;
     Jsi_Hash *typeNameHash;
+    Jsi_PkgOpts *popts;
 } MySqlObj;
 
 typedef struct MyDbEvalContext {
@@ -401,7 +403,7 @@ static Jsi_RC mdbEvalStepSub(MyDbEvalContext *eval, int release, int *erc) {
     if (m == MYSQL_NO_DATA)
         return JSI_BREAK;
     if (m) 
-        return Jsi_LogError("fetch failed: %s", mysql_error(jdb->db));
+        return Jsi_LogErrorExt("fetch failed: %s", mysql_error(jdb->db));
     return JSI_OK;
 }
 
@@ -574,7 +576,7 @@ static Jsi_RC MySqlExtractParmNames(MySqlObj* jdb, const char *sql, Jsi_DString 
                             const char *key = (char*)Jsi_HashKeyGet(hPtr);
                             Jsi_DSAppend(&eStr, (n++?", ":""), key, NULL);
                         }
-                        Jsi_LogWarn("bind type \"%s\" is not one of: %s", Jsi_DSValue(&tStr), Jsi_DSValue(&eStr));
+                        Jsi_LogWarnExt("bind type \"%s\" is not one of: %s", Jsi_DSValue(&tStr), Jsi_DSValue(&eStr));
                         Jsi_DSFree(&eStr);
                     }
                     Jsi_DSFree(&tStr);
@@ -650,7 +652,7 @@ static Jsi_RC mdbPrepareStmt(MyDbEvalContext *p)
     if (!prep) {
         myStmt = mysql_stmt_init(jdb->db);
         if (!myStmt) 
-            return Jsi_LogError("can't get statement: %s", mysql_error(jdb->db));
+            return Jsi_LogErrorExt("can't get statement: %s", mysql_error(jdb->db));
         char **paramNames;
         int paramCnt;
         int namedParams = 0;
@@ -662,7 +664,7 @@ static Jsi_RC mdbPrepareStmt(MyDbEvalContext *p)
             Jsi_DSInit(&nsStr);
             Jsi_DSInit(&nnStr);
             if (MySqlExtractParmNames(jdb, zSql, &nsStr, &nnStr) != JSI_OK)
-                rc = Jsi_LogError("parsing names from query: %s", zSql);
+                rc = Jsi_LogErrorExt("parsing names from query: %s", zSql);
             else if (Jsi_DSLength(&nnStr)) {
                 namedParams = 1;
                 zSql = Jsi_DSFreeDup(&nsStr);
@@ -677,7 +679,7 @@ static Jsi_RC mdbPrepareStmt(MyDbEvalContext *p)
 
         if (mysql_stmt_prepare(myStmt, zSql, Jsi_Strlen(zSql)) )
         {
-            Jsi_LogError("error in sql: %s", mysql_error(jdb->db));
+            Jsi_LogErrorExt("error in sql: %s", mysql_error(jdb->db));
             mysql_stmt_close(myStmt);
             if (namedParams) {
                 Jsi_DSFree(naStr);
@@ -737,6 +739,7 @@ static Jsi_RC mdbPrepareStmt(MyDbEvalContext *p)
 static Jsi_RC mdbEvalPrep(MyDbEvalContext *p) {
     MysqlPrep *prep = p->prep;
     Jsi_Interp *interp = p->jdb->interp;
+    MySqlObj *jdb = p->jdb;
     Jsi_RC rc = JSI_OK;
     if( p->prep==0 ) {
         rc = mdbPrepareAndBind(p); //p->jdb, p->zSql, &p->zSql, &p->prep);
@@ -749,10 +752,10 @@ static Jsi_RC mdbEvalPrep(MyDbEvalContext *p) {
         }
         if (mysql_stmt_execute(prep->myStmt)) {
             Jsi_Interp *interp = p->jdb->interp;
-            rc = Jsi_LogError("execute failed: %s", mysql_error(p->jdb->db));
+            rc = Jsi_LogErrorExt("execute failed: %s", mysql_error(p->jdb->db));
         }
         if (p->jdb->optPtr->prefetch && mysql_stmt_store_result(prep->myStmt)) {
-            Jsi_LogWarn("prefetch failed, disabling: %s", mysql_error(p->jdb->db));
+            Jsi_LogWarnExt("prefetch failed, disabling: %s", mysql_error(p->jdb->db));
             p->jdb->optPtr->prefetch = 0;
         }
         MYSQL_RES *res = mysql_stmt_result_metadata(prep->myStmt);
@@ -929,12 +932,12 @@ static Jsi_RC mdbPrepareAndBind(MyDbEvalContext *p)
         tname[0] = 0;
         if (zVar == NULL) {
             if (!jdb->optPtr || !(apv=jdb->optPtr->values))
-                return Jsi_LogError("? bind without values for param %d", i);
+                return Jsi_LogErrorExt("? bind without values for param %d", i);
             if (!(pv =Jsi_ValueArrayIndex(interp, apv, i-1))) 
-                return Jsi_LogError("array element %d missing", nVar);
+                return Jsi_LogErrorExt("array element %d missing", nVar);
         }
         else if ((zVar[0]!='$' && zVar[0]!=':' && zVar[0]!='@') ) 
-            return Jsi_LogError("can not find bind var %s", zVar); else {
+            return Jsi_LogErrorExt("can not find bind var %s", zVar); else {
            
             int zvLen = Jsi_Strlen(zVar);
             char *zcp;
@@ -979,10 +982,10 @@ static Jsi_RC mdbPrepareAndBind(MyDbEvalContext *p)
         // Now create binding.
         if(!pv ) {
             if (!jdb->bindWarn) {
-                rc = Jsi_LogError("unknown bind param: %s", zVar);
+                rc = Jsi_LogErrorExt("unknown bind param: %s", zVar);
                 break;
             } else
-                Jsi_LogWarn("unknown bind param: %s", zVar);
+                Jsi_LogWarnExt("unknown bind param: %s", zVar);
         } else {
             if (btype && !Jsi_ValueIsUndef(interp, pv)) {
                 int done = 0, match = 1, cast = (jdb->optPtr->typeCheck==mdbTypeCheck_Cast);
@@ -1039,7 +1042,7 @@ static Jsi_RC mdbPrepareAndBind(MyDbEvalContext *p)
 errout:
                  {
                     int ltyp = (jdb->optPtr->typeCheck==mdbTypeCheck_Error?JSI_LOG_ERROR:JSI_LOG_WARN);
-                    Jsi_LogMsg(interp, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
+                    Jsi_LogMsgExt(interp, JSI_EXT_OPTS, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
                     if (ltyp == JSI_LOG_ERROR)
                         return JSI_ERROR;
                 }
@@ -1090,17 +1093,17 @@ bindnull:
                     bind->buffer_type = MYSQL_TYPE_BLOB;
             } else {
                 if (!jdb->bindWarn) {
-                    rc = Jsi_LogError("bind param must be string/number/bool/null: %s", zVar);
+                    rc = Jsi_LogErrorExt("bind param must be string/number/bool/null: %s", zVar);
                     break;
                 } else {
-                    Jsi_LogWarn("bind param must be string/number/bool/null: %s", zVar);
+                    Jsi_LogWarnExt("bind param must be string/number/bool/null: %s", zVar);
                     goto bindnull;
                 }
             }
         }
     }
     if (mysql_stmt_bind_param(prep->myStmt, prep->bindParam))
-        rc = Jsi_LogError("bind failed: %s", mysql_error(jdb->db));
+        rc = Jsi_LogErrorExt("bind failed: %s", mysql_error(jdb->db));
     return rc;
 }
 
@@ -1214,6 +1217,7 @@ static void mdbEvalSetColumn(MyDbEvalContext *p, int iCol, Jsi_DString *dStr) {
     //Jsi_Interp *interp = p->jdb->interp;
     char nbuf[JSI_MAX_NUMBER_STRING];
     MysqlPrep *prep = p->prep;
+    MySqlObj *jdb = p->jdb;
     SqlFieldResults *field = prep->fieldResult+iCol;
     Jsi_Interp *interp = p->jdb->interp;
     if (field->isnull)
@@ -1256,7 +1260,7 @@ static void mdbEvalSetColumn(MyDbEvalContext *p, int iCol, Jsi_DString *dStr) {
             return;
         }
         default:
-            Jsi_LogWarn("unknown type: %d", field->jsiTypeMap);
+            Jsi_LogWarnExt("unknown type: %d", field->jsiTypeMap);
     
     }
 }
@@ -1265,6 +1269,7 @@ static void mdbEvalSetColumn(MyDbEvalContext *p, int iCol, Jsi_DString *dStr) {
 static Jsi_Value* mdbEvalSetColumnValue(MyDbEvalContext *p, int iCol, Jsi_Value **val) {
     Jsi_Interp *interp = p->jdb->interp;
     MysqlPrep *prep = p->prep;
+    MySqlObj *jdb = p->jdb;
     SqlFieldResults *field = prep->fieldResult+iCol;
     if (field->isnull)
         return Jsi_ValueMakeNull(interp, val);
@@ -1294,7 +1299,7 @@ static Jsi_Value* mdbEvalSetColumnValue(MyDbEvalContext *p, int iCol, Jsi_Value 
         case JSI_OPTION_DOUBLE:
              return Jsi_ValueMakeNumber(interp, val, (Jsi_Number)field->buffer.vdouble);
         default:
-            Jsi_LogWarn("unknown type: %d", field->jsiTypeMap);
+            Jsi_LogWarnExt("unknown type: %d", field->jsiTypeMap);
     }
     return Jsi_ValueNew1(interp);
 }
@@ -1347,12 +1352,12 @@ static MySqlObj *_mysql_getDbHandle(Jsi_Interp *interp, Jsi_Value *_this, Jsi_Fu
 {
     MySqlObj *jdb = (MySqlObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!jdb) {
-        Jsi_LogError("MySql call to a non-mysql object");
+        Jsi_LogErrorExt("MySql call to a non-mysql object");
         return NULL;
     }
     if (!jdb->db)
     {
-        Jsi_LogError("MySql db is closed");
+        Jsi_LogErrorExt("MySql db is closed");
         return NULL;
     }
     return jdb;
@@ -1414,7 +1419,7 @@ static Jsi_RC MySqlReconnectCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     mysql_close(jdb->db);
     jdb->db = mysql_init(NULL);
     if (!mdbConnect(interp, jdb)) 
-        return Jsi_LogError("reconnect failed: %s", mysql_error(jdb->db));
+        return Jsi_LogErrorExt("reconnect failed: %s", mysql_error(jdb->db));
     return JSI_OK;
 }
 
@@ -1430,8 +1435,9 @@ static Jsi_RC MySqlEvalCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     Jsi_RC rc = JSI_OK;
     const char *zSql = Jsi_ValueArrayIndexToStr(interp, args, 0, &zLen);
 
+    Jsi_LogTraceExt("MYSQL-EVAL: %s", zSql); 
     if (mysql_real_query(jdb->db, zSql, zLen))
-        rc = Jsi_LogError("mysql error: %s", mysql_error(jdb->db));
+        rc = Jsi_LogErrorExt("mysql error: %s", mysql_error(jdb->db));
     else if (jdb->enableMulti) {
         MYSQL_RES *results;
         int sr = mysql_next_result(jdb->db);
@@ -1594,7 +1600,7 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         else if (Jsi_ValueIsObjType(interp, arg, JSI_OT_OBJECT))
             isopts = 1;
         else  {
-            rc = Jsi_LogError("argument must be null, a function, string, array or options");
+            rc = Jsi_LogErrorExt("argument must be null, a function, string, array or options");
             goto bail;
         }
     }
@@ -1611,7 +1617,7 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         char *cdata = (char*)jdb->queryOpts.CData;
         MySqlObjMultipleBind* copts = Jsi_CarrayLookup(interp, cdata);
         if (!copts) 
-            return Jsi_LogError("unknown CData option: %s", jdb->queryOpts.CData);
+            return Jsi_LogErrorExt("unknown CData option: %s", jdb->queryOpts.CData);
         int n = MySqlObjQuery(jdb, copts->opts, copts->data, copts->numData, zSql, copts->flags);
         Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)n);
         return JSI_OK;
@@ -1625,7 +1631,7 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         if (opts.obj.name)
             Jsi_ValueMakeStringDup(interp, ret, zSql);
         else
-            rc = Jsi_LogError("'obj.getSql' can only be used with 'objName'");
+            rc = Jsi_LogErrorExt("'obj.getSql' can only be used with 'objName'");
         goto bail;
     }
     if (!opts.separator) {
@@ -1657,12 +1663,13 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
             goto bail;
         }
     }
+    Jsi_LogTraceExt("MYSQL-QUERY: %s", zSql); 
     if (opts.mode == _mdb_EF_NONE)
         goto bail;
     if (callback) {
         sEval.tocall = callback;
         if (opts.mode != _mdb_EF_ROWS)
-            rc = Jsi_LogError("'mode' must be 'rows' with 'callback'");
+            rc = Jsi_LogErrorExt("'mode' must be 'rows' with 'callback'");
         else 
             rc = mdbEvalCallCmd(&sEval, interp, JSI_OK);
         goto bail;
@@ -2257,7 +2264,7 @@ static Jsi_RC MySqlResetCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     jdb->maxStmts = oldMax;
     Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)mysql_reset_connection(jdb->db));
 #else
-    Jsi_LogWarn("mysql reset unavailable: requires version 5.7.3+");
+    Jsi_LogWarnExt("mysql reset unavailable: requires version 5.7.3+");
 #endif
     return JSI_OK;    
 }
@@ -2274,7 +2281,7 @@ static Jsi_RC MySqlPingCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     if (val)
         Jsi_ValueGetBoolean(interp, val, &noErr);
     if (n && noErr==0) 
-        return Jsi_LogError("ping failed: (%d) %s", n, mysql_error(jdb->db));
+        return Jsi_LogErrorExt("ping failed: (%d) %s", n, mysql_error(jdb->db));
     Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)n);
 
     return JSI_OK;    
@@ -2387,7 +2394,8 @@ static Jsi_RC MySqlConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     jdb = (MySqlObj*)Jsi_Calloc(1, sizeof(*jdb));
     SQLSIGINIT(jdb, DB);
     const char *groupname = "mysqljsi";
-    jdb->_ = &mydbObjCmd;
+    jdb->popts = Jsi_CommandPkgOpts(interp, funcPtr);
+    jdb->_ = &mydb_PkgStatus;
     jdb->_->newCnt++;
     jdb->_->activeCnt++;
 
@@ -2400,6 +2408,7 @@ static Jsi_RC MySqlConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         mysqlObjFree(interp, jdb);
         return JSI_ERROR;
     }
+    Jsi_LogDebugExt("Starting MyDB");
     if (!jdb->udata) {
         jdb->udata = Jsi_ValueNewObj(interp, NULL);
         Jsi_IncrRefCount(interp, jdb->udata);
@@ -2429,14 +2438,14 @@ static Jsi_RC MySqlConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 #endif
 
     if (!mdbConnect(interp, jdb)) {
-        Jsi_LogError("connect failed %s", mysql_error(jdb->db));
+        Jsi_LogErrorExt("connect failed %s", mysql_error(jdb->db));
         mysqlObjFree(interp, jdb);
         return JSI_ERROR;
     }
 
     if (jdb->enableMulti) {
         if (mysql_set_server_option(jdb->db, MYSQL_OPTION_MULTI_STATEMENTS_ON))
-            Jsi_LogWarn("multi on failed %s", mysql_error(jdb->db));
+            Jsi_LogWarnExt("multi on failed %s", mysql_error(jdb->db));
     }
     //jdb->event = Jsi_EventNew(interp, mysqlUpdate, jdb); //TODO: events
     Jsi_Value *toacc = NULL;
@@ -2474,7 +2483,7 @@ static Jsi_RC Jsi_DoneMySql(Jsi_Interp *interp)
 Jsi_RC Jsi_InitMySql(Jsi_Interp *interp, int release)
 {
     if (release) {
-        if (!--mydbObjCmd.init)
+        if (!--mydb_PkgStatus.init)
             mysql_library_end();
         return Jsi_DoneMySql(interp);
     }
@@ -2484,15 +2493,15 @@ Jsi_RC Jsi_InitMySql(Jsi_Interp *interp, int release)
     return JSI_ERROR;
 #endif
 #ifndef JSI_OMIT_THREADS
-    if (mydbObjCmd.init == 0 && mysql_library_init(0, NULL, NULL))
+    if (mydb_PkgStatus.init == 0 && mysql_library_init(0, NULL, NULL))
         return Jsi_LogError("failed to initialize MySQL library\n");
 #else
-    return Jsi_LogError("Threads required for mysql");
+    return Jsi_LogErrorExt("Threads required for mysql");
 #endif
 
     Jsi_Value *info = Jsi_ValueNew1(interp);
     Jsi_JSONParseFmt(interp, &info, "{pkgVer:%d}", MYSQL_VERSION_ID);
-    Jsi_PkgOpts dbPkgOpts = { mydb_ObjCmd_Specs, &mydbObjCmd, mysqlCmds, info};
+    Jsi_PkgOpts dbPkgOpts = { .spec=mydb_ObjCmd_Specs, .data=&mydb_PkgStatus, .cmdSpec=mysqlCmds, .info=info};
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "MySql", 1.1, Jsi_InitMySql, &dbPkgOpts);
     Jsi_DecrRefCount(interp, info);
     if (rc != JSI_OK)
@@ -2502,10 +2511,11 @@ Jsi_RC Jsi_InitMySql(Jsi_Interp *interp, int release)
     else if (!Jsi_CommandCreateSpecs(interp, mysqlobject.name, mysqlCmds, dbSys, JSI_CMDSPEC_ISOBJ))
         rc = JSI_ERROR;
     if (rc == JSI_OK)
-        mydbObjCmd.init++;
+        mydb_PkgStatus.init++;
     else
         mysql_library_end();
     return rc;
 }
 
+#undef JSI_EXT_OPTS 
 #endif

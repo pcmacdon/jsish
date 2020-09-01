@@ -191,9 +191,9 @@ function SqliteUI(files:array|string, conf:object=void)
             if (req.where !== '') req.where = ' WHERE '+req.where;
             if (req.orderby !== '') req.orderby = ' ORDER BY '+req.orderby;
             req.limit = parseInt(req.limit);
-            if (req.limit === NaN || req.limit<=0) req.limit = 20;
+            if (isNaN(req.limit)|| req.limit<=0) req.limit = 20;
             req.offset = parseInt(req.offset);
-            if (req.offset === NaN || req.offset<=0) req.offset = 0;
+            if (isNaN(req.offset) || req.offset<=0) req.offset = 0;
             var query = 'select '+cols+' from "'+table+'" '+req.where;
             query += ' ' + req.orderby + ' limit '+req.limit;
             if (req.offset)
@@ -208,6 +208,7 @@ function SqliteUI(files:array|string, conf:object=void)
             WsSend(id,'loadTable', lst);
         }
         catch (e) {
+            LogWarn("ERROR:", e);
             WsSend(id,'error', e);
         }
     }
@@ -224,6 +225,7 @@ function SqliteUI(files:array|string, conf:object=void)
             WsSend(id,'loadTable', lst);
         }
         catch (e) {
+            LogWarn("ERROR:", e);
             WsSend(id,'error', e);
         }
     }

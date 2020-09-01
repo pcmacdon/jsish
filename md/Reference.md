@@ -631,6 +631,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>jsppChars</td><td><i>STRKEY</i></td><td>Line preprocessor when sourcing files. Line starts with first char, and either ends with it, or matches string.</td><td><i></i></td></tr>
 <tr><td>jsppCallback</td><td><i>FUNC</i></td><td>Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number).</td><td><i></i></td></tr>
 <tr><td>lockTimeout</td><td><i>INT</i></td><td>Thread time-out for mutex lock acquires (milliseconds).</td><td><i></i></td></tr>
+<tr><td>lockDown</td><td><i>STRKEY</i></td><td>Directory to Safe-lockdown interpreter to.</td><td><i></i></td></tr>
 <tr><td>logOpts</td><td><i><a href='#logOptsOptions'>options</a></i></td><td>Options for log output to add file/line/time.</td><td><i></i></td></tr>
 <tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>maxDepth</td><td><i>INT</i></td><td>Depth limit of recursive function calls (1000).</td><td><i></i></td></tr>

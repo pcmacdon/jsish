@@ -436,6 +436,7 @@ Jsi_Channel Jsi_Open(Jsi_Interp *interp, Jsi_Value *file, const char *modeString
     Jsi_Chan *ch = NULL;
     void *data;
     int fnl = 0;
+    char pbuf[FILENAME_MAX];
     const char *fileName = Jsi_ValueString(interp, file, &fnl), *oldFN = fileName;
     if (!fileName || !fnl) {
         Jsi_LogError("expected string filename");
@@ -518,10 +519,14 @@ Jsi_Channel Jsi_Open(Jsi_Interp *interp, Jsi_Value *file, const char *modeString
         else
             Jsi_LogError("File open failed '%s'", fileName);
     } else {
-        if (interp->isSafe && ((rc && Jsi_InterpAccess(interp, file, JSI_INTACCESS_CREATE) != JSI_OK)
-        || Jsi_InterpAccess(interp, file, aflag) != JSI_OK)) {
-            Jsi_LogError("%s access denied: %s", writ?"write":"read", fileName);
-            goto done;
+        if (interp->isSafe) {
+            if ((rc && Jsi_InterpAccess(interp, file, JSI_INTACCESS_CREATE) != JSI_OK)
+            || (Jsi_InterpAccess(interp, file, aflag) != JSI_OK
+                && (aflag || !interp->opts.argv[0] || Jsi_Strcmp(fileName, Jsi_FileRealpathStr(interp, interp->opts.argv[0], pbuf))))
+            ) {
+                Jsi_LogError("%s access denied: %s", writ?"write":"read", fileName);
+                goto done;
+            }
         }
         FILE *fp = fopen(fileName, Mode);
         fsPtr = &jsiFilesystem;

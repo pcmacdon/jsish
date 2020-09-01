@@ -1,3 +1,4 @@
+#define JSI_EXT_OPTS db->popts
 #define JSI_SQLITE_DB_VFS "SQLITE_DB_VFS"
 
 #ifndef JSI_AMALGAMATION
@@ -13,8 +14,8 @@ JSI_EXTENSION_INI
 
 typedef struct jsi_DbVfs {
     int sig; 
-    int (*dbcQuery)(Jsi_Db *jdb, Jsi_CDataDb *dbc, const char *query);
-    void *(*dbHandle)(Jsi_Interp *interp, Jsi_Db* jdb);
+    int (*dbcQuery)(Jsi_Db *db, Jsi_CDataDb *dbc, const char *query);
+    void *(*dbHandle)(Jsi_Interp *interp, Jsi_Db* db);
     Jsi_Db* (*dbNew)(const char *zFile, int inFlags /* JSI_DBI_* */);
 } jsi_DbVfs;
 
@@ -102,19 +103,19 @@ typedef enum { SQLITE_SIG_DB = 0xbeefdead, SQLITE_SIG_FUNC, SQLITE_SIG_EXEC, SQL
 # define UTF_TRANSLATION_NEEDED 1
 #endif
 
-typedef struct db_ObjCmd {
+typedef struct {
   int activeCnt;  /* Count of active objects. */ 
   int newCnt;  /* Total number of new. */ 
-} db_ObjCmd;
+} db_Pkg_Status;
 
 #ifndef JSI_LITE_ONLY
-static db_ObjCmd dbObjCmd = {};
+static db_Pkg_Status db_PkgStatus = {};
 
 static Jsi_OptionSpec db_ObjCmd_Specs[] =
 {
-    JSI_OPT(INT,   db_ObjCmd, activeCnt, .help="Number of active objects"),
-    JSI_OPT(INT,   db_ObjCmd, newCnt,    .help="Number of new calls"),
-    JSI_OPT_END(db_ObjCmd, .help="Options for Sqlite module")
+    JSI_OPT(INT,   db_Pkg_Status, activeCnt, .help="Number of active objects"),
+    JSI_OPT(INT,   db_Pkg_Status, newCnt,    .help="Number of new calls"),
+    JSI_OPT_END(db_Pkg_Status, .help="Options for Sqlite module")
 };
 #endif
 
@@ -142,7 +143,7 @@ struct SqlCollate {
     Sqlite_Sig sig;
     Jsi_Interp  *interp;   /* The JSI interpret to execute the function */
     Jsi_Value   *zScript;  /* The function to be run */
-    Jsi_Db      *jdb;
+    Jsi_Db      *db;
     SqlCollate  *pNext;    /* Next function on the list of them all */
 };
 
@@ -207,7 +208,7 @@ typedef struct Jsi_Db {
     Sqlite_Sig sig;
     sqlite3 *db;               /* The "real" database structure. MUST BE FIRST */
     Jsi_Interp *interp;        /* The interpreter used for this database */
-    db_ObjCmd *_;              // Module data.
+    db_Pkg_Status *_;              // Module data.
     Jsi_Value *onBusy;               /* The busy callback routine */
     Jsi_Value *onCommit;             /* The commit hook callback routine */
     Jsi_Value *onTrace;              /* The trace callback routine */
@@ -256,6 +257,7 @@ typedef struct Jsi_Db {
     Jsi_DString name;
     Jsi_Hash *typeNameHash;
     Jsi_Hash *regexpHash;
+    Jsi_PkgOpts *popts;
 } Jsi_Db;
 
 static const int jsi_DbPkgVersion = 2;
@@ -270,7 +272,7 @@ static const int jsi_DbPkgVersion = 2;
 */
 #define SQL_MAX_STATIC_TYPES 100
 typedef struct DbEvalContext {
-    Jsi_Db *jdb;                /* Database handle */
+    Jsi_Db *db;                /* Database handle */
     Jsi_DString *dSql;               /* Object holding string zSql */
     const char *zSql;               /* Remaining SQL to execute */
     SqlPreparedStmt *pPreStmt;      /* Current statement */
@@ -367,9 +369,9 @@ static Jsi_OptionSpec SqlOptions[] =
 
 #endif
 
-void dbTypeNameHashInit(Jsi_Db *jdb) {
-    Jsi_Interp *interp = jdb->interp;
-    Jsi_Hash *hPtr = jdb->typeNameHash = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
+void dbTypeNameHashInit(Jsi_Db *db) {
+    Jsi_Interp *interp = db->interp;
+    Jsi_Hash *hPtr = db->typeNameHash = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
     Jsi_HashSet(hPtr, (void*)"blob", (void*)JSI_OPTION_STRBUF);
     Jsi_HashSet(hPtr, (void*)"string", (void*)JSI_OPTION_STRING);
     Jsi_HashSet(hPtr, (void*)"double", (void*)JSI_OPTION_DOUBLE);
@@ -386,9 +388,9 @@ void dbTypeNameHashInit(Jsi_Db *jdb) {
 #define SQLITE_OMIT_INCRBLOB
 
 // Return 1 if ok, else return 0 and set erc to -1 or -2 for timeout.
-static int dbExecCmd(Jsi_Db *jdb, const char *zQuery, int *erc)
+static int dbExecCmd(Jsi_Db *db, const char *zQuery, int *erc)
 {
-    int rc = sqlite3_exec(jdb->db, zQuery, 0, 0, 0);
+    int rc = sqlite3_exec(db->db, zQuery, 0, 0, 0);
     if (rc == SQLITE_BUSY) {
         if (erc) *erc = -2;
     } else if (rc != SQLITE_OK) {
@@ -405,7 +407,7 @@ static void dbEvalRowInfo(
     int **papColType
 ) {
     /* Compute column names */
-    // Jsi_Interp *interp = p->jdb->interp;
+    // Jsi_Interp *interp = p->db->interp;
 
     if( 0==p->apColName ) {
         sqlite3_stmt *pStmt = p->pPreStmt->pStmt;
@@ -475,23 +477,23 @@ static void dbEvalRowInfo(
 }
 
 #ifndef JSI_LITE_ONLY
-static Jsi_RC dbPrepareAndBind( Jsi_Db *jdb, char const *zIn, char const **pzOut,  SqlPreparedStmt **ppPreStmt );
+static Jsi_RC dbPrepareAndBind( Jsi_Db *db, char const *zIn, char const **pzOut,  SqlPreparedStmt **ppPreStmt );
 #endif
 static void dbReleaseColumnNames(DbEvalContext *p);
-static void dbReleaseStmt( Jsi_Db *jdb, SqlPreparedStmt *pPreStmt, int discard );
+static void dbReleaseStmt( Jsi_Db *db, SqlPreparedStmt *pPreStmt, int discard );
 
 
 /* Step statement. Return JSI_OK if there is a ROW result, JSI_BREAK if done, else JSI_ERROR. */
 static Jsi_RC dbEvalStepSub(DbEvalContext *p, int release, int *erc) {
     int rcs;
-    Jsi_Db *jdb = p->jdb;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = p->db;
+    Jsi_Interp *interp = db->interp;
     JSI_NOTUSED(interp);
     SqlPreparedStmt *pPreStmt = p->pPreStmt;
     SQLSIGASSERT(pPreStmt, STMT);
     sqlite3_stmt *pStmt = pPreStmt->pStmt;
 
-    if (jdb->debug & TMODE_STEP)
+    if (db->debug & TMODE_STEP)
         JSI_DBQUERY_PRINTF( "DEBUG: step: %s\n", pPreStmt->zSql);
     rcs = sqlite3_step(pStmt);
     if( rcs==SQLITE_BUSY ) {
@@ -506,8 +508,8 @@ static Jsi_RC dbEvalStepSub(DbEvalContext *p, int release, int *erc) {
     }
     rcs = sqlite3_reset(pStmt);
 
-    jdb->stepCnt = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_FULLSCAN_STEP,1);
-    jdb->sortCnt = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_SORT,1);
+    db->stepCnt = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_FULLSCAN_STEP,1);
+    db->sortCnt = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_SORT,1);
     if (release==0 && rcs==SQLITE_OK)
         return JSI_BREAK;
     dbReleaseColumnNames(p);
@@ -516,11 +518,11 @@ static Jsi_RC dbEvalStepSub(DbEvalContext *p, int release, int *erc) {
     if( rcs!=SQLITE_OK ) {
         /* If a run-time error occurs, report the error and stop reading
         ** the SQL.  */
-        Jsi_LogError("%s", sqlite3_errmsg(jdb->db));
-        dbReleaseStmt(jdb, pPreStmt, 1);
+        Jsi_LogErrorExt("%s", sqlite3_errmsg(db->db));
+        dbReleaseStmt(db, pPreStmt, 1);
         return JSI_ERROR;
     } else {
-        dbReleaseStmt(jdb, pPreStmt, p->nocache);
+        dbReleaseStmt(db, pPreStmt, p->nocache);
     }
     return JSI_BREAK;
 }
@@ -528,7 +530,7 @@ static Jsi_RC dbEvalStepSub(DbEvalContext *p, int release, int *erc) {
 static Jsi_RC dbEvalInit(
     Jsi_Interp *interp,
     DbEvalContext *p,               /* Pointer to structure to initialize */
-    Jsi_Db *jdb,                  /* Database handle */
+    Jsi_Db *db,                  /* Database handle */
     const char* zSql,                /* Value containing SQL script */
     Jsi_DString *dStr,
     Jsi_Obj *pArray,                /* Name of Jsi array to set (*) element of */
@@ -536,11 +538,11 @@ static Jsi_RC dbEvalInit(
 ) {
     p->dSql = dStr;
     p->zSql = Jsi_DSAppend(p->dSql, zSql?zSql:"", NULL);
-    p->jdb = jdb;
+    p->db = db;
     return JSI_OK;
 }
 
-static void dbPrepStmtFree( Jsi_Db *jdb, SqlPreparedStmt *prep)
+static void dbPrepStmtFree( Jsi_Db *db, SqlPreparedStmt *prep)
 {
     if (prep->deleting)
         return;
@@ -555,29 +557,29 @@ static void dbPrepStmtFree( Jsi_Db *jdb, SqlPreparedStmt *prep)
     if (prep->elPtr)
         Jsi_ListEntryDelete(prep->elPtr);
     Jsi_Free( (char*)prep );
-    jdb->stmtCacheCnt--;
+    db->stmtCacheCnt--;
 }
 
 /*
 ** Finalize and free a list of prepared statements
 */
 
-static void dbPrepStmtLimit( Jsi_Db *jdb)
+static void dbPrepStmtLimit( Jsi_Db *db)
 {
-    while(jdb->stmtCacheCnt>jdb->stmtCacheMax ) {
-        Jsi_ListEntry *l = Jsi_ListPopBack(jdb->stmtCache);
-        dbPrepStmtFree(jdb, (SqlPreparedStmt*)Jsi_ListValueGet(l));
-        jdb->stmtCacheCnt = Jsi_ListSize(jdb->stmtCache);
+    while(db->stmtCacheCnt>db->stmtCacheMax ) {
+        Jsi_ListEntry *l = Jsi_ListPopBack(db->stmtCache);
+        dbPrepStmtFree(db, (SqlPreparedStmt*)Jsi_ListValueGet(l));
+        db->stmtCacheCnt = Jsi_ListSize(db->stmtCache);
     }
 }
 
 
 static Jsi_RC dbStmtFreeProc(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *value) {
-    Jsi_Db *jdb = (Jsi_Db*)interp;
+    Jsi_Db *db = (Jsi_Db*)interp;
     Jsi_ListEntry *l = (Jsi_ListEntry*)hPtr;
     SqlPreparedStmt *prep = (SqlPreparedStmt *)Jsi_ListValueGet(l);
     prep->elPtr = NULL;
-    dbPrepStmtFree(jdb, prep);
+    dbPrepStmtFree(db, prep);
     return JSI_OK;
 }
 
@@ -586,9 +588,9 @@ static Jsi_RC dbStmtFreeProc(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *valu
 /*
 ** Finalize and free a list of prepared statements
 */
-static void dbFlushStmtCache( Jsi_Db *jdb ) {
-    Jsi_ListClear(jdb->stmtCache);
-    jdb->stmtCacheCnt = 0;
+static void dbFlushStmtCache( Jsi_Db *db ) {
+    Jsi_ListClear(db->stmtCache);
+    db->stmtCacheCnt = 0;
 }
 
 #endif
@@ -603,12 +605,12 @@ static void dbFlushStmtCache( Jsi_Db *jdb ) {
 ** by a subsequent call to dbPrepareAndBind().
 */
 static void dbReleaseStmt(
-    Jsi_Db *jdb,                  /* Database handle */
+    Jsi_Db *db,                  /* Database handle */
     SqlPreparedStmt *pPreStmt,      /* Prepared statement handle to release */
     int discard                     /* True to delete (not cache) the pPreStmt */
 ) {
     //int i;
-    //Jsi_Interp *interp = jdb->interp;
+    //Jsi_Interp *interp = db->interp;
 
     /* Free the bound string and blob parameters */
     /*for(i=0; i<pPreStmt->nParm; i++) {
@@ -616,17 +618,17 @@ static void dbReleaseStmt(
     }*/
     //pPreStmt->nParm = 0;
 
-    if( jdb->stmtCacheMax<=0 || discard ) {
+    if( db->stmtCacheMax<=0 || discard ) {
         /* If the cache is turned off, deallocated the statement */
-        dbPrepStmtFree(jdb, pPreStmt);
+        dbPrepStmtFree(db, pPreStmt);
     } else {
         /* Add the prepared statement to the beginning of the cache list, then limit. */
         if (!pPreStmt->elPtr)
-            pPreStmt->elPtr = Jsi_ListPushFrontNew(jdb->stmtCache, pPreStmt);
+            pPreStmt->elPtr = Jsi_ListPushFrontNew(db->stmtCache, pPreStmt);
         else
-            Jsi_ListPushFront(jdb->stmtCache, pPreStmt->elPtr);
-        dbPrepStmtLimit(jdb);
-        jdb->stmtCacheCnt = Jsi_ListSize(jdb->stmtCache);
+            Jsi_ListPushFront(db->stmtCache, pPreStmt->elPtr);
+        dbPrepStmtLimit(db);
+        db->stmtCacheCnt = Jsi_ListSize(db->stmtCache);
     }
 }
 
@@ -635,7 +637,7 @@ static void dbReleaseStmt(
 ** the DbEvalContext structure passed as the first argument.
 */
 static void dbReleaseColumnNames(DbEvalContext *p) {
-    //Jsi_Interp *interp = p->jdb->interp;
+    //Jsi_Interp *interp = p->db->interp;
 
     if( p->apColName && p->apColName != (char**)p->staticColNames) {
         int i;
@@ -665,10 +667,10 @@ static void dbReleaseColumnNames(DbEvalContext *p) {
 ** next statement.
 **
 ** If successful, JSI_OK is returned. Otherwise, JSI_ERROR is returned
-** and an error message loaded into interpreter jdb->interp.
+** and an error message loaded into interpreter db->interp.
 */
 static Jsi_RC dbPrepareStmt(
-    Jsi_Db *jdb,                  /* Database object */
+    Jsi_Db *db,                  /* Database object */
     char const *zIn,                /* SQL to compile */
     char const **pzOut,             /* OUT: Pointer to next SQL statement */
     SqlPreparedStmt **ppPreStmt     /* OUT: Object used to cache statement */
@@ -680,7 +682,7 @@ static Jsi_RC dbPrepareStmt(
     //int nVar;                       /* Number of variables in statement */
     //int iParm = 0;                  /* Next free entry in apParm */
     Jsi_RC rc = JSI_OK;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
     JSI_NOTUSED(interp);
 
     *ppPreStmt = 0;
@@ -690,10 +692,10 @@ static Jsi_RC dbPrepareStmt(
         zSql++;
     }
     //nSql = Jsi_Strlen(zSql);
-    Jsi_HashEntry *entry = Jsi_HashEntryFind(jdb->stmtHash, zSql);
+    Jsi_HashEntry *entry = Jsi_HashEntryFind(db->stmtHash, zSql);
     if (entry && ((pPreStmt = (SqlPreparedStmt*)Jsi_HashValueGet(entry)))) {
         
-        if (jdb->debug & TMODE_PREPARE)
+        if (db->debug & TMODE_PREPARE)
             JSI_DBQUERY_PRINTF( "DEBUG: prepare cache-hit: %s\n", zSql);
         pStmt = pPreStmt->pStmt;
         *pzOut = &zSql[pPreStmt->nSql];
@@ -702,8 +704,8 @@ static Jsi_RC dbPrepareStmt(
         ** cache list.  It will later be added back to the beginning
         ** of the cache list in order to implement LRU replacement.
         */
-        Jsi_ListPop(jdb->stmtCache, pPreStmt->elPtr);
-        jdb->stmtCacheCnt = Jsi_ListSize(jdb->stmtCache);
+        Jsi_ListPop(db->stmtCache, pPreStmt->elPtr);
+        db->stmtCacheCnt = Jsi_ListSize(db->stmtCache);
 
     }
 
@@ -712,13 +714,13 @@ static Jsi_RC dbPrepareStmt(
     if( pPreStmt==0 ) {
         int nByte;
 
-        if( SQLITE_OK!=sqlite3_prepare_v2(jdb->db, zSql, -1, &pStmt, pzOut) )
+        if( SQLITE_OK!=sqlite3_prepare_v2(db->db, zSql, -1, &pStmt, pzOut) )
         
-            return Jsi_LogError("PREPARE: %s", sqlite3_errmsg(jdb->db));
+            return Jsi_LogErrorExt("PREPARE: %s", sqlite3_errmsg(db->db));
         if( pStmt==0 ) {
-            if( SQLITE_OK!=sqlite3_errcode(jdb->db) ) {
+            if( SQLITE_OK!=sqlite3_errcode(db->db) ) {
                 /* A compile-time error in the statement. */
-                Jsi_LogError("PREP: %s", sqlite3_errmsg(jdb->db));
+                Jsi_LogErrorExt("PREP: %s", sqlite3_errmsg(db->db));
                 return JSI_ERROR;
             } else {
                 /* The statement was a no-op.  Continue to the next statement
@@ -728,11 +730,11 @@ static Jsi_RC dbPrepareStmt(
             }
         }
 
-        if (jdb->debug & TMODE_PREPARE)
+        if (db->debug & TMODE_PREPARE)
             JSI_DBQUERY_PRINTF( "DEBUG: prepare new: %s\n", zSql);
         assert( pPreStmt==0 );
         //nVar = sqlite3_bind_parameter_count(pStmt);
-        jdb->stmtCacheCnt++;
+        db->stmtCacheCnt++;
         nByte = sizeof(SqlPreparedStmt); // + nVar*sizeof(Jsi_Obj *);
         pPreStmt = (SqlPreparedStmt*)Jsi_Calloc(1, nByte);
         pPreStmt->sig = SQLITE_SIG_STMT;
@@ -741,7 +743,7 @@ static Jsi_RC dbPrepareStmt(
         pPreStmt->nSql = (*pzOut - zSql);
         pPreStmt->zSql = sqlite3_sql(pStmt);
         bool isNew = 0;
-        pPreStmt->entry = Jsi_HashEntryNew(jdb->stmtHash, zSql, &isNew);
+        pPreStmt->entry = Jsi_HashEntryNew(db->stmtHash, zSql, &isNew);
         if (!isNew)
             JSI_DBQUERY_PRINTF( "sqlite dup stmt entry");
         Jsi_HashValueSet(pPreStmt->entry, pPreStmt);
@@ -774,7 +776,7 @@ static Jsi_RC dbEvalStep(DbEvalContext *p) {
     while( p->zSql[0] || p->pPreStmt ) {
         Jsi_RC rc;
         if( p->pPreStmt==0 ) {
-            rc = dbPrepareAndBind(p->jdb, p->zSql, &p->zSql, &p->pPreStmt);
+            rc = dbPrepareAndBind(p->db, p->zSql, &p->zSql, &p->pPreStmt);
             if( rc!=JSI_OK ) return rc;
         }
         rc = dbEvalStepSub(p, 1, NULL);
@@ -786,10 +788,10 @@ static Jsi_RC dbEvalStep(DbEvalContext *p) {
     return JSI_BREAK;
 }
 
-static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
+static Jsi_RC dbBindStmt(Jsi_Db *db, SqlPreparedStmt *prep)
 {
     sqlite3_stmt *pStmt = prep->pStmt;    /* Object used to cache statement */
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
     int i, btype = 0, bindArr=0, n;
     Jsi_RC rc = JSI_OK;
     Jsi_Number r;
@@ -805,10 +807,10 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
         int isInt = 0, isBlob = 0;
         const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
         if (zVar == NULL) {
-            if (!jdb->optPtr || !(apv=jdb->optPtr->values)) 
-                return Jsi_LogError("? bind without values for param %d", i);
+            if (!db->optPtr || !(apv=db->optPtr->values)) 
+                return Jsi_LogErrorExt("? bind without values for param %d", i);
             if (!(pv =Jsi_ValueArrayIndex(interp, apv, i-1))) 
-                return Jsi_LogError("array element %d missing", nVar);
+                return Jsi_LogErrorExt("array element %d missing", nVar);
         }
         else if((zVar[0]=='$' || zVar[0]==':' || zVar[0]=='@') ) {
             int zvLen = Jsi_Strlen(zVar);
@@ -825,22 +827,22 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
                     Jsi_DString tStr = {};
                     int tlen = Jsi_Strlen(ttp+1);
                     Jsi_DSAppendLen(&tStr, ttp+1, tlen-1);
-                    if (!jdb->typeNameHash)
-                        dbTypeNameHashInit(jdb);
-                    Jsi_HashEntry *htPtr = Jsi_HashEntryFind(jdb->typeNameHash, Jsi_DSValue(&tStr));
+                    if (!db->typeNameHash)
+                        dbTypeNameHashInit(db);
+                    Jsi_HashEntry *htPtr = Jsi_HashEntryFind(db->typeNameHash, Jsi_DSValue(&tStr));
                     int rc = ( htPtr != NULL);
                     if (!htPtr) {
                         Jsi_DString eStr = {};
                         Jsi_HashSearch search;
-                        Jsi_Interp *interp = jdb->interp;
+                        Jsi_Interp *interp = db->interp;
                         int n = 0;
                         Jsi_HashEntry *hPtr;
-                        for (hPtr = Jsi_HashSearchFirst(jdb->typeNameHash, &search);
+                        for (hPtr = Jsi_HashSearchFirst(db->typeNameHash, &search);
                             hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
                             const char *key = (char*)Jsi_HashKeyGet(hPtr);
                             Jsi_DSAppend(&eStr, (n++?", ":""), key, NULL);
                         }
-                        Jsi_LogWarn("bind type \"%s\" is not one of: %s", Jsi_DSValue(&tStr), Jsi_DSValue(&eStr));
+                        Jsi_LogWarnExt("bind type \"%s\" is not one of: %s", Jsi_DSValue(&tStr), Jsi_DSValue(&eStr));
                         Jsi_DSFree(&eStr);
                     }
                     Jsi_Strcpy(tname, Jsi_DSValue(&tStr));
@@ -867,17 +869,17 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
             } else
                 pv = Jsi_VarLookup(interp, &zVar[1]);
         } else 
-            return Jsi_LogError("can not find bind var %s", zVar);
+            return Jsi_LogErrorExt("can not find bind var %s", zVar);
             
         if(!pv ) {
-            if (!jdb->bindWarn) {
-                Jsi_LogError("unknown bind param: %s", zVar);
+            if (!db->bindWarn) {
+                Jsi_LogErrorExt("unknown bind param: %s", zVar);
                 rc = JSI_ERROR;
                 break;
             } else
-                Jsi_LogWarn("unknown bind param: %s", zVar);
+                Jsi_LogWarnExt("unknown bind param: %s", zVar);
         } else {
-            int match = 1, cast = (jdb->optPtr->typeCheck==dbTypeCheck_Cast);
+            int match = 1, cast = (db->optPtr->typeCheck==dbTypeCheck_Cast);
             if (btype && !Jsi_ValueIsUndef(interp, pv)) {
                 switch (btype) {
                     case JSI_OPTION_STRBUF:
@@ -920,8 +922,8 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
                         Jsi_LogBug("Unhandled bind type: %s = %d", tname, btype);
                 }
                 if (cast == 0 && match == 0) {
-                    int ltyp = (jdb->optPtr->typeCheck==dbTypeCheck_Error?JSI_LOG_ERROR:JSI_LOG_WARN);
-                    Jsi_LogMsg(interp, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
+                    int ltyp = (db->optPtr->typeCheck==dbTypeCheck_Error?JSI_LOG_ERROR:JSI_LOG_WARN);
+                    Jsi_LogMsgExt(interp, JSI_EXT_OPTS, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
                     if (ltyp == JSI_LOG_ERROR)
                         return JSI_ERROR;
                 }
@@ -934,11 +936,11 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
             } else if (Jsi_ValueIsNumber(interp, pv)) {
                 Jsi_GetNumberFromValue(interp, pv, &r);
                 wv = (Jsi_Wide)r;
-                if (isInt || (jdb->forceInt && (((Jsi_Number)wv)-r)==0))
+                if (isInt || (db->forceInt && (((Jsi_Number)wv)-r)==0))
                     sqlite3_bind_int64(pStmt, i,wv);
                 else
                     sqlite3_bind_double(pStmt, i,(double)r);
-            } else if (Jsi_ValueIsNull(interp, pv) || (Jsi_ValueIsUndef(interp, pv) && jdb->queryOpts.mapundef)) {
+            } else if (Jsi_ValueIsNull(interp, pv) || (Jsi_ValueIsUndef(interp, pv) && db->queryOpts.mapundef)) {
                 sqlite3_bind_null(pStmt, i);
             } else if (Jsi_ValueIsString(interp, pv)) {
                 const char *sstr = Jsi_ValueGetStringLen(interp, pv, &n);
@@ -947,7 +949,7 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
                     sqlite3_bind_blob(pStmt, i, (char *)sstr, n, SQLITE_TRANSIENT );
                 else
                     sqlite3_bind_text(pStmt, i, (char *)sstr, n, SQLITE_TRANSIENT );
-            } else if (!jdb->noJsonConv && bindArr && ((isArr=Jsi_ValueIsArray(interp, pv))
+            } else if (!db->noJsonConv && bindArr && ((isArr=Jsi_ValueIsArray(interp, pv))
                 || Jsi_ValueIsObjType(interp, pv, JSI_OT_OBJECT))
                 && (((dectyp = sqlite3_column_decltype(pStmt, i))==NULL) || 
                     !Jsi_Strncasecmp(dectyp,"charjson",8))) {
@@ -958,12 +960,12 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
                     sqlite3_bind_text(pStmt, i, Jsi_DSValue(&jStr), n, SQLITE_TRANSIENT );
                     Jsi_DSFree(&jStr);
             } else {
-                if (!jdb->bindWarn) {
-                    Jsi_LogError("bind param must be string/number/bool/null: %s", zVar);
+                if (!db->bindWarn) {
+                    Jsi_LogErrorExt("bind param must be string/number/bool/null: %s", zVar);
                     rc = JSI_ERROR;
                     break;
                 } else
-                    Jsi_LogWarn("bind param must be string/number/bool/null: %s", zVar);
+                    Jsi_LogWarnExt("bind param must be string/number/bool/null: %s", zVar);
                 sqlite3_bind_null(pStmt, i);
             }
 
@@ -973,14 +975,14 @@ static Jsi_RC dbBindStmt(Jsi_Db *jdb, SqlPreparedStmt *prep)
 }
 
 static Jsi_RC dbPrepareAndBind(
-    Jsi_Db *jdb,                  /* Database object */
+    Jsi_Db *db,                  /* Database object */
     char const *zIn,                /* SQL to compile */
     char const **pzOut,             /* OUT: Pointer to next SQL statement */
     SqlPreparedStmt **ppPreStmt     /* OUT: Object used to cache statement */
 ) {
-    if (dbPrepareStmt(jdb, zIn, pzOut, ppPreStmt) != JSI_OK)
+    if (dbPrepareStmt(db, zIn, pzOut, ppPreStmt) != JSI_OK)
         return JSI_ERROR;
-    return dbBindStmt(jdb, *ppPreStmt);
+    return dbBindStmt(db, *ppPreStmt);
 }
 #endif
 
@@ -990,11 +992,11 @@ static Jsi_RC dbPrepareAndBind(
 ** for each call to dbEvalInit(interp,).
 */
 static void dbEvalFinalize(DbEvalContext *p) {
-//  Jsi_Interp *interp = p->jdb->interp;
+//  Jsi_Interp *interp = p->db->interp;
 
     if( p->pPreStmt ) {
         sqlite3_reset(p->pPreStmt->pStmt);
-        dbReleaseStmt(p->jdb, p->pPreStmt, p->nocache);
+        dbReleaseStmt(p->db, p->pPreStmt, p->nocache);
         p->pPreStmt = 0;
     }
     if (p->dSql)
@@ -1030,38 +1032,38 @@ static Jsi_RC dbIsNumArray(Jsi_Interp *interp, Jsi_Value *value, Jsi_OptionSpec*
 ** JSI calls this procedure when an sqlite3 database command is
 ** deleted.
 */
-static void dbDeleteCmd(Jsi_Db *jdb)
+static void dbDeleteCmd(Jsi_Db *db)
 {
-    Jsi_Interp *interp = jdb->interp;
-    if (jdb->debug & TMODE_DELETE)
+    Jsi_Interp *interp = db->interp;
+    if (db->debug & TMODE_DELETE)
         JSI_DBQUERY_PRINTF( "DEBUG: delete\n");
-    dbFlushStmtCache(jdb);
-    if (jdb->stmtHash)
-        Jsi_HashDelete(jdb->stmtHash);
-    if (jdb->typeNameHash)
-        Jsi_HashDelete(jdb->typeNameHash);
-    if (jdb->regexpHash)
-        Jsi_HashDelete(jdb->regexpHash);
-    //closeIncrblobChannels(jdb);
-    if (jdb->db) {
-        DbClose(jdb->db);
+    dbFlushStmtCache(db);
+    if (db->stmtHash)
+        Jsi_HashDelete(db->stmtHash);
+    if (db->typeNameHash)
+        Jsi_HashDelete(db->typeNameHash);
+    if (db->regexpHash)
+        Jsi_HashDelete(db->regexpHash);
+    //closeIncrblobChannels(db);
+    if (db->db) {
+        DbClose(db->db);
     }
-    while( jdb->pFunc ) {
-        SqlFunc *pFunc = jdb->pFunc;
-        jdb->pFunc = pFunc->pNext;
+    while( db->pFunc ) {
+        SqlFunc *pFunc = db->pFunc;
+        db->pFunc = pFunc->pNext;
         Jsi_DSFree(&pFunc->dScript);
         Jsi_DecrRefCount(interp, pFunc->tocall);
         Jsi_Free((char*)pFunc);
     }
-    while( jdb->pCollate ) {
-        SqlCollate *pCollate = jdb->pCollate;
-        jdb->pCollate = pCollate->pNext;
+    while( db->pCollate ) {
+        SqlCollate *pCollate = db->pCollate;
+        db->pCollate = pCollate->pNext;
         Jsi_Free((char*)pCollate);
     }
 
-    Jsi_OptionsFree(interp, SqlOptions, jdb, 0);
-    if (jdb->stmtCache)
-        Jsi_ListDelete(jdb->stmtCache);
+    Jsi_OptionsFree(interp, SqlOptions, db, 0);
+    if (db->stmtCache)
+        Jsi_ListDelete(db->stmtCache);
 }
 
 static int dbGetIntBool(Jsi_Interp *interp, Jsi_Value* v)
@@ -1086,18 +1088,18 @@ static int dbGetIntBool(Jsi_Interp *interp, Jsi_Value* v)
 */
 static int dbBusyHandler(void *cd, int nTries) {
     int rc;
-    Jsi_Db *jdb = (Jsi_Db*)cd;
+    Jsi_Db *db = (Jsi_Db*)cd;
     Jsi_Value *vpargs, *items[3] = {}, *ret;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
 
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     items[1] = Jsi_ValueMakeNumber(interp, NULL, (Jsi_Number)nTries);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 2, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew1(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onBusy, vpargs, &ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onBusy, vpargs, &ret, NULL);
     if( JSI_OK!=rc ) {
-        jdb->errCnt++;
+        db->errCnt++;
         rc = 1;
     } else
         rc = dbGetIntBool(interp, ret);
@@ -1110,17 +1112,17 @@ static int dbBusyHandler(void *cd, int nTries) {
 ** This routine is invoked as the 'progress callback' for the database.
 */
 static int dbProgressHandler(void *cd) {
-    Jsi_Db *jdb = (Jsi_Db*)cd;
+    Jsi_Db *db = (Jsi_Db*)cd;
     Jsi_Value *vpargs, *items[3] = {}, *ret;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
 
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 1, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew1(interp);
-    int rc = Jsi_FunctionInvoke(interp, jdb->onProgress, vpargs, &ret, NULL);
+    int rc = Jsi_FunctionInvoke(interp, db->onProgress, vpargs, &ret, NULL);
     if( JSI_OK!=rc ) {
-        jdb->errCnt++;
+        db->errCnt++;
         rc = 1;
     } else
         rc = dbGetIntBool(interp, ret);
@@ -1131,66 +1133,66 @@ static int dbProgressHandler(void *cd) {
 
 /*
 ** This routine is called by the SQLite trace handler whenever a new
-** block of SQL is executed.  The JSI script in jdb->onTrace is executed.
+** block of SQL is executed.  The JSI script in db->onTrace is executed.
 */
 static void dbTraceHandler(void *cd, const char *zSql)
 {
     int rc;
-    Jsi_Db *jdb = (Jsi_Db*)cd;
+    Jsi_Db *db = (Jsi_Db*)cd;
     Jsi_Value *vpargs, *items[2] = {}, *ret;
-    Jsi_Interp *interp = jdb->interp;
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    Jsi_Interp *interp = db->interp;
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     items[1] = Jsi_ValueMakeStringDup(interp, NULL, zSql);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 2, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew1(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onTrace, vpargs, &ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onTrace, vpargs, &ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
     if (rc != JSI_OK)
-        jdb->errCnt++;
+        db->errCnt++;
 }
 
 /*
 ** This routine is called by the SQLite profile handler after a statement
-** SQL has executed.  The JSI script in jdb->onProfile is evaluated.
+** SQL has executed.  The JSI script in db->onProfile is evaluated.
 */
 static void dbProfileHandler(void *cd, const char *zSql, sqlite_uint64 tm) {
     int rc;
-    Jsi_Db *jdb = (Jsi_Db*)cd;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)cd;
+    Jsi_Interp *interp = db->interp;
     Jsi_Value *vpargs, *items[3] = {}, *ret;
 
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     items[1] = Jsi_ValueMakeStringDup(interp, NULL, zSql);
     items[2] = Jsi_ValueMakeNumber(interp, NULL, (Jsi_Number)tm);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 3, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew1(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onProfile, vpargs, &ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onProfile, vpargs, &ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
     if (rc != JSI_OK)
-        jdb->errCnt++;
+        db->errCnt++;
 }
 
 /*
 ** This routine is called when a transaction is committed.  The
-** JSI script in jdb->onCommit is executed.  If it returns non-zero or
+** JSI script in db->onCommit is executed.  If it returns non-zero or
 ** if it throws an exception, the transaction is rolled back instead
 ** of being committed.
 */
 static int dbCommitHandler(void *cd) {
     int rc = 0;
-    Jsi_Db *jdb = (Jsi_Db*)cd;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)cd;
+    Jsi_Interp *interp = db->interp;
     Jsi_Value *vpargs, *items[2] = {}, *ret = Jsi_ValueNew1(interp);
     
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 1, 0));
     Jsi_IncrRefCount(interp, vpargs);
-    if( JSI_OK!=Jsi_FunctionInvoke(interp, jdb->onCommit, NULL, &ret, NULL) ) {
-        jdb->errCnt++;
+    if( JSI_OK!=Jsi_FunctionInvoke(interp, db->onCommit, NULL, &ret, NULL) ) {
+        db->errCnt++;
         rc = 1;
     } else
         rc = dbGetIntBool(interp, ret);
@@ -1202,38 +1204,38 @@ static int dbCommitHandler(void *cd) {
 /*
 ** This procedure handles wal_hook callbacks.
 */
-static int dbWalHandler( void *cd, sqlite3 *db, const char *zDb, int nEntry ){
+static int dbWalHandler( void *cd, sqlite3 *sdb, const char *zDb, int nEntry ){
     int rc;
-    Jsi_Db *jdb = (Jsi_Db*)cd;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)cd;
+    Jsi_Interp *interp = db->interp;
     Jsi_Value *vpargs, *items[3] = {}, *ret;
 
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     items[1] = Jsi_ValueMakeStringDup(interp, NULL, zDb);
     items[2] = Jsi_ValueMakeNumber(interp, NULL, (Jsi_Number)nEntry);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 3, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onWalHook, vpargs, &ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onWalHook, vpargs, &ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
     if (rc != JSI_OK) {
-        jdb->errCnt++;
+        db->errCnt++;
         rc = 1;
     } else
-        rc = dbGetIntBool(jdb->interp, ret);
+        rc = dbGetIntBool(db->interp, ret);
     Jsi_DecrRefCount(interp, ret);
     return rc;
 }
  
 static void dbRollbackHandler(void *cd) {
-    Jsi_Db *jdb = (Jsi_Db*)cd;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)cd;
+    Jsi_Interp *interp = db->interp;
     Jsi_Value *vpargs, *items[2] = {}, *ret = Jsi_ValueNew1(interp);
     
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 1, 0));
     Jsi_IncrRefCount(interp, vpargs);
-    Jsi_FunctionInvoke(interp, jdb->onRollback, NULL, &ret, NULL);
+    Jsi_FunctionInvoke(interp, db->onRollback, NULL, &ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
 }
@@ -1246,13 +1248,13 @@ static void dbUpdateHandler(
     const char *zTbl,
     sqlite_int64 rowid
 ) {
-    Jsi_Db *jdb = (Jsi_Db *)p;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db *)p;
+    Jsi_Interp *interp = db->interp;
     int rc, i = 0;
     Jsi_Value *vpargs, *items[10] = {}, *ret;
     
     assert( op==SQLITE_INSERT || op==SQLITE_UPDATE || op==SQLITE_DELETE );
-    items[i++] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[i++] = Jsi_ValueNewObj(interp, db->fobj);
     items[i++] = Jsi_ValueMakeStringDup(interp, NULL, (op==SQLITE_INSERT)?"INSERT":(op==SQLITE_UPDATE)?"UPDATE":"DELETE");
     items[i++] = Jsi_ValueMakeStringDup(interp, NULL, zDb);
     items[i++] = Jsi_ValueMakeStringDup(interp, NULL, zTbl);
@@ -1260,33 +1262,33 @@ static void dbUpdateHandler(
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, i, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew1(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onUpdate, vpargs, &ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onUpdate, vpargs, &ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
     if (rc != JSI_OK)
-        jdb->errCnt++;
+        db->errCnt++;
 }
 
 static void dbCollateNeeded(
     void *cd,
-    sqlite3 *db,
+    sqlite3 *sdb,
     int enc,
     const char *zName
 ) {
     int rc;
-    Jsi_Db *jdb = (Jsi_Db*)cd;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)cd;
+    Jsi_Interp *interp = db->interp;
     Jsi_Value *vpargs, *items[2], *ret;
-    items[0] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, db->fobj);
     items[1] = Jsi_ValueMakeStringDup(interp, NULL, zName);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 2, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew1(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onNeedCollate, vpargs,& ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onNeedCollate, vpargs,& ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
     if (rc != JSI_OK)
-        jdb->errCnt++;
+        db->errCnt++;
 
 }
 
@@ -1305,17 +1307,17 @@ static int dbSqlCollate(
     Jsi_Interp *interp = p->interp;
 
     int rc;
-    //Jsi_Db *jdb = (Jsi_Db*)cd;
+    //Jsi_Db *db = (Jsi_Db*)cd;
     Jsi_Value *vpargs, *items[3], *ret;
 
-    items[0] = Jsi_ValueNewObj(interp, p->jdb->fobj);
+    items[0] = Jsi_ValueNewObj(interp, p->db->fobj);
     items[1] = Jsi_ValueMakeStringDup(interp, NULL, (char*)zA);
     items[2] = Jsi_ValueMakeStringDup(interp, NULL, (char*)zB);
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, 3, 0));
     ret = Jsi_ValueNew1(interp);
     rc = Jsi_FunctionInvoke(interp, p->zScript, vpargs, &ret, NULL);
     if( JSI_OK!=rc ) {
-        //jdb->errCnt++;
+        //db->errCnt++;
         rc = 0;
     } else
         rc = dbGetIntBool(interp, ret);
@@ -1361,11 +1363,11 @@ static Jsi_Value* dbGetValueGet(Jsi_Interp *interp, sqlite3_value *pIn)
 }
 
 static void jsiSqlFuncUnixTime(sqlite3_context *context, int argc, sqlite3_value**argv) {
-    Jsi_Db *jdb = (Jsi_Db*)sqlite3_user_data(context);
-    SQLSIGASSERT(jdb,DB);
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)sqlite3_user_data(context);
+    SQLSIGASSERT(db,DB);
+    Jsi_Interp *interp = db->interp;
     if (argc>3) {
-        Jsi_LogWarn("sqlite unixtime, expected: str fmt isutc");
+        Jsi_LogWarnExt("sqlite unixtime, expected: str fmt isutc");
         return;
     }
     const char *str = NULL, *fmt = NULL;
@@ -1389,11 +1391,11 @@ static Jsi_RC jsiSqlfreeValueTbl(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *
 }
 
 static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**argv) {
-    Jsi_Db *jdb = (Jsi_Db*)sqlite3_user_data(context);
-    SQLSIGASSERT(jdb,DB);
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Db *db = (Jsi_Db*)sqlite3_user_data(context);
+    SQLSIGASSERT(db,DB);
+    Jsi_Interp *interp = db->interp;
     if (argc!=2 && argc!=3) {
-        Jsi_LogWarn("sqlite regex, expected: str pattern ?modifier?");
+        Jsi_LogWarnExt("sqlite regex, expected: str pattern ?modifier?");
         return;
     }
     const char *str = (char *)sqlite3_value_text(argv[1]);
@@ -1402,21 +1404,21 @@ static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**
     bool isNew = 0;
     Jsi_Value *pat = NULL;
     Jsi_HashEntry *hPtr;
-    if (jdb->regexpHash && ((hPtr = Jsi_HashEntryFind(jdb->regexpHash, spat))))
+    if (db->regexpHash && ((hPtr = Jsi_HashEntryFind(db->regexpHash, spat))))
         pat = (Jsi_Value*)Jsi_HashValueGet(hPtr);
     if (!pat) {
-        if (jdb->regexpHash && jdb->maxRegexCache>0 && (int)Jsi_HashSize(jdb->regexpHash)>=jdb->maxRegexCache) {
-            Jsi_LogError("Regex hash reached max size: %d", jdb->maxRegexCache);
+        if (db->regexpHash && db->maxRegexCache>0 && (int)Jsi_HashSize(db->regexpHash)>=db->maxRegexCache) {
+            Jsi_LogErrorExt("Regex hash reached max size: %d", db->maxRegexCache);
             return;
         }
         pat = Jsi_ValueNewRegExp(interp, spat, mod);
         if (!pat)
             return;
         Jsi_IncrRefCount(interp, pat);
-        if (jdb->maxRegexCache) {
-            if (!jdb->regexpHash)
-                jdb->regexpHash = Jsi_HashNew(interp, JSI_KEYS_STRING, jsiSqlfreeValueTbl);
-            hPtr = Jsi_HashEntryNew(jdb->regexpHash, spat, &isNew);
+        if (db->maxRegexCache) {
+            if (!db->regexpHash)
+                db->regexpHash = Jsi_HashNew(interp, JSI_KEYS_STRING, jsiSqlfreeValueTbl);
+            hPtr = Jsi_HashEntryNew(db->regexpHash, spat, &isNew);
             if (!hPtr) {
                 Jsi_DecrRefCount(interp, pat);
                 return;
@@ -1426,7 +1428,7 @@ static void jsiSqlFuncRegexp(sqlite3_context *context, int argc, sqlite3_value**
     }
     if (Jsi_RegExpMatch(interp, pat, str, &rc, NULL)==JSI_OK)
         sqlite3_result_int(context, rc);
-    if (!jdb->maxRegexCache)
+    if (!db->maxRegexCache)
         Jsi_DecrRefCount(interp, pat);
 }
 
@@ -1494,9 +1496,9 @@ static int dbAuthCallback(
     const char *zCode;
     int rc;
     const char *zReply;
-    Jsi_Db *jdb = (Jsi_Db*)pArg;
-    Jsi_Interp *interp = jdb->interp;
-    if( jdb->disableAuth ) return SQLITE_OK;
+    Jsi_Db *db = (Jsi_Db*)pArg;
+    Jsi_Interp *interp = db->interp;
+    if( db->disableAuth ) return SQLITE_OK;
 
     switch( code ) {
     case SQLITE_COPY              :
@@ -1604,7 +1606,7 @@ static int dbAuthCallback(
     }
     int i = 0;
     Jsi_Value *vpargs, *items[10] = {}, *ret;
-    items[i++] = Jsi_ValueNewObj(interp, jdb->fobj);
+    items[i++] = Jsi_ValueNewObj(interp, db->fobj);
     items[i++] = Jsi_ValueMakeStringDup(interp, NULL, zCode);
     items[i++] = Jsi_ValueMakeStringDup(interp, NULL, zArg1 ? zArg1 : "");
     items[i++] = Jsi_ValueMakeStringDup(interp, NULL, zArg2 ? zArg2 : "");
@@ -1613,7 +1615,7 @@ static int dbAuthCallback(
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, i, 0));
     Jsi_IncrRefCount(interp, vpargs);
     ret = Jsi_ValueNew(interp);
-    rc = Jsi_FunctionInvoke(interp, jdb->onAuth, vpargs, &ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, db->onAuth, vpargs, &ret, NULL);
     Jsi_DecrRefCount(interp, vpargs);
 
     if (rc == JSI_OK && (zReply = Jsi_ValueGetStringLen(interp, ret, NULL)))
@@ -1692,7 +1694,7 @@ static char *dbLocalGetline(Jsi_Interp *interp, char *zPrompt, Jsi_Channel in) {
 ** the transaction or savepoint opened by the [transaction] command.
 */
 static Jsi_RC dbTransPostCmd(
-    Jsi_Db *jdb,                       /* Sqlite3Db for $db */
+    Jsi_Db *db,                       /* Sqlite3Db for $db */
     Jsi_Interp *interp,                  /* Jsi interpreter */
     Jsi_RC result                           /* Result of evaluating SCRIPT */
 ) {
@@ -1705,11 +1707,11 @@ static Jsi_RC dbTransPostCmd(
     Jsi_RC rc = result;
     const char *zEnd;
 
-    jdb->nTransaction--;
-    zEnd = azEnd[(rc==JSI_ERROR)*2 + (jdb->nTransaction==0)];
+    db->nTransaction--;
+    zEnd = azEnd[(rc==JSI_ERROR)*2 + (db->nTransaction==0)];
 
-    jdb->disableAuth++;
-    if( sqlite3_exec(jdb->db, zEnd, 0, 0, 0)) {
+    db->disableAuth++;
+    if( sqlite3_exec(db->db, zEnd, 0, 0, 0)) {
         /* This is a tricky scenario to handle. The most likely cause of an
         ** error is that the exec() above was an attempt to commit the
         ** top-level transaction that returned SQLITE_BUSY. Or, less likely,
@@ -1721,12 +1723,12 @@ static Jsi_RC dbTransPostCmd(
         ** this method's logic. Not clear how this would be best handled.
         */
         if( rc!=JSI_ERROR ) {
-            Jsi_LogError("%s", sqlite3_errmsg(jdb->db));
+            Jsi_LogErrorExt("%s", sqlite3_errmsg(db->db));
             rc = JSI_ERROR;
         }
-        sqlite3_exec(jdb->db, "ROLLBACK", 0, 0, 0);
+        sqlite3_exec(db->db, "ROLLBACK", 0, 0, 0);
     }
-    jdb->disableAuth--;
+    db->disableAuth--;
 
     return rc;
 }
@@ -1737,7 +1739,7 @@ static Jsi_RC dbTransPostCmd(
 ** the DbEvalContext structure passed as the first argument.
 */
 static void dbEvalSetColumnJSON(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
-    Jsi_Interp *interp = p->jdb->interp;
+    Jsi_Interp *interp = p->db->interp;
     char nbuf[JSI_MAX_NUMBER_STRING];
 
     sqlite3_stmt *pStmt = p->pPreStmt->pStmt;
@@ -1782,12 +1784,12 @@ static void dbEvalSetColumnJSON(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
     }
     const char *str = (char*)sqlite3_column_text(pStmt, iCol );
     if (!str)
-        str = p->jdb->optPtr->nullvalue;
+        str = p->db->optPtr->nullvalue;
     Jsi_JSONQuote(interp, str?str:"", -1, dStr);
 }
 
 static void dbEvalSetColumn(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
-    Jsi_Interp *interp = p->jdb->interp;
+    Jsi_Interp *interp = p->db->interp;
     char nbuf[JSI_MAX_NUMBER_STRING];
 
     sqlite3_stmt *pStmt = p->pPreStmt->pStmt;
@@ -1830,14 +1832,14 @@ static void dbEvalSetColumn(DbEvalContext *p, int iCol, Jsi_DString *dStr) {
     }
     const char *str = (char*)sqlite3_column_text(pStmt, iCol );
     if (!str)
-        str = p->jdb->optPtr->nullvalue;
+        str = p->db->optPtr->nullvalue;
     Jsi_DSAppend(dStr, str?str:"", NULL);
 }
 
 
 static Jsi_Value* dbEvalSetColumnValue(DbEvalContext *p, int iCol, Jsi_Value **val) {
-    Jsi_Interp *interp = p->jdb->interp;
-
+    Jsi_Interp *interp = p->db->interp;
+    Jsi_Db *db = p->db;
     sqlite3_stmt *pStmt = p->pPreStmt->pStmt;
     const char *str;
     
@@ -1877,13 +1879,13 @@ static Jsi_Value* dbEvalSetColumnValue(DbEvalContext *p, int iCol, Jsi_Value **v
         break;;
     }
     case SQLITE_TEXT: {
-        if (!p->jdb->noJsonConv) {
+        if (!p->db->noJsonConv) {
             const char *dectyp = sqlite3_column_decltype(pStmt, iCol);
             if (dectyp && !Jsi_Strncasecmp(dectyp, "charjson", 8)) {
                 Jsi_Value *v = NULL; //Jsi_ValueNew1(interp);
                 str = (char*)sqlite3_column_text(pStmt, iCol );
                 if (JSI_OK != Jsi_JSONParse(interp, str, &v, 0))
-                    Jsi_LogWarn("JSON parse failure for CHARJSON column");
+                    Jsi_LogWarnExt("JSON parse failure for CHARJSON column");
                 return v;
             }
         }
@@ -1891,7 +1893,7 @@ static Jsi_Value* dbEvalSetColumnValue(DbEvalContext *p, int iCol, Jsi_Value **v
     default:
         str = (char*)sqlite3_column_text(pStmt, iCol );
         if (!str)
-            str = p->jdb->optPtr->nullvalue;
+            str = p->db->optPtr->nullvalue;
         return Jsi_ValueMakeStringDup(interp, val, str?str:"");
     }
     return Jsi_ValueNew1(interp);
@@ -1914,7 +1916,7 @@ static Jsi_RC dbEvalCallCmd( DbEvalContext *p, Jsi_Interp *interp, Jsi_RC result
     Jsi_Obj *argso;
     char **apColName = NULL;
     int *apColType = NULL;
-    if (p->jdb->debug & TMODE_EVAL)
+    if (p->db->debug & TMODE_EVAL)
         JSI_DBQUERY_PRINTF( "DEBUG: eval\n");
 
     while( (rc==JSI_OK) && JSI_OK==(rc = dbEvalStep(p)) ) {
@@ -1952,23 +1954,23 @@ static Jsi_RC dbEvalCallCmd( DbEvalContext *p, Jsi_Interp *interp, Jsi_RC result
 
 static Jsi_Db *dbGetDbHandle(Jsi_Interp *interp, Jsi_Value *_this, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb = (Jsi_Db*)Jsi_UserObjGetData(interp, _this, funcPtr);
-    if (!jdb) {
-        Jsi_LogError("Sqlite call to a non-sqlite object");
+    Jsi_Db *db = (Jsi_Db*)Jsi_UserObjGetData(interp, _this, funcPtr);
+    if (!db) {
+        Jsi_LogErrorExt("Sqlite call to a non-sqlite object");
         return NULL;
     }
-    if (!jdb->db)
+    if (!db->db)
     {
-        Jsi_LogError("Sqlite db closed");
+        Jsi_LogErrorExt("Sqlite db closed");
         return NULL;
     }
-    return jdb;
+    return db;
 }
 
-static void sqliteObjErase(Jsi_Db *jdb)
+static void sqliteObjErase(Jsi_Db *db)
 {
-    dbDeleteCmd(jdb);
-    jdb->db = NULL;
+    dbDeleteCmd(db);
+    db->db = NULL;
 }
 
 static Jsi_RC sqliteObjFree(Jsi_Interp *interp, void *data)
@@ -2005,26 +2007,26 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
 static Jsi_RC SqliteCollateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                             Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb;
+    Jsi_Db *db;
     Jsi_Value *func;
 
     SqlCollate *pCollate;
     char *zName;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
 
     zName = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     func = Jsi_ValueArrayIndex(interp, args, 1);
     pCollate = (SqlCollate*)Jsi_Calloc(1, sizeof(*pCollate));
     if( pCollate==0 ) return JSI_ERROR;
-    pCollate->jdb = jdb;
+    pCollate->db = db;
     pCollate->interp = interp;
-    pCollate->pNext = jdb->pCollate;
+    pCollate->pNext = db->pCollate;
     pCollate->zScript = func; /*(char*)&pCollate[1];*/
-    jdb->pCollate = pCollate;
+    db->pCollate = pCollate;
 
-    if( sqlite3_create_collation(jdb->db, zName, SQLITE_UTF8, pCollate, dbSqlCollate) )
+    if( sqlite3_create_collation(db->db, zName, SQLITE_UTF8, pCollate, dbSqlCollate) )
     
-        return Jsi_LogError("%s", (char *)sqlite3_errmsg(jdb->db));
+        return Jsi_LogErrorExt("%s", (char *)sqlite3_errmsg(db->db));
     return JSI_OK;
 }
 
@@ -2067,7 +2069,7 @@ as 'changeCnt' due to the conflict algorithm selected. \
 static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                          Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb;
+    Jsi_Db *db;
     Jsi_RC rv = JSI_OK;
     int rc;
     char *zTable;               /* Insert data into this table */
@@ -2089,7 +2091,7 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     const char *zSep;
     const char *zNull;
 
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 2);
     ImportData opts = {};
 
@@ -2115,17 +2117,17 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     nSep = Jsi_Strlen(zSep);
     nNull = Jsi_Strlen(zNull);
     if( nSep==0 ) 
-        return Jsi_LogError("Error: non-null separator required for copy");
+        return Jsi_LogErrorExt("Error: non-null separator required for copy");
 
 
     zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
     if (zSql==0) 
-        return Jsi_LogError("Error: bad table: %s", zTable);
+        return Jsi_LogErrorExt("Error: bad table: %s", zTable);
     
     if (opts.headers) {
         in = Jsi_Open(interp, fname, "rb");
         if( in==0 ) 
-            return Jsi_LogError("Error: cannot open file: %s", zFile);
+            return Jsi_LogErrorExt("Error: cannot open file: %s", zFile);
         if ((zLine = dbLocalGetline(interp, 0, in))==0 ) {
             Jsi_Close(interp, in);
             return JSI_ERROR;
@@ -2155,21 +2157,21 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         Jsi_Free(zLine);
         if (zlen<=0) {
             Jsi_DSFree(&cStr);
-            Jsi_LogError("null header problem");
+            Jsi_LogErrorExt("null header problem");
             return JSI_ERROR;
         }
-        rc = sqlite3_exec(jdb->db, Jsi_DSValue(&cStr), 0, 0, 0);
+        rc = sqlite3_exec(db->db, Jsi_DSValue(&cStr), 0, 0, 0);
         Jsi_DSFree(&cStr);
         if (rc) 
-            return Jsi_LogError("%s", sqlite3_errmsg(jdb->db));
+            return Jsi_LogErrorExt("%s", sqlite3_errmsg(db->db));
         created = 1;
     }
     
     nByte = Jsi_Strlen(zSql);
-    rc = sqlite3_prepare(jdb->db, zSql, -1, &pStmt, 0);
+    rc = sqlite3_prepare(db->db, zSql, -1, &pStmt, 0);
         sqlite3_free(zSql);
     if( rc ) {
-        Jsi_LogError("%s", sqlite3_errmsg(jdb->db));
+        Jsi_LogErrorExt("%s", sqlite3_errmsg(db->db));
         nCol = 0;
     } else {
         nCol = sqlite3_column_count(pStmt);
@@ -2181,7 +2183,7 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     }
     zSql = (char*)Jsi_Malloc( nByte + 50 + nCol*2 );
     if( zSql==0 ) {
-        Jsi_LogError("Error: can't malloc()");
+        Jsi_LogErrorExt("Error: can't malloc()");
         rc = JSI_ERROR;
         goto bail;
     }
@@ -2194,27 +2196,27 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     }
     zSql[j++] = ')';
     zSql[j] = 0;
-    rc = sqlite3_prepare(jdb->db, zSql, -1, &pStmt, 0);
+    rc = sqlite3_prepare(db->db, zSql, -1, &pStmt, 0);
     Jsi_Free(zSql);
     if( rc ) {
-        Jsi_LogError("Error: %s", sqlite3_errmsg(jdb->db));
+        Jsi_LogErrorExt("Error: %s", sqlite3_errmsg(db->db));
         sqlite3_finalize(pStmt);
         return JSI_ERROR;
     }
     in = Jsi_Open(interp, fname, "rb");
     if( in==0 ) {
-        Jsi_LogError("Error: cannot open file: %s", zFile);
+        Jsi_LogErrorExt("Error: cannot open file: %s", zFile);
         sqlite3_finalize(pStmt);
         return JSI_ERROR;
     }
     azCol = (char**)Jsi_Malloc( sizeof(azCol[0])*(nCol+1) );
     if( azCol==0 ) {
-        Jsi_LogError("Error: can't malloc()");
+        Jsi_LogErrorExt("Error: can't malloc()");
         Jsi_Close(interp, in);
         rc = JSI_ERROR;
         goto bail;
     }
-    (void)sqlite3_exec(jdb->db, "BEGIN", 0, 0, 0);
+    (void)sqlite3_exec(db->db, "BEGIN", 0, 0, 0);
     onCommit = "COMMIT";
     while ((zLine = dbLocalGetline(interp, 0, in))!=0 ) {
         char *z;
@@ -2254,7 +2256,7 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
                 Jsi_DSFree(&sStr);
                 Jsi_Free(zLine);
                 Jsi_Close(interp, in);
-                Jsi_LogError("unterminated string at line: %d", lineno);
+                Jsi_LogErrorExt("unterminated string at line: %d", lineno);
                 break;
             }
             while (z) {
@@ -2311,7 +2313,7 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
             }
         }
         if( i+1!=nCol ) {
-            Jsi_LogError("%s line %d: expected %d columns of data but found %d",
+            Jsi_LogErrorExt("%s line %d: expected %d columns of data but found %d",
                  zFile, lineno, nCol, i+1);
             onCommit = "ROLLBACK";
             break;
@@ -2331,7 +2333,7 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         if (zLine)
             Jsi_Free(zLine);
         if( rc!=SQLITE_OK ) {
-            Jsi_LogError("%s at line: %d", sqlite3_errmsg(jdb->db), lineno);
+            Jsi_LogErrorExt("%s at line: %d", sqlite3_errmsg(db->db), lineno);
             onCommit = "ROLLBACK";
             break;
         }
@@ -2339,7 +2341,7 @@ static Jsi_RC SqliteImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Free(azCol);
     Jsi_Close(interp, in);
     sqlite3_finalize(pStmt);
-    (void)sqlite3_exec(jdb->db, onCommit, 0, 0, 0);
+    (void)sqlite3_exec(db->db, onCommit, 0, 0, 0);
 
     if( onCommit[0] == 'C' ) {
         /* success, set result as number of lines processed */
@@ -2353,7 +2355,7 @@ bail:
     if (rc != JSI_OK && created && opts.conflict == CC_ROLLBACK) {
         Jsi_DString cStr = {};
         Jsi_DSAppend(&cStr, "DROP TABLE IF EXISTS '", zTable, "';", NULL);
-        (void)sqlite3_exec(jdb->db, Jsi_DSValue(&cStr), 0, 0, 0);
+        (void)sqlite3_exec(db->db, Jsi_DSValue(&cStr), 0, 0, 0);
         Jsi_DSFree(&cStr);
     }
     return rv;
@@ -2367,19 +2369,19 @@ static Jsi_RC SqliteEvalCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
                          Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     int rc = SQLITE_OK, rc2;
-    Jsi_Db *jdb;
+    Jsi_Db *db;
     sqlite3_stmt *pStmt = NULL;
 
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
-    sqlite3 *db = jdb->db;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     const char *zSql = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     const char *zStart = zSql, *zLeftover = NULL, *zErrMsg = NULL;
     int lnum = 1;
-    if (jdb->echo && zSql)
-        Jsi_LogInfo("SQL-EVAL: %s\n", zSql); 
+    if (db->echo && zSql)
+        Jsi_LogInfo("SQL-EVAL: %s", zSql);
+    Jsi_LogTraceExt("SQL-EVAL: %s", zSql);
 
     while( zSql && zSql[0] && (SQLITE_OK == rc) ) {
-        rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+        rc = sqlite3_prepare_v2(db->db, zSql, -1, &pStmt, &zLeftover);
 
         if( SQLITE_OK != rc ) {
             break;
@@ -2392,7 +2394,7 @@ static Jsi_RC SqliteEvalCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
             }
 
             do {
-                if (jdb->debug & TMODE_STEP)
+                if (db->debug & TMODE_STEP)
                     JSI_DBQUERY_PRINTF( "DEBUG: step: %s\n", zSql);
                 rc = sqlite3_step(pStmt);
             } while( rc == SQLITE_ROW );
@@ -2407,15 +2409,15 @@ static Jsi_RC SqliteEvalCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     }
  
     if (rc == SQLITE_OK) {
-        Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)sqlite3_changes(jdb->db));
+        Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)sqlite3_changes(db->db));
         return JSI_OK;
     }
     while (zSql && zStart<zSql) {
         if (zStart[0] == '\n') lnum++;
         zStart++;
     }
-    zErrMsg = sqlite3_errmsg(db);
-    Jsi_LogError("sqlite error: %s in statement at line %d", (zErrMsg ? zErrMsg : ""), lnum);
+    zErrMsg = sqlite3_errmsg(db->db);
+    Jsi_LogErrorExt("sqlite error: %s in statement at line %d", (zErrMsg ? zErrMsg : ""), lnum);
     return JSI_ERROR;
 }
 
@@ -2561,8 +2563,8 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
                              Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_RC rc = JSI_OK;
-    Jsi_Db *jdb;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    Jsi_Db *db;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *vSql = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_DString eStr = {};
 #ifdef JSI_DB_DSTRING_SIZE
@@ -2577,8 +2579,8 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     char **apColName = NULL;
     int *apColType = NULL, isopts = 0;
     DbEvalContext sEval = {};
-    QueryOpts opts, *oEopt = jdb->optPtr;
-    opts = jdb->queryOpts;
+    QueryOpts opts, *oEopt = db->optPtr;
+    opts = db->queryOpts;
     opts.callback = NULL;
     opts.width = NULL;
     opts.obj.name = NULL;
@@ -2595,7 +2597,7 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
         else if (Jsi_ValueIsObjType(interp, arg, JSI_OT_OBJECT))
             isopts = 1;
         else {
-            rc = Jsi_LogError("arg 2: expected function, string, array or options");
+            rc = Jsi_LogErrorExt("arg 2: expected function, string, array or options");
             goto bail;
         }
     }
@@ -2605,12 +2607,12 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
             rc = JSI_ERROR;
             goto bail;
         }
-        callback = (opts.callback ? opts.callback : jdb->queryOpts.callback);
-        width = (opts.width ? opts.width : jdb->queryOpts.width);
+        callback = (opts.callback ? opts.callback : db->queryOpts.callback);
+        width = (opts.width ? opts.width : db->queryOpts.width);
     }
     if (opts.retChanged) {
         if (opts.callback) {
-            rc = Jsi_LogError("can not use retChanged with callback");
+            rc = Jsi_LogErrorExt("can not use retChanged with callback");
             goto bail;
         }
         opts.mode = _JSI_EF_NONE;
@@ -2619,9 +2621,9 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     if (opts.cdata) {
         Jsi_CDataDb* copts = Jsi_CDataLookup(interp, opts.cdata);
         if (!copts)
-            rc = Jsi_LogError("unknown cdata name: %s", opts.cdata);
+            rc = Jsi_LogErrorExt("unknown cdata name: %s", opts.cdata);
         else {
-            int n = Jsi_DbQuery(jdb, copts, zSql);
+            int n = Jsi_DbQuery(db, copts, zSql);
             Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)n);
         }
         goto bail;
@@ -2631,13 +2633,14 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
             goto bail;
         zSql = Jsi_DSValue(&eStr);
     }
-    if ((jdb->echo || opts.echo) && zSql)
-        Jsi_LogInfo("SQL-ECHO: %s\n", zSql); 
+    if ((db->echo || opts.echo) && zSql)
+        Jsi_LogInfo("SQL-ECHO: %s", zSql); 
+    Jsi_LogTraceExt("SQL-QUERY: %s", zSql); 
     if ((opts.obj.getSql)) {
         if (opts.obj.name)
             Jsi_ValueMakeStringDup(interp, ret, zSql);
         else
-            rc = Jsi_LogError("'obj.getSql' can only be used with 'objName'");
+            rc = Jsi_LogErrorExt("'obj.getSql' can only be used with 'objName'");
         goto bail;
     }
     if (!opts.separator) {
@@ -2651,14 +2654,14 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     Jsi_DString sStr;
     Jsi_DSInit(&sStr);
     sEval.nocache = opts.nocache;
-    if ((rc = dbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0)) != JSI_OK)
+    if ((rc = dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0)) != JSI_OK)
         goto bail;
     sEval.ret = *ret;
-    jdb->optPtr = &opts;
+    db->optPtr = &opts;
     if (callback) {
         sEval.tocall = callback;
         if (opts.mode != _JSI_EF_ROWS) {
-            Jsi_LogError("'mode' must be 'rows' with 'callback'");
+            Jsi_LogErrorExt("'mode' must be 'rows' with 'callback'");
             rc = JSI_ERROR;
             goto bail;
         }
@@ -2672,7 +2675,7 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
             if (opts.limit && cnt>=opts.limit) break;
         }
         if (opts.retChanged)
-            Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)sqlite3_changes(jdb->db));
+            Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)sqlite3_changes(db->db));
         if (rc == JSI_BREAK)
             rc = JSI_OK;
         goto bail;
@@ -3095,7 +3098,7 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     }
     if (opts.retChanged)
-        Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)sqlite3_changes(jdb->db));
+        Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)sqlite3_changes(db->db));
     else
         Jsi_ValueFromDS(interp, dStr, ret);
     if( rc==JSI_BREAK )
@@ -3107,7 +3110,7 @@ bail:
     }
     Jsi_DSFree(dStr);
     Jsi_DSFree(&eStr);
-    jdb->optPtr = oEopt;
+    db->optPtr = oEopt;
     return rc;
 }
 
@@ -3115,8 +3118,8 @@ static Jsi_RC SqliteOnecolumnCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                           Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_RC rc;
-    Jsi_Db *jdb;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    Jsi_Db *db;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *vSql = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
@@ -3125,8 +3128,8 @@ static Jsi_RC SqliteOnecolumnCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     DbEvalContext sEval = {};
     const char *zSql = Jsi_ValueGetDString(interp, vSql, &dStr, 0);
 
-    sEval.nocache = jdb->queryOpts.nocache;
-    if ((rc = dbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0)) != JSI_OK)
+    sEval.nocache = db->queryOpts.nocache;
+    if ((rc = dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0)) != JSI_OK)
         return rc;
     sEval.ret = *ret;
     sEval.tocall = NULL;
@@ -3152,8 +3155,8 @@ static Jsi_RC SqliteExistsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
                            Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_RC rc;
-    Jsi_Db *jdb;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    Jsi_Db *db;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *vSql = Jsi_ValueArrayIndex(interp, args, 0);
     const char *zSql;
     Jsi_DString dStr = {};
@@ -3162,8 +3165,8 @@ static Jsi_RC SqliteExistsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 
     Jsi_DString sStr;
     Jsi_DSInit(&sStr);
-    sEval.nocache = jdb->queryOpts.nocache;
-    if (dbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0) != JSI_OK)
+    sEval.nocache = db->queryOpts.nocache;
+    if (dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0) != JSI_OK)
         return JSI_ERROR;
     sEval.ret = *ret;
     int cnt = 0;
@@ -3190,12 +3193,12 @@ static Jsi_RC SqliteFilenameCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
 #if (SQLITE_VERSION_NUMBER>3007009)
     const char *zName = "main";
     int argc = Jsi_ValueGetLength(interp, args);
-    Jsi_Db *jdb;
+    Jsi_Db *db;
 
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     if (argc)
         zName = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
-    zName = sqlite3_db_filename(jdb->db, zName);
+    zName = sqlite3_db_filename(db->db, zName);
     if (zName)
         Jsi_ValueMakeStringDup(interp, ret, zName);
 #endif
@@ -3207,7 +3210,7 @@ static Jsi_RC SqliteFilenameCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
 ** one if an existing one cannot be found.  Return a pointer to the
 ** structure.
 */
-static SqlFunc *dbFindSqlFunc(Jsi_Db *jdb, const char *zName) {
+static SqlFunc *dbFindSqlFunc(Jsi_Db *db, const char *zName) {
     SqlFunc *p, *pNew;
     int i;
     pNew = (SqlFunc*)Jsi_Calloc(1, sizeof(*pNew) + Jsi_Strlen(zName) + 1 );
@@ -3217,17 +3220,17 @@ static SqlFunc *dbFindSqlFunc(Jsi_Db *jdb, const char *zName) {
         pNew->zName[i] = tolower(zName[i]);
     }
     pNew->zName[i] = 0;
-    for(p=jdb->pFunc; p; p=p->pNext) {
+    for(p=db->pFunc; p; p=p->pNext) {
         if( Jsi_Strcmp(p->zName, pNew->zName)==0 ) {
             Jsi_Free((char*)pNew);
             return p;
         }
     }
-    pNew->interp = jdb->interp;
+    pNew->interp = db->interp;
     pNew->pScript = 0;
     Jsi_DSInit(&pNew->dScript);
-    pNew->pNext = jdb->pFunc;
-    jdb->pFunc = pNew;
+    pNew->pNext = db->pFunc;
+    db->pFunc = pNew;
     return pNew;
 }
 
@@ -3239,16 +3242,16 @@ static Jsi_RC SqliteFunctionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     char *zName;
     int rc, nArg = -1, argc;
     argc = Jsi_ValueGetLength(interp, args);
-    Jsi_Db *jdb;
+    Jsi_Db *db;
 
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
 
     zName = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     tocall = Jsi_ValueArrayIndex(interp, args, 1);
     if (zName == NULL) 
-        return Jsi_LogError("expected name");
+        return Jsi_LogErrorExt("expected name");
     if (!Jsi_ValueIsFunction(interp, tocall)) 
-        return Jsi_LogError("expected function");
+        return Jsi_LogErrorExt("expected function");
     if (argc == 3) {
         nVal = Jsi_ValueArrayIndex(interp, args, 2);
         if (Jsi_GetIntFromValue(interp, nVal, &nArg) != JSI_OK)
@@ -3257,14 +3260,14 @@ static Jsi_RC SqliteFunctionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         Jsi_FunctionArguments(interp, tocall, &nArg);
     }
     if (nArg > SQLITE_LIMIT_FUNCTION_ARG) 
-        return Jsi_LogError("to many args");
+        return Jsi_LogErrorExt("to many args");
     /*  if( argc==6 ){
         const char *z = Jsi_GetString(objv[3]);
         int n = Jsi_Strlen(z);
         if( n>2 && strncmp(z, "-argcount",n)==0 ){
           if( Jsi_GetIntFromObj(interp, objv[4], &nArg) ) return JSI_ERROR;
           if( nArg<0 )
-              return Jsi_LogError( "number of arguments must be non-negative");
+              return Jsi_LogErrorExt( "number of arguments must be non-negative");
         }
         pScript = objv[5];
       }else if( argc!=4 ){
@@ -3273,18 +3276,18 @@ static Jsi_RC SqliteFunctionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
       }else{
         pScript = objv[3];
       }*/
-    pFunc = dbFindSqlFunc(jdb, zName);
+    pFunc = dbFindSqlFunc(db, zName);
     if( pFunc==0 ) return JSI_ERROR;
     SQLSIGASSERT(pFunc,FUNC);
 
     pFunc->tocall = tocall;
     Jsi_IncrRefCount(interp, pFunc->tocall);
-    rc = sqlite3_create_function(jdb->db, zName, nArg, SQLITE_UTF8,
+    rc = sqlite3_create_function(db->db, zName, nArg, SQLITE_UTF8,
                                  pFunc, jsiSqlFunc, 0, 0);
                                  
     if( rc!=SQLITE_OK ) {
         rc = JSI_ERROR;
-        Jsi_LogError("function create error: %s", (char *)sqlite3_errmsg(jdb->db));
+        Jsi_LogErrorExt("function create error: %s", (char *)sqlite3_errmsg(db->db));
     }
     return JSI_OK;
 }
@@ -3293,9 +3296,9 @@ static Jsi_RC SqliteFunctionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
 static Jsi_RC SqliteInterruptCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                               Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
-    sqlite3_interrupt(jdb->db);
+    Jsi_Db *db;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    sqlite3_interrupt(db->db);
     return JSI_OK;
 }
 
@@ -3303,8 +3306,8 @@ static Jsi_RC SqliteInterruptCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 static Jsi_RC SqliteCompleteCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                              Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    Jsi_Db *db;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *s = Jsi_ValueArrayIndex(interp, args, 0);
     const char *str =  Jsi_ValueString(interp, s, NULL);
     int isComplete = 0;
@@ -3323,7 +3326,7 @@ of FILENAME into the local database DATABASE (default: 'main').")
 static Jsi_RC SqliteRestoreCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                             Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb;
+    Jsi_Db *db;
     const char *zSrcFile;
     const char *zDestDb;
     sqlite3 *pSrc;
@@ -3331,7 +3334,7 @@ static Jsi_RC SqliteRestoreCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     int nTimeout = 0;
     int rc;
 
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *vFile = Jsi_ValueArrayIndex(interp, args, 0);
     int argc = Jsi_ValueGetLength(interp, args);
     if( argc==1 ) {
@@ -3345,19 +3348,19 @@ static Jsi_RC SqliteRestoreCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     else {
         zSrcFile = Jsi_ValueNormalPath(interp, vFile, &dStr);
         if (zSrcFile == NULL) 
-            return Jsi_LogError("bad or missing file name");
+            return Jsi_LogErrorExt("bad or missing file name");
     }
     rc = sqlite3_open_v2(zSrcFile, &pSrc, SQLITE_OPEN_READONLY, 0);
 
     if( rc!=SQLITE_OK ) {
-        Jsi_LogError("cannot open source database: %s", sqlite3_errmsg(pSrc));
+        Jsi_LogErrorExt("cannot open source database: %s", sqlite3_errmsg(pSrc));
         DbClose(pSrc);
         Jsi_DSFree(&dStr);
         return JSI_ERROR;
     }
-    pBackup = sqlite3_backup_init(jdb->db, zDestDb, pSrc, "main");
+    pBackup = sqlite3_backup_init(db->db, zDestDb, pSrc, "main");
     if( pBackup==0 ) {
-        Jsi_LogError("restore failed: %s", sqlite3_errmsg(jdb->db));
+        Jsi_LogErrorExt("restore failed: %s", sqlite3_errmsg(db->db));
         DbClose(pSrc);
         Jsi_DSFree(&dStr);
         return JSI_ERROR;
@@ -3374,10 +3377,10 @@ static Jsi_RC SqliteRestoreCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     if( rc==SQLITE_DONE ) {
         rv = JSI_OK;
     } else if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ) {
-        Jsi_LogError("restore failed: source database busy");
+        Jsi_LogErrorExt("restore failed: source database busy");
         rv = JSI_ERROR;
     } else {
-        Jsi_LogError("restore failed: %s", sqlite3_errmsg(jdb->db));
+        Jsi_LogErrorExt("restore failed: %s", sqlite3_errmsg(db->db));
         rv = JSI_ERROR;
     }
     Jsi_DSFree(&dStr);
@@ -3395,15 +3398,15 @@ static Jsi_RC SqliteTransactionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
                                 Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     int rc;
-    Jsi_Db *jdb;
+    Jsi_Db *db;
 
     int argc = Jsi_ValueGetLength(interp, args);
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
 
     Jsi_Value *pScript;
     const char *zBegin = "SAVEPOINT _jsi_transaction";
 
-    if( jdb->nTransaction==0 && argc==2 ) {
+    if( db->nTransaction==0 && argc==2 ) {
         Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
         static const char *TTYPE_strs[] = {
             "deferred",   "exclusive",  "immediate", 0
@@ -3430,21 +3433,21 @@ static Jsi_RC SqliteTransactionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
     }
     pScript = Jsi_ValueArrayIndex(interp, args, argc-1);
     if(!Jsi_ValueIsFunction(interp, pScript)) 
-        return Jsi_LogError("expected function");
+        return Jsi_LogErrorExt("expected function");
 
     /* Run the SQLite BEGIN command to open a transaction or savepoint. */
-    jdb->disableAuth++;
-    rc = sqlite3_exec(jdb->db, zBegin, 0, 0 ,0);
-    jdb->disableAuth--;
+    db->disableAuth++;
+    rc = sqlite3_exec(db->db, zBegin, 0, 0 ,0);
+    db->disableAuth--;
     if( rc!=SQLITE_OK ) 
-        return Jsi_LogError("%s", sqlite3_errmsg(jdb->db));
-    jdb->nTransaction++;
+        return Jsi_LogErrorExt("%s", sqlite3_errmsg(db->db));
+    db->nTransaction++;
 
     /* Evaluate the function , then
     ** call function dbTransPostCmd() to commit (or rollback) the transaction
     ** or savepoint.  */
     Jsi_RC rv = Jsi_FunctionInvoke(interp, pScript, NULL, NULL, NULL);
-    rv = dbTransPostCmd(jdb, interp, rv);
+    rv = dbTransPostCmd(db, interp, rv);
     return rv;
 }
 
@@ -3456,7 +3459,7 @@ FILENAME database.")
 static Jsi_RC SqliteBackupCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                            Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb;
+    Jsi_Db *db;
     Jsi_RC rv = JSI_OK;
     int rc;
     const char *zDestFile;
@@ -3464,7 +3467,7 @@ static Jsi_RC SqliteBackupCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     sqlite3 *pDest;
     sqlite3_backup *pBackup;
 
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *vFile = Jsi_ValueArrayIndex(interp, args, 0);
     int argc = Jsi_ValueGetLength(interp, args);
     if( argc==1 ) {
@@ -3478,18 +3481,18 @@ static Jsi_RC SqliteBackupCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     else {
         zDestFile = Jsi_ValueNormalPath(interp, vFile, &dStr);
         if (zDestFile == NULL) 
-            return Jsi_LogError("bad or missing file name");
+            return Jsi_LogErrorExt("bad or missing file name");
     }
     rc = sqlite3_open(zDestFile, &pDest);
     if( rc!=SQLITE_OK ) {
-        Jsi_LogError("cannot open target database %s: %s", zDestFile, sqlite3_errmsg(pDest));
+        Jsi_LogErrorExt("cannot open target database %s: %s", zDestFile, sqlite3_errmsg(pDest));
         DbClose(pDest);
         Jsi_DSFree(&dStr);
         return JSI_ERROR;
     }
-    pBackup = sqlite3_backup_init(pDest, "main", jdb->db, zSrcDb);
+    pBackup = sqlite3_backup_init(pDest, "main", db->db, zSrcDb);
     if( pBackup==0 ) {
-        Jsi_LogError("backup failed: %s", sqlite3_errmsg(pDest));
+        Jsi_LogErrorExt("backup failed: %s", sqlite3_errmsg(pDest));
         DbClose(pDest);
         Jsi_DSFree(&dStr);
         return JSI_ERROR;
@@ -3499,7 +3502,7 @@ static Jsi_RC SqliteBackupCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if( rc==SQLITE_DONE ) {
         rv = JSI_OK;
     } else {
-        Jsi_LogError("backup failed: %s", sqlite3_errmsg(pDest));
+        Jsi_LogErrorExt("backup failed: %s", sqlite3_errmsg(pDest));
         rv = JSI_ERROR;
     }
     Jsi_DSFree(&dStr);
@@ -3507,68 +3510,68 @@ static Jsi_RC SqliteBackupCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     return rv;
 }
 
-void dbSetupCallbacks(Jsi_Db *jdb, Jsi_Db *ojdb)
+void dbSetupCallbacks(Jsi_Db *db, Jsi_Db *ojdb)
 {
-    if (jdb->onAuth && (!ojdb || !ojdb->onAuth) )
-        sqlite3_set_authorizer(jdb->db, dbAuthCallback, jdb);
+    if (db->onAuth && (!ojdb || !ojdb->onAuth) )
+        sqlite3_set_authorizer(db->db, dbAuthCallback, db);
     else
-        sqlite3_set_authorizer(jdb->db, 0, 0);
+        sqlite3_set_authorizer(db->db, 0, 0);
 
-    if (jdb->onCommit && (!ojdb || !ojdb->onCommit) )
-        sqlite3_commit_hook(jdb->db, dbCommitHandler, jdb);
+    if (db->onCommit && (!ojdb || !ojdb->onCommit) )
+        sqlite3_commit_hook(db->db, dbCommitHandler, db);
     else
-        sqlite3_commit_hook(jdb->db, 0, 0);
+        sqlite3_commit_hook(db->db, 0, 0);
 
-    if (jdb->onBusy && (!ojdb || !ojdb->onBusy) )
-        sqlite3_busy_handler(jdb->db, dbBusyHandler, jdb);
+    if (db->onBusy && (!ojdb || !ojdb->onBusy) )
+        sqlite3_busy_handler(db->db, dbBusyHandler, db);
     else
-        sqlite3_busy_handler(jdb->db, 0, 0);
+        sqlite3_busy_handler(db->db, 0, 0);
     
-    if (jdb->onTrace && (!ojdb || !ojdb->onTrace) )
-        sqlite3_trace(jdb->db, dbTraceHandler, jdb);
+    if (db->onTrace && (!ojdb || !ojdb->onTrace) )
+        sqlite3_trace(db->db, dbTraceHandler, db);
     else
-        sqlite3_trace(jdb->db, 0, 0);
+        sqlite3_trace(db->db, 0, 0);
 
-    if (jdb->onNeedCollate && (!ojdb || !ojdb->onNeedCollate) )
-        sqlite3_collation_needed(jdb->db, jdb, dbCollateNeeded);
+    if (db->onNeedCollate && (!ojdb || !ojdb->onNeedCollate) )
+        sqlite3_collation_needed(db->db, db, dbCollateNeeded);
     else
-        sqlite3_collation_needed(jdb->db, 0, 0);
+        sqlite3_collation_needed(db->db, 0, 0);
 
-    if (jdb->onUpdate && (!ojdb || !ojdb->onUpdate) )
-        sqlite3_update_hook(jdb->db, dbUpdateHandler, jdb);
+    if (db->onUpdate && (!ojdb || !ojdb->onUpdate) )
+        sqlite3_update_hook(db->db, dbUpdateHandler, db);
     else
-        sqlite3_update_hook(jdb->db, 0, 0);
+        sqlite3_update_hook(db->db, 0, 0);
 
-    if (jdb->onWalHook && (!ojdb || !ojdb->onWalHook) )
-        sqlite3_wal_hook(jdb->db, dbWalHandler, jdb);
+    if (db->onWalHook && (!ojdb || !ojdb->onWalHook) )
+        sqlite3_wal_hook(db->db, dbWalHandler, db);
     else
-        sqlite3_wal_hook(jdb->db, 0, 0);
+        sqlite3_wal_hook(db->db, 0, 0);
 
-    if (jdb->onRollback && (!ojdb || !ojdb->onRollback) )
-        sqlite3_rollback_hook(jdb->db, dbRollbackHandler, jdb);
+    if (db->onRollback && (!ojdb || !ojdb->onRollback) )
+        sqlite3_rollback_hook(db->db, dbRollbackHandler, db);
     else
-        sqlite3_rollback_hook(jdb->db, 0, 0);
+        sqlite3_rollback_hook(db->db, 0, 0);
 
-    if (jdb->onProfile && (!ojdb || !ojdb->onProfile) )
-        sqlite3_profile(jdb->db, dbProfileHandler, jdb);
+    if (db->onProfile && (!ojdb || !ojdb->onProfile) )
+        sqlite3_profile(db->db, dbProfileHandler, db);
     else
-        sqlite3_profile(jdb->db, 0, 0);
+        sqlite3_profile(db->db, 0, 0);
 
-    if (jdb->onProgress && jdb->progressSteps && (!ojdb || !ojdb->onProgress || ojdb->progressSteps != jdb->progressSteps) )
-        sqlite3_progress_handler(jdb->db, jdb->progressSteps, dbProgressHandler, jdb);
+    if (db->onProgress && db->progressSteps && (!ojdb || !ojdb->onProgress || ojdb->progressSteps != db->progressSteps) )
+        sqlite3_progress_handler(db->db, db->progressSteps, dbProgressHandler, db);
     else
-        sqlite3_progress_handler(jdb->db, 0, 0, 0);
+        sqlite3_progress_handler(db->db, 0, 0, 0);
     
-    if (!ojdb || jdb->load != ojdb->load)
-        sqlite3_enable_load_extension(jdb->db, jdb->load);
+    if (!ojdb || db->load != ojdb->load)
+        sqlite3_enable_load_extension(db->db, db->load);
 
-    if (!ojdb || jdb->timeout != ojdb->timeout)
-        sqlite3_busy_timeout( jdb->db, jdb->timeout );
+    if (!ojdb || db->timeout != ojdb->timeout)
+        sqlite3_busy_timeout( db->db, db->timeout );
 
-/*    if (jdb->onUnlock && (!ojdb || !ojdb->onUnlock) )
-        sqlite3_unlock_notify(jdb->db, dbUnlockNotify, (void*)jdb);
+/*    if (db->onUnlock && (!ojdb || !ojdb->onUnlock) )
+        sqlite3_unlock_notify(db->db, dbUnlockNotify, (void*)db);
     else
-        sqlite3_unlock_notify(jdb->db, 0, 0);
+        sqlite3_unlock_notify(db->db, 0, 0);
         */
 }
 
@@ -3576,27 +3579,27 @@ void dbSetupCallbacks(Jsi_Db *jdb, Jsi_Db *ojdb)
 static Jsi_RC SqliteConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                          Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    Jsi_Db *jdb, ojdb;
-    if (!(jdb = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
+    Jsi_Db *db, ojdb;
+    if (!(db = dbGetDbHandle(interp, _this, funcPtr))) return JSI_ERROR;
     Jsi_Value *opts = Jsi_ValueArrayIndex(interp, args, 0);
-    if (jdb->noConfig && opts && !Jsi_ValueIsString(interp, opts))
-        return Jsi_LogError("Socket conf() is disabled for set");
-    ojdb = *jdb;
+    if (db->noConfig && opts && !Jsi_ValueIsString(interp, opts))
+        return Jsi_LogErrorExt("Socket conf() is disabled for set");
+    ojdb = *db;
     
-    jdb->lastInsertId = sqlite3_last_insert_rowid(jdb->db);
-    jdb->changeCnt = sqlite3_changes(jdb->db);
-    jdb->changeCntAll = sqlite3_total_changes(jdb->db);
-    jdb->errorCode = sqlite3_errcode(jdb->db);
+    db->lastInsertId = sqlite3_last_insert_rowid(db->db);
+    db->changeCnt = sqlite3_changes(db->db);
+    db->changeCntAll = sqlite3_total_changes(db->db);
+    db->errorCode = sqlite3_errcode(db->db);
     
-    Jsi_RC rc = Jsi_OptionsConf(interp, SqlOptions, jdb, opts, ret, 0);
+    Jsi_RC rc = Jsi_OptionsConf(interp, SqlOptions, db, opts, ret, 0);
     
-    if (jdb->stmtCacheMax<0 || jdb->stmtCacheMax>MAX_PREPARED_STMTS) {
-        JSI_DBQUERY_PRINTF( "option stmtCacheMax value %d is not in range 0..%d", jdb->stmtCacheMax, MAX_PREPARED_STMTS);
-        jdb->stmtCacheMax = ojdb.stmtCacheMax;
+    if (db->stmtCacheMax<0 || db->stmtCacheMax>MAX_PREPARED_STMTS) {
+        JSI_DBQUERY_PRINTF( "option stmtCacheMax value %d is not in range 0..%d", db->stmtCacheMax, MAX_PREPARED_STMTS);
+        db->stmtCacheMax = ojdb.stmtCacheMax;
         rc = JSI_ERROR;
     }
-    dbSetupCallbacks(jdb, &ojdb);
-    dbPrepStmtLimit(jdb);
+    dbSetupCallbacks(db, &ojdb);
+    dbPrepStmtLimit(db);
     return rc;
 }
 
@@ -3661,7 +3664,6 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
 #else
     flags |= SQLITE_OPEN_NOMUTEX;
 #endif
-
     Jsi_Value *vFile = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 1);
     Jsi_DString dStr = {};
@@ -3670,7 +3672,7 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     Jsi_Value *toacc;
     const char *vf;
     const char *dbname = NULL;
-    
+
     if (vFile==NULL || Jsi_ValueIsNull(interp, vFile) ||
         ((vf = Jsi_ValueString(interp, vFile, NULL)) && !Jsi_Strcmp(vf,":memory:"))) {
         zFile = ":memory:";
@@ -3687,11 +3689,13 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     Jsi_Db *db = (Jsi_Db*)Jsi_Calloc(1, sizeof(*db) );
     if( db==0 ) {
         Jsi_DSFree(&dStr);
-        Jsi_LogError("malloc failed");
+        Jsi_LogErrorExt("malloc failed");
         return JSI_ERROR;
     }
+    db->popts = Jsi_CommandPkgOpts(interp, funcPtr);
+    Jsi_LogDebugExt("Starting DB");
     db->sig = SQLITE_SIG_DB;
-    db->_ = &dbObjCmd;
+    db->_ = &db_PkgStatus;
     db->_->newCnt++;
     db->_->activeCnt++;
     db->stmtCacheMax = NUM_PREPARED_STMTS;
@@ -3705,12 +3709,12 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     if (ismem == 0 &&
         (Jsi_InterpAccess(interp, vFile, (db->readonly ? JSI_INTACCESS_READ : JSI_INTACCESS_WRITE)) != JSI_OK
         || (create && Jsi_InterpAccess(interp, vFile, JSI_INTACCESS_CREATE) != JSI_OK))) {
-        Jsi_LogError("Safe accces denied");
+        Jsi_LogErrorExt("Safe accces denied");
         goto bail;
     }
 
     if (db->stmtCacheMax<0 || db->stmtCacheMax>MAX_PREPARED_STMTS) {
-        Jsi_LogError("option stmtCacheMax value %d is not in range 0..%d", db->stmtCacheMax, MAX_PREPARED_STMTS);
+        Jsi_LogErrorExt("option stmtCacheMax value %d is not in range 0..%d", db->stmtCacheMax, MAX_PREPARED_STMTS);
         goto bail;
     }
     if (!db->udata) {
@@ -3743,7 +3747,7 @@ static Jsi_RC SqliteConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     }
   
     if (SQLITE_OK != sqlite3_open_v2(zFile, &db->db, flags, vfs)) {
-        Jsi_LogError("db open failed: %s", zFile);
+        Jsi_LogErrorExt("db open failed: %s", zFile);
         goto bail;
     }
     //Jsi_DSFree(&translatedFilename);
@@ -3816,10 +3820,10 @@ const char *jsi_DbOptionTypeStr(Jsi_OptionId typ, bool cname)
     return NULL;
 }
 
-static Jsi_RC dbBindOptionStmt(Jsi_Db *jdb, sqlite3_stmt *pStmt, OptionBind *obPtr,
+static Jsi_RC dbBindOptionStmt(Jsi_Db *db, sqlite3_stmt *pStmt, OptionBind *obPtr,
                             int dataIdx, int bindMax, Jsi_CDataDb *dbopts)
 {
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
     int j, k, cnt = 0, idx, sidx = -1, rc = 0;
     Jsi_StructSpec *specPtr, *specs;
     void *rec;
@@ -3849,7 +3853,7 @@ static Jsi_RC dbBindOptionStmt(Jsi_Db *jdb, sqlite3_stmt *pStmt, OptionBind *obP
             if (bindMax>0 && k>=bindMax)
                 continue;
             if (!dbopts[k].sf) {
-                Jsi_LogError("bad bind: %s", bName);
+                Jsi_LogErrorExt("bad bind: %s", bName);
                 continue;
             }
         }
@@ -3880,7 +3884,7 @@ static Jsi_RC dbBindOptionStmt(Jsi_Db *jdb, sqlite3_stmt *pStmt, OptionBind *obP
             }
         }
         if (specPtr->id<JSI_OPTION_BOOL || specPtr->id>=JSI_OPTION_END) 
-            return Jsi_LogError("unknown bind: %s", bName);
+            return Jsi_LogErrorExt("unknown bind: %s", bName);
 
         char *ptr = (char *)rec + specPtr->offset;
         switch (specPtr->id) {
@@ -3930,18 +3934,18 @@ static Jsi_RC dbBindOptionStmt(Jsi_Db *jdb, sqlite3_stmt *pStmt, OptionBind *obP
                 rc = sqlite3_bind_text(pStmt, idx, Jsi_DSValue(&dStr), -1, SQLITE_TRANSIENT );
                 Jsi_DSFree(&dStr);
             } else 
-                return Jsi_LogError("missing or invalid custom for \"%s\"", specPtr->name);
+                return Jsi_LogErrorExt("missing or invalid custom for \"%s\"", specPtr->name);
             break;
         }
         case JSI_OPTION_DSTRING:
             eStr = (Jsi_DString*)ptr;
-            if (jdb->optPtr->nullvalue && !Jsi_Strcmp(jdb->optPtr->nullvalue, Jsi_DSValue(eStr)))
+            if (db->optPtr->nullvalue && !Jsi_Strcmp(db->optPtr->nullvalue, Jsi_DSValue(eStr)))
                 rc = sqlite3_bind_text(pStmt, idx, NULL, -1, statFlags );
             else
                 rc = sqlite3_bind_text(pStmt, idx, Jsi_DSValue(eStr), -1, statFlags );
             break;
         case JSI_OPTION_STRBUF:
-            if (jdb->optPtr->nullvalue && ptr && !Jsi_Strcmp(jdb->optPtr->nullvalue, (char*)ptr))
+            if (db->optPtr->nullvalue && ptr && !Jsi_Strcmp(db->optPtr->nullvalue, (char*)ptr))
                 rc = sqlite3_bind_text(pStmt, idx, NULL, -1, statFlags );
             else
                 rc = sqlite3_bind_text(pStmt, idx, (char*)ptr, -1, statFlags );
@@ -3968,12 +3972,12 @@ static Jsi_RC dbBindOptionStmt(Jsi_Db *jdb, sqlite3_stmt *pStmt, OptionBind *obP
 #else
         default:
 #endif
-            Jsi_LogError("unsupported jdb option type \"%s\" for \"%s\"", jsi_DbOptionTypeStr(specPtr->id, 0), specPtr->name);
+            Jsi_LogErrorExt("unsupported db option type \"%s\" for \"%s\"", jsi_DbOptionTypeStr(specPtr->id, 0), specPtr->name);
             return JSI_ERROR;
 
         }
         if (rc != SQLITE_OK)
-            Jsi_LogError("bind failure: %s", sqlite3_errmsg(jdb->db));
+            Jsi_LogErrorExt("bind failure: %s", sqlite3_errmsg(db->db));
     }
     cnt++;
     return JSI_OK;
@@ -3983,17 +3987,17 @@ static Jsi_RC dbBindOptionStmt(Jsi_Db *jdb, sqlite3_stmt *pStmt, OptionBind *obP
  * If there are results return JSI_OK. On error return JSI_ERROR;
  */
 static Jsi_RC dbEvalStepOption(DbEvalContext *p, OptionBind *obPtr, int *cntPtr, int dataIdx, int bindMax, Jsi_CDataDb *dbopts, int *erc) {
-    Jsi_Db *jdb = p->jdb;
+    Jsi_Db *db = p->db;
     int cnt = 0;
     while( p->zSql[0] || p->pPreStmt ) {
         Jsi_RC rc;
         cnt++;
         if( p->pPreStmt==0 ) {
-            rc = dbPrepareStmt(p->jdb, p->zSql, &p->zSql, &p->pPreStmt);
+            rc = dbPrepareStmt(p->db, p->zSql, &p->zSql, &p->pPreStmt);
             if( rc!=JSI_OK ) return rc;
         }
         if (bindMax!=0) {
-            rc = dbBindOptionStmt(jdb, p->pPreStmt->pStmt, obPtr, dataIdx, bindMax, dbopts);
+            rc = dbBindOptionStmt(db, p->pPreStmt->pStmt, obPtr, dataIdx, bindMax, dbopts);
             if( rc!=JSI_OK ) return rc;
         }
         rc = dbEvalStepSub(p, 1, erc);
@@ -4018,23 +4022,23 @@ static Jsi_StructSpec* dbLookupSpecFromName(Jsi_StructSpec *specs, const char *n
     return NULL;
 }
 
-const char* Jsi_DbKeyAdd(Jsi_Db *jdb, const char *str)
+const char* Jsi_DbKeyAdd(Jsi_Db *db, const char *str)
 {
 #ifndef JSI_LITE_ONLY
-    if (jdb->interp)
-        return Jsi_KeyAdd(jdb->interp, str);
+    if (db->interp)
+        return Jsi_KeyAdd(db->interp, str);
 #endif
     Jsi_HashEntry *hPtr;
     bool isNew;
-    hPtr = Jsi_HashEntryNew(jdb->strKeyTbl, str, &isNew);
+    hPtr = Jsi_HashEntryNew(db->strKeyTbl, str, &isNew);
     assert(hPtr) ;
     return (const char*)Jsi_HashKeyGet(hPtr);
 }
 
-static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDataDb *dbopts)
+static int dbOptSelect(Jsi_Db *db, const char *cmd, OptionBind *obPtr, Jsi_CDataDb *dbopts)
 {
     void *rec = dbopts[0].data, **recPtrPtr = NULL;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
     Jsi_StructSpec *specPtr, *specs = dbopts[0].sf;
     DbEvalContext sEval = {};
     int ccnt = 0;
@@ -4048,7 +4052,7 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
     Jsi_DString sStr, *dStr = &sStr;
     Jsi_DSInit(dStr);
 #endif
-    dbEvalInit(interp, &sEval, jdb, NULL, dStr, 0, 0);
+    dbEvalInit(interp, &sEval, db, NULL, dStr, 0, 0);
     if (dbopts->noCache)
         sEval.nocache = 1;
     Jsi_DSAppendLen(dStr, cmd, cPtr?(cPtr-cmd):-1);
@@ -4065,7 +4069,7 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
         Jsi_DSAppend(dStr, cPtr+3, NULL);
     }
     sEval.zSql = Jsi_DSValue(dStr);
-    sEval.nocache = jdb->optPtr->nocache;
+    sEval.nocache = db->optPtr->nocache;
     int rc = JSI_ERROR, erc = -1, structSize = 0;
     int cnt = 0, dataMax = (dbopts->isPtr2?0:1);
     int multi = (dbopts->isPtr2!=0);
@@ -4140,11 +4144,11 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
         for (idx=0; idx<nCol; idx++) {
             specPtr = dbLookupSpecFromName(specs, apColName[idx]);
             if (!specPtr) {
-                Jsi_LogError("unknown column name: %s", apColName[idx]);
+                Jsi_LogErrorExt("unknown column name: %s", apColName[idx]);
                 goto bail;
             }          
             if (specPtr->id<JSI_OPTION_BOOL || specPtr->id>=JSI_OPTION_END) {
-                Jsi_LogError("unknown option type \"%d\" for \"%s\"", specPtr->id, specPtr->name);
+                Jsi_LogErrorExt("unknown option type \"%d\" for \"%s\"", specPtr->id, specPtr->name);
                 goto bail;
             }
             char *ptr = (char*)prec + specPtr->offset;
@@ -4192,13 +4196,13 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
                     eStr = (Jsi_DString*)ptr;
                     str = (char*)sqlite3_column_text(pStmt, idx );
                     if (!str)
-                        str = jdb->optPtr->nullvalue;
+                        str = db->optPtr->nullvalue;
                     Jsi_DSSet(eStr, str?str:"");
                     break;
                 case JSI_OPTION_STRBUF:
                     str = (char*)sqlite3_column_text(pStmt, idx );
                     if (!str)
-                        str = jdb->optPtr->nullvalue;
+                        str = db->optPtr->nullvalue;
                     strncpy((char*)ptr, str?str:"", specPtr->size);
                     ((char*)ptr)[specPtr->size-1] = 0;
                     break;
@@ -4210,7 +4214,7 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
                             goto bail;
                         }
                     } else {
-                        Jsi_LogError("missing or invalid custom for \"%s\"", specPtr->name);
+                        Jsi_LogErrorExt("missing or invalid custom for \"%s\"", specPtr->name);
                         goto bail;
                     }
                     break;
@@ -4218,8 +4222,8 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
                 case JSI_OPTION_STRKEY:
                     str = (char*)sqlite3_column_text(pStmt, idx );
                     if (!str)
-                        str = jdb->optPtr->nullvalue;
-                    *(char**)ptr = (str?(char*)Jsi_DbKeyAdd(jdb, str):NULL);
+                        str = db->optPtr->nullvalue;
+                    *(char**)ptr = (str?(char*)Jsi_DbKeyAdd(db, str):NULL);
                     break;
 #ifndef JSI_LITE_ONLY
                 case JSI_OPTION_STRING: {
@@ -4230,7 +4234,7 @@ static int dbOptSelect(Jsi_Db *jdb, const char *cmd, OptionBind *obPtr, Jsi_CDat
                     }
                     str = (char*)sqlite3_column_text(pStmt, idx );
                     if (!str)
-                        str = jdb->optPtr->nullvalue;
+                        str = db->optPtr->nullvalue;
                     if (str) {
                         vPtr = Jsi_ValueNewStringDup(interp, str);
                         *((Jsi_Value **)ptr) = vPtr;
@@ -4275,18 +4279,18 @@ bail:
     return erc;
 }
 
-static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
+static int jsi_DbQuery(Jsi_Db *db, Jsi_CDataDb *dbopts, const char *query)
 {
     int k, cnt, erc = -1;
     Jsi_CDataDb statbinds[] = {{}, {}};
     if (!dbopts) dbopts = statbinds;
     OptionBind ob = {.binds = dbopts};
     Jsi_StructSpec *specPtr, *specs;
-    Jsi_Interp *interp = jdb->interp;
+    Jsi_Interp *interp = db->interp;
     if (!query) query="";
     if (query[0]==';') {
-        if (!dbExecCmd(jdb, query+1, &erc)) {
-            Jsi_LogError("EXEC ERROR=\"%s\", SQL=\"%s\"", sqlite3_errmsg(jdb->db), query);
+        if (!dbExecCmd(db, query+1, &erc)) {
+            Jsi_LogErrorExt("EXEC ERROR=\"%s\", SQL=\"%s\"", sqlite3_errmsg(db->db), query);
             return erc;
         }
         return 0;
@@ -4294,15 +4298,15 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
     const char *cPtr = Jsi_Strstr(query, " %s");
     if (!cPtr) cPtr = Jsi_Strstr(query, "\t%s");
     if (!dbopts) {
-        Jsi_LogError("dbopts may not be null");
+        Jsi_LogErrorExt("dbopts may not be null");
         return -1;
     }
     if (!dbopts[0].data) {
-        Jsi_LogError("data may not be null");
+        Jsi_LogErrorExt("data may not be null");
         return -1;
     }
     if (!dbopts[0].sf) {
-        Jsi_LogError("specs may not be null");
+        Jsi_LogErrorExt("specs may not be null");
         return -1;
     }
     for (k=0; dbopts[k].sf; k++) {
@@ -4315,7 +4319,7 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
                 if (k==0) {
                     if (specPtr->flags&JSI_OPT_DB_ROWID) {
                         if (specPtr->id != JSI_OPTION_INT64) {
-                            Jsi_LogError("rowid flag must be a wide field: %s", specPtr->name);
+                            Jsi_LogErrorExt("rowid flag must be a wide field: %s", specPtr->name);
                             return -1;
                         }
                         ob.rowidPtr = specPtr;
@@ -4324,7 +4328,7 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
                         if (specPtr->id == JSI_OPTION_BOOL || specPtr->id == JSI_OPTION_INT) {
                             ob.dirtyPtr = specPtr;
                         } else {
-                            Jsi_LogError("dirty flag must be a int/bool field: %s", specPtr->name);
+                            Jsi_LogErrorExt("dirty flag must be a int/bool field: %s", specPtr->name);
                             return -1;
                         }
                     }
@@ -4371,7 +4375,7 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
     }
     
     if (!Jsi_Strncasecmp(query, "SELECT", 6))
-        return dbOptSelect(jdb, query, &ob, dbopts);
+        return dbOptSelect(db, query, &ob, dbopts);
         
     DbEvalContext sEval = {};
     int insert = 0, replace = 0, update = 0;
@@ -4384,7 +4388,7 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
 #endif
     if (dbopts->noCache)
         sEval.nocache = 1;
-    if (dbEvalInit(interp, &sEval, jdb, NULL, dStr, 0, 0) != JSI_OK)
+    if (dbEvalInit(interp, &sEval, db, NULL, dStr, 0, 0) != JSI_OK)
         return -1;
     int dataMax = dbopts[0].arrSize;
     cnt = 0;
@@ -4450,12 +4454,13 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
     } else if (!Jsi_Strncasecmp(query, "DELETE", 6)) {
         Jsi_DSAppend(dStr, query, NULL);
     } else {
-        Jsi_LogError("unrecognized query \"%s\": expected one of: SELECT, UPDATE, INSERT, REPLACE or DELETE", query);
+        Jsi_LogErrorExt("unrecognized query \"%s\": expected one of: SELECT, UPDATE, INSERT, REPLACE or DELETE", query);
         return -1;
     }
     sEval.zSql = Jsi_DSValue(dStr);
-    if (jdb->echo && sEval.zSql)
-        Jsi_LogInfo("SQL-ECHO: %s\n", sEval.zSql); 
+    if (db->echo && sEval.zSql)
+        Jsi_LogInfoExt("SQL-ECHO: %s", sEval.zSql); 
+    Jsi_LogTraceExt("SQL-QUERY: %s", sEval.zSql); 
 
     int rc, bindMax = -1, dataIdx = 0;
     cnt = 0;
@@ -4463,11 +4468,11 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
     int isnew = (replace||insert);
     int didBegin = 0;
     DbEvalContext *p = &sEval;
-    rc = dbPrepareStmt(p->jdb, p->zSql, &p->zSql, &p->pPreStmt);
+    rc = dbPrepareStmt(p->db, p->zSql, &p->zSql, &p->pPreStmt);
     if( rc!=JSI_OK ) return -1;
     if (dataMax>1 && !dbopts->noBegin) {
         didBegin = 1;
-        if (!dbExecCmd(jdb, JSI_DBQUERY_BEGIN_STR, &erc))
+        if (!dbExecCmd(db, JSI_DBQUERY_BEGIN_STR, &erc))
             goto bail;
     }
     while (dataIdx<dataMax) {
@@ -4489,14 +4494,14 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
             isDirty &= ~(1<<(bit));
             *(int*)ptr = isDirty; /* Note that the dirty bit is cleared, even upon error.*/
         }
-        rc = dbBindOptionStmt(jdb, p->pPreStmt->pStmt, &ob, dataIdx, bindMax, dbopts);
+        rc = dbBindOptionStmt(db, p->pPreStmt->pStmt, &ob, dataIdx, bindMax, dbopts);
         if( rc!=JSI_OK )
             goto bail;
         bindMax = 1;
         rc = dbEvalStepSub(p, (dataIdx>=dataMax), &erc);
         if (rc == JSI_ERROR)
             goto bail;
-        cnt += sqlite3_changes(jdb->db);
+        cnt += sqlite3_changes(db->db);
         if (rc != JSI_OK && rc != JSI_BREAK)
             break;
         if (ob.rowidPtr && isnew) {
@@ -4506,11 +4511,11 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
             else
                 rec = (char*)rec + (dataIdx * structSize);
             char *ptr = (char*)rec + ob.rowidPtr->offset;
-            *(Jsi_Wide*)ptr = sqlite3_last_insert_rowid(jdb->db);
+            *(Jsi_Wide*)ptr = sqlite3_last_insert_rowid(db->db);
         }
         dataIdx++;
     }
-    if (didBegin && !dbExecCmd(jdb, JSI_DBQUERY_COMMIT_STR, &erc))
+    if (didBegin && !dbExecCmd(db, JSI_DBQUERY_COMMIT_STR, &erc))
         rc = JSI_ERROR;
     dbEvalFinalize(&sEval);
     if( rc==JSI_BREAK ) {
@@ -4521,7 +4526,7 @@ static int jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
 bail:
     dbEvalFinalize(&sEval);
     if (didBegin)
-        dbExecCmd(jdb, JSI_DBQUERY_ROLLBACK_STR, NULL);
+        dbExecCmd(db, JSI_DBQUERY_ROLLBACK_STR, NULL);
     return erc;
 }
 
@@ -4531,20 +4536,20 @@ bail:
 #undef Jsi_DbNew
 #endif
 int
-Jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dbopts, const char *query)
+Jsi_DbQuery(Jsi_Db *db, Jsi_CDataDb *dbopts, const char *query)
 {
-    int rc = jsi_DbQuery(jdb, dbopts, query);
+    int rc = jsi_DbQuery(db, dbopts, query);
 #ifdef JSI_DBQUERY_ERRORCMD
     if (rc<0)
-        rc = JSI_DBQUERY_ERRORCMD(jdb, specs, data, arrSize, query, dopts, rc);
+        rc = JSI_DBQUERY_ERRORCMD(db, specs, data, arrSize, query, dopts, rc);
 #endif
     return rc;
 }
 
-void *Jsi_DbHandle(Jsi_Interp *interp, Jsi_Db* jdb)
+void *Jsi_DbHandle(Jsi_Interp *interp, Jsi_Db* db)
 {
-    SQLSIGASSERT(jdb,DB);
-    return jdb->db;
+    SQLSIGASSERT(db,DB);
+    return db->db;
 }
 
 /* This is the non-script, JSI_LITE_ONLY creator for Jsi_Db */
@@ -4648,7 +4653,7 @@ Jsi_RC Jsi_InitSqlite(Jsi_Interp *interp, int release)
     Jsi_Value *info = Jsi_ValueNew1(interp);
     Jsi_JSONParseFmt(interp, &info, "{libVer:\"%s\", hdrVer:\"%s\", hdrNum:%d, hdrSrcId:\"%s\", pkgVer:%d}",
         (char *)sqlite3_libversion(), SQLITE_VERSION, SQLITE_VERSION_NUMBER, SQLITE_SOURCE_ID, jsi_DbPkgVersion);
-    Jsi_PkgOpts dbPkgOpts = { .spec=db_ObjCmd_Specs, .data=&dbObjCmd, .cmdSpec=sqliteCmds, .info=info };
+    Jsi_PkgOpts dbPkgOpts = { .spec=db_ObjCmd_Specs, .data=&db_PkgStatus, .cmdSpec=sqliteCmds, .info=info };
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "Sqlite", jsi_DbPkgVersion, Jsi_InitSqlite, &dbPkgOpts);
     Jsi_DecrRefCount(interp, info);
     if (rc != JSI_OK)
@@ -4689,22 +4694,22 @@ Jsi_RC Jsi_doneSqlite(Jsi_Interp *interp)
 #endif
 
 int
-Jsi_DbQuery(Jsi_Db *jdb, Jsi_CDataDb *dPtr, const char *query)
+Jsi_DbQuery(Jsi_Db *db, Jsi_CDataDb *dPtr, const char *query)
 {
     if (!jsi_dbVfsPtr) {
         printf( "Sqlite unsupported\n");
         return -1;
     }
-    return jsi_dbVfsPtr->dbcQuery(jdb, dPtr, query);
+    return jsi_dbVfsPtr->dbcQuery(db, dPtr, query);
 }
 
-void *Jsi_DbHandle(Jsi_Interp *interp, Jsi_Db* jdb)
+void *Jsi_DbHandle(Jsi_Interp *interp, Jsi_Db* db)
 {
     if (!jsi_dbVfsPtr) {
         printf( "Sqlite unsupported\n");
         return NULL;
     }
-    return jsi_dbVfsPtr->dbHandle(interp, jdb);
+    return jsi_dbVfsPtr->dbHandle(interp, db);
 }
 
 Jsi_Db* Jsi_DbNew(const char *zFile, int inFlags /* JSI_DBI_* */)
@@ -4717,3 +4722,4 @@ Jsi_Db* Jsi_DbNew(const char *zFile, int inFlags /* JSI_DBI_* */)
 }
 
 #endif
+#undef JSI_EXT_OPTS

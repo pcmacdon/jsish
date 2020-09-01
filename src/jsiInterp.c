@@ -97,6 +97,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(STRKEY,Jsi_Interp, jsppChars,   .help="Line preprocessor when sourcing files. Line starts with first char, and either ends with it, or matches string"),
     JSI_OPT(FUNC,  Jsi_Interp, jsppCallback,.help="Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number)"),
     JSI_OPT(INT,   Jsi_Interp, lockTimeout, .help="Thread time-out for mutex lock acquires (milliseconds)" ),
+    JSI_OPT(STRKEY,Jsi_Interp, lockDown,    .help="Directory to Safe-lockdown interpreter to" ),
     JSI_OPT(CUSTOM,Jsi_Interp, logOpts,     .help="Options for log output to add file/line/time", .flags=0, .custom=Jsi_Opt_SwitchSuboption, .data=jsi_InterpLogOptions),
     JSI_OPT(CUSTOM,Jsi_Interp, log,         .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(INT,   Jsi_Interp, maxDepth,    .help="Depth limit of recursive function calls (1000)", .flags=JSI_OPT_LOCKSAFE),
@@ -771,20 +772,13 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
         dohelp:
         puts("USAGE:\n  jsish [PREFIX-OPTS] [COMMAND-OPTS|FILE] ...\n"
           "\nPREFIX-OPTS:\n"
-          "  --C FILE\tOption file of config options.\n"
-          "  --F\t\tTrace all function calls and returns.\n"
-          "  --I OPT=VAL\tInterp option bits: equivalent to Interp.conf({OPT:VAL}).\n"
-          "  --L OPT\tLogging bits: equivalent to Interp.conf({log:'XXX'})..\n"
-          "  --S PATH\tSet safeMode to \"lockdown\" using PATH for safe(Read/Write)Dirs.\n"
-          "  --T OPT\tTypechecking bits: equivalent to Interp.conf({typeCheck:'XXX'})..\n"
-          "  --U\t\tDisplay unittest output, minus pass/fail compare.\n"
-          "  --V\t\tSame as --U, but adds file and line number to output.\n"
-          "  --X OPT\tTracing bits: equivalent to Interp.conf({traceCall:'XXX'})..\n"
+          "  --E CODE\tJavascript to evaluate before program starts\n"
+          "  --I OPT=VAL\tInterp option bits: equivalent to Interp.conf({OPT:VAL}); VAL defaults to true.\n"
           "\nCOMMAND-OPTS:\n"
           "  -a\t\tArchive: mount an archive (zip, sqlar or fossil repo) and run module.\n"
           "  -c\t\tCData: generate .c or JSON output from a .jsc description.\n"
           "  -d\t\tDebug: console script debugger.\n"
-          "  -e CODE ...\tEvaluate javascript CODE.\n"
+          "  -e CODE\tEvaluate javascript and exit.\n"
           "  -h ?CMD?\tHelp: show help for jsish or its commands.\n"
           "  -m\t\tModule: utility create/manage/invoke a Module.\n"
           "  -s\t\tSafe: runs script in safe sub-interp.\n"
@@ -885,8 +879,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Zip');", JSI_EVAL_ISMAIN);
                 break;
             default:
-                puts("usage: jsish [  --C FILE | --I OPT:VAL | --L OPT | --T OPT | --X OPT | --S PATH | --U | --V | --F ] | -e STRING |\n\t"
-                "| -a | -c | -d | -D | -h | -m | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
+                puts("usage: jsish [ --E CODE | --I OPT:VAL ] \n\t"
+                "-a | -c | -d | -D | -e CODE | -h | J | -m | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
                 return jsi_DoExit(interp, 1);
         }
     } else {
@@ -1056,6 +1050,19 @@ done:
     return rc;
 }
 
+static void jsi_UnitTestSetup(Jsi_Interp *interp)  {
+    if (interp->unitTest&2) {
+        interp->logOpts.before = 1;
+        interp->logOpts.full = 1;
+        interp->tracePuts = 1;
+        interp->noStderr = 1;
+    }
+    if (interp->unitTest&1)
+        interp->log |= JSI_LOG_ASSERT;
+    if ((interp->unitTest&3) == 3)
+        interp->tracePuts = 1;
+}
+
 static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_InterpOpts *iopts)
 {
     Jsi_Interp* interp;
@@ -1103,7 +1110,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->logOpts.func = 1;
     interp->logOpts.before = 1;
     interp->typeCheck.strict = 1;
-    interp->log = jsi_LogDefMaskVal;
+    interp->log = ~jsi_LogDefVal;
     int argc = interp->opts.argc;
     char **argv = interp->opts.argv;
     char *argv0 = (argv?argv[0]:NULL);
@@ -1148,9 +1155,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
             break;
         else {
             switch (aio[2]) {
-                case 'T': case 'S': case 'C': case 'L': case 'X':
-                    continue;
-                case 'F': case 'U': case 'V':  iocnt--;
+                case 'E':
                     continue;
                 case 'I': {
                     const char *aio2 = argv[iocnt+1];
@@ -1219,72 +1224,9 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
             break;
         else {
             switch (aio[2]) {
-                case 'F':
-                    interp->traceCall |= (jsi_callTraceFuncs |jsi_callTraceArgs |jsi_callTraceReturn | jsi_callTraceBefore | jsi_callTraceFullPath);
-                    iocnt--;
-                    interp->iskips++;
-                    continue;
-                case 'U':
-                    interp->log |= JSI_LOG_ASSERT;
-                    interp->unitTest = 1;
-                    iocnt--;
-                    interp->iskips++;
-                    continue;
-                case 'V':
-                    interp->log |= JSI_LOG_ASSERT;
-                    interp->unitTest = 5;
-                    interp->tracePuts = 1;
-                    iocnt--;
-                    interp->iskips++;
-                    continue;
-                case 'C':
-                    if (interp->confFile)
-                       Jsi_LogWarn("overriding confFile: %s", interp->confFile);
-                    interp->confFile = argv[iocnt+1];
-                    interp->iskips+=2;
-                    continue;
-                case 'S': {
-                    struct stat sb;
-                    const char* path = argv[iocnt+1]; //TODO: convert to Jsi_Value first?
-                    if (!path || stat(path, &sb)
-                        || !((S_ISREG(sb.st_mode) && !access(path, W_OK)) || (S_ISDIR(sb.st_mode) && !access(path, X_OK)))) {
-                        Jsi_LogError("Lockdown path must exist and be a writable file or executable dir: %s", path);
-                        Jsi_InterpDelete(interp);
-                        return NULL;
-                    }
-                    interp->isSafe = true;
-                    interp->safeMode = jsi_safe_Lockdown;
-                    if (interp->safeWriteDirs) {
-                        Jsi_LogWarn("Overriding safeWriteDirs");
-                        Jsi_DecrRefCount(interp, interp->safeWriteDirs);
-                    }
-                    const char *vda[2] = {};
-                    char npath[PATH_MAX];
-                    vda[0] = Jsi_FileRealpathStr(interp, path, npath);
-                    interp->safeWriteDirs = Jsi_ValueNewArray(interp, vda, 1);
-                    Jsi_IncrRefCount(interp, interp->safeWriteDirs);
-                    if (!interp->safeReadDirs) {
-                        interp->safeReadDirs = interp->safeWriteDirs;
-                        Jsi_IncrRefCount(interp, interp->safeReadDirs);
-                    }
-                    interp->iskips+=2;
-                    continue;
-                }
-                case 'T': case 'L': case 'X': {
-                    Jsi_Value *lv = Jsi_ValueNewStringConst(interp, argv[iocnt+1], -1);
-                    Jsi_IncrRefCount(interp, lv);
-                    if (aio[2]=='L')
-                        rc = Jsi_OptionsSet(interp, InterpOptions, interp, "log", lv, 0);
-                    else if (aio[2]=='T')
-                        rc = Jsi_OptionsSet(interp, InterpOptions, interp, "typeCheck", lv, 0);
-                    else
-                        rc = Jsi_OptionsSet(interp, InterpOptions, interp, "traceCall", lv, 0);
-                    Jsi_DecrRefCount(interp, lv);
-                    if (JSI_OK != rc) {
-                    //if (jsi_ParseTypeCheckStr(interp, argv[iocnt+1]) != JSI_OK)
-                        Jsi_InterpDelete(interp);
-                        return NULL;
-                    }
+
+                case 'E': {
+                    Jsi_DSAppend(&interp->interpEvalQ, argv[iocnt+1], NULL);
                     interp->iskips+=2;
                     continue;
                 }
@@ -1484,12 +1426,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->framePtr->ingsc = interp->gsc = jsi_ScopeChainNew(interp, 0);
 
     interp->ps = jsi_PstateNew(interp); /* Default parser. */
-    if (interp->unitTest&2) {
-        interp->logOpts.before = 1;
-        interp->logOpts.full = 1;
-        interp->tracePuts = 1;
-        interp->noStderr = 1;
-    }
+    jsi_UnitTestSetup(interp);
     if (interp->args && argc) {
         Jsi_LogBug("args may not be specified both as options and parameter");
         Jsi_InterpDelete(interp);
@@ -1533,7 +1470,6 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->Mutex = Jsi_MutexNew(interp, -1, JSI_MUTEX_RECURSIVE);
     if (1 || interp->subthread) {
         interp->QMutex = Jsi_MutexNew(interp, -1, JSI_MUTEX_RECURSIVE);
-        //Jsi_DSInit(&interp->interpEvalQ);
     }
     JSIDOINIT(Lexer);
     if (interp != jsiIntData.mainInterp && !parent)
@@ -1580,6 +1516,39 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     }
 #endif
     Jsi_PkgProvide(interp, "Jsi", JSI_VERSION, NULL);
+    if (Jsi_DSLength(&interp->interpEvalQ)) {
+        rc = Jsi_EvalString(interp, Jsi_DSValue(&interp->interpEvalQ), 0);
+        Jsi_DSSetLength(&interp->interpEvalQ, 0);
+        if (JSI_OK != rc) {
+            Jsi_InterpDelete(interp);
+            return NULL;
+        }
+    }
+    if (interp->lockDown) {
+        struct stat sb;
+        const char* path = interp->lockDown;
+        if (!path || stat(path, &sb)
+            || !((S_ISREG(sb.st_mode) && !access(path, W_OK)) || (S_ISDIR(sb.st_mode) && !access(path, X_OK)))) {
+            Jsi_LogError("Lockdown path must exist and be a writable file or executable dir: %s", path);
+            Jsi_InterpDelete(interp);
+            return NULL;
+        }
+        interp->isSafe = true;
+        interp->safeMode = jsi_safe_Lockdown;
+        if (interp->safeWriteDirs) {
+            Jsi_LogWarn("Overriding safeWriteDirs");
+            Jsi_DecrRefCount(interp, interp->safeWriteDirs);
+        }
+        const char *vda[2] = {};
+        char npath[PATH_MAX];
+        vda[0] = Jsi_FileRealpathStr(interp, path, npath);
+        interp->safeWriteDirs = Jsi_ValueNewArray(interp, vda, 1);
+        Jsi_IncrRefCount(interp, interp->safeWriteDirs);
+        if (!interp->safeReadDirs) {
+            interp->safeReadDirs = interp->safeWriteDirs;
+            Jsi_IncrRefCount(interp, interp->safeReadDirs);
+        }
+    }
     if (argc > 0) {
         char *ss = argv0;
         char epath[PATH_MAX] = ""; // Path of executable
@@ -2904,6 +2873,7 @@ static Jsi_RC InterpConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
             Jsi_DecrRefCount(sinterp, popts);
         Jsi_CleanValue(sinterp, interp, *ret, ret);
     }
+    jsi_UnitTestSetup(sinterp);
     return rc;
 }
 

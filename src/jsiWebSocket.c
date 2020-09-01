@@ -1,3 +1,4 @@
+#define JSI_EXT_OPTS cmdPtr->popts
 #ifndef JSI_LITE_ONLY
 #if JSI__WEBSOCKET==1
 #if JSI__MEMDEBUG
@@ -91,15 +92,15 @@ enum {
 typedef struct {
   int activeCnt;  /* Count of active objects. */ 
   int newCnt;  /* Total number of new. */ 
-} ws_ObjCmd;
+} ws_Pkg_Status;
 
-static ws_ObjCmd wsObjCmd = {};
+static ws_Pkg_Status ws_PkgStatus = {};
 
 static Jsi_OptionSpec wsObjCmd_Specs[] =
 {
-    JSI_OPT(INT,   ws_ObjCmd, activeCnt, .help="Number of active objects"),
-    JSI_OPT(INT,   ws_ObjCmd, newCnt,    .help="Number of new calls"),
-    JSI_OPT_END(ws_ObjCmd, .help="Options for WebSocket module")
+    JSI_OPT(INT,   ws_Pkg_Status, activeCnt, .help="Number of active objects"),
+    JSI_OPT(INT,   ws_Pkg_Status, newCnt,    .help="Number of new calls"),
+    JSI_OPT_END(ws_Pkg_Status, .help="Options for WebSocket module")
 };
 
 typedef struct {
@@ -116,7 +117,7 @@ typedef struct {
 typedef struct { /* Per server data (or client if client-mode). */
     uint sig;
     Jsi_Interp *interp;
-    ws_ObjCmd *_;
+    ws_Pkg_Status *_;
     Jsi_Hash *pssTable, *handlers, *fileHash;
     Jsi_Value *onAuth, *onCloseLast, *onClose, *onFilter, *onOpen, *onRecv,
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
@@ -181,6 +182,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     const char *curRoot;
     int sfd;        // File descriptor for http.
     Jsi_DString cName;
+    Jsi_PkgOpts *popts;
 } jsi_wsCmdObj;
 
 typedef struct { /* Per session connection (to each server) */
@@ -826,11 +828,11 @@ static bool jsi_wsAddHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws
         const char *hn = Jsi_ValueArrayIndexToStr(interp, hdrs, i, NULL),
             *hv = Jsi_ValueArrayIndexToStr(interp, hdrs, i+1, &hvl);
         if (!hn || !hv || !(len=Jsi_Strlen(hn))) {
-            Jsi_LogWarn("Header invalid: %s %s", (hn?hn:""), (hv?hv:""));
+            Jsi_LogWarnExt("Header invalid: %s %s", (hn?hn:""), (hv?hv:""));
             return false;
         }
         if (hn[len-1] != ':') {
-            Jsi_LogWarn("Header name must end in colon: %s %s", (hn?hn:""), (hv?hv:""));
+            Jsi_LogWarnExt("Header name must end in colon: %s %s", (hn?hn:""), (hv?hv:""));
             return false;
         }
         if (lws_add_http_header_by_name(wsi, (const uchar *)hn, (const uchar *)hv, hvl, &p, end))
@@ -910,7 +912,7 @@ static bool jsi_wsIsSSIExt(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *
         if (mVal) {
             bool b = 0;
             if (Jsi_ValueGetBoolean(interp, mVal, &b) != JSI_OK) {
-                Jsi_LogWarn("expected bool for ssiExts '%s': disabling all\n", ext);
+                Jsi_LogWarnExt("expected bool for ssiExts '%s': disabling all\n", ext);
                 Jsi_DecrRefCount(interp, cmdPtr->ssiExts);
                 cmdPtr->ssiExts = NULL;
             }
@@ -979,7 +981,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
         llen = se-sp;
         Jsi_DSSetLength(&lStr, 0);
         cp = Jsi_DSAppendLen(&lStr, sp, llen);
-        if (Jsi_Strchr(cp, '\n')) { rc = Jsi_LogError("unexpected newline in directive \"%.10s\"", cp); break; }
+        if (Jsi_Strchr(cp, '\n')) { rc = Jsi_LogErrorExt("unexpected newline in directive \"%.10s\"", cp); break; }
         if (!II[ii].elide)
             Jsi_DSAppendLen(dStr, cs, sp-cs-4);
         
@@ -1093,13 +1095,13 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
                 val = Jsi_ValueObjLookup(interp, pss->queryObj, cp, 0);
             if (!val) {
                 if (req) { msg = "symbol not found"; break; }
-                if (warn) Jsi_LogWarn("symbol \"%s\" not found: %s", cp, fbuf);
+                if (warn) Jsi_LogWarnExt("symbol \"%s\" not found: %s", cp, fbuf);
             } else if (Jsi_ValueGetBoolean(interp, val, &nifval) != JSI_OK) {
                 const char *valStr = NULL;
                 if (val) valStr = Jsi_ValueString(interp, val, NULL);
                 if (!valStr || Jsi_GetBool(interp, valStr, &nifval) != JSI_OK) {
                     if (!warn) { msg = "symbol not a boolean"; break; }
-                    Jsi_LogWarn("symbol \"%s\" should be a boolean: %s", cp, fbuf);
+                    Jsi_LogWarnExt("symbol \"%s\" should be a boolean: %s", cp, fbuf);
                 }
             }
             if (inot) nifval = !nifval;
@@ -1139,7 +1141,7 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
     }
     if (msg) {
         while (*fname=='/') fname++;
-        rc = Jsi_LogError("SHTML Error in \"%s\": %s: at \"%.40s\" ", fname, msg, sp);
+        rc = Jsi_LogErrorExt("SHTML Error in \"%s\": %s: at \"%.40s\" ", fname, msg, sp);
     }
     Jsi_DSFree(&tStr);
     Jsi_DSFree(&lStr);
@@ -1192,11 +1194,11 @@ static Jsi_RC WebSocketUnaliasCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply to non-websock object");
+        return Jsi_LogErrorExt("Apply to non-websock object");
     int vlen, nlen;
     const char *kstr, *vstr, *nstr = Jsi_ValueArrayIndexToStr(interp, args, 0, &nlen);
     if (!nstr)
-        return Jsi_LogError("arg 1: expected string");
+        return Jsi_LogErrorExt("arg 1: expected string");
     Jsi_Value *v, *a = cmdPtr->pathAliases;
     if (!a|| !Jsi_ValueIsObjType(interp, a, JSI_OT_OBJECT)) return JSI_OK;
     Jsi_IterObj *io = Jsi_IterObjNew(interp, NULL);
@@ -1355,7 +1357,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                     Jsi_DecrRefCount(interp, ret);
 
                     if (rc != JSI_OK) {
-                        Jsi_LogError("websock bad rcv eval");
+                        Jsi_LogErrorExt("websock bad rcv eval");
                         return -1;
                     }
                     ok = rb;
@@ -1464,7 +1466,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             Jsi_DecrRefCount(interp, ret);
 
             if (rc != JSI_OK) {
-                Jsi_LogWarn("websock mimeLookupFunc bad eval");
+                Jsi_LogWarnExt("websock mimeLookupFunc bad eval");
             } else {
                 Jsi_Value *mVal = Jsi_ValueObjLookup(interp, cmdPtr->mimeTypes, ext+1, 1);
                 if (mVal)
@@ -1517,7 +1519,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 if (!vrc || !Jsi_ValueIsFunction(interp, vrc)) {
                     if (vrc)
                         Jsi_DecrRefCount(interp, vrc);
-                    Jsi_LogError("Failed to autoload handle: %s", hstr);
+                    Jsi_LogErrorExt("Failed to autoload handle: %s", hstr);
                     jsi_wsServeString(pss, wsi, "Failed to autoload handler", 404, NULL, NULL);
                     return -1;
                 }
@@ -1538,13 +1540,13 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 if (Jsi_InterpGone(interp))
                     return -1;
                 if (evrc != JSI_OK || !vrc || !Jsi_ValueIsObjType(interp, vrc, JSI_OT_OBJECT)) {
-                    Jsi_LogError("Failed to load obj: %s", hstr);
+                    Jsi_LogErrorExt("Failed to load obj: %s", hstr);
                     jsi_wsServeString(pss, wsi, "Failed to load obj", 404, NULL, NULL);
                     return -1;
                 }
                 Jsi_Value *fvrc = Jsi_ValueObjLookup(interp, vrc, "parse", 0);
                 if (!fvrc || !Jsi_ValueIsFunction(interp, fvrc)) {
-                    Jsi_LogError("Failed to find parse: %s", hstr);
+                    Jsi_LogErrorExt("Failed to find parse: %s", hstr);
                     jsi_wsServeString(pss, wsi, "Failed to find parse", 404, NULL, NULL);
                     return -1;
                 }
@@ -1576,10 +1578,10 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             }
             // Take result from vrc and return it.
             if (evrc != JSI_OK) {
-                Jsi_LogError("failure in websocket handler");
+                Jsi_LogErrorExt("failure in websocket handler");
             } else if ((!vrc) ||
                 (!(vStr = Jsi_ValueString(interp, vrc, &strLen)))) {
-                Jsi_LogError("failed to get result");
+                Jsi_LogErrorExt("failed to get result");
             } else {
                 hrc = jsi_wsServeString(pss, wsi, vStr, 0, NULL, mime);
             }
@@ -1779,7 +1781,8 @@ static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_
             return JSI_OK;
         vargs[n++]  = Jsi_ValueNewBlob(interp, (uchar*)inPtr, nlen);
         if ((cmdPtr->echo||(pss && pss->echo)) && inPtr)
-            Jsi_LogInfo("WS-RECV: %s\n", inPtr);
+            Jsi_LogInfo("WS-RECV: %s", inPtr);
+        Jsi_LogTraceExt("WS-RECV: %s", inPtr);
     }
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, n, 0));
     Jsi_IncrRefCount(interp, vpargs);
@@ -1834,7 +1837,7 @@ jsi_wsFileUploadCB(void *data, const char *name, const char *filename,
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
     if (rc != JSI_OK) {
-        Jsi_LogError("websock bad rcv eval");
+        Jsi_LogErrorExt("websock bad rcv eval");
         return -1;
     }
     return 0;
@@ -2044,7 +2047,7 @@ static int jsi_wscallback_http(struct lws *wsi,
             Jsi_DecrRefCount(interp, vpargs);
             Jsi_DecrRefCount(interp, ret);
             if (rc != JSI_OK) {
-                Jsi_LogError("websock bad rcv eval");
+                Jsi_LogErrorExt("websock bad rcv eval");
                 return 1;
             }
             if (killcon)
@@ -2333,7 +2336,7 @@ jsi_wscallback_websock(struct lws *wsi,
             Jsi_DecrRefCount(interp, vpargs);
             Jsi_DecrRefCount(interp, ret);
             if (rc != JSI_OK) {
-                Jsi_LogError("websock bad rcv eval");
+                Jsi_LogErrorExt("websock bad rcv eval");
                 return 1;
             }
             if (killcon)
@@ -2368,7 +2371,7 @@ jsi_wscallback_websock(struct lws *wsi,
             Jsi_DecrRefCount(interp, vpargs);
             Jsi_DecrRefCount(interp, ret);
             if (rc != JSI_OK)
-                return Jsi_LogError("websock bad rcv eval");
+                return Jsi_LogErrorExt("websock bad rcv eval");
         }
         break;
 
@@ -2382,7 +2385,7 @@ jsi_wscallback_websock(struct lws *wsi,
         if (cmdPtr->onClose || pss->onClose) {
             rc = jsi_wsrecv_callback(interp, cmdPtr, pss, inPtr, len, 1, 0);
             if (rc != JSI_OK)
-                return Jsi_LogError("websock bad rcv eval");
+                return Jsi_LogErrorExt("websock bad rcv eval");
         }
         jsi_wsdeletePss(pss);
         if (cmdPtr->stats.connectCnt<=0 && cmdPtr->onCloseLast && !Jsi_InterpGone(interp)) {
@@ -2481,7 +2484,7 @@ jsi_wscallback_websock(struct lws *wsi,
             if (inPtr != in)
                 Jsi_Free(inPtr);
             if (rc != JSI_OK) {
-                Jsi_LogError("websock bad rcv eval");
+                Jsi_LogErrorExt("websock bad rcv eval");
                 return 1;
             }
         }
@@ -2502,10 +2505,10 @@ static Jsi_RC WebSocketConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
 
     if (!cmdPtr)
-        return Jsi_LogError("Apply in a non-websock object");
+        return Jsi_LogErrorExt("Apply in a non-websock object");
     Jsi_Value *opts = Jsi_ValueArrayIndex(interp, args, 0);
     if (cmdPtr->noConfig && opts && !Jsi_ValueIsString(interp, opts))
-        return Jsi_LogError("WebSocket conf() is disabled for set");
+        return Jsi_LogErrorExt("WebSocket conf() is disabled for set");
     jsi_ws_loadMimeTypes(interp, cmdPtr, 0);
     return Jsi_OptionsConf(interp, WSOptions, cmdPtr, opts, ret, 0);
 
@@ -2517,11 +2520,11 @@ static Jsi_RC WebSocketIdCmdOp(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_RC rc = JSI_OK;
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply in a non-websock object");
+        return Jsi_LogErrorExt("Apply in a non-websock object");
     Jsi_Value *v, *valPtr = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Number vid;
     if (Jsi_ValueGetNumber(interp, valPtr, &vid) != JSI_OK || vid < 0)
-        return Jsi_LogError("Expected connection number id");
+        return Jsi_LogErrorExt("Expected connection number id");
     int id = (int)vid;
     jsi_wsPss *pss = NULL;
     Jsi_HashEntry *hPtr;
@@ -2537,7 +2540,7 @@ static Jsi_RC WebSocketIdCmdOp(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     }
 
     if (!pss)
-        return Jsi_LogError("No such id: %d", id);
+        return Jsi_LogErrorExt("No such id: %d", id);
     switch (op) {
         case 0:
             v = Jsi_ValueArrayIndex(interp, args, 1);
@@ -2578,7 +2581,7 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply in a non-websock object");
+        return Jsi_LogErrorExt("Apply in a non-websock object");
     const char *val = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     Jsi_DString dStr = {"["};
     jsi_wsPss *pss = NULL;
@@ -2613,7 +2616,7 @@ static Jsi_RC jsi_wsHandleVue(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPs
         *sx = Jsi_Strstr(s, sxs), *sxb,
         *se = Jsi_Strstr(s, "\n</script>");
     if (ts<0||te<0||se<0||sx<0)
-        rc = Jsi_LogError("bad template: %s", Jsi_ValueString(interp, fn, NULL));
+        rc = Jsi_LogErrorExt("bad template: %s", Jsi_ValueString(interp, fn, NULL));
     else {
         Jsi_DSAppendLen(tStr, s, ts-s);
         Jsi_DSAppend(tStr, "let template=`", NULL);
@@ -2654,7 +2657,7 @@ static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_HashEntry *hPtr;
     jsi_wsHander *hdlPtr;
     if (!cmdPtr)
-        return Jsi_LogError("Apply in a non-websock object");
+        return Jsi_LogErrorExt("Apply in a non-websock object");
     WSSIGASSERT(cmdPtr, OBJ);
     int argc = Jsi_ValueGetLength(interp, args);
     if (argc == 0) {
@@ -2678,7 +2681,7 @@ static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     }
     const char *key = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     if (!key || !*key)
-        return Jsi_LogError("handler: extension key must not be empty: %s", key);
+        return Jsi_LogErrorExt("handler: extension key must not be empty: %s", key);
     Jsi_Value *valPtr = Jsi_ValueArrayIndex(interp, args, 1);
     if (Jsi_ValueIsNull(interp, valPtr)) {
         hPtr = Jsi_HashEntryFind(cmdPtr->handlers, key);
@@ -2694,13 +2697,13 @@ static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         return JSI_OK;
     }
     if (Jsi_ValueIsFunction(interp, valPtr)==0 && Jsi_ValueIsString(interp, valPtr)==0)
-        return Jsi_LogError("expected string, function or null");
+        return Jsi_LogErrorExt("expected string, function or null");
     Jsi_Value *argPtr = Jsi_ValueArrayIndex(interp, args, 2);
     if (argPtr) {
         if (Jsi_ValueIsNull(interp, argPtr))
             argPtr = NULL;
         else if (!Jsi_ValueIsString(interp, argPtr))
-            return Jsi_LogError("expected a string");
+            return Jsi_LogErrorExt("expected a string");
     }
     hPtr = Jsi_HashEntryNew(cmdPtr->handlers, key, NULL);
     if (!hPtr)
@@ -2725,7 +2728,7 @@ static Jsi_RC WebSocketSendCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply in a non-websock object");
+        return Jsi_LogErrorExt("Apply in a non-websock object");
     WSSIGASSERT(cmdPtr, OBJ);
     jsi_wsPss *pss;
     Jsi_HashEntry *hPtr;
@@ -2735,18 +2738,19 @@ static Jsi_RC WebSocketSendCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     int id = -1, argc = Jsi_ValueGetLength(interp, args);
     Jsi_DString eStr = {};
     if (argc!=2)
-        return Jsi_LogError("wrong args");
+        return Jsi_LogErrorExt("wrong args");
     Jsi_Number dnum;
     Jsi_Value *darg = Jsi_ValueArrayIndex(interp, args, 0);
     if (Jsi_ValueGetNumber(interp, darg, &dnum) != JSI_OK)
-        return Jsi_LogError("invalid id");
+        return Jsi_LogErrorExt("invalid id");
     id = (int)dnum;
 
     if (!str)
         str = (char*)Jsi_ValueGetDString(interp, arg, &eStr, JSI_OUTPUT_JSON);
 
     if (cmdPtr->echo)
-        Jsi_LogInfo("WS-SEND: %s\n", str);
+        Jsi_LogInfo("WS-SEND: %s", str);
+    Jsi_LogTraceExt("WS-SEND: %s", str);
 
     for (hPtr = Jsi_HashSearchFirst(cmdPtr->pssTable, &cursor);
         hPtr != NULL; hPtr = Jsi_HashSearchNext(&cursor)) {
@@ -2760,7 +2764,8 @@ static Jsi_RC WebSocketSendCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             Jsi_StackPush(pss->stack, msg);
             pss->stats.msgQLen++;
             if (!cmdPtr->echo && pss->echo)
-                Jsi_LogInfo("WS-SEND: %s\n", str);
+                Jsi_LogInfo("WS-SEND: %s", str);
+            Jsi_LogTraceExt("WS-SEND: %s", str);
         }
     }
 
@@ -2832,7 +2837,7 @@ static void jsi_wsOnModify(jsi_wsCmdObj *cmdPtr) {
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, ret);
     if (rc != JSI_OK) {
-        Jsi_LogWarn("websock bad onModify eval: disabling");
+        Jsi_LogWarnExt("websock bad onModify eval: disabling");
         Jsi_DecrRefCount(interp, cmdPtr->onModify);
         cmdPtr->onModify = NULL;
     }
@@ -2916,7 +2921,7 @@ static Jsi_RC WebSocketUpdateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply to non-websock object");
+        return Jsi_LogErrorExt("Apply to non-websock object");
     if (!cmdPtr->noUpdate)
         jsi_wsService(cmdPtr);
     return JSI_OK;
@@ -3030,7 +3035,7 @@ static Jsi_RC WebSocketFileCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply to non-websock object");
+        return Jsi_LogErrorExt("Apply to non-websock object");
     Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0);
     if (val)
         return jsi_wsFileAdd(interp, cmdPtr, val);
@@ -3044,13 +3049,13 @@ static Jsi_RC WebSocketStatusCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogError("Apply to non-websock object");
+        return Jsi_LogErrorExt("Apply to non-websock object");
 #ifndef OMIT_LWS_WITH_SERVER_STATUS
     char cbuf[JSI_BUFSIZ*2];
     lws_json_dump_context(cmdPtr->context, cbuf, sizeof(cbuf), 0);
     return Jsi_JSONParse(interp, cbuf, ret, 0);
 #else
-    return Jsi_LogError("unsupported");
+    return Jsi_LogErrorExt("unsupported");
 #endif
 }
 
@@ -3113,7 +3118,8 @@ static Jsi_RC WebSocketConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
 
     cmdPtr = (jsi_wsCmdObj*)Jsi_Calloc(1, sizeof(*cmdPtr));
     cmdPtr->sig = JWS_SIG_OBJ;
-    cmdPtr->_ = &wsObjCmd;
+    cmdPtr->popts = Jsi_CommandPkgOpts(interp, funcPtr);
+    cmdPtr->_ = &ws_PkgStatus;
     cmdPtr->_->newCnt++;
     cmdPtr->_->activeCnt++;
     cmdPtr->port = 8080;
@@ -3134,6 +3140,7 @@ bail:
         jsi_wswebsocketObjFree(interp, cmdPtr);
         return JSI_ERROR;
     }
+    Jsi_LogDebugExt("Starting WS: %d", cmdPtr->port);
     if (cmdPtr->mimeTypes)
         jsi_ws_loadMimeTypes(interp, cmdPtr, 1);
 
@@ -3144,17 +3151,17 @@ bail:
     Jsi_PathNormalize(interp, &cmdPtr->rootdir);
 
     if (cmdPtr->headers && (Jsi_ValueGetLength(interp, cmdPtr->headers)%2)) {
-        Jsi_LogError("Odd header length");
+        Jsi_LogErrorExt("Odd header length");
         goto bail;
     }
     const char *up = cmdPtr->urlPrefix, *ur = cmdPtr->urlRedirect;
     if (up && ur && Jsi_Strncmp(ur, up, Jsi_Strlen(up))) {
-        Jsi_LogError("urlRedirect does not start with urlPrefix");
+        Jsi_LogErrorExt("urlRedirect does not start with urlPrefix");
         goto bail;
     }
     const char* subprot = (cmdPtr->protocol&&cmdPtr->protocol[0]?cmdPtr->protocol:"ws");
     if (cmdPtr->protocol && !cmdPtr->protocol[0])
-        Jsi_LogWarn("empty protocol string: forcing to 'ws'");
+        Jsi_LogWarnExt("empty protocol string: forcing to 'ws'");
     cmdPtr->protocols[JWS_PROTOCOL_HTTP].name="http-only";
     cmdPtr->protocols[JWS_PROTOCOL_HTTP].callback=jsi_wscallback_http;
     cmdPtr->protocols[JWS_PROTOCOL_HTTP].per_session_data_size=sizeof(jsi_wsUser);
@@ -3166,7 +3173,7 @@ bail:
         cmdPtr->bufferPwr2 = 16;
     if (cmdPtr->bufferPwr2>0) {
         if (cmdPtr->bufferPwr2>20) {
-            Jsi_LogError("bufferPwr2 not in 0-20: %d", cmdPtr->bufferPwr2);
+            Jsi_LogErrorExt("bufferPwr2 not in 0-20: %d", cmdPtr->bufferPwr2);
             goto bail;
         }
         cmdPtr->protocols[JWS_PROTOCOL_WEBSOCK].rx_buffer_size=(1<<cmdPtr->bufferPwr2);
@@ -3220,7 +3227,7 @@ bail:
     }
     if (cmdPtr->ssl) {
 #ifndef LWS_OPENSSL_SUPPORT
-        Jsi_LogError("WebSocket not compiled with SSL");
+        Jsi_LogErrorExt("WebSocket not compiled with SSL");
         goto bail;
 #endif
         cmdPtr->info.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
@@ -3228,7 +3235,7 @@ bail:
     cmdPtr->context = lws_create_context(&cmdPtr->info);
     if (cmdPtr->context == NULL) {
 fail:
-        Jsi_LogError("WebSocket init failed on port %d (try another port?)", cmdPtr->info.port);
+        Jsi_LogErrorExt("WebSocket init failed on port %d (try another port?)", cmdPtr->info.port);
         goto bail;
     }
     if (cmdPtr->info.options & LWS_SERVER_OPTION_EXPLICIT_VHOSTS) {
@@ -3258,7 +3265,7 @@ fail:
 
         if (NULL == lws_client_connect_via_info(&lci))
         {
-            Jsi_LogError("websock connect failed");
+            Jsi_LogErrorExt("websock connect failed");
             jsi_wswebsocketObjFree(interp, cmdPtr);
             return JSI_ERROR;
         }
@@ -3340,7 +3347,7 @@ Jsi_RC Jsi_InitWebSocket(Jsi_Interp *interp, int release)
 #endif
     Jsi_JSONParseFmt(interp, &info, "{libVer:\"%s\", hdrVer:\"%s\", pkgVer:%d, ssl:%s, sslVer:%ld, sslVerStr:\"%s\", sslCompat:%ld}",
         libver, LWS_LIBRARY_VERSION, jsi_WsPkgVersion, (hasSSL?"true":"false"), sslVer, sslVerStr, sslCompat);
-    Jsi_PkgOpts wsPkgOpts = { wsObjCmd_Specs, &wsObjCmd, websockCmds, info };
+    Jsi_PkgOpts wsPkgOpts = { .spec=wsObjCmd_Specs, .data=&ws_PkgStatus, .cmdSpec=websockCmds, .info=info };
     Jsi_RC rc = Jsi_PkgProvideEx(interp, "WebSocket", jsi_WsPkgVersion, Jsi_InitWebSocket, &wsPkgOpts);
     Jsi_DecrRefCount(interp, info);
     if (rc != JSI_OK)
@@ -3357,3 +3364,4 @@ Jsi_RC Jsi_InitWebSocket(Jsi_Interp *interp, int release)
 
 #endif
 #endif
+#undef JSI_EXT_OPTS

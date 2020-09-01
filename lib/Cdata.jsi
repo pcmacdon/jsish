@@ -432,6 +432,8 @@ function Cdata(args:array, conf:object=void)
             inits.push(sinit);
             evItems.push(evIt);
         }
+        if (name == self.name)
+            sc += '  Jsi_PkgOpts* popts;\n';
         crc = 0;
         if (!port) // Non-portable fields add platform crc.
             crc = Info.platform().crc;
@@ -694,15 +696,16 @@ function Cdata(args:array, conf:object=void)
             }
             var fcprefix = '(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr';
             ifpre += '\nstatic Jsi_RC '+fcmdName2 + fcprefix + ifprecc2 + ') {\n';
+            var svendx = 'Jsi_LogTraceExt("'+name+fname+'");\n';
             if (isObj && !fconstr) {
                 if (!self.setCons)
                     self.out += '#define CDATA_CONSTRUCTOR 1\n';
                 self.setCons=1;
                 ifpre += '  '+otyp+' *cmdPtr = ('+otyp+' *)Jsi_UserObjGetData(interp, _this, funcPtr);\n'
-                    + '  if (!cmdPtr) { Jsi_LogError("Apply in a non object"); return JSI_ERROR; }\n';
+                    + '  if (!cmdPtr) return Jsi_LogError("Apply in a non object"); \n'+svendx;
             } else if (intData) {
                 ifpre += '#ifdef JSI_INI_DEFN_'+otyp+'\n  '+otyp+' *cmdPtr = ('+otyp+' *)Jsi_InterpGetData(interp, "'+name+'", NULL);\n'
-                    + '  if (!cmdPtr) { Jsi_LogError("Missing interp data"); return JSI_ERROR; }\n#endif\n';
+                    + '  if (!cmdPtr) return Jsi_LogError("Missing interp data"); \n'+svendx+'#endif\n';
             }
             var rettyp = typeValidate('return', fre[3].substr(1));
             if (rettyp.length>1 || rettyp[0] != 'any') {
@@ -962,6 +965,7 @@ function Cdata(args:array, conf:object=void)
         var scnm = self.icode[name+'_'];
         if (!scnm) scnm = '';
         self.out = self.preface + ' ' + self.verStr + ' from: '+self.infile+'\n\n'
+            + '#define JSI_EXT_OPTS cmdPtr->popts \n'
             + self.jscHeaderStr.replace(/Demo/g, name) + self.outcode
         /*+ "#ifndef _JSI_CDEFS_"+name+"_H_\n"
         + "#define _JSI_CDEFS_"+name+"_H_\n\n"
@@ -1555,6 +1559,7 @@ static Jsi_CmdProcDecl(DemoConstructor)
 #ifdef CDATA_CODE_PER_INTERP_Demo
     cmdPtr->_ = (void *)Jsi_InterpGetData(interp, "Demo_InterpData", NULL);
 #endif
+    cmdPtr->popts = Jsi_CommandPkgOpts(interp, funcPtr);
 
     bool hasOpts = (arg != NULL && !Jsi_ValueIsNull(interp,arg));
     if ((hasOpts && Jsi_OptionsProcess(interp, Demo_Specs, cmdPtr, arg, 0) < 0)
@@ -1562,7 +1567,7 @@ static Jsi_CmdProcDecl(DemoConstructor)
         DemoObjFree(interp, cmdPtr);
         return JSI_ERROR;
     }
-
+    Jsi_LogDebugExt("Starting");
     Jsi_Value *toacc = NULL;
     if (Jsi_FunctionIsConstructor(funcPtr)) {
         toacc = _this;
@@ -1695,6 +1700,7 @@ int main(int argc, char *argv[])
 }
 #endif
 #endif
+#undef JSI_EXT_OPTS
 ';
 
     var retval = main();

@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "d977e4091854ba810b69d2f9aba2c778"
+#define JSI_STUBS_MD5 "b43953bc9ba7fc791f74958478337968"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -376,7 +376,7 @@ typedef struct Jsi_Stubs {
     Jsi_Mutex*(*_Jsi_MutexNew)(Jsi_Interp *interp, int timeout, int flags);
     void*(*_Jsi_CurrentThread)(void);
     void*(*_Jsi_InterpThread)(Jsi_Interp *interp);
-    Jsi_RC(*_Jsi_LogMsg)(Jsi_Interp *interp, uint level, const char *format,...);
+    Jsi_RC(*_Jsi_LogMsgExt)(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint level, const char *format,...);
     Jsi_Event*(*_Jsi_EventNew)(Jsi_Interp *interp, Jsi_EventHandlerProc *callback, void* data);
     void(*_Jsi_EventFree)(Jsi_Interp *interp, Jsi_Event* event);
     int(*_Jsi_EventProcess)(Jsi_Interp *interp, int maxEvents);
@@ -449,6 +449,7 @@ typedef struct Jsi_Stubs {
     Jsi_RC(*_Jsi_UserObjName)(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr);
     Jsi_Value*(*_Jsi_ValueNewRegExp)(Jsi_Interp *interp, const char *regtxt, const char* modifiers);
     Jsi_RC(*_Jsi_ObjGetValues)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val);
+    Jsi_PkgOpts*(*_Jsi_CommandPkgOpts)(Jsi_Interp *interp, Jsi_Func *func);
     void *endPtr;
 } Jsi_Stubs;
 
@@ -804,7 +805,7 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_MutexNew,\
     Jsi_CurrentThread,\
     Jsi_InterpThread,\
-    Jsi_LogMsg,\
+    Jsi_LogMsgExt,\
     Jsi_EventNew,\
     Jsi_EventFree,\
     Jsi_EventProcess,\
@@ -877,6 +878,7 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_UserObjName,\
     Jsi_ValueNewRegExp,\
     Jsi_ObjGetValues,\
+    Jsi_CommandPkgOpts,\
     NULL
 
 #ifdef JSI_USE_STUBS
@@ -1228,7 +1230,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_MutexNew(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_MutexNew(n0,n1,n2))
 #define Jsi_CurrentThread(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_CurrentThread(n0))
 #define Jsi_InterpThread(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_InterpThread(n0))
-#define Jsi_LogMsg(n0,n1,n2,...) JSISTUBCALL(jsiStubsPtr, _Jsi_LogMsg(n0,n1,n2,##__VA_ARGS__))
+#define Jsi_LogMsgExt(n0,n1,n2,n3,...) JSISTUBCALL(jsiStubsPtr, _Jsi_LogMsgExt(n0,n1,n2,n3,##__VA_ARGS__))
 #define Jsi_EventNew(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_EventNew(n0,n1,n2))
 #define Jsi_EventFree(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_EventFree(n0,n1))
 #define Jsi_EventProcess(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_EventProcess(n0,n1))
@@ -1301,6 +1303,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_UserObjName(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_UserObjName(n0,n1,n2))
 #define Jsi_ValueNewRegExp(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewRegExp(n0,n1,n2))
 #define Jsi_ObjGetValues(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjGetValues(n0,n1,n2))
+#define Jsi_CommandPkgOpts(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_CommandPkgOpts(n0,n1))
 
 #endif
 

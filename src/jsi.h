@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 39
+#define JSI_VERSION_RELEASE 40
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -392,7 +392,7 @@ typedef struct Jsi_CmdSpec {
 } Jsi_CmdSpec;
 
 typedef struct {
-    int log, logmask;
+    uint log, logmask;
     int traceCall;
     bool coverage;
     bool profile;
@@ -400,7 +400,7 @@ typedef struct {
 
 typedef struct {
     struct Jsi_OptionSpec *spec;
-    void *data;
+    void *data; // "status" output in Info.package
     Jsi_CmdSpec *cmdSpec;
     Jsi_Value *info;
     void *reserved[3]; // Reserved for future use.
@@ -414,6 +414,7 @@ typedef struct {
     uint32_t flags;
 } Jsi_String;
 
+JSI_EXTERN Jsi_PkgOpts* Jsi_CommandPkgOpts(Jsi_Interp *interp, Jsi_Func *func); /*STUB = 421*/ /*LAST*/
 JSI_EXTERN Jsi_Value* Jsi_CommandCreate(Jsi_Interp *interp, const char *name, Jsi_CmdProc *cmdProc, void *privData); /*STUB = 49*/
 JSI_EXTERN Jsi_Value* Jsi_CommandCreateSpecs(Jsi_Interp *interp, const char *name, Jsi_CmdSpec *cmdSpecs, void *privData, int flags); /*STUB = 50*/
 JSI_EXTERN void* Jsi_CommandNewObj(Jsi_Interp *interp, const char *name, const char *arg1, const char *opts, const char *var);  /*STUB = 51*/
@@ -477,7 +478,7 @@ JSI_EXTERN Jsi_IterObj* Jsi_IterObjNew(Jsi_Interp *interp, Jsi_IterProc *iterPro
 JSI_EXTERN void Jsi_IterObjFree(Jsi_IterObj *iobj); /*STUB = 413*/
 JSI_EXTERN void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth); /*STUB = 414*/
 JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
-JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val); /*STUB = 420*/ /*LAST*/
+JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val); /*STUB = 420*/
 
 struct Jsi_IterObj {
     Jsi_Interp *interp;
@@ -1234,17 +1235,36 @@ JSI_EXTERN void* Jsi_InterpThread(Jsi_Interp *interp); /*STUB = 347*/
 
 
 /* --LOGGING-- */
-#define Jsi_LogBug(fmt,...) Jsi_LogMsg(interp, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
-#define Jsi_LogError(fmt,...) Jsi_LogMsg(interp, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
-#define Jsi_LogParse(fmt,...) Jsi_LogMsg(interp, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
-#define Jsi_LogWarn(fmt,...) Jsi_LogMsg(interp, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
-#define Jsi_LogInfo(fmt,...) Jsi_LogMsg(interp, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
-#define Jsi_LogDebug(fmt,...) Jsi_LogMsg(interp, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
-#define Jsi_LogTrace(fmt,...) Jsi_LogMsg(interp, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
-#define Jsi_LogTest(fmt,...) Jsi_LogMsg(interp, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
+#define Jsi_LogBug(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogError(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
+#define Jsi_LogParse(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
+#define Jsi_LogWarn(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define Jsi_LogInfo(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
+#define Jsi_LogDebug(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogTrace(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
+#define Jsi_LogTest(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
 
-JSI_EXTERN Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint level, const char *format,...)  /*STUB = 348*/ __attribute__((format (printf,3,4)));
+#ifndef JSI_EXT_OPTS_OMIT
+#define Jsi_LogBugExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogErrorExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
+#define Jsi_LogParseExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
+#define Jsi_LogWarnExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define Jsi_LogInfoExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
+#define Jsi_LogDebugExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogTraceExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
+#define Jsi_LogTestExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
+#else
+#define Jsi_LogBugExt(fmt,...)
+#define Jsi_LogErrorExt(fmt,...)
+#define Jsi_LogParseExt(fmt,...)
+#define Jsi_LogWarnExt(fmt,...)
+#define Jsi_LogInfoExt(fmt,...)
+#define Jsi_LogDebugExt(fmt,...)
+#define Jsi_LogTraceExt(fmt,...)
+#define Jsi_LogTestExt(fmt,...)
+#endif
 
+JSI_EXTERN Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint level, const char *format,...)  /*STUB = 348*/ __attribute__((format (printf,4, 5)));
 
 /* --EVENTS-- */
 typedef struct {

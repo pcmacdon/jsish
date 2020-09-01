@@ -13,7 +13,8 @@ function Safe(fileargs:array, conf:object=void) {
         putsCmd     :null,      // Command to relay Interp.putsCallback.
         quiet       :false,     // Quiet mode
         retAll      :false,     // Return object with these fields: retVal, putsVal, msgVal.
-        unitTest    :false      // Enable unit test output (ie. like -U).
+        unitTest    :false,     // Enable unit test output (ie. like -U).
+        write       :false,     // Enable write to given dir.
     };
     var self = {
         srcFile:null,
@@ -86,9 +87,13 @@ function Safe(fileargs:array, conf:object=void) {
             if (isdir) {
                 sopts.scriptFile='';                
                 sopts.safeReadDirs = [fn];
+                if (self.write)
+                    sopts.safeWriteDirs = [fn];
             } else {
                 sopts.safeReadDirs = [File.dirname(fn)];
                 sopts.scriptFile=fn;
+                if (self.write)
+                    sopts.safeWriteDirs = sopts.safeReadDirs;
             }
 
             if (self.unitTest) {

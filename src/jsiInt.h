@@ -259,8 +259,8 @@ typedef enum {
     JSI_SIG_NAMEDATA
 } jsi_Sig;
 
-#define Jsi_LogType(fmt,...) Jsi_LogMsg(interp, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
-#define jsi_LogDefMaskVal (uint)~((1<<JSI_LOG_DEBUG)|(1<<JSI_LOG_TRACE)|(1<<JSI_LOG_TEST)|(1<<JSI_LOG_ASSERT))
+#define Jsi_LogType(fmt,...) Jsi_LogMsgExt(interp, NULL, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define jsi_LogDefVal (uint)((1<<JSI_LOG_DEBUG)|(1<<JSI_LOG_TRACE)|(1<<JSI_LOG_TEST)|(1<<JSI_LOG_ASSERT))
 extern const char *jsi_LogCodes[], *jsi_LogCodesU[];
 extern uint jsi_GetLogFlag(Jsi_Interp *interp, uint mask);
 
@@ -1137,6 +1137,7 @@ struct Jsi_Interp {
     jsi_SubOptions subOpts;
     bool isInteractive;
     const char *confArgs;
+    const char *lockDown;
     Jsi_Value *stdinStr;
     Jsi_Value *stdoutStr;
     Jsi_TypeCheck typeCheck;
@@ -1189,6 +1190,7 @@ struct Jsi_Interp {
     Jsi_Value *retValue;       /* Return value from eval */
     Jsi_Value *callee;
     jsi_Pstate *ps, *parsePs;
+    const char *Argv0;
     Jsi_Value *argv0;
     Jsi_Value *args;
     Jsi_Value *console;

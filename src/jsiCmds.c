@@ -756,6 +756,12 @@ done:
     return rc;
 }
 
+Jsi_PkgOpts *Jsi_CommandPkgOpts(Jsi_Interp *interp, Jsi_Func *func) {
+    if (!func || func->type != FC_BUILDIN || !func->fobj->func->pkg) return NULL;
+    Jsi_PkgOpts *popts = &func->fobj->func->pkg->popts;
+    return popts;
+}
+
 Jsi_Number Jsi_PkgRequireEx(Jsi_Interp *interp, const char *name, Jsi_Number version, Jsi_PkgOpts **poptsPtr)
 {
     jsi_PkgInfo *ptr = jsi_PkgGet(interp, name), *ptr2 = NULL;
@@ -767,8 +773,8 @@ Jsi_Number Jsi_PkgRequireEx(Jsi_Interp *interp, const char *name, Jsi_Number ver
                 return -1;
             ptr->needInit = 0;
         }
-            if (poptsPtr)
-                *poptsPtr = &ptr->popts;
+        if (poptsPtr)
+            *poptsPtr = &ptr->popts;
         return ptr->version;
     } else if ((ptr2 = jsi_PkgGet(interp->topInterp, name)) && ptr2->initProc) {
         // C-extensions load from topInterp
@@ -975,6 +981,7 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
     jsi_PkgInfo *ptr;
     Jsi_HashEntry *hPtr = Jsi_HashEntryFind(interp->packageHash, name);
     Jsi_Value *opts = (popts?popts->info:NULL);
+    jsi_Frame *fp = interp->framePtr;
     if (version<0) {
         if (hPtr) {
             ptr = (jsi_PkgInfo*)Jsi_HashValueGet(hPtr);
@@ -988,7 +995,7 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
     else {
         if (hPtr) {
             ptr = (jsi_PkgInfo*)Jsi_HashValueGet(hPtr);
-            if (ptr && ptr->needInit==0) 
+            if (ptr && ptr->needInit==0 && fp->filePtr->fileName != ptr->loadFile) 
                 return Jsi_LogError("package %s already provided from: %s", name, ptr->loadFile?ptr->loadFile:"");
             return JSI_OK;
         }
@@ -999,7 +1006,6 @@ Jsi_RC Jsi_PkgProvideEx(Jsi_Interp *interp, const char *name, Jsi_Number version
         ptr = (jsi_PkgInfo*)Jsi_Calloc(1, sizeof(*ptr));
         ptr->version = version;
         ptr->initProc = initProc;
-        jsi_Frame *fp = interp->framePtr;
         if (popts) {
             ptr->popts = *popts;
             if (popts->info)
@@ -1616,16 +1622,21 @@ void jsi_SysPutsCmdPrefix(Jsi_Interp *interp, jsi_LogOptions *popts,Jsi_DString 
 }
 
 static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
-    Jsi_Func *funcPtr, bool stdErr, jsi_LogOptions *popts, const char *argStr, bool conLog, int islog)
+    Jsi_Func *funcPtr, bool stdErr, jsi_LogOptions *popts, const char *argStr, int islog)
 {
     int i = 0, cnt = 0, argc = 0, quote = (popts->file);
-    bool isbool = 0;
+    bool isbool = 0, isbool0 = 0;
     const char *fn = NULL;
     Jsi_DString dStr, oStr;
     Jsi_Value *v;
     if (args)
         argc = Jsi_ValueGetLength(interp, args);
-    if (islog == 2 && argc > 2) {
+    if (islog == 3 && argc > 1) {
+        v = Jsi_ValueArrayIndex(interp, args, 0);
+        if ((isbool0=Jsi_ValueIsBoolean(interp, v)))
+            if (Jsi_ValueIsFalse(interp, v)) return JSI_OK;
+    }
+    else if (islog == 2 && argc > 2) {
         v = Jsi_ValueArrayIndex(interp, args, 1);
         if ((isbool=Jsi_ValueIsBoolean(interp, v)))
             if (Jsi_ValueIsFalse(interp, v)) return JSI_OK;
@@ -1648,14 +1659,10 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     if (argStr)
         Jsi_DSAppend(&dStr, argStr, NULL);
     if (args) { // Assert may call with a null args
-        /*if (conLog && argc>0 && (argStr=Jsi_ValueString(interp, Jsi_ValueArrayIndex(interp, args, 0), NULL))) {
-            if (   ((!(interp->log&(1<<JSI_LOG_ERROR))) && jsi_PrefixMatch(argStr, "ERROR: "))
-                || ((!(interp->log&(1<<JSI_LOG_WARN))) && jsi_PrefixMatch(argStr, "WARN: "))
-                || ((!(interp->log&(1<<JSI_LOG_INFO))) && jsi_PrefixMatch(argStr, "INFO: ")))
-                goto done;
-        }*/
         for (; i < argc; ++i) {
             if (isbool && i==1)
+                continue;
+            if (isbool0 && i==0)
                 continue;
             v = Jsi_ValueArrayIndex(interp, args, i);
             if (!v) continue;
@@ -1723,27 +1730,24 @@ static Jsi_RC consolePrintfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 static Jsi_RC consoleErrorCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
-    int conLog = ((interp->log&jsi_LogDefMaskVal)==jsi_LogDefMaskVal);
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "ERROR: ", conLog, 1);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "ERROR: ", 1);
 }
 
 static Jsi_RC consoleLogCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
-    int conLog = ((interp->log&jsi_LogDefMaskVal)==jsi_LogDefMaskVal);
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, NULL, conLog, 1);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, NULL, 1);
 }
 static Jsi_RC consoleLogPCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
-    int conLog = ((interp->log&jsi_LogDefMaskVal)==jsi_LogDefMaskVal);
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, NULL, conLog, 2);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, NULL, 2);
 }
 static Jsi_RC consolePutsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
     jsi_LogOptions lo = {};
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0, 0);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0);
 }
 
 #define FN_puts JSI_INFO("\
@@ -1752,13 +1756,13 @@ static Jsi_RC SysPutsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, 
     Jsi_Func *funcPtr)
 {
     jsi_LogOptions lo = {};
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0, 0);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, (interp->tracePuts?&interp->logOpts:&lo), NULL, 0);
 }
 
 static Jsi_RC SysLogCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
     Jsi_Func *funcPtr)
 {
-    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, &interp->logOpts, NULL, 0, 1);
+    return SysPutsCmd_(interp, args, _this, ret, funcPtr, 0, &interp->logOpts, NULL, 1);
 }
 
 typedef struct {
@@ -1791,8 +1795,7 @@ uint jsi_GetLogFlag(Jsi_Interp *interp, uint maskidx) {
             logmask |= fp->filePtr->pkg->logmask;
         }
      }
-    if (logmask)
-        logflag &= ~logmask;
+    logflag &= ~logmask;
     if (maskidx)
         logflag = logflag&(1<<maskidx);
     return logflag;
@@ -1877,7 +1880,7 @@ Jsi_RC jsi_AssertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
             jsi_LogOptions lo = {}, *loPtr = ((udata.mode==jsi_AssertModeLog || interp->tracePuts)?&interp->logOpts:&lo);
             Jsi_DSInit(&dStr);
             const char *imsg = Jsi_DSAppend(&dStr, msg, NULL);
-            SysPutsCmd_(interp, NULL, _this, ret, funcPtr, !udata.noStderr, loPtr, imsg, 0, 0);
+            SysPutsCmd_(interp, NULL, _this, ret, funcPtr, !udata.noStderr, loPtr, imsg, 0);
             Jsi_DSFree(&dStr);
         } else
             rv = Jsi_LogError("%s", msg);
@@ -4619,36 +4622,6 @@ static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DStrin
     }
     return "";
 }
-/*static bool jsi_ModLogDisabled(Jsi_Interp *interp, Jsi_Value *v1, const char *name) {
-    Jsi_Value *v2 = Jsi_ValueObjLookup(interp, v1, name, 0);
-    if (v2 && Jsi_ValueIsFalse(interp, v2)) return true;
-    return false;
-}
-
-static bool jsi_ModLogEnabled(Jsi_Interp *interp, Jsi_Value *v1, const char *name) {
-    jsi_Frame *fptr = interp->framePtr;
-    Jsi_Value *v2 = Jsi_ValueObjLookup(interp, v1, name, 0);
-    if (v2 && Jsi_ValueIsTrue(interp, v2)) return true;
-#ifndef JSI_OMIT_INTERP_ENV
-    const char *fname = fptr->funcName;
-    if (!fname) return false;
-    const char *cp;
-    static int isinit = 0;
-    static const char *ce = NULL;
-    if (!isinit) {
-        isinit = 1;
-        ce = getenv("JSI_PARSEOPTS");
-    }
-    if (!ce) return false;
-    int len = Jsi_Strlen(fname);
-    cp = Jsi_Strstr(ce, fname);
-    if (!cp || cp[len]!='=') return false;
-    char buf[JSI_BUFSIZ];
-    snprintf(buf, sizeof(buf), "%s=%s", fname, name);
-    return (Jsi_Strstr(ce, buf) != NULL);
-#endif
-    return false;
-}*/
 
 static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
@@ -4823,36 +4796,6 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
                  }
             }
         }
-
-/*#define jsiModLogCheck(name, lname) \
-        if (mo && mo->name) { \
-            evfunc->callflags.bits.logFlag |= (1<<jsi_Oplf_##lname);\
-        } else if ((vlv = Jsi_ValueObjLookup(interp, v1, #name, 0))) { \
-             if (Jsi_ValueIsFalse(interp, vlv)) { \
-                 puts("LOGMASK"); \
-                 evfunc->callflags.bits.nologFlag |= (1<<jsi_Oplf_##lname); \
-             } else \
-                evfunc->callflags.bits.logFlag |= (1<<jsi_Oplf_##lname);\
-        }
-        jsiModLogCheck(Debug, debug)
-        jsiModLogCheck(Trace, trace)
-        jsiModLogCheck(Test, test)*/
-        /*if (jsi_ModLogDisabled(interp, v1, "Debug")) {
-            //jsi_evalStrFile(interp, NULL, "this.LogDebug = noOp;", 0, fp->level);
-            evfunc->callflags.bits.nologFlag |= (1<<jsi_Oplf_debug);
-        } else if (jsi_ModLogEnabled(interp, v1, "Debug") || (mo && mo->Debug)) {
-            //jsi_evalStrFile(interp, NULL, "var LogDebug = console.logp.bind(null, 'DEBUG:');", 0, fp->level);
-            cptr->logflag |= (1<<jsi_Oplf_debug);
-            evfunc->callflags.bits.logFlag |= (1<<jsi_Oplf_debug);
-        }
-        if (jsi_ModLogEnabled(interp, v1, "Trace") || (mo && mo->Trace)) {
-            //jsi_evalStrFile(interp, NULL, "this.LogTrace = console.logp.bind(null, 'TRACE:');", 0, fp->level);
-            cptr->logflag |= (1<<jsi_Oplf_trace);
-        }
-        if (jsi_ModLogEnabled(interp, v1, "Test") || (mo && mo->Test)) {
-            //jsi_evalStrFile(interp, NULL, "this.LogTest = console.logp.bind(null, 'TEST: ');", 0, fp->level);
-            cptr->logflag |= (1<<jsi_Oplf_test);
-        }*/
     }
     return rc;
 }
@@ -4955,17 +4898,17 @@ static Jsi_RC SysSqlValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 }
 
 static Jsi_RC SysLogDebugCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
-{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "DEBUG: ", 3, 2); }
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "DEBUG: ", 3); }
 static Jsi_RC SysLogTraceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
-{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "TRACE: ", 3, 2); }
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "TRACE: ", 3); }
 static Jsi_RC SysLogTestCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
-{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "TEST: ", 3, 2); }
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "TEST: ", 3); }
 static Jsi_RC SysLogInfoCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
-{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "INFO: ", 3, 2); }
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "INFO: ", 3); }
 static Jsi_RC SysLogWarnCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
-{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "WARN: ", 3, 2); }
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "WARN: ", 3); }
 static Jsi_RC SysLogErrorCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret, Jsi_Func *funcPtr)
-{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "ERROR: ", 3, 2); }
+{  return SysPutsCmd_(interp, args, _this, ret, funcPtr, 1, &interp->logOpts, "ERROR: ", 3); }
 
 
 static Jsi_CmdSpec utilCmds[] = {

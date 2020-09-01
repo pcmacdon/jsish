@@ -73,7 +73,7 @@ const char *jsi_LogCodesU[] = { "Bug", "Assert", "Debug", "Trace", "Test", "Info
 jsi_IntData jsiIntData = {};
 
 #ifdef JSI_LITE_ONLY
-Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
+Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts *popts, uint code, const char *format,...) {
     va_list va;
     va_start (va, format);
     const char *mt = (code <= JSI__LOGLAST ? jsi_LogCodes[code] : "");
@@ -109,11 +109,26 @@ extern void jsi_TypeMismatch(Jsi_Interp* interp)
 static void (*logHook)(const char *buf, va_list va) = NULL;
 
 // Format message: always returns JSI_ERROR.
-Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
-    if (Jsi_InterpGone(interp))
+Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char *format,...) {
+    if (!interp || Jsi_InterpGone(interp))
         return JSI_ERROR;
-    va_list va;
-    va_start (va, format);
+    bool isExt = 0, ftail = interp->logOpts.ftail;
+    uint log = 0, mask, cshift = (1<<code);
+    if (!popts)
+        log = jsi_GetLogFlag(interp, code);
+    else {
+        mask = popts->modConf.logmask;
+        log = popts->modConf.log;
+        log = ((~mask|log)&cshift);
+        isExt = 1;
+        ftail = 1;
+    }
+    if (!log) {
+        if (code == JSI_LOG_ERROR)
+            puts("FUCK");
+        else
+            return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
+    }
     char pbuf[JSI_BUFSIZ/8] = "";
     char buf[JSI_BUFSIZ/2];
     const char *term = "", *pterm=pbuf;
@@ -127,10 +142,9 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
     Jsi_OptionSpec *oep = interp->parseMsgSpec;
     const char *pps = "", *curFile = "";
     char *ss = interp->lastPushStr;
-    uint log = jsi_GetLogFlag(interp, code);
     jsi_Frame *fp = interp->framePtr;
-    if (!log)
-        return JSI_OK;
+    va_list va;
+    va_start (va, format);
     if (interp==NULL)
         interp = jsiIntData.mainInterp;
     LastInterp = interp;
@@ -174,7 +188,9 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
     if (!Jsi_Strchr(format,'\n')) term = "\n";
     if (interp->typeCheck.strict && interp->lastParseOpt)
         ss = (char*)Jsi_ValueToString(interp, interp->lastParseOpt, NULL);
-    if (code != JSI_LOG_INFO && code < JSI_LOG_TEST && interp && ss && ss[0]) {
+    if (isExt)
+        snprintf(pbuf, sizeof(pbuf), "    (c-extn [%s])", popts->cmdSpec->name);
+    else if (code != JSI_LOG_INFO && code < JSI_LOG_TEST && ss && ss[0]) {
         char psbuf[JSI_BUFSIZ/6];
         if (Jsi_Strchr(ss,'%')) {
             char *s = ss, *sd = psbuf;
@@ -225,7 +241,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, uint code, const char *format,...) {
         }
     }
     char *cpt;
-    if (curFile && interp->logOpts.ftail && (cpt =Jsi_Strrchr(curFile, '/')) && cpt[1])
+    if (curFile && ftail && (cpt =Jsi_Strrchr(curFile, '/')) && cpt[1])
         curFile = cpt+1;
     if (curFile && curFile[0] && Jsi_Strchr(curFile,'%')==0 && !islog) {
         if (!interp->subOpts.logColNums)
@@ -283,9 +299,6 @@ done:
     if ((code & jsi_fatalexit) && !interp->opts.no_exit)
         jsi_DoExit(interp, 1);
     return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
-//bail:
-    va_end(va);
-    return JSI_OK;
 }
 
 const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str)

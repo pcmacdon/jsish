@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.41
+//JSI Command Prototypes: version 3.0.42
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -217,6 +217,7 @@ Number.prototype.toPrecision = function(num:number):string {};
 Number.prototype.toString = function(radix:number=10):string {};
 var Object = function(cmd,args) {};
 Object.prototype.create = function(proto:null|object, properties:object=void):object {};
+Object.prototype.freeze = function(obj:object, modify:boolean=false, badread:boolean=false, unfreeze:boolean=false):void {};
 Object.prototype.getPrototypeOf = function(name:object|function):function|object {};
 Object.prototype.hasOwnProperty = function(name:string):boolean {};
 Object.prototype.is = function(value1, value2):boolean {};
@@ -314,7 +315,7 @@ System.prototype.parseFloat = function(val):number {};
 System.prototype.parseInt = function(val:any, base:number=10):number {};
 System.prototype.parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined=void):object {};
 System.prototype.printf = function(format:string, ...):void {};
-System.prototype.provide = function(name:string|null|function=void, version:number|string=void, opts:object|function=void):void {};
+System.prototype.provide = function(name:string|null|function=void, version:number|string=void, options:object|function=void):void {};
 System.prototype.puts = function(val, ...):void {};
 System.prototype.quote = function(val:string):string {};
 System.prototype.require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};
@@ -408,7 +409,7 @@ var parseFloat = function(val):number {};
 var parseInt = function(val:any, base:number=10):number {};
 var parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined=void):object {};
 var printf = function(format:string, ...):void {};
-var provide = function(name:string|null|function=void, version:number|string=void, opts:object|function=void):void {};
+var provide = function(name:string|null|function=void, version:number|string=void, options:object|function=void):void {};
 var puts = function(val, ...):void {};
 var quote = function(val:string):string {};
 var require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};

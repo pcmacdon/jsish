@@ -722,6 +722,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><td>compat</td><td><i>BOOL</i></td><td>Ignore unknown options via JSI_OPTS_IGNORE_EXTRA in option parser.</td><td><i></i></td></tr>
 <tr><td>dblPrec</td><td><i>INT</i></td><td>Format precision of double where 0=max, -1=max-1, ... (max-1).</td><td><i></i></td></tr>
 <tr><td>istty</td><td><i>BOOL</i></td><td>Indicates interp is in interactive mode.</td><td><i>readOnly</i></td></tr>
+<tr><td>freeze</td><td><i>BOOL</i></td><td>Default freeze self object in: first arg to moduleOpts.</td><td><i></i></td></tr>
 <tr><td>logColNums</td><td><i>BOOL</i></td><td>Display column numbers in error messages.</td><td><i></i></td></tr>
 <tr><td>logAllowDups</td><td><i>BOOL</i></td><td>Log should not filter out duplicate messages.</td><td><i></i></td></tr>
 <tr><td>mutexUnlock</td><td><i>BOOL</i></td><td>Unlock own mutex when evaling in other interps (true).</td><td><i>initOnly</i></td></tr>
@@ -964,6 +965,7 @@ Otherwise waits until the sub-interp is idle, to make call and return result.</t
 <tr><th>Method</th><th>Prototype</th><th>Description</th></tr>
 <tr><td>Object</td><td>new Object(val:object|function|null=void):object </td><td>Object constructor.</td></tr>
 <tr><td>create</td><td>create(proto:null|object, properties:object=void):object </td><td>Create a new object with prototype object and properties.</td></tr>
+<tr><td>freeze</td><td>freeze(obj:object, modify:boolean=false, badread:boolean=false, unfreeze:boolean=false):void </td><td>Freeze an object optionally allowing modify (but not add).</td></tr>
 <tr><td>getPrototypeOf</td><td>getPrototypeOf(name:object|function):function|object </td><td>Return prototype of an object.</td></tr>
 <tr><td>hasOwnProperty</td><td>hasOwnProperty(name:string):boolean </td><td>Returns a true if object has the specified property.</td></tr>
 <tr><td>is</td><td>is(value1, value2):boolean </td><td>Tests if two values are equal.</td></tr>
@@ -1372,7 +1374,7 @@ By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or
 <tr><td>parseInt</td><td>parseInt(val:any, base:number=10):number </td><td>Convert string to an integer.</td></tr>
 <tr><td>parseOpts</td><td>parseOpts(self:object|userobj, options:object, conf:object|null|undefined=void):object </td><td>Parse module options: same as moduleOpts.</td></tr>
 <tr><td>printf</td><td>printf(format:string, ...):void </td><td>Formatted output to stdout.</td></tr>
-<tr><td>provide</td><td>provide(name:string|null|function=void, version:number|string=void, opts:object|function=void):void </td><td>Provide a package for use with require. Default is the file tail-rootname.</td></tr>
+<tr><td>provide</td><td>provide(name:string|null|function=void, version:number|string=void, <a href='#System.provideOptions'>options</a>:object|function=void):void </td><td>Provide a package for use with require.. Default is the file tail-rootname</td></tr>
 <tr><td>puts</td><td>puts(val, ...):void </td><td>Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.</td></tr>
 <tr><td>quote</td><td>quote(val:string):string </td><td>Return quoted string.</td></tr>
 <tr><td>require</td><td>require(name:string=void, version:number|string=1, <a href='#System.requireOptions'>options</a>:object=void):number|array|object </td><td>Load/query packages. With no arguments, returns the list of all loaded packages.
@@ -1421,6 +1423,22 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 </table>
 
 
+<a name="System.provideOptions"></a>
+<a name="System.confOptions"></a>
+<h2>Options for "System.provide"</h2>
+<table border="1" class="optstbl table">
+<tr><th>Option</th> <th>Type</th> <th>Description</th><th>Flags</th></tr>
+<tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
+<tr><td>logmask</td><td><i>ARRAY</i></td><td>Logging mask flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
+<tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
+<tr><td>freeze</td><td><i>BOOL</i></td><td>Freeze self object: first arg to moduleOpts.</td><td><i></i></td></tr>
+<tr><td>info</td><td><i>OBJ</i></td><td>Info provided by module.</td><td><i>initOnly</i></td></tr>
+<tr><td>profile</td><td><i>BOOL</i></td><td>On exit generate profile of function calls.</td><td><i></i></td></tr>
+<tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>
+<tr><td>udata</td><td><i>OBJ</i></td><td>User data settable by require.</td><td><i></i></td></tr>
+</table>
+
+
 <a name="System.requireOptions"></a>
 <a name="System.confOptions"></a>
 <h2>Options for "System.require"</h2>
@@ -1429,6 +1447,7 @@ The default minTime is 0, meaning return as soon as no events can be processed. 
 <tr><td>log</td><td><i>ARRAY</i></td><td>Logging flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>logmask</td><td><i>ARRAY</i></td><td>Logging mask flags. (zero or more of: <b>bug</b>, <b>assert</b>, <b>debug</b>, <b>trace</b>, <b>test</b>, <b>info</b>, <b>warn</b>, <b>error</b>, <b>parse</b>)</td><td><i>noCase</i></td></tr>
 <tr><td>coverage</td><td><i>BOOL</i></td><td>On exit generate detailed code coverage for function calls (with profile).</td><td><i></i></td></tr>
+<tr><td>freeze</td><td><i>BOOL</i></td><td>Freeze self object: first arg to moduleOpts.</td><td><i></i></td></tr>
 <tr><td>info</td><td><i>OBJ</i></td><td>Info provided by module.</td><td><i>initOnly</i></td></tr>
 <tr><td>profile</td><td><i>BOOL</i></td><td>On exit generate profile of function calls.</td><td><i></i></td></tr>
 <tr><td>traceCall</td><td><i>ARRAY</i></td><td>Trace commands. (zero or more of: <b>funcs</b>, <b>cmds</b>, <b>new</b>, <b>return</b>, <b>args</b>, <b>notrunc</b>, <b>noparent</b>, <b>full</b>, <b>before</b>)</td><td><i></i></td></tr>

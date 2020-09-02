@@ -855,6 +855,7 @@ static Jsi_OptionSpec jsiModuleOptions[] = {
     JSI_OPT(CUSTOM,Jsi_ModuleConf, log,     .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, logmask, .help="Logging mask flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(BOOL,  Jsi_ModuleConf, coverage,.help="On exit generate detailed code coverage for function calls (with profile)" ),
+    JSI_OPT(BOOL,  Jsi_ModuleConf, freeze,  .help="Freeze self object: first arg to moduleOpts" ),
     JSI_OPT(OBJ,   Jsi_ModuleConf, info,    .help="Info provided by module", .flags=JSI_OPT_INIT_ONLY ),
     JSI_OPT(BOOL,  Jsi_ModuleConf, profile, .help="On exit generate profile of function calls" ),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, traceCall,.help="Trace commands", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_callTraceStrs),
@@ -1085,6 +1086,7 @@ pkg:
             return JSI_ERROR;
         if (rc == JSI_OK) {
             Jsi_PkgOpts po = {};
+            po.conf.freeze = interp->subOpts.freeze;
             v = Jsi_ValueArrayIndex(interp, args, 2);
             if (v && Jsi_OptionsProcess(interp, jsiModuleOptions, &po.conf, v, 0) < 0)
                 rc = JSI_ERROR;
@@ -1102,6 +1104,7 @@ pkg:
     return rc;
 }
 
+#define FN_provide "Default is the file tail-rootname"
 static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr) {
     return SysProvideCmdInt(interp, args, _this, ret, funcPtr, 0);
@@ -4609,6 +4612,7 @@ static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DStrin
 static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
+    bool freeze = interp->subOpts.freeze;
     Jsi_TreeEntry *tPtr, *tPtr2;
     Jsi_TreeSearch search = {};
     Jsi_RC rc = JSI_OK;
@@ -4764,6 +4768,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             mo = &pf->pkg->popts.conf;
             pf->pkg->logmask = mo->logmask;
             pf->pkg->log = mo->log;
+            freeze = mo->freeze;
         }
         uint i;
         for (i=JSI_LOG_ASSERT; mo && i<=JSI_LOG_TEST; i++) {
@@ -4779,6 +4784,12 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
                  }
             }
         }
+    }
+    if (rc == JSI_OK && freeze) {
+        Jsi_Obj *obj = v1->d.obj;
+        obj->freeze = 1;
+        obj->freezeModifyOk = 1;
+        obj->freezeReadBad = 1;
     }
     return rc;
 }
@@ -4943,7 +4954,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
     { "parseOpts",  SysModuleOptsCmd,2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: same as moduleOpts", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, opts:object|function=void", .help="Provide a package for use with require. Default is the file tail-rootname", .retType=(uint)JSI_TT_VOID },
+    { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object|function=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },

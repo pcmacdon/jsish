@@ -362,6 +362,33 @@ static Jsi_RC jsi_FunctionCallCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     return Jsi_FunctionCall(interp, args, _this, ret);
 }
 
+static Jsi_RC ObjectFreezeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0),
+        *bval = Jsi_ValueArrayIndex(interp, args, 1),
+        *rval = Jsi_ValueArrayIndex(interp, args, 2),
+        *fval = Jsi_ValueArrayIndex(interp, args, 3);
+    if (!val || !Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
+        return Jsi_LogError("arg 1: expected object");
+    if (bval && !Jsi_ValueIsBoolean(interp, bval))
+        return Jsi_LogError("arg 2: expected bool");
+    if (rval && !Jsi_ValueIsBoolean(interp, rval))
+        return Jsi_LogError("arg 3: expected bool");
+    bool bnum = 0, rnum = 0, fnum = 0;
+    if (bval)
+        Jsi_GetBoolFromValue(interp, bval, &bnum);
+    if (rval)
+        Jsi_GetBoolFromValue(interp, rval, &rnum);
+    if (fval)
+        Jsi_GetBoolFromValue(interp, fval, &fnum);
+    Jsi_Obj *obj = val->d.obj;
+    obj->freeze = !fnum;
+    obj->freezeModifyOk = bnum;
+    obj->freezeReadBad = rnum;
+    return JSI_OK;
+
+}
 
 static Jsi_RC ObjectKeysCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
@@ -673,6 +700,7 @@ static Jsi_CmdSpec objectCmds[] = {
     { "hasOwnProperty", jsi_HasOwnPropertyCmd,  1, 1, "name:string", .help="Returns a true if object has the specified property", .retType=(uint)JSI_TT_BOOLEAN },
     { "is",             ObjectIsCmd, 2, 2, "value1, value2", .help="Tests if two values are equal", .retType=(uint)JSI_TT_BOOLEAN },
     { "isPrototypeOf",  ObjectIsPrototypeOfCmd, 1, 1, "name", .help="Tests for an object in another object's prototype chain", .retType=(uint)JSI_TT_BOOLEAN },
+    { "freeze",         ObjectFreezeCmd,        1, 4, "obj:object, modify:boolean=false, badread:boolean=false, unfreeze:boolean=false", .help="Freeze an object optionally allowing modify (but not add)", .retType=(uint)JSI_TT_VOID },
     { "keys",           ObjectKeysCmd,          0, 1, "obj:object|function=void", .help="Return the keys of an object or array", .retType=(uint)JSI_TT_ARRAY },
     { "merge",          ObjectMergeCmd,         1, 1, "obj:object|function", .help="Return new object containing merged values", .retType=(uint)JSI_TT_OBJECT },
     { "propertyIsEnumerable", ObjectPropertyIsEnumerableCmd,1, 1, "name", .help="Determine if a property is enumerable", .retType=(uint)JSI_TT_BOOLEAN },

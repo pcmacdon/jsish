@@ -521,7 +521,10 @@ struct Jsi_Obj {
     uint clearProto:1;          /* Prototype changed, clean it up at exit. */
     uint isNoOp:1;
     uint isBlob:1;
-    uint unused2:16;
+    uint freeze:1;
+    uint freezeModifyOk:1;
+    uint freezeReadBad:1;
+    uint unused2:13;
     union {                     /* switched on by value of "ot" */
         int val;
         Jsi_Number num;
@@ -1027,6 +1030,7 @@ typedef struct {
     bool outUndef;
     bool logAllowDups;
     bool logColNums;
+    bool freeze;
     bool privKeys;
     bool compat;
     bool mutexUnlock;
@@ -1126,6 +1130,7 @@ struct Jsi_Interp {
     bool tracePuts;
     bool isMain;
     bool subthread;
+
    // bool strict;
     bool protoInit;
     bool hasOpenSSL;

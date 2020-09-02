@@ -999,6 +999,23 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
     }
     /* TODO: array["1"] also extern the length of array */
     
+    if (value && target->vt == JSI_VT_OBJECT && target->d.obj->ot == JSI_OT_OBJECT && target->d.obj->freeze) {
+        Jsi_Obj *obj = target->d.obj;
+        Jsi_Value *v;
+        char keyBuf[100], *keyStr = keyBuf;
+        if (arrayindex>=0)
+            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
+        else
+            keyStr = Jsi_ValueString(interp, keyval, NULL);
+        if (!obj->freezeModifyOk) {
+            Jsi_LogError("frozen assign/modify key: %s", keyStr);
+            return NULL;
+        }
+        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, target, keyStr, 0))) {
+            Jsi_LogError("frozen assign key: %s", keyStr);
+            return NULL;
+        }
+    }
     if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
         target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
         return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);

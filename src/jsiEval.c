@@ -864,6 +864,8 @@ static Jsi_RC jsiPushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, 
                 Jsi_Value key = VALINIT, *kPtr = &key; // Note: a string key so no reset needed.
                 Jsi_ValueMakeStringKey(interp, &kPtr, varname);
                 v = jsi_ValueObjKeyAssign(interp, global_scope, &key, NULL, JSI_OM_DONTENUM);
+                if (!v)
+                    return JSI_ERROR;
                 if (v->vt == JSI_VT_UNDEF) {
                     v->d.lookupFail = varname;
                     v->f.bits.lookupfailed = 1;
@@ -941,6 +943,24 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
         jsiPop(interp, 1);
         return JSI_ERROR;
     }
+    int arrayindex = -1;
+
+    if (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0) {
+        arrayindex = (int)idx->d.num;
+    }
+
+    if (src->vt == JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT && src->d.obj->freeze && src->d.obj->freezeReadBad) {
+        Jsi_Value *v;
+        char keyBuf[100], *keyStr = keyBuf;
+        if (arrayindex>=0)
+            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
+        else
+            keyStr = Jsi_ValueString(interp, idx, NULL);
+        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0))) {
+            return Jsi_LogError("frozen read undefined key: %s", keyStr);
+        }
+    }
+
     Jsi_String *str = jsi_ValueString(src);
     if (str && Jsi_ValueIsNumber(interp, idx)) {
         int bLen, cLen;
@@ -1227,7 +1247,8 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     if (v3->vt == JSI_VT_OBJECT) {
                         if (strict && sval->vt == JSI_VT_UNDEF)
                             rc = jsiValueAssignCheck(interp, sval, lop);
-                        jsi_ValueObjKeyAssign(interp, v3, dval, sval, 0);
+                        if (!jsi_ValueObjKeyAssign(interp, v3, dval, sval, 0))
+                            rc = JSI_ERROR;
                         jsi_ValueDebugLabel(sval, "assign", NULL);
                     } else if (strict)
                         rc = Jsi_LogError("assign to a non-exist object");
@@ -2027,6 +2048,8 @@ void jsi_DumpStackTrace(Jsi_Interp *interp) {
                 line = fp->child->filePtr->pkg->loadLine;
             }
         }
+        if (!line && fp->level == interp->framePtr->level)
+            line = interp->curIp->Line;
         if (fn && ((cp=Jsi_Strrchr(fn, '/'))))
             fn = cp +1;
         Jsi_DSPrintf(&dStr, "#%d: %s:%d: ", fp->level, fn, line);

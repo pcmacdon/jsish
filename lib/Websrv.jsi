@@ -10,7 +10,10 @@ function Websrv(args:string|array, conf:object=void)
         ssl     :false,
         sslcert :null,
         sslkey  :null,
-        Trace       :false,
+        ws      :null,
+        wsopts  :null,
+        css     :'',
+        done    :0,
     };
     var options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
@@ -511,7 +514,6 @@ function Websrv(args:string|array, conf:object=void)
             return self;
         }
 
-        self.done = 0;
         if (self.timeout)
             setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
         while (self.done == 0 && Event.update(100) ) ;
@@ -525,5 +527,5 @@ function Websrv(args:string|array, conf:object=void)
     
 }
 
-provide(Websrv, '1.2.3');
+provide(Websrv, '1.2.3', {freeze:true, logmask:'debug,trace'});
 moduleRun(Websrv);

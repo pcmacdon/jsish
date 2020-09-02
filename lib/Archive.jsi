@@ -11,7 +11,6 @@ function Archive(args:array, conf:object=void)
     var self = {
         app         :'',
         cnt         :0,
-        Trace       :false,
     };
     var options = { // Run application from a zip, sqlar or fossil repository.
         mainFile    :'main.jsi',// File to execute, if no module given.
@@ -103,6 +102,6 @@ function Archive(args:array, conf:object=void)
     return main();
 }
 
-provide(Archive);
+provide(Archive, 1,  {freeze:true, logmask:'debug,trace'});
 moduleRun(Archive);
 

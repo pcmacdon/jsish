@@ -29,7 +29,7 @@ function Wget(fileargs:array|string, conf:object=void) {
         ssl         :false,
         sslcert     :null,
         sslkey      :null,
-        LogTrace    :false,  // Disable global
+        ws          :null,
     };
 
     moduleOpts(self, options);
@@ -63,8 +63,6 @@ function Wget(fileargs:array|string, conf:object=void) {
     }
     
     function main() {
-        if (self.Debug)
-            debugger;
         if (typeof(fileargs) === 'string')
             fileargs = [fileargs];
         if (!fileargs || fileargs.length !== 1)
@@ -146,7 +144,7 @@ function Wget(fileargs:array|string, conf:object=void) {
     return main();
 }
 
-provide(Wget, "1.2");
+provide(Wget, "1.2", {freeze:true, logmask:'trace'});
 
 moduleRun(Wget);
 

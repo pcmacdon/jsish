@@ -43,7 +43,6 @@ function Cdata(args:array, conf:object=void)
     var EV = { enum:[], struct:[], vars:[] };
 
     moduleOpts(self, options, conf);
-    Object.freeze(self, true, true);
 
     var defs = {structs:[], enums:[], types:[], vars:[], cmds:[]};
     //var popts = { hassig:true, hassiz:false, builtinhassig:true};
@@ -1711,6 +1710,6 @@ int main(int argc, char *argv[])
     return retval;
 }
 
-provide(Cdata, "2");
+provide(Cdata, "2", {freeze:true, logmask:'debug,trace'});
 moduleRun(Cdata);
 

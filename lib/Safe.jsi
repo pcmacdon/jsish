@@ -19,7 +19,9 @@ function Safe(fileargs:array, conf:object=void) {
     var self = {
         srcFile:null,
         version:1.0,
-        Trace       :false,
+        rootdir:Info.scriptDir(),
+        args:[],
+        interp:null,
     };
     var all = {
         putsVal:'',
@@ -46,10 +48,6 @@ function Safe(fileargs:array, conf:object=void) {
     
     function main() {
         LogTrace('Starting');
-        debugger;
-        if (!self.rootdir)
-            self.rootdir=Info.scriptDir();
-        self.args = [];
         var scr = null, fn = self.srcFile = fileargs[0];
         if (fn === undefined)
             fn = '.';
@@ -131,5 +129,5 @@ function Safe(fileargs:array, conf:object=void) {
     return main();
 }
 
-provide(Safe);
+provide(Safe, 1, {freeze:true, logmask:'trace'});
 moduleRun(Safe);

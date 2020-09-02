@@ -11,8 +11,7 @@ function Help(args, ...) {
         wiki        :false      // For -web, return instead of opening browser.
     };
     var self = {
-        rootdir:null,
-        Trace       :false,
+        rootdir:Info.scriptDir(),
     };
     var index = "";
     var optsDumped = [];
@@ -339,8 +338,6 @@ function Help(args, ...) {
     
     function main() {
         LogTrace('Starting');
-        if (!self.rootdir)
-            self.rootdir=Info.scriptDir();
         debugger;
         if (args.length>1)
             throw('expected 0 or 1 args');
@@ -374,5 +371,5 @@ function Help(args, ...) {
     return main();
 }
 
-provide(Help);
+provide(Help, 1, {freeze:true, logmask:'trace'});
 moduleRun(Help);

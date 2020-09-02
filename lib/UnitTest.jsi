@@ -29,7 +29,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
         outfile:'/tmp/utest.txt',
         startTime:0,
         version:1.0,
-        Trace:false,
+        rootdir:null,
     };
     moduleOpts(self, options);
     
@@ -242,8 +242,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
         }
         if (self.times)
             self.verbose = true;
-        if (!self.rootdir)
-            self.rootdir=Info.scriptDir();
+        self.rootdir=Info.scriptDir();
         if (self.echo && self.verbose)
             throw('can not use both verbose and echo');
         LogTrace('Files', fileargs);
@@ -289,7 +288,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
     return main();
 }
 
-provide(UnitTest, 1);
+provide(UnitTest, 1, {freeze:true, logmask:'trace'});
 
 if (Info.isMain())
     exit(moduleRun(UnitTest));

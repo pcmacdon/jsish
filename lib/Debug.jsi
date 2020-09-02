@@ -8,27 +8,31 @@ function Debug(fileargs:array, conf:object=void):number {
 
     var options = { // A command-line Debugger for Jsi scripts.
         echoCmd     :true,      // Echo user cmds.
-        safe        :false      // Debug program in a safe interp (untested)
+        safe        :false,     // Debug program in a safe interp (untested)
     };
     var self = {
+        args:null,
         curline:0,      // Next 3 are changed by up/down.
         curfile:null,
         curlev:0,
         curfunc:null,
+        dbfile:null,
         level:0,
         line:0,         // Next 3 are saved by Callback.
         file:null,
         files:[],
         filedata:{},
+        find:null,
+        interp:null,
         lastCmd:'',     // Previous cmd, empty string repeats.
         lastCommand:'',  // Full command name (unaliased)
         lastPrintArg:null,
         minLevel:0,
-        rootdir:null,   // Where self script, jdebug.jsi lives.
+        rootdir:Info.scriptDir(),
         stopped:false,
         stopSig:false,
         toplev:0,
-        version:1.0
+        version:1.0,
     };
     
     moduleOpts(self, options, conf);
@@ -455,10 +459,6 @@ function Debug(fileargs:array, conf:object=void):number {
     }
 
     function main() {
-        self.done = 0;
-        if (!self.rootdir)
-            self.rootdir=Info.scriptDir();
-        self.args = null;
         self.dbfile = fileargs[0];
         self.args = fileargs.splice(1);
 
@@ -494,7 +494,7 @@ function Debug(fileargs:array, conf:object=void):number {
     return main();
 }
 
-provide(Debug, 1.0);
+provide(Debug, 1.0, {freeze:true, logmask:'debug,trace'});
 
 if (isMain())
     exit( moduleRun(Debug) );

@@ -1710,6 +1710,6 @@ int main(int argc, char *argv[])
     return retval;
 }
 
-provide(Cdata, "2", {freeze:true, logmask:'debug,trace'});
+provide(Cdata, "2", {logmask:'debug,trace'});
 moduleRun(Cdata);
 

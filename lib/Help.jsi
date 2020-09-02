@@ -371,5 +371,5 @@ function Help(args, ...) {
     return main();
 }
 
-provide(Help, 1, {freeze:true, logmask:'trace'});
+provide(Help, 1, {logmask:'trace'});
 moduleRun(Help);

@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 42
+#define JSI_VERSION_RELEASE 43
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -398,7 +398,7 @@ typedef struct {
     int traceCall;
     bool coverage;
     bool profile;
-    bool freeze;
+    bool nofreeze;
     Jsi_Value *udata;
 } Jsi_ModuleConf;
 

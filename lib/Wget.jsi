@@ -144,7 +144,7 @@ function Wget(fileargs:array|string, conf:object=void) {
     return main();
 }
 
-provide(Wget, "1.2", {freeze:true, logmask:'trace'});
+provide(Wget, "1.2", {logmask:'trace'});
 
 moduleRun(Wget);
 

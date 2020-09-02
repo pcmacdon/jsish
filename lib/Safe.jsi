@@ -129,5 +129,5 @@ function Safe(fileargs:array, conf:object=void) {
     return main();
 }
 
-provide(Safe, 1, {freeze:true, logmask:'trace'});
+provide(Safe, 1, {logmask:'trace'});
 moduleRun(Safe);

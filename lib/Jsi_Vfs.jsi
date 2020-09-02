@@ -11,7 +11,8 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
 
     var self = {
         exec:System.exec,
-        Trace       :false,
+        uuid:null,
+        parent:null,
     };
 
     moduleOpts(self, options);
@@ -62,7 +63,8 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
                 version :''
             };
 
-            moduleOpts(info, moptions, mnt.param);
+            parseOpts(info, moptions, mnt.param);
+            Object.freeze(info, false);
             if (self.version === '')
                 self.version = mnt.version;
             
@@ -236,7 +238,7 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
     Vfs.type('sqlar',  {callback:Sqlar});
 }
 
-provide(Jsi_Vfs, 1);
+provide(Jsi_Vfs, 1, {logmask:'trace'});
 
 if (isMain())
     moduleRun(Jsi_Vfs);

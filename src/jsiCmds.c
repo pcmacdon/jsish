@@ -855,7 +855,7 @@ static Jsi_OptionSpec jsiModuleOptions[] = {
     JSI_OPT(CUSTOM,Jsi_ModuleConf, log,     .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, logmask, .help="Logging mask flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(BOOL,  Jsi_ModuleConf, coverage,.help="On exit generate detailed code coverage for function calls (with profile)" ),
-    JSI_OPT(BOOL,  Jsi_ModuleConf, freeze,  .help="Freeze self object: first arg to moduleOpts" ),
+    JSI_OPT(BOOL,  Jsi_ModuleConf, nofreeze,.help="Disable moduleOpts freeze of first arg (self)" ),
     JSI_OPT(OBJ,   Jsi_ModuleConf, info,    .help="Info provided by module", .flags=JSI_OPT_INIT_ONLY ),
     JSI_OPT(BOOL,  Jsi_ModuleConf, profile, .help="On exit generate profile of function calls" ),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, traceCall,.help="Trace commands", .flags=0,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_callTraceStrs),
@@ -1086,7 +1086,7 @@ pkg:
             return JSI_ERROR;
         if (rc == JSI_OK) {
             Jsi_PkgOpts po = {};
-            po.conf.freeze = interp->subOpts.freeze;
+            po.conf.nofreeze = interp->subOpts.nofreeze;
             v = Jsi_ValueArrayIndex(interp, args, 2);
             if (v && Jsi_OptionsProcess(interp, jsiModuleOptions, &po.conf, v, 0) < 0)
                 rc = JSI_ERROR;
@@ -4609,10 +4609,10 @@ static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DStrin
     return "";
 }
 
-static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr)
+static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr, bool parse)
 {
-    bool freeze = interp->subOpts.freeze;
+    bool nofreeze = interp->subOpts.nofreeze;
     Jsi_TreeEntry *tPtr, *tPtr2;
     Jsi_TreeSearch search = {};
     Jsi_RC rc = JSI_OK;
@@ -4641,7 +4641,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     }
     if (v2)
         Jsi_TreeSearchDone(&search);
-    if (!v3 && pf && pf->funcName && !Jsi_Strcmp(pf->funcName, "moduleRun") && ((v3=pf->arguments))) {
+    if (!parse && !v3 && pf && pf->funcName && !Jsi_Strcmp(pf->funcName, "moduleRun") && ((v3=pf->arguments))) {
         if (Jsi_ValueIsObjType(interp, v3, JSI_OT_ARRAY))
             v3 = Jsi_ValueArrayIndex(interp, v3, 1);
         else {
@@ -4667,7 +4667,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
                 break;
             }
 
-            if (cnt == 1 && !Jsi_Strcmp(key, "help") && v3->d.obj->tree->numEntries==1) {
+            if (!parse && cnt == 1 && !Jsi_Strcmp(key, "help") && v3->d.obj->tree->numEntries==1) {
                 int isLong = 1;//Jsi_ValueIsTrue(interp, val);
                 const char *help = "", *es = NULL, *fstr = NULL, *fname = fp->ip->filePtr->fileName;
                 Jsi_TreeSearchDone(&search);
@@ -4721,7 +4721,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
                 break;
             }
             Jsi_vtype oTyp, vTyp = jsi_getValType(val);
-            if (!Jsi_Strcmp(key, "Debug") || !Jsi_Strcmp(key, "Test") || !Jsi_Strcmp(key, "Trace")  || !Jsi_Strcmp(key, "Assert")) {
+            if (!parse && (!Jsi_Strcmp(key, "Debug") || !Jsi_Strcmp(key, "Test") || !Jsi_Strcmp(key, "Trace")  || !Jsi_Strcmp(key, "Assert"))) {
                 oTyp = JSI_VT_BOOL; // Accept these as builtin options.
                 oVal = NULL;
             } else if (!v2) {
@@ -4760,7 +4760,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         Jsi_TreeSearchDone(&search);
     }
 
-    if (rc == JSI_OK && fp->filePtr && evfunc) {
+    if (!parse && rc == JSI_OK && fp->filePtr && evfunc) {
         //jsi_FileInfo *cptr = fp->filePtr;
         Jsi_Func *pf = interp->prevActiveFunc;
         Jsi_ModuleConf *mo = NULL;
@@ -4768,7 +4768,7 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             mo = &pf->pkg->popts.conf;
             pf->pkg->logmask = mo->logmask;
             pf->pkg->log = mo->log;
-            freeze = mo->freeze;
+            nofreeze = mo->nofreeze;
         }
         uint i;
         for (i=JSI_LOG_ASSERT; mo && i<=JSI_LOG_TEST; i++) {
@@ -4785,13 +4785,24 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             }
         }
     }
-    if (rc == JSI_OK && freeze) {
+    if (rc == JSI_OK && !nofreeze) {
         Jsi_Obj *obj = v1->d.obj;
         obj->freeze = 1;
         obj->freezeModifyOk = 1;
-        obj->freezeReadBad = 1;
+        obj->freezeReadCheck = 1;
     }
     return rc;
+}
+
+static Jsi_RC SysParseOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    return SysModuleOptsCmdEx(interp, args, _this, ret, funcPtr, 1);
+}
+static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    return SysModuleOptsCmdEx(interp, args, _this, ret, funcPtr, 0);
 }
 
 static Jsi_CmdSpec consoleCmds[] = {
@@ -4952,7 +4963,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
-    { "parseOpts",  SysModuleOptsCmd,2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: same as moduleOpts", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: similar to moduleOpts but for non-modules", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object|function=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },

@@ -494,7 +494,7 @@ function Debug(fileargs:array, conf:object=void):number {
     return main();
 }
 
-provide(Debug, 1.0, {freeze:true, logmask:'debug,trace'});
+provide(Debug, 1.0, {logmask:'debug,trace'});
 
 if (isMain())
     exit( moduleRun(Debug) );

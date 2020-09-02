@@ -347,9 +347,7 @@ static void jsiRestoreScope(Jsi_Interp* interp, jsi_Pstate *ps, jsi_TryList* try
     *context_id = ps->_context_id++; 
 }
 
-#define JSI_DO_THROW(nam) if ((rc=jsiDoThrow(interp, ps, &ip, &trylist,&scope, &currentScope, &context_id, (interp->framePtr->Sp?_jsi_TOP:NULL), nam)) != JSI_OK) break;
-
-static int jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, jsi_TryList **tlp,
+static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, jsi_TryList **tlp,
      jsi_ScopeChain **scope, Jsi_Value **currentScope, int *context_id, Jsi_Value *top, const char *nam) {
     if (Jsi_InterpGone(interp))
         return JSI_ERROR;
@@ -361,7 +359,7 @@ static int jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, jsi_
                 if (!Jsi_Strcmp(nam, "help"))
                     Jsi_LogError("...%s", str);
                 else
-                    Jsi_LogError("%s: %s", nam, str);
+                    Jsi_LogError("%s near %s", nam, str);
             }
             return JSI_ERROR;
         }
@@ -949,7 +947,7 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
         arrayindex = (int)idx->d.num;
     }
 
-    if (src->vt == JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT && src->d.obj->freeze && src->d.obj->freezeReadBad) {
+    if (src->vt == JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT && src->d.obj->freeze && src->d.obj->freezeReadCheck) {
         Jsi_Value *v;
         char keyBuf[100], *keyStr = keyBuf;
         if (arrayindex>=0)
@@ -1059,7 +1057,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     jsi_TryList  *trylist = NULL;
     jsi_Frame *fp = interp->framePtr;
     bool strict = interp->typeCheck.strict;
-    const char *curFile = NULL;
+    const char *curFile = NULL, *throwStr;
     
     if (currentScope->vt != JSI_VT_OBJECT) {
         Jsi_LogBug("Eval: current scope is not a object");
@@ -1158,7 +1156,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             if ((rc = (*interp->debugOpts.hook)(interp, curFile, curLine, fp->level, interp->curFunction, jsi_opcode_string(ip->op), ip, NULL)) != JSI_OK)
                 break;
         }
-
+        throwStr = "error";
         switch(ip->op) {
             case OP_NOP:
             case OP_LASTOP:
@@ -1219,10 +1217,12 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     case JSI_BREAK:
                         if (fp->tryDepth<=0)
                             interp->isHelp = 1;
-                        JSI_DO_THROW("help");
+                        rc = JSI_ERROR;
+                        throwStr = "help";
                         break;
                     default:  
-                        JSI_DO_THROW("fcall");
+                        throwStr = "fcall";
+                        rc = JSI_ERROR;
                 }
                 strict = interp->typeCheck.strict;
                 /* TODO: new Function return a function without scopechain, add here */
@@ -1752,7 +1752,8 @@ undef_eval:
                 jsiPush(interp,1);
 
                 if (r) {
-                    JSI_DO_THROW("eval");
+                    rc = JSI_ERROR;
+                    throwStr = "eval";
                 }
                 break;
             }
@@ -1853,7 +1854,8 @@ undef_eval:
                     Jsi_LogBug("Unexpected SCATCH opcode??");
 
                 if (!ip->data) {
-                    JSI_DO_THROW("catch");
+                    throwStr = "catch";
+                    rc = JSI_ERROR;
                 } else {
                     trylist->inCatch=1;
                     /* new scope and make var */
@@ -1907,7 +1909,8 @@ undef_eval:
                 pop_try(trylist);
 
                 if (last_op == jsi_LOP_THROW) {
-                    JSI_DO_THROW("finally");
+                    throwStr = "finally";
+                    rc = JSI_ERROR;
                 } else if (last_op == jsi_LOP_JMP) {
                     while (1) {
                         if (trylist == NULL) {
@@ -1946,7 +1949,8 @@ undef_eval:
                 jsiVarDeref(interp,1);
                 Jsi_ValueDup2(interp,&ps->last_exception, _jsi_TOP);
                 interp->didReturn = 1; /* TODO: could possibly hide _jsi_STACK problem */
-                JSI_DO_THROW("throw");
+                throwStr = "throw";
+                rc = JSI_ERROR;
                 break;
             }
             case OP_WITH: {
@@ -2007,12 +2011,14 @@ undef_eval:
             }
 #ifndef __cplusplus
             default:
-                Jsi_LogBug("invalid op ceod: %d", ip->op);
+                Jsi_LogBug("invalid op code: %d", ip->op);
 #endif
         }
         if (rc == JSI_ERROR) {
-            JSI_DO_THROW("error");
-            rc = JSI_OK;
+            rc = jsiDoThrow(interp, ps, &ip, &trylist,&scope, &currentScope, &context_id,
+                (interp->framePtr->Sp?_jsi_TOP:NULL), throwStr);
+            if (rc != JSI_OK)
+                break;
         }
         lop = plop;
         ip++;

@@ -523,7 +523,7 @@ struct Jsi_Obj {
     uint isBlob:1;
     uint freeze:1;
     uint freezeModifyOk:1;
-    uint freezeReadBad:1;
+    uint freezeReadCheck:1;
     uint unused2:13;
     union {                     /* switched on by value of "ot" */
         int val;
@@ -1030,7 +1030,7 @@ typedef struct {
     bool outUndef;
     bool logAllowDups;
     bool logColNums;
-    bool freeze;
+    bool nofreeze;
     bool privKeys;
     bool compat;
     bool mutexUnlock;
@@ -1276,8 +1276,8 @@ struct Jsi_Interp {
     int delRBCnt;
     Jsi_Func *activeFunc;  // Currently active function call.
     Jsi_Func *prevActiveFunc;  // Prev active function call.
-    jsi_OpCode *curIp;  /* Used for debug Log msgs. */
-    
+    jsi_OpCode *curIp,  /* Used for debug Log msgs. */
+        *curIpLastError; // Elimnate dup error messages.
     char *lastPushStr;  // Used by error handling and Jsi_LogMsg.   TODO: cleanup/rationalize.
     Jsi_Value* lastParseOpt;
     Jsi_Value* lastSubscriptFail;

@@ -527,5 +527,5 @@ function Websrv(args:string|array, conf:object=void)
     
 }
 
-provide(Websrv, '1.2.3', {freeze:true, logmask:'debug,trace'});
+provide(Websrv, '1.2.3', {nofreeze:false, logmask:'debug,trace'});
 moduleRun(Websrv);

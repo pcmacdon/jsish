@@ -288,7 +288,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
     return main();
 }
 
-provide(UnitTest, 1, {freeze:true, logmask:'trace'});
+provide(UnitTest, 1, {logmask:'trace'});
 
 if (Info.isMain())
     exit(moduleRun(UnitTest));

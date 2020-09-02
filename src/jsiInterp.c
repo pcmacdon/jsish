@@ -63,7 +63,7 @@ static Jsi_OptionSpec InterpSubOptions[] = {
     JSI_OPT(BOOL,  jsi_SubOptions, compat,      .help="Ignore unknown options via JSI_OPTS_IGNORE_EXTRA in option parser" ),
     JSI_OPT(INT,   jsi_SubOptions, dblPrec,     .help="Format precision of double where 0=max, -1=max-1, ... (max-1)" ),
     JSI_OPT(BOOL,  jsi_SubOptions, istty,       .help="Indicates interp is in interactive mode", jsi_IIRO),
-    JSI_OPT(BOOL,  jsi_SubOptions, freeze,      .help="Default freeze self object in: first arg to moduleOpts" ),
+    JSI_OPT(BOOL,  jsi_SubOptions, nofreeze,    .help="moduleOpts freeze disabled by default" ),
     JSI_OPT(BOOL,  jsi_SubOptions, logColNums,  .help="Display column numbers in error messages"),
     JSI_OPT(BOOL,  jsi_SubOptions, logAllowDups,.help="Log should not filter out duplicate messages"),
     JSI_OPT(BOOL,  jsi_SubOptions, mutexUnlock, .help="Unlock own mutex when evaling in other interps (true)", jsi_IIOF),

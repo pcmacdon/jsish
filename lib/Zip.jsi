@@ -158,5 +158,5 @@ function Zip(args:string|array, conf:object=void) {
     throw(emsg); 
 }
 
-provide(Zip, 1, {freeze:true});
+provide(Zip, 1);
 runModule(Zip);

@@ -935,76 +935,25 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
 {
     Jsi_RC rc = JSI_OK;
     uint flags = (uintptr_t)ip->data, right_val = flags&1; // isident=flags&2;
-    Jsi_String *str = NULL;
-    Jsi_Obj *obj = NULL;
-    int bsc, arrayindex = -1;
     jsiVarDeref(interp,2);
-    if (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0)
-        arrayindex = (int)idx->d.num;
+    Jsi_String *str = jsi_ValueString(src);
+    Jsi_Obj *obj = (src->vt==JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT?src->d.obj:NULL);
+    int bsc, arrayindex = (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0) ?  (int)idx->d.num : -1;
 
-    switch (src->vt) {
-        case JSI_VT_NULL:
-            rc = Jsi_LogError("invalid null subscript");
-            break;
-        case JSI_VT_UNDEF:
-            rc = Jsi_LogError("invalid undefined subscript");
-            break;
-        //case JSI_VT_NUMBER:
-        //    break;
-        case JSI_VT_STRING:
-            str = &src->d.s;
-            break;
-        case JSI_VT_OBJECT:
-            obj = src->d.obj;
-            switch (obj->ot) {
-                case JSI_OT_STRING:
-                    str = &obj->d.s;
-                    break;
-                case JSI_OT_OBJECT:
-                    if (obj->freeze && obj->freezeReadCheck) {
-                        Jsi_Value *v;
-                        char keyBuf[100], *keyStr = keyBuf;
-                        if (arrayindex>=0)
-                            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
-                        else
-                            keyStr = Jsi_ValueString(interp, idx, NULL);
-                        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0))) {
-                            rc = Jsi_LogError("frozen read undefined key: %s", keyStr);
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
-    if (rc != JSI_OK)
-        goto done;
-    
-/*    if (isident && obj && idx->vt == JSI_VT_STRING) {
-        const char *keyStr = Jsi_ValueString(interp, idx, NULL);
-        Jsi_Value *vp = Jsi_ValueObjLookup(interp, src, keyStr, 0);
-        if (vp) {
-            //Jsi_ValueCopy(interp, src, v);
-
-            if (right_val || vp->f.bits.readonly) {
-                if (vp->vt == JSI_VT_OBJECT || vp->vt == JSI_VT_STRING)  // TODO:*** Undo using ValueCopy. ***
-                    Jsi_ValueMove(interp, src, vp);
-                else
-                    Jsi_ValueCopy(interp, src, vp);
-            } else {
-                Jsi_Value res = VALINIT;
-                res.vt = JSI_VT_VARIABLE;
-                res.d.lval = vp;
-                Jsi_ValueCopy(interp, src, &res);
-            }
-
+    if (obj && obj->freeze && obj->freezeReadCheck) {
+        Jsi_Value *v;
+        char keyBuf[100], *keyStr = keyBuf;
+        if (arrayindex>=0)
+            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
+        else
+            keyStr = Jsi_ValueString(interp, idx, NULL);
+        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0))) {
+            rc = Jsi_LogError("frozen read undefined key: %s", keyStr);
             goto done;
         }
-    }*/
-    if (str && Jsi_ValueIsNumber(interp, idx)) { // eg. "abc"[1]
+    }
+
+    if (str && Jsi_ValueIsNumber(interp, idx)) { // String index, eg. "abc"[1]
         int bLen, cLen;
         char bbuf[10], *cp = Jsi_ValueString(interp, src, &bLen);
         int n = (int)idx->d.num;

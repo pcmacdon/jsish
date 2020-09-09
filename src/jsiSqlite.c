@@ -923,7 +923,7 @@ static Jsi_RC dbBindStmt(Jsi_Db *db, SqlPreparedStmt *prep)
                 }
                 if (cast == 0 && match == 0) {
                     int ltyp = (db->optPtr->typeCheck==dbTypeCheck_Error?JSI_LOG_ERROR:JSI_LOG_WARN);
-                    Jsi_LogMsgExt(interp, JSI_EXT_OPTS, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
+                    Jsi_LogMsg(interp, JSI_EXT_OPTS, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
                     if (ltyp == JSI_LOG_ERROR)
                         return JSI_ERROR;
                 }

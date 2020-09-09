@@ -259,7 +259,7 @@ typedef enum {
     JSI_SIG_NAMEDATA
 } jsi_Sig;
 
-#define Jsi_LogType(fmt,...) Jsi_LogMsgExt(interp, NULL, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define Jsi_LogType(fmt,...) Jsi_LogMsg(interp, NULL, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
 extern const char *jsi_LogCodes[], *jsi_LogCodesU[];
 extern uint jsi_GetLogFlag(Jsi_Interp *interp, uint mask, Jsi_PkgOpts* popts);
 

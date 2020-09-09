@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 44
+#define JSI_VERSION_RELEASE 45
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -1240,24 +1240,24 @@ JSI_EXTERN void* Jsi_InterpThread(Jsi_Interp *interp); /*STUB = 347*/
 
 
 /* --LOGGING-- */
-#define Jsi_LogBug(fmt,...)   Jsi_LogMsgExt(interp, NULL, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
-#define Jsi_LogError(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
-#define Jsi_LogParse(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
-#define Jsi_LogWarn(fmt,...)  Jsi_LogMsgExt(interp, NULL, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
-#define Jsi_LogInfo(fmt,...)  Jsi_LogMsgExt(interp, NULL, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
-#define Jsi_LogDebug(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
-#define Jsi_LogTrace(fmt,...) Jsi_LogMsgExt(interp, NULL, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
-#define Jsi_LogTest(fmt,...)  Jsi_LogMsgExt(interp, NULL, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
+#define Jsi_LogBug(fmt,...)   Jsi_LogMsg(interp, NULL, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogError(fmt,...) Jsi_LogMsg(interp, NULL, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
+#define Jsi_LogParse(fmt,...) Jsi_LogMsg(interp, NULL, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
+#define Jsi_LogWarn(fmt,...)  Jsi_LogMsg(interp, NULL, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define Jsi_LogInfo(fmt,...)  Jsi_LogMsg(interp, NULL, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
+#define Jsi_LogDebug(fmt,...) Jsi_LogMsg(interp, NULL, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogTrace(fmt,...) Jsi_LogMsg(interp, NULL, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
+#define Jsi_LogTest(fmt,...)  Jsi_LogMsg(interp, NULL, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
 
 #ifndef JSI_EXT_OPTS_OMIT
-#define Jsi_LogBugExt(fmt,...)   Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
-#define Jsi_LogErrorExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
-#define Jsi_LogParseExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
-#define Jsi_LogWarnExt(fmt,...)  Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
-#define Jsi_LogInfoExt(fmt,...)  Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
-#define Jsi_LogDebugExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
-#define Jsi_LogTraceExt(fmt,...) Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
-#define Jsi_LogTestExt(fmt,...)  Jsi_LogMsgExt(interp, JSI_EXT_OPTS, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
+#define Jsi_LogBugExt(fmt,...)   Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_BUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogErrorExt(fmt,...) Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_ERROR, fmt, ##__VA_ARGS__)
+#define Jsi_LogParseExt(fmt,...) Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_PARSE, fmt, ##__VA_ARGS__)
+#define Jsi_LogWarnExt(fmt,...)  Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define Jsi_LogInfoExt(fmt,...)  Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_INFO, fmt, ##__VA_ARGS__)
+#define Jsi_LogDebugExt(fmt,...) Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define Jsi_LogTraceExt(fmt,...) Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_TRACE, fmt, ##__VA_ARGS__)
+#define Jsi_LogTestExt(fmt,...)  Jsi_LogMsg(interp, JSI_EXT_OPTS, JSI_LOG_TEST, fmt, ##__VA_ARGS__)
 #else
 #define Jsi_LogBugExt(fmt,...)
 #define Jsi_LogErrorExt(fmt,...)
@@ -1269,7 +1269,7 @@ JSI_EXTERN void* Jsi_InterpThread(Jsi_Interp *interp); /*STUB = 347*/
 #define Jsi_LogTestExt(fmt,...)
 #endif
 
-JSI_EXTERN Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint level, const char *format,...)  /*STUB = 348*/ __attribute__((format (printf,4, 5)));
+JSI_EXTERN Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint level, const char *format,...)  /*STUB = 348*/ __attribute__((format (printf,4, 5)));
 
 /* --EVENTS-- */
 typedef struct {

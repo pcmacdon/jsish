@@ -73,7 +73,7 @@ const char *jsi_LogCodesU[] = { "Bug", "Assert", "Debug", "Trace", "Test", "Info
 jsi_IntData jsiIntData = {};
 
 #ifdef JSI_LITE_ONLY
-Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts *popts, uint code, const char *format,...) {
+Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts *popts, uint code, const char *format,...) {
     va_list va;
     va_start (va, format);
     const char *mt = (code <= JSI__LOGLAST ? jsi_LogCodes[code] : "");
@@ -128,7 +128,7 @@ uint jsi_GetLogFlag(Jsi_Interp *interp, uint maskidx, Jsi_PkgOpts* popts) {
 static void (*logHook)(const char *buf, va_list va) = NULL;
 
 // Format message: always returns JSI_ERROR.
-Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char *format,...) {
+Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char *format,...) {
     if (!interp || Jsi_InterpGone(interp))
         return JSI_ERROR;
     bool isExt = 0, ftail = interp->logOpts.ftail;

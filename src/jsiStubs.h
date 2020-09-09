@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "b43953bc9ba7fc791f74958478337968"
+#define JSI_STUBS_MD5 "e35b4e29ea6f2aaf56ee9eb4618c25f2"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -376,7 +376,7 @@ typedef struct Jsi_Stubs {
     Jsi_Mutex*(*_Jsi_MutexNew)(Jsi_Interp *interp, int timeout, int flags);
     void*(*_Jsi_CurrentThread)(void);
     void*(*_Jsi_InterpThread)(Jsi_Interp *interp);
-    Jsi_RC(*_Jsi_LogMsgExt)(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint level, const char *format,...);
+    Jsi_RC(*_Jsi_LogMsg)(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint level, const char *format,...);
     Jsi_Event*(*_Jsi_EventNew)(Jsi_Interp *interp, Jsi_EventHandlerProc *callback, void* data);
     void(*_Jsi_EventFree)(Jsi_Interp *interp, Jsi_Event* event);
     int(*_Jsi_EventProcess)(Jsi_Interp *interp, int maxEvents);
@@ -805,7 +805,7 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_MutexNew,\
     Jsi_CurrentThread,\
     Jsi_InterpThread,\
-    Jsi_LogMsgExt,\
+    Jsi_LogMsg,\
     Jsi_EventNew,\
     Jsi_EventFree,\
     Jsi_EventProcess,\
@@ -1230,7 +1230,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_MutexNew(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_MutexNew(n0,n1,n2))
 #define Jsi_CurrentThread(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_CurrentThread(n0))
 #define Jsi_InterpThread(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_InterpThread(n0))
-#define Jsi_LogMsgExt(n0,n1,n2,n3,...) JSISTUBCALL(jsiStubsPtr, _Jsi_LogMsgExt(n0,n1,n2,n3,##__VA_ARGS__))
+#define Jsi_LogMsg(n0,n1,n2,n3,...) JSISTUBCALL(jsiStubsPtr, _Jsi_LogMsg(n0,n1,n2,n3,##__VA_ARGS__))
 #define Jsi_EventNew(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_EventNew(n0,n1,n2))
 #define Jsi_EventFree(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_EventFree(n0,n1))
 #define Jsi_EventProcess(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_EventProcess(n0,n1))

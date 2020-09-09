@@ -12,9 +12,6 @@ A small javascript interpreter integrating Database and Web in **C**.
     jsish -e 'require("Sum".0); return Sum.add(9,3);'   # Simple C-extension.
 
 
-> Quote this
-> and this
->    -- by Me
 
 | DOC                            | DESCRIPTION                    | DOC                            | DESCRIPTION                    |
 |--------------------------------|--------------------------------|--------------------------------|--------------------------------|

@@ -1042,7 +1042,7 @@ static Jsi_RC mdbPrepareAndBind(MyDbEvalContext *p)
 errout:
                  {
                     int ltyp = (jdb->optPtr->typeCheck==mdbTypeCheck_Error?JSI_LOG_ERROR:JSI_LOG_WARN);
-                    Jsi_LogMsgExt(interp, JSI_EXT_OPTS, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
+                    Jsi_LogMsg(interp, JSI_EXT_OPTS, ltyp, "bind param \"%s\" type is not \"%s\"", zVar, tname);
                     if (ltyp == JSI_LOG_ERROR)
                         return JSI_ERROR;
                 }

@@ -32,14 +32,14 @@ function Jspp(files:array|string=null, conf:object=undefined):string|object
         funcLst:[],         // List of functions
         funcIdx:0,          // Func idx.
         curFile:'',         // Current file being processed.
-        tail:''             // Basename of file.
+        tail:'',            // Basename of file.
+        typeNameStr:"number string boolean array function object regexp any userobj void null undefined",
     };
+    self.typeNameList = self.typeNameStr.split(' ');
     var ws;
  
     moduleOpts(self, options);
 
-    self.typeNameStr = "number string boolean array function object regexp any userobj void null undefined";
-    self.typeNameList = self.typeNameStr.split(' ');
     
     function typeValidate(typ) {
         if (typ === '') return [];

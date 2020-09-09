@@ -338,7 +338,7 @@ vardec:
 
 delete_statement:
     DELETE lvalue ';'           {
-        if (($2)->lvalue_flag == 2) {
+        if (($2)->lvalue_flag&2) {
             $$ = codes_join($2, code_delete(2));
         } else {
             $$ = codes_join($2, code_delete(1));
@@ -399,7 +399,7 @@ for_statement:
     | label_opt FOR '(' lvalue inof expr ')' statement_or_empty {
         jsi_ForinVar *fv;
         int inof = $5;
-        if (($4)->lvalue_flag == 2) 
+        if (($4)->lvalue_flag&2) 
             fv = forinvar_new(pstate, NULL, NULL, codes_join($4, code_subscript(pstate, &@4, 0)));
         else fv = forinvar_new(pstate, NULL, NULL, $4);
         Jsi_OpCodes *lval;
@@ -566,12 +566,12 @@ expr:
     value                   { $$ = $1; }
     | func_expr             { $$ = $1; }
     | lvalue                { 
-        if (($1)->lvalue_flag == 2) $$ = codes_join($1, code_subscript(pstate, &@1, 1)); 
+        if (($1)->lvalue_flag&2) $$ = codes_join($1, code_subscript(pstate, &@1, 1 |(($1)->lvalue_flag&4?2:0))); 
         else $$ = $1;
     }
     | expr ',' expr         { $$ = codes_join3($1, code_pop(1), $3); }
     | expr '[' expr ']'     { $$ = codes_join3($1, $3, code_subscript(pstate, &@1, 1)); }
-    | expr '.' IDENTIFIER   { $$ = codes_join3($1, code_push_string(pstate,&@3,$3), code_subscript(pstate, &@3, 1)); }
+    | expr '.' IDENTIFIER   { $$ = codes_join3($1, code_push_string(pstate,&@3,$3), code_subscript(pstate, &@3, 3)); }
     | '-' expr %prec NEG    { $$ = codes_join($2, code_neg()); }
     | '+' expr %prec NEG    { $$ = codes_join($2, code_pos()); }
     | '~' expr              { $$ = codes_join($2, code_bnot()); }
@@ -584,23 +584,23 @@ expr:
     | expr '-' expr         { $$ = codes_join3($1, $3, code_sub()); }
     | expr IN expr          { $$ = codes_join3($1, $3, code_in()); }
     | lvalue INC            {
-        if (($1)->lvalue_flag == 2) $$ = codes_join3($1, code_subscript(pstate, &@1, 0), code_inc(pstate, &@1, 1));
+        if (($1)->lvalue_flag&2) $$ = codes_join3($1, code_subscript(pstate, &@1, 0), code_inc(pstate, &@1, 1));
         else $$ = codes_join($1, code_inc(pstate, &@1, 1));
     }
     | lvalue DEC            { 
-        if (($1)->lvalue_flag == 2) $$ = codes_join3($1, code_subscript(pstate, &@1, 0), code_dec(pstate, &@1, 1));
+        if (($1)->lvalue_flag&2) $$ = codes_join3($1, code_subscript(pstate, &@1, 0), code_dec(pstate, &@1, 1));
         else $$ = codes_join($1, code_dec(pstate, &@1, 1)); 
     }
     | INC lvalue            {
-        if (($2)->lvalue_flag == 2) $$ = codes_join3($2, code_subscript(pstate, &@2, 0), code_inc(pstate, &@2, 0));
+        if (($2)->lvalue_flag&2) $$ = codes_join3($2, code_subscript(pstate, &@2, 0), code_inc(pstate, &@2, 0));
         else $$ = codes_join($2, code_inc(pstate, &@2, 0));
     }
     | TYPEOF expr {
-        if (($2)->lvalue_flag == 2) $$ = codes_join3($2, code_subscript(pstate, &@2, 0), code_typeof(pstate, &@2, 0));
+        if (($2)->lvalue_flag&2) $$ = codes_join3($2, code_subscript(pstate, &@2, 0), code_typeof(pstate, &@2, 0));
         else $$ = codes_join($2, code_typeof(pstate, &@2, 0));
     }
     | DEC lvalue            { 
-        if (($2)->lvalue_flag == 2) $$ = codes_join3($2, code_subscript(pstate, &@2, 0), code_dec(pstate, &@2, 0));
+        if (($2)->lvalue_flag&2) $$ = codes_join3($2, code_subscript(pstate, &@2, 0), code_dec(pstate, &@2, 0));
         else $$ = codes_join($2, code_dec(pstate, &@2, 0));
     }
     | '(' expr ')'          { $$ = $2; }
@@ -653,7 +653,7 @@ expr:
     
     | NEW value             { $$ = codes_join($2, code_newfcall(pstate, &@1, 0, NULL, $2)); }
     | NEW lvalue            { 
-        if (($2)->lvalue_flag == 2) $$ = codes_join3($2, code_subscript(pstate, &@2, 1), code_newfcall(pstate, &@2, 0, NULL, $2));
+        if (($2)->lvalue_flag&2) $$ = codes_join3($2, code_subscript(pstate, &@2, 1), code_newfcall(pstate, &@2, 0, NULL, $2));
         else $$ = codes_join($2, code_newfcall(pstate, &@2, 0, NULL, $2));}
     | NEW '(' expr ')'      { $$ = codes_join($3, code_newfcall(pstate, &@1,0, NULL, $3)); }
     | NEW func_expr         { $$ = codes_join($2, code_newfcall(pstate, &@1,0, NULL, $2)); }
@@ -667,7 +667,7 @@ expr:
         Jsi_OpCodes *opl = $4;
         int expr_cnt = opl ? opl->expr_counter:0;
         Jsi_OpCodes *lv = NULL;
-        if (($2)->lvalue_flag == 2) lv = codes_join($2, code_subscript(pstate, &@2, 1));
+        if (($2)->lvalue_flag&2) lv = codes_join($2, code_subscript(pstate, &@2, 1));
         else lv = $2;
         $$ = codes_join3(lv, (opl ? opl : code_nop()), code_newfcall(pstate, &@1,expr_cnt, lv?lv->lvalue_name:NULL, opl));
     }
@@ -720,7 +720,7 @@ fcall_exprs:
         Jsi_OpCodes *pref;
         Jsi_OpCodes *lval = $1;
         const char *n1 = lval->lvalue_name;
-        if (lval->lvalue_flag == 2) {
+        if (lval->lvalue_flag&2) {
             const char *n2 = NULL;
             pref = codes_join3($1, code_chthis(pstate,&@1, 1), code_subscript(pstate, &@1, 1));
             if (pref->code_len>=2 && pref->codes[0].op == OP_PUSHVAR && pref->codes[1].op == OP_PUSHSTR && !n1) {
@@ -751,14 +751,18 @@ lvalue:
     | ARGUMENTS             { $$ = code_push_args(); ($$)->lvalue_flag = 1; }
     | _THIS                 { $$ = code_push_this(pstate,&@1); ($$)->lvalue_flag = 1; }
     | lvalue '[' expr ']'   {
-        if (($1)->lvalue_flag == 2) $$ = codes_join3($1, code_subscript(pstate, &@1, 1), $3); 
+        if (($1)->lvalue_flag&2) $$ = codes_join3($1, code_subscript(pstate, &@1, 1), $3); 
         else $$ = codes_join($1, $3); 
         ($$)->lvalue_flag = 2;
     }
     | lvalue '.' IDENTIFIER {
-        if (($1)->lvalue_flag == 2) $$ = codes_join3($1, code_subscript(pstate, &@1, 1), code_push_string(pstate,&@3, $3)); 
-        else $$ = codes_join($1, code_push_string(pstate,&@3, $3));
-        ($$)->lvalue_flag = 2;
+        if (($1)->lvalue_flag&2) {
+            $$ = codes_join3($1, code_subscript(pstate, &@1, 3), code_push_string(pstate,&@3, $3)); 
+            ($$)->lvalue_flag = 2;
+        } else {
+            $$ = codes_join($1, code_push_string(pstate,&@3, $3));
+            ($$)->lvalue_flag = 6;
+        }
     }
 ;
 

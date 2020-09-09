@@ -28,29 +28,38 @@ function DebugUI(fileargs:array, conf:object=void)
     };
     
     var self = {
+        args:null,
+        bpId:0,
+        closeId:null,
         curline:0,
         curfile:null,
         curlev:0,
         curfunc:null,
-        curfunc:null, curlevel:0, optstr:'', bpId:0,
+        curlevel:0,
+        dbfile:null,
         done:false,
+        find:null,
         fsent:[], // File name cache
         files:[],
         filedata:{},
         file:null,
         id:-1,
+        interp:null,
         isSafe:false,   // Debug program in a safe interp
         lastCmd:'',     // Previous cmd, empty string repeats.
         lastCommand:'',  // Full command name (unaliased)
         lastPrintArg:null,
         level:0,
         line:0,
+        opstr:'',
+        optdb:null,
         optdbfile: '~/.debugui.db',   // Store options, etc.
         prevLevel:0,
         rootdir: null,  // Root for application files.
         stopped:false,
         toplev:0,
         version:1.0,
+        ws:null,
         Debug:false,
         Trace:false,
 
@@ -694,7 +703,6 @@ function DebugUI(fileargs:array, conf:object=void)
         var req = require("DebugUI", 1.0);
         if (!self.rootdir)
             self.rootdir=File.dirname(req.loadFile);
-        self.args = null;
         if (typeof(fileargs) !== 'array')
             self.dbfile = fileargs;
         else {

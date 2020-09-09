@@ -704,7 +704,8 @@ typedef struct jsi_Frame {
     int tryDepth;
     int withDepth;
     jsi_ScopeChain* ingsc;
-    Jsi_Value *incsc;
+    Jsi_Value *fargs;      // Function call args.
+    Jsi_Value *incsc;      // Initial args
     Jsi_Value *inthis;
     Jsi_OpCodes *opcodes;
     struct jsi_Pstate *ps;

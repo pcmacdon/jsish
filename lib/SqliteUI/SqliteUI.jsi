@@ -32,10 +32,22 @@ function SqliteUI(files:array|string, conf:object=void)
     };
     var self = 
     {
+        cleanup:null,
+        closeId:null,
+        db:null,
+        dbfile:null,
+        dbinfo:{},
+        dblist:null,
+        dbID:null,
         debugging:false,      // Break in debugger on recv.
+        done:0,
         integrityFail:null,
         foreignKeysFail:null,
+        foreignKeysInfo:null,        
+        optdb:null,
         rootdir: null,                  // Where main.js lives.
+        ws:null,
+        wsopts:null,
         SJO : { mode: 'json2' },        // Sqlite mode.
         browsers: {                     // Not used, yet.
             unix:[ "xdg-open", "gnome-open", "firefox", "google-chrome" ],
@@ -556,7 +568,6 @@ function SqliteUI(files:array|string, conf:object=void)
     function main() {
         debugger;
         LogTrace('Starting', files);
-        self.done = 0;
         var req = require("SqliteUI", 1.0);
         if (!self.rootdir)
             self.rootdir=File.dirname(req.loadFile);

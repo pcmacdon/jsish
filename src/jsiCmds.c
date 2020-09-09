@@ -4648,6 +4648,14 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             v3 = NULL;
         }
     }
+    if (!parse && !v3 && (v3=interp->framePtr->fargs)) {
+        if (Jsi_ValueIsObjType(interp, v3, JSI_OT_ARRAY))
+            v3 = Jsi_ValueArrayIndex(interp, v3, 1);
+        else {
+            v3 = NULL;
+        }
+    }
+        
     if (v3 && !Jsi_ValueIsNull(interp, v3) && !Jsi_ValueIsUndef(interp, v3)) {
         if (!Jsi_ValueIsObjType(interp, v3, JSI_OT_OBJECT))
             return Jsi_LogError("arg 3: expected object|null|undefined");

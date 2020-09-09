@@ -65,7 +65,7 @@ function Safe(fileargs:array, conf:object=void) {
         var sopts = {isSafe:true, name:'safeProg'};
         if (self.paranoid) {
             self.noRead = true;
-            sopts.asserts=true;
+            sopts.log='assert';
             sopts.noNetwork = true;
             //sopts.noInput = true;
             sopts.stdinStr = 'INPUT DISALLOWED';

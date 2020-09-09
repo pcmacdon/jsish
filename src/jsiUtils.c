@@ -134,10 +134,6 @@ Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const ch
     bool isExt = 0, ftail = interp->logOpts.ftail;
     //uint mask, cshift = (1<<code),
     uint log = jsi_GetLogFlag(interp, code, popts);
-/*    else {
-        mask = popts->modConf.logmask;
-        log = popts->modConf.log|interp->log;
-        log = ((~mask&log)&cshift);*/
     if (popts) {
         isExt = 1;
         ftail = 1;
@@ -145,9 +141,11 @@ Jsi_RC Jsi_LogMsgExt(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const ch
     if (!log)
         return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
     if (code == JSI_LOG_ERROR) {
-        if (interp->curIpLastError == interp->curIp)
-            return JSI_ERROR;
-        interp->curIpLastError = interp->curIp;
+        if (interp->curIp) {
+            if (interp->curIpLastError == interp->curIp)
+                return JSI_ERROR;
+            interp->curIpLastError = interp->curIp;
+        }
     }
     char pbuf[JSI_BUFSIZ/8] = "";
     char buf[JSI_BUFSIZ/2];

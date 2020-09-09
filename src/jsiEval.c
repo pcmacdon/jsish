@@ -934,33 +934,77 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
     Jsi_Value *currentScope)
 {
     Jsi_RC rc = JSI_OK;
+    uint flags = (uintptr_t)ip->data, right_val = flags&1; // isident=flags&2;
+    Jsi_String *str = NULL;
+    Jsi_Obj *obj = NULL;
+    int bsc, arrayindex = -1;
     jsiVarDeref(interp,2);
-    int isnull;
-    if ((isnull=Jsi_ValueIsNull(interp, src)) || Jsi_ValueIsUndef(interp, src)) {
-        Jsi_LogError("invalid subscript of %s", (isnull?"null":"undefined"));
-        jsiPop(interp, 1);
-        return JSI_ERROR;
-    }
-    int arrayindex = -1;
-
-    if (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0) {
+    if (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0)
         arrayindex = (int)idx->d.num;
-    }
 
-    if (src->vt == JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT && src->d.obj->freeze && src->d.obj->freezeReadCheck) {
-        Jsi_Value *v;
-        char keyBuf[100], *keyStr = keyBuf;
-        if (arrayindex>=0)
-            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
-        else
-            keyStr = Jsi_ValueString(interp, idx, NULL);
-        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0))) {
-            return Jsi_LogError("frozen read undefined key: %s", keyStr);
+    switch (src->vt) {
+        case JSI_VT_NULL:
+            rc = Jsi_LogError("invalid null subscript");
+            break;
+        case JSI_VT_UNDEF:
+            rc = Jsi_LogError("invalid undefined subscript");
+            break;
+        //case JSI_VT_NUMBER:
+        //    break;
+        case JSI_VT_STRING:
+            str = &src->d.s;
+            break;
+        case JSI_VT_OBJECT:
+            obj = src->d.obj;
+            switch (obj->ot) {
+                case JSI_OT_STRING:
+                    str = &obj->d.s;
+                    break;
+                case JSI_OT_OBJECT:
+                    if (obj->freeze && obj->freezeReadCheck) {
+                        Jsi_Value *v;
+                        char keyBuf[100], *keyStr = keyBuf;
+                        if (arrayindex>=0)
+                            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
+                        else
+                            keyStr = Jsi_ValueString(interp, idx, NULL);
+                        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0))) {
+                            rc = Jsi_LogError("frozen read undefined key: %s", keyStr);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    if (rc != JSI_OK)
+        goto done;
+    
+/*    if (isident && obj && idx->vt == JSI_VT_STRING) {
+        const char *keyStr = Jsi_ValueString(interp, idx, NULL);
+        Jsi_Value *vp = Jsi_ValueObjLookup(interp, src, keyStr, 0);
+        if (vp) {
+            //Jsi_ValueCopy(interp, src, v);
+
+            if (right_val || vp->f.bits.readonly) {
+                if (vp->vt == JSI_VT_OBJECT || vp->vt == JSI_VT_STRING)  // TODO:*** Undo using ValueCopy. ***
+                    Jsi_ValueMove(interp, src, vp);
+                else
+                    Jsi_ValueCopy(interp, src, vp);
+            } else {
+                Jsi_Value res = VALINIT;
+                res.vt = JSI_VT_VARIABLE;
+                res.d.lval = vp;
+                Jsi_ValueCopy(interp, src, &res);
+            }
+
+            goto done;
         }
-    }
-
-    Jsi_String *str = jsi_ValueString(src);
-    if (str && Jsi_ValueIsNumber(interp, idx)) {
+    }*/
+    if (str && Jsi_ValueIsNumber(interp, idx)) { // eg. "abc"[1]
         int bLen, cLen;
         char bbuf[10], *cp = Jsi_ValueString(interp, src, &bLen);
         int n = (int)idx->d.num;
@@ -984,22 +1028,14 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
             }
             Jsi_ValueMakeStringDup(interp, &src, bbuf);
         }
-        jsiPop(interp, 1);
-        return rc;
+        goto done;
     }
     Jsi_ValueToObject(interp, src);
-    /*if (interp->hasCallee && (src->d.obj == currentScope->d.obj || (interp->framePtr->arguments && src->d.obj == interp->framePtr->arguments->d.obj))) {
-        if (idx->vt == JSI_VT_STRING && Jsi_Strcmp(idx->d.s.str, "callee") == 0) {
-            jsiClearStack(interp,1);
-            Jsi_ValueMakeStringKey(interp, &idx, "\1callee\1");
-        }
-    }*/
-    int bsc = Jsi_ValueIsObjType(interp, src, JSI_OT_NUMBER); // Previous bad subscript.
+    bsc = Jsi_ValueIsObjType(interp, src, JSI_OT_NUMBER); // Previous bad subscript.
     if (bsc == 0 && interp->lastSubscriptFail && interp->lastSubscriptFail->vt != JSI_VT_UNDEF)
         Jsi_ValueReset(interp, &interp->lastSubscriptFail);
 
-    if (src->vt != JSI_VT_UNDEF) {
-        int right_val = (uintptr_t)ip->data;
+    {
         Jsi_Value res = VALINIT, 
             *resPtr = &res,
             *vp = jsi_ValueSubscript(interp, src, idx, &resPtr);
@@ -1030,6 +1066,8 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
             Jsi_DecrRefCount(interp, vp);
         }
     }
+    
+done:
     jsiPop(interp, 1);
     return rc;
 }
@@ -1235,7 +1273,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_ASSIGN: {
                 Jsi_Value *sval = _jsi_TOP, *dval = _jsi_TOQ;
                 bool globThis = (sval->vt == JSI_VT_OBJECT && sval->d.obj == interp->csc->d.obj);
-                if ((uintptr_t)ip->data == 1) {
+                if ((uintptr_t)ip->data & 1) {
                     jsiVarDeref(interp,1);
                     rc = jsiValueAssign(interp, dval, sval, lop);                    
                     if (strict && sval->vt == JSI_VT_UNDEF)
@@ -2099,7 +2137,7 @@ Jsi_RC jsi_evalcode(jsi_Pstate *ps, Jsi_Func *func, Jsi_OpCodes *opcodes,
     frame.parent->child = interp->framePtr = &frame;
     frame.ps = ps;
     frame.ingsc = scope;
-    frame.incsc = fargs;
+    frame.incsc = frame.fargs = fargs;
     frame.inthis = _this;
     frame.opcodes = opcodes;
     frame.filePtr = fi;

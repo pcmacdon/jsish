@@ -36,7 +36,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
     
     if (self.interpOptStr.length)
         self.intOpts = JSON.parse(self.interpOptStr);
-    self.intOpts.maxOpCnt = self.maxOptCnt;
+    self.intOpts.maxOpCnt = self.maxOpCnt;
     
     function callback(iname:string, cnt:number) {
         //puts('callback: '+iname+' '+cnt);
@@ -259,10 +259,8 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
                 self.rc += '\n\n'+self.errs+"</pre>";
             }
         }
-        if (self.delInterp) {
+        if (self.delInterp)
             delete self.interp;
-            self.interp = null;
-        }
         return self.rc;
     }
     if (self.wsName.length)

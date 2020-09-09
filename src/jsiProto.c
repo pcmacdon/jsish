@@ -365,6 +365,9 @@ static Jsi_RC jsi_FunctionCallCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
 static Jsi_RC ObjectFreezeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
+    if (_this->vt != JSI_VT_OBJECT || _this->d.obj->ot != JSI_OT_FUNCTION ||
+        _this->d.obj->d.fobj->func->callback != ObjectConstructor)
+        return Jsi_LogError("must call via Object.freeze");
     Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0),
         *fval = Jsi_ValueArrayIndex(interp, args, 1),
         *bval = Jsi_ValueArrayIndex(interp, args, 2),

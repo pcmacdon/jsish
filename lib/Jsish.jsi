@@ -265,7 +265,7 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
         objOpts     :{},        // Options for objOpts
         verbose     :false
     };
-    moduleOpts(self, options);
+    parseOpts(self, options, conf);
     var cols = db.query('PRAGMA table_info("'+table+'")');
     if (!cols.length) {
         if (!self.noCreate)

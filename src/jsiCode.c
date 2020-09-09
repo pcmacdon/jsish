@@ -544,7 +544,7 @@ static void caselist_free(jsi_CaseList *c)
 static Jsi_OpCodes *opassign(jsi_Pstate *pstate, jsi_Pline *line, Jsi_OpCodes *lval, Jsi_OpCodes *oprand, Jsi_OpCodes *op)
 {
     Jsi_OpCodes *ret;
-    if ((lval)->lvalue_flag == 1) {
+    if ((lval)->lvalue_flag&1) {
         ret = codes_join3(lval, 
                              codes_join3(code_push_top(), oprand, op),
                              code_assign(pstate, line, 1));

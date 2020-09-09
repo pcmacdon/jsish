@@ -74,7 +74,6 @@ function Csspp(files:array|string=null, conf:object=undefined):string|object
             nstr = nstr.trim();
         var res = nstr;
         var cres = nstr;
-        var i = self.maxRecurse;
         if (self.vmap.length) {
             if (self.vmap.indexOf(fnam)>=0)
                 errorCmd("Redefined symbol: "+fnam);

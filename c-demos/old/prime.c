@@ -7,9 +7,10 @@ static Jsi_RC PrimeCheckCmd(Jsi_Interp *interp, Jsi_Value *args,
 {
     int val, lim, i;
     bool rc = 1;
-    if (Jsi_GetIntFromValue(interp, Jsi_ValueArrayIndex(interp, args, 0), &val) != JSI_OK ||
-        Jsi_GetIntFromValue(interp, Jsi_ValueArrayIndex(interp, args, 1), &lim) != JSI_OK)
-        return JSI_ERROR;
+    Jsi_Value *v1 = Jsi_ValueArrayIndex(interp, args, 0), *v2 = Jsi_ValueArrayIndex(interp, args, 1);
+    if (!v1 || Jsi_GetIntFromValue(interp, v1, &val) != JSI_OK ||
+        !v2 || Jsi_GetIntFromValue(interp, v2, &lim) != JSI_OK)
+        return Jsi_LogError("expected 2 int args");
 
     for (i = 2; i <= lim; i++) {
         if ((val % i) == 0) {

@@ -1,26 +1,20 @@
 # Makefile to download/compile libsqlite.a
 TARGET=unix
 SOURCEDIR=src
-CFLAGS= -I$(SOURCEDIR) -I$(LWSBASE)/build -I../miniz -I$(TARGET)/ -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_DBSTAT_VTAB
-SQLVER=3300100
-SQLURL=https://www.sqlite.org/2019/sqlite-amalgamation-$(SQLVER).zip
+CFLAGS= -fPIC -I$(SOURCEDIR) -I../miniz -I$(TARGET)/ -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_DBSTAT_VTAB
+SQLITE_VER=3300100
+SQLURL=https://www.sqlite.org/2019/sqlite-amalgamation-$(SQLITE_VER).zip
 
-BUILDDIR=build/$(TARGET)
-LIBNAME=libsqlite3.a
-LWSLIBBUILD=$(LIBNAME)
-CMAKE=cmake
-
-LWSLIB=build/$(TARGET)/$(LIBNAME)
-
+BUILDDIR=$(SOURCEDIR)
+SQLITE_LIBNAME=libsqlite3.a
+LIBNAME=$(BUILDDIR)/$(SQLITE_LIBNAME)
 SOURCES = $(SOURCEDIR)/sqlite3.c
 
 OBJLST  = $(SOURCES:.c=.o)
 OBJECTS	= $(patsubst $(SOURCEDIR)/%,$(BUILDDIR)/%,$(OBJLST))
 
-all: mkdirs download $(BUILDDIR)/libsqlite3.a
 
-mkdirs:
-	mkdir -p $(BUILDDIR)
+all: download $(LIBNAME)
 
 download: $(SOURCEDIR)/sqlite3.c
 
@@ -30,15 +24,14 @@ $(SOURCEDIR)/sqlite3.c:
 	ln -sf sqlite-amalgamation-$(SQLVER) src
 	rm sqlite-amalgamation-$(SQLVER).zip
 
-
-$(BUILDDIR)/libsqlite3.a: $(SOURCEDIR)/sqlite3.c Makefile
+$(LIBNAME): $(SOURCEDIR)/sqlite3.c Makefile
 	$(CC) -c -I$(SOURCEDIR) $(SOURCEDIR)/sqlite3.c $(CFLAGS)
-	$(AR) rv $(BUILDDIR)/libsqlite3.a sqlite3.o
+	$(AR) rv $(LIBNAME) sqlite3.o
 
 clean:
-	rm -f $(OBJECTS) $(BUILDDIR)/libsqlite3.a
+	rm -f $(OBJECTS) $(LIBNAME)
 
 cleanall: clean
-	rm -rf build
+	rm -rf src/*.a
 	
 .PHONY: all depend remake clean cleanall download

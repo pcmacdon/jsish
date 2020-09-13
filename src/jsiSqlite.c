@@ -42,13 +42,15 @@ jsi_DbVfs SqliteDbVfs = {
 typedef enum { SQLITE_SIG_DB = 0xbeefdead, SQLITE_SIG_FUNC, SQLITE_SIG_EXEC, SQLITE_SIG_STMT } Sqlite_Sig;
 
 #define SQLSIGASSERT(s,n) assert(s->sig == SQLITE_SIG_##n)
-#ifndef _JSI_MEMCLEAR
-#ifndef NDEBUG
+
+#if !defined(_JSI_MEMCLEAR) && !defined(NDEBUG) 
 #define _JSI_MEMCLEAR(s) memset(s, 0, sizeof(*s));
-#else
+#endif
+
+#ifndef _JSI_MEMCLEAR
 #define _JSI_MEMCLEAR(s)
 #endif
-#endif
+
 #ifndef JSI_DB_DSTRING_SIZE
 #define JSI_DB_DSTRING_SIZE 2000
 #endif
@@ -78,7 +80,7 @@ typedef enum { SQLITE_SIG_DB = 0xbeefdead, SQLITE_SIG_FUNC, SQLITE_SIG_EXEC, SQL
 #include <stdio.h>
 #include <inttypes.h>
 
-#ifndef SQLITE_AMALGAMATION
+#ifndef SQLITE_VERSION
 #include "sqlite3.h"
 #endif
 
@@ -385,7 +387,7 @@ void dbTypeNameHashInit(Jsi_Db *db) {
     Jsi_HashSet(hPtr, (void*)"datetime", (void*)JSI_OPTION_TIME_W);
 }
 
-#define SQLITE_OMIT_INCRBLOB
+#define SQLITE_OMIT_INCRBLOB 1
 
 // Return 1 if ok, else return 0 and set erc to -1 or -2 for timeout.
 static int dbExecCmd(Jsi_Db *db, const char *zQuery, int *erc)
@@ -4043,8 +4045,8 @@ static int dbOptSelect(Jsi_Db *db, const char *cmd, OptionBind *obPtr, Jsi_CData
     DbEvalContext sEval = {};
     int ccnt = 0;
     Jsi_Wide flags = 0;
-    const char *cPtr = Jsi_Strstr(cmd, " %s");
-    if (!cPtr) cPtr = Jsi_Strstr(cmd, "\t%s");
+    const char *cPtr = Jsi_Strstr(cmd, " %v");
+    if (!cPtr) cPtr = Jsi_Strstr(cmd, "\t%v");
     Jsi_DString *eStr;
 #ifdef JSI_DB_DSTRING_SIZE
     JSI_DSTRING_VAR(dStr, JSI_DB_DSTRING_SIZE);
@@ -4295,8 +4297,8 @@ static int jsi_DbQuery(Jsi_Db *db, Jsi_CDataDb *dbopts, const char *query)
         }
         return 0;
     }
-    const char *cPtr = Jsi_Strstr(query, " %s");
-    if (!cPtr) cPtr = Jsi_Strstr(query, "\t%s");
+    const char *cPtr = Jsi_Strstr(query, " %v");
+    if (!cPtr) cPtr = Jsi_Strstr(query, "\t%v");
     if (!dbopts) {
         Jsi_LogErrorExt("dbopts may not be null");
         return -1;

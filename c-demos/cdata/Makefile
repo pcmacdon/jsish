@@ -1,4 +1,4 @@
-JSIDIR=../../src
+JSIROOT=../..
 OTHER=
 CSTRFN=../../lib/Cdata.jsi 
 JSISH=../../jsish
@@ -6,7 +6,7 @@ NOLINE=false
 #CSTRPP=$(JSISH) $(CSTRFN) 
 CSTRPP=$(JSISH) -c -noline $(NOLINE)
 CCGET=$(CSTRPP) -cflags true
-DEPS=$(CSTRFN) $(JSIDIR)/jsi.c $(JSIDIR)/jsi.h Makefile
+DEPS=$(CSTRFN) $(JSIROOT)/jsi.c $(JSIROOT)/src/jsi.h Makefile
 STATICS=Bee Car Baker
 
 all: shared

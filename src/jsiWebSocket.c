@@ -53,7 +53,9 @@ JSI_EXTENSION_INI
 
 #include <signal.h>
 
+#ifndef JSI_AMALGAMATION 
 #include <lws.h>
+#endif
 
 //#define LWS_NO_EXTENSIONS
 static const int jsi_WsPkgVersion = 2;
@@ -68,13 +70,14 @@ static int force_exit = 0;
 typedef enum {  PWS_DEAD, PWS_HTTP, PWS_CONNECTED, PWS_RECV, PWS_SENT, PWS_SENDERR } pws_state;
 enum { JWS_SIG_SYS=0xdeadf000, JWS_SIG_OBJ, JWS_SIG_PWS };
 
-#ifndef NDEBUG
-#ifndef _JSI_MEMCLEAR
+#if !defined(_JSI_MEMCLEAR) && !defined(NDEBUG) 
 #define _JSI_MEMCLEAR(s) memset(s, 0, sizeof(*s));
 #endif
-#else
+
+#ifndef _JSI_MEMCLEAR
 #define _JSI_MEMCLEAR(s)
 #endif
+
 #define WSSIGASSERT(s,n) assert(s->sig == JWS_SIG_##n)
 
 enum {

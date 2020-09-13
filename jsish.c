@@ -1,6 +1,7 @@
 #include "src/jsi.h"
 #ifndef JSI_IN_AMALGAMATION
 #define JSI_AMALGAMATION
+#define JSI__ALL 1
 struct jsi_Pstate;
 #include "src/jsiStubs.h"
 #include "regex/regex.h"
@@ -18,6 +19,10 @@ struct jsi_Pstate;
 #if JSI__READLINE==1
 #include "src/linenoise.c"
 #endif //JSI__READLINE==1
+#ifndef SQLITE_VERSION
+#include "sqlite/src/sqlite3.c"
+#endif //SQLITE_VERSION
+#include "lws/src/lwsSingle.c"
 #include "src/jsiCode.c"
 #include "src/jsiLexer.c"
 #include "src/jsiFunc.c"

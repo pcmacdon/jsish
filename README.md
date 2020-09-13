@@ -1,4 +1,3 @@
-![Jsi](www/site/logojsi.png)
 A small javascript interpreter integrating Database and Web in **C**.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 

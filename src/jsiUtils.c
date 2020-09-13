@@ -45,21 +45,20 @@
 #endif
 void* Jsi_Realloc(void *m,unsigned int size) {
     void *v = realloc(m,size);
-    Assert(v);
+    ASSERTRET(v, 0);
     return v;
 }
 void* Jsi_Malloc(unsigned int size) {
     void *v = malloc(size);
-    Assert(v);
+    ASSERTRET(v, 0);
     return v;
 }
 void* Jsi_Calloc(unsigned int n,unsigned int size) {
     void *v = calloc(n,size);
-    Assert(v);
+    ASSERTRET(v, 0);
     return v;
 }
-void  Jsi_Free(void *n) { Assert(n); free(n); }
-
+void  Jsi_Free(void *n) { ASSERTRET(n); free(n); }
 #if JSI__SANITIZE
 #define Jsi_Malloc(sz) malloc(sz)
 #define Jsi_Calloc(nm, sz) calloc(nm,sz)

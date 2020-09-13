@@ -1589,6 +1589,12 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     return interp;
 }
 
+Jsi_Interp* Jsi_InterpMain(int argc, char **argv, Jsi_InitProc* initProc)
+{
+    Jsi_InterpOpts opts = {.argc=argc, .argv=argv, .initProc=initProc};
+    return jsi_InterpNew(NULL, NULL, &opts);
+}
+
 Jsi_Interp* Jsi_InterpNew(Jsi_InterpOpts *opts)
 {
     return jsi_InterpNew(NULL, NULL, opts);
@@ -1983,9 +1989,11 @@ void Jsi_EventuallyFree(Jsi_Interp* interp, void *data, Jsi_DeleteProc* proc) {
         (*proc)(interp, data);
         return;
     }
+#ifndef NDEBUG
     PreserveData *ptr = (PreserveData*)Jsi_HashValueGet(hPtr);
     assert(ptr && ptr->interp == interp);
     JSI_NOWARN(ptr);
+#endif
     Jsi_HashEntryDelete(hPtr);
 }
 

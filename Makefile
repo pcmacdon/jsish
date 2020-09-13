@@ -1,11 +1,10 @@
 # Makefile for jsish: controlled by make.conf from configure.
 PREFIX=/usr/local
+SQLITE_VER=3300100
 LWS_VER=2.0202
 LWS_SSL=0
-WEBSOCKDIR = lws
-WEBSOCKROOT = $(WEBSOCKDIR)/lws-$(LWS_VER)
+WEBSOCKROOT = lws/src
 WEBSOCKSRC = $(WEBSOCKROOT)/src
-SQLITEDIR = sqlite
 ACFILES	= src/parser.c
 #ACFILES	= src/jsiParser.c
 BUILDSYS = $(shell uname -o)
@@ -94,12 +93,12 @@ SSL_SFX=
 endif
 
 LWS_LIBNAME = liblws_$(SSL_SFX)$(TARGET)-$(LWS_VER).a
-LWS_LIBDIR = $(WEBSOCKROOT)/$(LWS_LIBNAME)
-WEBSOCKLIB = $(LWS_LIBDIR)
+LWSLIB = lws/src/$(LWS_LIBNAME)
+WEBSOCKLIB = $(LWSLIB)
 
 CFLAGS += -I$(WEBSOCKSRC)
-#WEBSOCKLIB = $(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
-#CFLAGS += -I$(WEBSOCKSRC)/lib  -I$(WEBSOCKSRC)/build -Iwebsocket/$(TARGET) -I$(WEBSOCKDIR)/build/$(TARGET)
+#WEBSOCKLIB = lws/build/$(TARGET)/libwebsockets.a
+#CFLAGS += -I$(WEBSOCKSRC)/lib  -I$(WEBSOCKSRC)/build -Iwebsocket/$(TARGET) -Ilws/build/$(TARGET)
 STATICLIBS += $(WEBSOCKLIB)
 
 ifeq ($(LWS_SSL),1)
@@ -127,8 +126,9 @@ endif
 ifeq ($(WITH_EXT_SQLITE),1)
 
 ifeq ($(BUILDIN_SQLITE),1)
-SQLITELIB = $(SQLITEDIR)/build/$(TARGET)/libsqlite3.a
-CFLAGS += -I$(SQLITEDIR)/src
+SQLITE_LIBNAME = libsqlite3_$(TARGET)-$(SQLITE_VER).a
+SQLITELIB = sqlite/src/$(SQLITE_LIBNAME)
+CFLAGS += -Isqlite/src
 else
 SQLITELIB = -lsqlite3
 endif
@@ -171,7 +171,7 @@ OPT_SOCKET=0
 OPT_READLINE=0
 
 EXEEXT=.exe
-CFILES += $(WFILES) $(SQLITEDIR)/src/sqlite3.c
+CFILES += $(WFILES) sqlite/src/sqlite3.c
 
 ifneq ($(WITH_EXT_WEBSOCKET),1)
 #for windows without websock use miniz
@@ -182,7 +182,7 @@ PROGFLAGS += JSI__MINIZ=1
 endif
 
 else
-#WEBSOCKLIB=$(WEBSOCKDIR)/build/$(TARGET)/libwebsockets.a
+#WEBSOCKLIB=lws/build/$(TARGET)/libwebsockets.a
 PROGLDFLAGS += $(WEBSOCKLIB) -lwsock32 -lws2_32
 endif
 
@@ -280,7 +280,8 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: src/jsi.c src/jsiOne.c jsimin $(ALLTARGS) $(STATICLIBS) $(PROGBIN) checkcfgver
+all: jsi.c jsish.c jsimin $(ALLTARGS) $(STATICLIBS) $(PROGBIN) shared
+# checkcfgver
 
 help:
 	@echo "targets are: mkwin mkmusl shared jsishs stubs ref test testmem release"
@@ -301,10 +302,16 @@ $(PROGBINA): src/parser.c $(OBJS) src/main.o libjsi.a
 	$(CC) $(CFLAGS) $(OBJS) $(SQLITELIB) src/main.o $(LNKFLAGS) -o $(PROGBINA) $(LDFLAGS)
 	$(MAKE) modules
 
-jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
-	$(CC) $(CFLAGS) src/main.o -o $@ -L. -ljsi $(LDFLAGS) -lsqlite3 $(LOADLIB) $(THREADLIB)
+libjsi$(SHLEXT): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -Wl,--export-dynamic  -shared -o $@
 
-shared: libjsi$(SHLEXT) jsish$(EXEEXT)
+libjsish$(SHLEXT): $(OBJS) $(SQLITELIB) $(WEBSOCKLIB)
+	$(CC) $(CFLAGS) $(OBJS) $(SQLITELIB) $(WEBSOCKLIB) -Wl,--export-dynamic  -shared -o $@
+
+jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
+	$(CC) $(CFLAGS) src/main.o -o $@ -L. -Wl,-rpath=`pwd` -L. -ljsish $(LDFLAGS)
+
+shared: libjsi$(SHLEXT) libjsish$(SHLEXT) jsishs$(EXEEXT)
 
 jsimin:
 ifeq ($(PROGBINMIN),)
@@ -339,17 +346,17 @@ sqliteui$(EXEEXT):  .FORCE
 	cp $(PROGBINA) $@
 	./jsimin lib/Zip.jsi create  $@ ../sqliteui lib
 
-lwslib: $(LWS_LIBDIR)
+lwslib: $(LWSLIB)
 
-$(LWS_LIBDIR):
-	$(MAKE) -C $(WEBSOCKDIR) CFLAGS="$(CFLAGS)" CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(LWS_SSL) LWS_LIBNAME=$(LWS_LIBNAME)
+$(LWSLIB): $(MAKECONF)
+	$(MAKE) -C lws CFLAGS="$(CFLAGS)" CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(LWS_SSL) LWS_LIBNAME=$(LWS_LIBNAME)
 
-$(SQLITELIB): $(SQLITEDIR)/Makefile
-	$(MAKE) -C $(SQLITEDIR) CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
+$(SQLITELIB): sqlite/Makefile  $(MAKECONF)
+	$(MAKE) -C sqlite CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET) SQLITE_VER=$(SQLITE_VER) SQLITE_LIBNAME=$(SQLITE_LIBNAME)
 
 openssllib: openssl/$(TARGET)/libcypto.a
 
-openssl/$(TARGET)/libcypto.a:
+openssl/$(TARGET)/libcypto.a:  $(MAKECONF)
 	$(MAKE) -C openssl CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
 
 
@@ -363,9 +370,6 @@ depend:
 	$(CC) -E -MM -DJSI__WEBSOCKET=1 -DJSI__SQLITE -DJSI__MYSQL $(CFLAGS) $(CFILES) $(EFILES) | sed 's/^\([^ ]\)/src\/\1/' > .depend
 
 -include .depend
-
-libjsi$(SHLEXT): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -Wl,--export-dynamic  -shared -o $@ $(LDFLAGS)
 
 # Supported modules (unix only)
 mysql: MySql$(SHLEXT)
@@ -391,12 +395,13 @@ src/jsiParser.c: src/jsiParser.y
 	-lemon src/jsiParser.y
 
 # Create the single amalgamation file jsi.c
-src/jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE)
+jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE)
 	@cat src/jsi.h > $@
+	@echo "#ifndef JSI_H_ONLY" >> $@
 	@echo "#ifndef JSI_IN_AMALGAMATION" >> $@
 	@echo "#define JSI_IN_AMALGAMATION" >> $@
-	@echo "#define _GNU_SOURCE"  >> $@
 	@echo "#define JSI_AMALGAMATION" >> $@
+	@echo "#define JSI__ALL 1" >> $@
 	@echo "struct jsi_Pstate;" >> $@
 	@cat src/jsiStubs.h $(REFILES) $(HFILES) | grep -v '^#line' >> $@
 	@echo "#if JSI__MINIZ" >> $@
@@ -405,6 +410,10 @@ src/jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE)
 	@echo "#if JSI__READLINE==1" >> $@
 	@cat src/linenoise.c >> $@
 	@echo "#endif //JSI__READLINE==1" >> $@
+	@echo "#ifndef SQLITE_EXTERNAL_ONLY" >> $@
+	@cat sqlite/src/sqlite3.c  >> $@
+	@echo "#endif //SQLITE_EXTERNAL_ONLY " >> $@
+	@cat lws/src/lwsSingle.c  >> $@
 	@cat $(WIFILES)  src/jsiCode.c $(PCFILES) | grep -v '^#line' >> $@
 	@echo "#ifndef JSI_LITE_ONLY" >> $@
 	@grep -v '^#line' $(ACFILES)  >> $@
@@ -412,12 +421,14 @@ src/jsi.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE)
 	@cat $(WFILES) $(EFILES)  >> $@
 	@cat src/main.c  >> $@
 	@echo "#endif //JSI_IN_AMALGAMATION" >> $@
+	@echo "#endif //JSI_H_ONLY" >> $@
     
-# Create the single compile file jsiOne.c
-src/jsiOne.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
+# Create the single compile file jsish.c
+jsish.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
 	@echo '#include "src/jsi.h"' > $@
 	@echo "#ifndef JSI_IN_AMALGAMATION" >> $@
 	@echo "#define JSI_AMALGAMATION" >> $@
+	@echo "#define JSI__ALL 1" >> $@
 	@echo "struct jsi_Pstate;" >> $@
 	@for ii in src/jsiStubs.h $(REFILES) $(HFILES); do echo '#include "'$$ii'"' >> $@; done
 	@echo "#if JSI__MINIZ" >> $@
@@ -426,6 +437,10 @@ src/jsiOne.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
 	@echo "#if JSI__READLINE==1" >> $@
 	@echo '#include "'src/linenoise.c'"' >> $@
 	@echo "#endif //JSI__READLINE==1" >> $@
+	@echo "#ifndef SQLITE_VERSION" >> $@
+	@echo '#include "sqlite/src/sqlite3.c"'  >> $@
+	@echo "#endif //SQLITE_VERSION" >> $@
+	@echo '#include "lws/src/lwsSingle.c"'  >> $@
 	@for ii in  src/jsiCode.c $(PCFILES); do echo '#include "'$$ii'"' >> $@; done
 	@echo "#ifndef JSI_LITE_ONLY" >> $@
 	@for ii in $(ACFILES); do echo '#include "'$$ii'"' >> $@; done
@@ -442,7 +457,7 @@ ref:
 	$(MAKE) -C www
 	$(MAKE) -C md
 
-release: stubs ref src/jsi.c src/jsiOne.c testsys test
+release: stubs ref jsi.c jsish.c testsys test
 
 printconf:
 	@echo $(EXPECT_CONFIG_VER)

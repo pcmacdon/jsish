@@ -246,11 +246,8 @@ Jsi_RC Jsi_JSONParseFmt(Jsi_Interp *interp, Jsi_Value **ret, const char *fmt, ..
         return JSI_ERROR;
     }
     if (n >= sizeof(buf)) {
-        uint m;
         Jsi_DSSetLength(&dStr, n+1);
-        m = vsnprintf(Jsi_DSValue(&dStr), n+1, fmt, argList);
-        assert(m == n);
-        JSI_NOWARN(m);
+        vsnprintf(Jsi_DSValue(&dStr), n+1, fmt, argList);
         cp = Jsi_DSValue(&dStr);
     }
     va_end(argList);

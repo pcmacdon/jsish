@@ -1,8 +1,9 @@
-// JSI DATABASE DEMO: "dbdemo.c".  COMPILE WITH: "gcc dbdemo.c -lm -lsqlite3 -lz -lpthread -I../src"
-#include <sqlite3.h>
-#define JSI__SQLITE 1
+// JSI DATABASE DEMO: "dbdemo.c".  
+
 //#define JSI_LITE_ONLY  // ie. TO OMIT SCRIPT SUPPORT.
-#include "jsi.c"
+#include <assert.h>
+#include <string.h>
+#include "jsi.h"
 
 static const char *markStrs[] = {"","A","B","C","D","F", NULL};
 typedef enum { MARK_NONE, MARK_A, MARK_B, MARK_C, MARK_D, MARK_F } MarkType;
@@ -92,7 +93,7 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
     for (i=0; i<10; i++) {
         mydata.id++;
         mydata.max--;
-        n = Jsi_DbQuery(jdb, d, "INSERT INTO mytable %s" ); assert(n==1);
+        n = Jsi_DbQuery(jdb, d, "INSERT INTO mytable %v" ); assert(n==1);
     }
     Jsi_DbQuery(jdb, NULL, ";COMMIT");
 
@@ -101,13 +102,13 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
     mydata2.rowid = mydata.rowid;
     Jsi_CDataDb d2[] ={ {MyOptions, &mydata2 }, {}};
     n = Jsi_DbQuery(jdb, d2, "SELECT id,name FROM mytable WHERE rowid=:rowid"); assert(n==1);
-    n = Jsi_DbQuery(jdb, d2, "SELECT %s FROM mytable WHERE rowid=:rowid"); assert(n==1);
+    n = Jsi_DbQuery(jdb, d2, "SELECT %v FROM mytable WHERE rowid=:rowid"); assert(n==1);
 
     /* MODIFY ALL FIELDS OF LAST INSERTED ROW. */
     mydata.max = -1;
     mydata.myTime = Jsi_DateTime();
     strcpy(mydata.name, "billybob");
-    n = Jsi_DbQuery(jdb, d, "UPDATE mytable SET %s WHERE id=:id"); assert(n==1);
+    n = Jsi_DbQuery(jdb, d, "UPDATE mytable SET %v WHERE id=:id"); assert(n==1);
     /* MODIFY SPECIFIC COLUMNS FOR HALF OF INSERTED ROWS. */
     mydata.id = 105;
     n = Jsi_DbQuery(jdb, d, "UPDATE mytable SET name=:name, max=:max WHERE id<:id"); assert(n==5);
@@ -119,12 +120,12 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
     int num = 10;
     static MyData mydatas[10] = {};
     Jsi_CDataDb d3[] ={ {MyOptions, mydatas, num }, {}};
-    cnt = Jsi_DbQuery(jdb, d3, "SELECT %s FROM mytable"); assert(cnt==9);
+    cnt = Jsi_DbQuery(jdb, d3, "SELECT %v FROM mytable"); assert(cnt==9);
     
     for (i=0; i<cnt; i++)
         mydatas[i].id += i;
     d3->arrSize = cnt;
-    n = Jsi_DbQuery(jdb, d3, "UPDATE mytable SET %s WHERE rowid = :rowid"); assert(n==9);
+    n = Jsi_DbQuery(jdb, d3, "UPDATE mytable SET %v WHERE rowid = :rowid"); assert(n==9);
     
     /* Update only the dirty rows. */
     for (i=1; i<=3; i++) {
@@ -132,7 +133,7 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
         mydatas[i].id += 100*i;
     }
     d3->dirtyOnly = 1;
-    n = Jsi_DbQuery(jdb, d3, "UPDATE mytable SET %s WHERE rowid = :rowid"); assert(n==3);
+    n = Jsi_DbQuery(jdb, d3, "UPDATE mytable SET %v WHERE rowid = :rowid"); assert(n==3);
  
 #ifndef JSI_LITE_ONLY
    /* if (interp) {
@@ -145,14 +146,14 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
     static MyData *mdPtr[3] = {};  /* FIXED LENGTH */
     Jsi_CDataDb d4[] ={ {MyOptions, mdPtr, 3 }, {}};
     d4->isPtrs = 1;
-    n = Jsi_DbQuery(jdb, d4, "SELECT %s FROM mytable"); assert(n==3);
+    n = Jsi_DbQuery(jdb, d4, "SELECT %v FROM mytable"); assert(n==3);
     printf("%f\n", mdPtr[0]->max);
 
     MyData **dynPtr = NULL;  /* VARIABLE LENGTH */
     Jsi_CDataDb d5[] ={ {MyOptions, &dynPtr }, {}};
     d5->isPtr2 = 1;
-    d5->arrSize = n = Jsi_DbQuery(jdb, d5, "SELECT %s FROM mytable WHERE rowid < 5"); assert(n==4);
-    d5->arrSize = n = Jsi_DbQuery(jdb, d5, "SELECT %s FROM mytable LIMIT 1000");  assert(n==9);
+    d5->arrSize = n = Jsi_DbQuery(jdb, d5, "SELECT %v FROM mytable WHERE rowid < 5"); assert(n==4);
+    d5->arrSize = n = Jsi_DbQuery(jdb, d5, "SELECT %v FROM mytable LIMIT 1000");  assert(n==9);
     d5->memFree = 1;
     n = Jsi_DbQuery(jdb, d5, NULL);
     assert(!dynPtr);
@@ -165,12 +166,12 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
     };
     mydata.max = -1;
     binds->isPtrs = 1;
-    n = Jsi_DbQuery(jdb, binds, "SELECT %s FROM mytable WHERE max=$max"); assert(n==3);
+    n = Jsi_DbQuery(jdb, binds, "SELECT %v FROM mytable WHERE max=$max"); assert(n==3);
 #if 0
     if (!strcmp(arg,"-wrapper")) {
-        ExecMyData(mydatas, n, "SELECT %s FROM mytable;");
-        ExecMySemi(mdPtr,   n, "SELECT %s FROM mytable;");
-        ExecMyDyn(&dynPtr,  n, "SELECT %s FROM mytable;");
+        ExecMyData(mydatas, n, "SELECT %v FROM mytable;");
+        ExecMySemi(mdPtr,   n, "SELECT %v FROM mytable;");
+        ExecMyDyn(&dynPtr,  n, "SELECT %v FROM mytable;");
     }
 
     /* MAKE "mdPtr" AVAILABLE AS "mydata" TO JAVASCRIPT "CData.names()" */
@@ -179,7 +180,7 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
     /* LOAD TEST INSERT/SELECT/UPDATE 1,000,000 ROWS. */
     if (!strcmp(arg,"-benchmark")) {
         Jsi_Number stim, etim;
-        int bnum = 1000000;
+        int bnum = 100000;
         MyData *big = (MyData *)Jsi_Calloc(bnum, sizeof(MyData)), *b = big;
         *b = mydata;
         printf("BENCHMARK %d ROWS\n", bnum);
@@ -195,14 +196,14 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
         printf("INIT C: %8.3f secs\n", ((etim-stim)/1000.0));
         Jsi_DbQuery(jdb, NULL, ";DELETE FROM mytable;");
         stim=etim;
-        n = Jsi_DbQuery(jdb, d6, "INSERT INTO mytable %s"); assert(n==bnum);
+        n = Jsi_DbQuery(jdb, d6, "INSERT INTO mytable %v"); assert(n==bnum);
         etim = Jsi_DateTime();
         i=(int)(etim-stim);
         printf("%8.3f sec, %8d rows/sec    INSERT %d ROWS\n", i/1000.0, bnum*1000/i, n);
 
         stim=etim;
         memset(big, 0, num*sizeof(MyData));
-        n = Jsi_DbQuery(jdb, d6, "SELECT %s FROM mytable"); assert(n==bnum);
+        n = Jsi_DbQuery(jdb, d6, "SELECT %v FROM mytable"); assert(n==bnum);
         etim = Jsi_DateTime();
         i=(int)(etim-stim);
         printf("%8.3f sec, %8d rows/sec    SELECT %d ROWS \n", i/1000.0, bnum*1000/i, bnum);
@@ -226,14 +227,14 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
         }
 
         stim=etim;
-        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %s where rowid=:rowid"); assert(n==bnum);
+        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %v where rowid=:rowid"); assert(n==bnum);
         etim = Jsi_DateTime();
         i=(int)(etim-stim);
         printf("%8.3f sec, %8d rows/sec    UPDATE %d ROWS, ALL FIELDS\n", i/1000.0, n*1000/i, n);
 
         stim=etim;
         d6->dirtyOnly = 1;
-        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %s where rowid=:rowid"); assert(n==(bnum/10));
+        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %v where rowid=:rowid"); assert(n==(bnum/10));
         etim = Jsi_DateTime();
         i=(int)(etim-stim);
         printf("%8.3f sec, %8d rows/sec    UPDATE %d DIRTY ROWS\n", i/1000.0, (int)(n*1000.0/i), n);
@@ -243,7 +244,7 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
             if ((i%1000)==0)
                 b[i].isdirty = 1;
         }
-        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %s where rowid=:rowid"); assert(n==(bnum/1000));
+        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %v where rowid=:rowid"); assert(n==(bnum/1000));
         etim = Jsi_DateTime();
         i=(int)(etim-stim);
         printf("%8.3f sec, %8d rows/sec    UPDATE %d DIRTY ROWS\n", i/1000.0, n*1000/i, n);
@@ -253,7 +254,7 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
             if ((i%100000)==0)
                 b[i].isdirty = 1;
         }
-        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %s where rowid=:rowid"); assert(n==(bnum/100000));
+        n = Jsi_DbQuery(jdb, d6, "UPDATE mytable SET %v where rowid=:rowid"); assert(n==(bnum/100000));
         etim = Jsi_DateTime();
         i=(int)(etim-stim);
         printf("%8.3f sec, %8d rows/sec    UPDATE %d DIRTY ROWS\n", i/1000.0, n*1000/i, n);
@@ -267,8 +268,7 @@ static Jsi_RC DemoMain(Jsi_Interp *interp, const char *arg)
 int main(int argc, char *argv[]) {
     Jsi_Interp *interp = NULL;
 #ifndef JSI_LITE_ONLY
-    Jsi_InterpOpts opts = {.argc=argc, .argv=argv};
-    interp = Jsi_InterpNew(&opts);
+    interp = Jsi_InterpMain(argc, argv, NULL);
 #endif
     DemoMain(interp, argc>1?argv[1]:"");
 #ifndef JSI_LITE_ONLY

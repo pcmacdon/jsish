@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 45
+#define JSI_VERSION_RELEASE 46
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -285,6 +285,7 @@ typedef struct {
 } Jsi_InterpOpts;
 
 JSI_EXTERN Jsi_Interp* Jsi_InterpNew(Jsi_InterpOpts *opts); /*STUB = 1*/
+JSI_EXTERN Jsi_Interp* Jsi_InterpMain(int argc, char **argv, Jsi_InitProc* initProc); /*STUB = 422*/ /*LAST*/
 JSI_EXTERN void Jsi_InterpDelete( Jsi_Interp* interp); /*STUB = 2*/
 JSI_EXTERN void Jsi_InterpOnDelete(Jsi_Interp *interp, Jsi_DeleteProc *freeProc, void *ptr);  /*STUB = 3*/
 JSI_EXTERN Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags); /*STUB = 4*/
@@ -419,7 +420,7 @@ typedef struct {
     uint32_t flags;
 } Jsi_String;
 
-JSI_EXTERN Jsi_PkgOpts* Jsi_CommandPkgOpts(Jsi_Interp *interp, Jsi_Func *func); /*STUB = 421*/ /*LAST*/
+JSI_EXTERN Jsi_PkgOpts* Jsi_CommandPkgOpts(Jsi_Interp *interp, Jsi_Func *func); /*STUB = 421*/
 JSI_EXTERN Jsi_Value* Jsi_CommandCreate(Jsi_Interp *interp, const char *name, Jsi_CmdProc *cmdProc, void *privData); /*STUB = 49*/
 JSI_EXTERN Jsi_Value* Jsi_CommandCreateSpecs(Jsi_Interp *interp, const char *name, Jsi_CmdSpec *cmdSpecs, void *privData, int flags); /*STUB = 50*/
 JSI_EXTERN void* Jsi_CommandNewObj(Jsi_Interp *interp, const char *name, const char *arg1, const char *opts, const char *var);  /*STUB = 51*/
@@ -1597,6 +1598,14 @@ typedef char STRING65536[(1<<16)+1];
 #ifndef JSI_INFO
 #define JSI_INFO(n) n
 #endif
+
+#ifndef NDEBUG
+#define ASSERTRET(s, ...) assert(s);
+#else
+#define ASSERTRET(s, ...) if (!(s)) { fprintf(stderr, "%s:%d ASSERT FAIL: %s\n", __FILE__, __LINE__, #s); return  ##__VA_ARGS__; }
+#endif
+
+
 
 #endif /* __JSI_H__ */
 

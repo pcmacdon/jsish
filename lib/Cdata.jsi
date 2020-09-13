@@ -129,7 +129,7 @@ function Cdata(args:array, conf:object=void)
 
         var libDir = Interp.conf('pkgDirs')[0];
         var pDir = File.dirname(libDir), srcDir = pDir + '/src';
-        if (!File.readable('jsi.c') && !File.readable(srcDir+'/jsi.c'))
+        if (!File.readable('jsi.c') && !File.readable(pDir+'/jsi.c'))
             LogWarn('can not locate jsi.c');
         var wDir = pDir + '/websocket';
         s += ' -I'+srcDir;

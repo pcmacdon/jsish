@@ -18,7 +18,7 @@ function Zip(args:string|array, conf:object=void) {
     function usage(str) {
         if (str != '')
             console.puts(str);
-        console.puts("usage: list file|truncate file|unzip File.zip ?dir?|zip File.zip dir|fuse File.zip|zvfs file|create ...");
+        console.puts("usage: list file|trunc file|unzip File.zip ?dir?|zip File.zip dir|fuse File.zip|zvfs file|create ...");
         return 1;
     }
 
@@ -66,8 +66,8 @@ function Zip(args:string|array, conf:object=void) {
         return 0;
     }
 
-    function truncate(fname:string) {   // Truncate zip files off of executable.
-        zvfs.truncate(fname);
+    function trunc(fname:string) {   // Truncate zip files off of executable.
+        Zvfs.truncate(fname);
         return 0;
     }
     
@@ -159,4 +159,5 @@ function Zip(args:string|array, conf:object=void) {
 }
 
 provide(Zip, 1);
-runModule(Zip);
+if (Info.isMain())
+    exit(runModule(Zip));

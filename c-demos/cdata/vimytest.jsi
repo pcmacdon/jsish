@@ -1,4 +1,4 @@
-#!/usr/local/bin/jsish --U %s
+#!/usr/local/bin/jsish --I unitTest=1 %s
 "use strict";
 require('Vimy');
 require('VarTest');

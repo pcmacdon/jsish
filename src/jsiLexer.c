@@ -78,6 +78,8 @@ Jsi_RC jsi_InitLexer(Jsi_Interp *interp, int release)
         { "function", FUNC },
         { "return", RETURN },
         { "var", LOCAL },
+        { "let", LOCALLET },
+        { "const", LOCALCONST },
         { "of", OF },
         { "new", NEW },
         { "delete", DELETE },
@@ -104,6 +106,7 @@ Jsi_RC jsi_InitLexer(Jsi_Interp *interp, int release)
         { "boolean", TYPEBOOLEAN },
         { "array", TYPEARRAY },
         { "null", TYPENULL },
+        { "export", EXPORT },
         { "...", ELLIPSIS },
         { "debugger", __DEBUG }
     };

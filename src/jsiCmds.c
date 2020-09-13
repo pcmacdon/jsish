@@ -4958,6 +4958,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "exec",       SysExecCmd,      1,  2, "val:string, options:string|object=void", .help="Execute an OS command", .retType=(uint)JSI_TT_ANY, .flags=0, .info=FN_exec, .opts=ExecOptions},
     { "exit",       SysExitCmd,      0,  1, "code:number=0", .help="Exit the current interpreter", .retType=(uint)JSI_TT_VOID },
     { "format",     SysFormatCmd,    1, -1, "format:string, ...", .help="Printf style formatting: adds %q and %S", .retType=(uint)JSI_TT_STRING },
+    { "import",     SysSourceCmd,    1,  2, "val:string|array, options:object=void",  .help="Same as source", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
     { "isFinite",   isFiniteCmd,     1,  1, "val", .help="Return true if is a finite number", .retType=(uint)JSI_TT_BOOLEAN },
     { "isMain",     InfoIsMainCmd,   0,  0, "", .help="Return true if current script was the main script invoked from command-line", .retType=(uint)JSI_TT_BOOLEAN },
     { "isNaN",      isNaNCmd,        1,  1, "val", .help="Return true if not a number", .retType=(uint)JSI_TT_BOOLEAN },

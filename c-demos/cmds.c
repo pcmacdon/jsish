@@ -1,10 +1,7 @@
 /*
-  Multi-command object: Cmd.add, Cmd.diff
-
-  BUILDING:
-    cc cmds.c -lz -lm -ldl -lpthread -I../src
+  Create multi-command object (Cmd.add/diff) then drop to interactive mode
 */
-#include "jsi.c"
+#include "jsi.h"
 
 static Jsi_CmdProcDecl(AddCmd) {
     int i, n = Jsi_ValueGetLength(interp, args);
@@ -48,11 +45,11 @@ Jsi_RC Jsi_InitCmds(Jsi_Interp *interp, int release) {
 
 int main(int argc, char *argv[])
 {
-    Jsi_InterpOpts opts = {.argc=argc, .argv=argv};
-    Jsi_Interp *interp = Jsi_InterpNew(&opts);
+    Jsi_Interp *interp = Jsi_InterpMain(argc, argv, NULL);
     if (Jsi_InitCmds(interp, 0) != JSI_OK)
-        exit(1);
+        return(1);
     Jsi_EvalString(interp, "puts(Cmd.add(1,2,3)); puts(Cmd.diff(17,9));", 0);
-    Jsi_Interactive(interp, 0);
-    exit(0);
+    if (argc>1)
+        Jsi_Interactive(interp, 0);
+    return(0);
 }

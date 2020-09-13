@@ -1,4 +1,4 @@
-#!/usr/local/bin/jsish --U %s
+#!/usr/local/bin/jsish --I unitTest=1 %s
 "use strict";
 
 var alpha, beta, tree, tree2, tree3, hash, hash2, hash3, pest, flower, n, bees;
@@ -183,8 +183,8 @@ var db, schema;
 ;db = new Sqlite('/tmp/bees.db');
 ;schema = CStruct.schema('Bee');
 ;db.eval('CREATE TABLE IF NOT EXISTS Bee (\n'+schema+'\n);');
-;db.query('INSERT INTO Bee %s',{cdata:'beta'});
-;db.query('SELECT %s FROM Bee',{cdata:'beta'});
+;db.query('INSERT INTO Bee %v',{cdata:'beta'});
+;db.query('SELECT %v FROM Bee',{cdata:'beta'});
 
 ;'\n====Cleanup====';
 ;Info.named('CData');
@@ -396,8 +396,8 @@ schema = CStruct.schema('Bee') ==>
 db.eval('CREATE TABLE IF NOT EXISTS Bee (
 '+schema+'
 );') ==> 0
-db.query('INSERT INTO Bee %s',{cdata:'beta'}) ==> 10
-db.query('SELECT %s FROM Bee',{cdata:'beta'}) ==> 10
+db.query('INSERT INTO Bee %v',{cdata:'beta'}) ==> 10
+db.query('SELECT %v FROM Bee',{cdata:'beta'}) ==> 10
 '
 ====Cleanup===='
 Info.named('CData') ==> [ "#CData_8", "#CData_4", "#CData_9", "#CData_5", "#CData_1", "#CData_6", "#CData_2", "#CData_10", "#CData_7", "#CData_3", "#CData_11" ]

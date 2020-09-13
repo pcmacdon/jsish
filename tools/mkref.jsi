@@ -3,7 +3,7 @@
 function mkref(args:array|string, opts:object) {
 
     var options = { // Generate documentation for Jsi builtin cmd.
-        md       :false         // Generate for markdown
+        md       :true         // Generate for markdown
     };
     var self = {};
     parseOpts(self, options, conf);

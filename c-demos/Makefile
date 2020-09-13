@@ -1,66 +1,63 @@
-JSIDIR=../src
-ACFLAGS= -g -Wall -I$(JSIDIR) -I.. -DJSI__MEMDEBUG=1
-CFLAGS= $(ACFLAGS)  -DJSI__READLINE=1 -I../sqlite/src -L../sqlite/build/unix
-LDFLAGS=-lm -ldl -lpthread
+JSIROOT=..
+ACFLAGS= -g -Wall -I$(JSIROOT) -I$(JSIROOT)/src
+CFLAGS=$(ACFLAGS)
+LIBJSI=libjsish.a
+ALDFLAGS=-lm -ldl -lpthread
+
+HASMYSQL=$(shell $(JSIROOT)/jsish -e 'return(MySql!==undefined);')
+ifeq ($(HASMYSQL),true)
+ALDFLAGS+=-lmysqlclient
+endif
+
+HASLIBSAN=$(shell ldd $(JSIROOT)/jsish | grep libasan)
+ifneq ($(HASLIBSAN),)
+CFLAGS+=-fsanitize=address
+endif
+
+LDFLAGS=$(LIBJSI) $(ALDFLAGS)
 SHFLAGS=-shared -fpic 
-ALLDEPS=$(JSIDIR)/jsi.c $(JSIDIR)/jsiOne.c Makefile
+ALLDEPS=$(JSIROOT)/jsi.c $(JSIROOT)/libjsish.so $(JSIROOT)/src/jsi.h Makefile
 
-all: simple minimalsh dyn.so prime.so dbdemo litedemo listdemo cmds demo1 demo2 treedemo
+SLDFLAGS=-Wl,-rpath=`pwd`/$(JSIROOT) -L$(JSIROOT) -ljsish $(ALDFLAGS) 
 
-simple: simple.c $(ALLDEPS)
-	$(CC) $(CFLAGS) -DJSI__SQLITE=1 simple.c -o simple -lm -ldl -lpthread -lsqlite3
+all: basic cmds dbdemo stubs
 
-minimalsh: minimal
-	rm -f minimalsh
-	jsish -z zvfs minimal
+libjsi.a: $(JSIROOT)/jsi.c
+	$(CC) $(CFLAGS) $< -c -o jsi.o
+	$(AR) rv libjsi.a jsi.o
 
-minimal: minimal.c $(ALLDEPS)
-	$(CC) $(CFLAGS) -DJSI__SQLITE=1 minimal.c -o minimal -lm -ldl -lpthread -lsqlite3
+libjsish.a: $(JSIROOT)/jsish.c
+	$(CC) $(CFLAGS) $< -I.. -c -o jsish.o
+	$(AR) rv libjsish.a jsish.o
 
-cmds: cmds.c $(JSIDIR)/jsi.c
-	$(CC) $(CFLAGS) cmds.c -o cmds -lm -ldl -lpthread
+libjsish.so: $(JSIROOT)/jsish.c
+	$(CC) $(ACFLAGS) $(SHFLAGS) $< -rdynamic -o $@
 
-listdemo: listdemo.c $(ALLDEPS)
-	$(CC) $(CFLAGS) listdemo.c -o listdemo -lm -ldl -lpthread
-	
-treedemo: treedemo.c $(ALLDEPS)
-	$(CC) $(CFLAGS) treedemo.c -o treedemo -lm -ldl -lpthread
+jsish: $(JSIROOT)/jsish.c
+	$(CC) $(ACFLAGS) -fpic -DJSI__MAIN=1 $< -rdynamic -o $@ -lm -ldl -lpthread
+	jsish -z create jsish $(JSIROOT)/lib
+
+cmds: cmds.c $(ALLDEPS)
+	$(CC) $(CFLAGS) -o $@ $< $(SLDFLAGS)
 
 dbdemo: dbdemo.c $(ALLDEPS)
-	$(CC) $(CFLAGS) -DJSI__SQLITE=1 dbdemo.c -o dbdemo -lm -ldl -lpthread -lsqlite3
+	$(CC) $(CFLAGS) -o $@ $< $(SLDFLAGS)
 
-dyn.so: dyn.c $(ALLDEPS)
-	$(CC) $(ACFLAGS) -I$(JSIDIR) $(SHFLAGS) dyn.c -o dyn.so
+basic: basic.c $(ALLDEPS)
+	$(CC) $(CFLAGS) -o $@ $< $(SLDFLAGS)
 
-prime.so: prime.c $(ALLDEPS)
-	$(CC) $(CFLAGS) $(SHFLAGS) prime.c -o prime.so
-
-demo1: demo1.c $(ALLDEPS)
-	$(CC) -o demo1 $(CFLAGS) -DJSI_USER_EXTENSION=Jsi_Initdemo1 demo1.c -DJSI__MAIN=1 -DJSI__MINIZ=1 $(JSIDIR)/jsiOne.c $(LDFLAGS)
-        
-demo2: demo2.c $(ALLDEPS)
-	$(CC) -o demo2 $(CFLAGS) -DJSI_USER_EXTENSION=Jsi_Initdemo2 demo2.c -DJSI__MAIN=1 -DJSI__MINIZ=1 $(JSIDIR)/jsiOne.c $(LDFLAGS)
-
-demo2.so: demo2.c $(ALLDEPS)
-	$(CC) $(SHFLAGS) -o demo2.so $(CFLAGS) demo2.c -DJSI__MAIN=1 $(LDFLAGS)
-
-
-litedemo: litedemo.c $(ALLDEPS)
-	$(CC) $(CFLAGS) -DJSI__SQLITE=1 litedemo.c -o litedemo -lsqlite3 -lm -lpthread -ldl
-
+stubs:
+	$(MAKE) -C stubs
+	
 testmem:
 	JSI_INTERP_OPTS='{memDebug:1}' $(MAKE) test
 
 test: all
-	./listdemo
-	./litedemo
-	./simple
+	./basic
+	./cmds
 	echo 'exit(0);' | ./dbdemo -benchmark
-	./dyn.js
-	#echo 'demo(1,2);exit(0)' | ./demo1
-	echo 'demos.foo(1,2);exit(0)' | ./demo2
-	$(MAKE) -C stubs
 	$(MAKE) -C stubs test
+	$(MAKE) -C cdata
 
 clean:
 	rm -rf *.so *.o simple listdemo litedemo dbdemo cmds demo1 demo2 minimal minimalsh treedemo
@@ -68,3 +65,5 @@ clean:
 	$(MAKE) -C cdata clean
 
 cleanall:
+
+.PHONY: all clean cleanall stubs testmem

@@ -1986,6 +1986,7 @@ undef_eval:
             }
             case OP_RESERVED: {
                 jsi_ReservedInfo *ri = (jsi_ReservedInfo *)ip->data;
+                if (ri->type == RES_EXPORT ||  ri->type == RES_IMPORT) break;
                 const char *cmd = ri->type == RES_CONTINUE ? "continue" : "break";
                 /* TODO: continue/break out of labeled scope: see tests/prob/break.jsi. */
                 if (ri->label) {
@@ -2041,9 +2042,9 @@ void jsi_DumpStackTrace(Jsi_Interp *interp) {
                 line = fp->child->filePtr->pkg->loadLine;
             }
         }
-        if (!line && fp->level == interp->framePtr->level)
+        if (fp->level == interp->framePtr->level && interp->curIp && interp->curIp->Line)
             line = interp->curIp->Line;
-        if (fn && ((cp=Jsi_Strrchr(fn, '/'))))
+        if (fn && !interp->logOpts.full && ((cp=Jsi_Strrchr(fn, '/'))))
             fn = cp +1;
         Jsi_DSPrintf(&dStr, "#%d: %s:%d: ", fp->level, fn, line);
         if (func && fp->incsc) {

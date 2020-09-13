@@ -1,4 +1,4 @@
-#!/usr/local/bin/jsish --U %s
+#!/usr/local/bin/jsish --I unitTest=1 %s
 "use strict";
 
 var n, m, c, p;
@@ -34,7 +34,7 @@ for (i of n) {
 
 ;'\nCar';
 ;require('Car');
-;require('Car',1).info;
+;require('Car',0).conf.info;
 ;n=Car.keys();
 ;m=Info.cmds('Car');
 ;c=new Car();
@@ -97,7 +97,7 @@ Baker.label('rye',.75) ==> rye_0.75
 '
 Car'
 require('Car') ==> 1
-require('Car',1).info ==> { carstuff:true, mynum:1 }
+require('Car',0).conf.info ==> { carstuff:true, mynum:1 }
 n=Car.keys() ==> [ "Car", "conf", "shift", "setSpeed", "fix" ]
 m=Info.cmds('Car') ==> { args:"options:object=void", constructor:true, help:"Extension to create a Car object command.", name:"Car", retType:"any", type:"object" }
 c=new Car() ==> "#Car_1"

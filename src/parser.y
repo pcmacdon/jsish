@@ -41,11 +41,11 @@
 %destructor { } <str>
 */
 
-%type <opcodes> array commonstatement delete_statement do_statement expr expr_opt exprlist exprlist_opt 
+%type <opcodes> array commonstatement delete_statement do_statement expr expr_opt exprlist exprlist_opt itemident
 %type <opcodes> fcall_exprs for_cond for_init for_statement func_expr func_statement func_statement_block if_statement item items iterstatement lvalue
-%type <opcodes> object statement statements statement_or_empty switch_statement try_statement value vardec vardecs while_statement with_statement
+%type <opcodes> object objectident statement statements statement_or_empty switch_statement try_statement value vardec vardecs while_statement with_statement
 %type <scopes> args args_opt argsa arrowargs
-%type <inum> typeid inof rettype argtype
+%type <inum> typeid inof rettype argtype localvar
 %type <sstr> identifier_opt label_opt func_prefix
 %type <vstr> strlit
 %type <caseitem> case
@@ -68,6 +68,8 @@
 %token FUNC
 %token RETURN
 %token LOCAL
+%token LOCALCONST
+%token LOCALLET
 %token OF
 %token NEW
 %token DELETE
@@ -94,6 +96,7 @@
 %token TYPEANY
 %token TYPEARRAY
 %token ELLIPSIS
+%token EXPORT
 %token ARROW
 %token __DEBUG
 
@@ -143,6 +146,22 @@ statement:
     | IDENTIFIER ':' commonstatement { $$ = $3; }
 ;
 
+localvar:
+    LOCAL { $$ = LOCAL; }
+    | LOCALLET { $$ = LOCAL; }
+    | LOCALCONST { $$ = LOCAL; }
+;
+    
+objectident:
+    object { $$ = $1; }
+    | IDENTIFIER {
+        Jsi_OpCodes *lval = code_push_index(pstate, &@1, $1, 0); 
+        $$ = lval;
+        lval->lvalue_flag = 1; 
+        lval->lvalue_name = $1; 
+    }
+;
+
 commonstatement:
     expr ';' { $$ = codes_join($1, code_pop(1)); }
     | if_statement  { $$ = $1; }
@@ -151,7 +170,7 @@ commonstatement:
     | CONTINUE identifier_opt ';'   { $$ = code_reserved(pstate, &@2, RES_CONTINUE, $2); }
     | RETURN expr ';'   { $$ = codes_join($2, code_ret(pstate, &@2, 1)); }
     | RETURN ';'        { $$ = code_ret(pstate, &@1, 0); }
-    | LOCAL vardecs ';' {
+    | localvar vardecs ';' {
         jsi_mark_local($2);
         $$ = $2;
     }
@@ -161,6 +180,7 @@ commonstatement:
     | ';'                   { $$ = code_nop(); }
     | '{' statements '}'    { $$ = $2; }
     | func_statement        { $$ = $1; }
+    | EXPORT DEFAULT objectident { $$ = codes_join($3, code_ret(pstate, &@3, 1)); }
 ;
 
 func_statement:
@@ -376,7 +396,7 @@ for_statement:
         $$ = codes_join(codes_join3(init, cond, cont_jmp),
                            codes_join3(stat, step, step_jmp));
     }
-    | label_opt FOR '(' LOCAL IDENTIFIER inof expr ')' statement_or_empty {
+    | label_opt FOR '(' localvar IDENTIFIER inof expr ')' statement_or_empty {
         jsi_ForinVar *fv;
         int inof = $6;
         Jsi_OpCodes *loc = code_local(pstate, &@5, $5);
@@ -422,7 +442,7 @@ for_statement:
 for_init:
     ';'                 { $$ = code_nop(); }
     | expr ';'          { $$ = codes_join($1, code_pop(1)); }
-    | LOCAL vardecs ';' {
+    | localvar vardecs ';' {
         jsi_mark_local($2);
         $$ = $2;
     }
@@ -779,7 +799,8 @@ exprlist:
     }
 ;
 
-value: strlit { $$ = code_push_vstring(pstate,&@1, $1); }
+value:
+    strlit { $$ = code_push_vstring(pstate,&@1, $1); }
     | TYPENULL { $$ = code_push_null(); }
     | UNDEF { $$ = code_push_undef(); }
     | _TRUE { $$ = code_push_bool(1); }
@@ -792,12 +813,22 @@ value: strlit { $$ = code_push_vstring(pstate,&@1, $1); }
 
 object:
     '{' items '}'   { $$ = codes_join($2, code_object(pstate, &@2, ($2)->expr_counter)); }
-
 ;
 
-items:      { $$ = code_nop(); ($$)->expr_counter = 0; }
+itemident:
+    IDENTIFIER  {
+        Jsi_OpCodes *lval = code_push_index(pstate, &@1, $1, 0); 
+        lval->lvalue_flag = 1; 
+        lval->lvalue_name = $1; 
+        $$ = codes_join(code_push_string(pstate,&@1, $1), lval);
+    }
+    | item  { $$ = $1; }
+
+// Note first item still needs a colon eg. {a:a, b, c, d}
+items:
+    { $$ = code_nop(); ($$)->expr_counter = 0; }
     | item  { $$ = $1; ($$)->expr_counter = 1; }
-    | items ',' item {
+    | items ',' itemident {
         int cnt = ($1)->expr_counter + 1;
         $$ = codes_join($1, $3);
         ($$)->expr_counter = cnt;
@@ -805,13 +836,7 @@ items:      { $$ = code_nop(); ($$)->expr_counter = 0; }
     | items ',' {
         $$ = $1;
     }
-/*    | items ',' IDENTIFIER {
-        Jsi_OpCodes *lval = code_push_index(pstate, &@3, $3, 0); 
-        lval->lvalue_flag = 1; 
-        lval->lvalue_name = $3; 
-        $$ = codes_join3($1, code_push_string(pstate,&@3, $3), lval);
-    }
-*/
+    /* | items '.' '.' '.' IDENTIFIER { } //TODO:??? */
 ;
 
 item:

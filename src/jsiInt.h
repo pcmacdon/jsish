@@ -481,8 +481,7 @@ typedef struct jsi_JmpPopInfo {
     int topop;
 } jsi_JmpPopInfo;
 
-#define RES_CONTINUE    1
-#define RES_BREAK       2
+enum { RES_CONTINUE =1, RES_BREAK, RES_EXPORT, RES_IMPORT };
 typedef struct YYLTYPE jsi_Pline;
 
 //void jsi_codes_print(Jsi_OpCodes *ops);
@@ -1498,12 +1497,12 @@ extern void jsi_ToHexStr(const uchar *indata, int dlen, char *out);
 extern bool jsi_StrIsBalanced(char *str);
 extern char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt);
 
-#ifndef _JSI_MEMCLEAR
-#ifndef JSI_MEM_DEBUG
-#define _JSI_MEMCLEAR(ptr)
-#else
+#if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/
 #endif
+
+#ifndef _JSI_MEMCLEAR
+#define _JSI_MEMCLEAR(ptr)
 #endif
 
 #define MAX_SUBREGEX    256

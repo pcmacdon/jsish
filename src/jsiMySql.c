@@ -7,13 +7,14 @@ typedef enum { MYSQL_SIG_DB = 0xbeefdeaa, MYSQL_SIG_FUNC, MYSQL_SIG_EXEC, MYSQL_
 #define SQLSIGASSERT(s,n) assert(s->sig == MYSQL_SIG_##n)
 #define SQLSIGINIT(s,n) s->sig = MYSQL_SIG_##n
 
-#ifndef NDEBUG
-#ifndef _JSI_MEMCLEAR
+#if !defined(_JSI_MEMCLEAR) && !defined(NDEBUG) 
 #define _JSI_MEMCLEAR(s) memset(s, 0, sizeof(*s));
 #endif
-#else
+
+#ifndef _JSI_MEMCLEAR
 #define _JSI_MEMCLEAR(s)
 #endif
+
 #ifndef JSI_DB_DSTRING_SIZE
 #define JSI_DB_DSTRING_SIZE 2000
 #endif

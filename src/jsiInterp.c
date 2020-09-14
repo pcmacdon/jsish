@@ -1069,6 +1069,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
 {
     Jsi_Interp* interp;
     Jsi_RC rc = JSI_OK;
+    assert(jsiOpCodesCnt[3]==OP_LASTOP);
     if (parent && parent->noSubInterps) {
         interp = parent;
         Jsi_LogError("subinterps disallowed");

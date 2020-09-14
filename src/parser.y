@@ -41,7 +41,7 @@
 %destructor { } <str>
 */
 
-%type <opcodes> array commonstatement delete_statement do_statement expr expr_opt exprlist exprlist_opt itemident
+%type <opcodes> array commonstatement delete_statement do_statement expr expr_opt exprlist exprlist_opt itemident itemfunc
 %type <opcodes> fcall_exprs for_cond for_init for_statement func_expr func_statement func_statement_block if_statement item items iterstatement lvalue
 %type <opcodes> object objectident statement statements statement_or_empty switch_statement try_statement value vardec vardecs while_statement with_statement
 %type <scopes> args args_opt argsa arrowargs
@@ -154,11 +154,17 @@ localvar:
     
 objectident:
     object { $$ = $1; }
-    | IDENTIFIER {
+/*    | IDENTIFIER {
         Jsi_OpCodes *lval = code_push_index(pstate, &@1, $1, 0); 
         $$ = lval;
         lval->lvalue_flag = 1; 
         lval->lvalue_name = $1; 
+    }*/
+    | '*' {
+        $$ = code_push_null();
+    }
+    | '+' {
+        $$ = code_push_undef();
     }
 ;
 
@@ -180,7 +186,7 @@ commonstatement:
     | ';'                   { $$ = code_nop(); }
     | '{' statements '}'    { $$ = $2; }
     | func_statement        { $$ = $1; }
-    | EXPORT DEFAULT objectident { $$ = codes_join($3, code_ret(pstate, &@3, 1)); }
+    | EXPORT DEFAULT objectident { $$ = codes_join($3, code_export(pstate, &@3, 1)); }
 ;
 
 func_statement:
@@ -815,8 +821,19 @@ object:
     '{' items '}'   { $$ = codes_join($2, code_object(pstate, &@2, ($2)->expr_counter)); }
 ;
 
+itemfunc:
+    IDENTIFIER '(' args_opt ')' func_statement_block {
+        Jsi_OpCodes *lval = code_push_func(pstate, &@3, jsi_FuncMake(pstate, $3, $5, &@1, $1, 0));
+        lval->lvalue_flag = 1; 
+        lval->lvalue_name = $1; 
+        $$ = codes_join(code_push_string(pstate,&@1, $1), lval);
+        jsi_PstatePop(pstate);
+    }
+;
+
 itemident:
-    IDENTIFIER  {
+    itemfunc { $$ = $1; }
+    | IDENTIFIER  {
         Jsi_OpCodes *lval = code_push_index(pstate, &@1, $1, 0); 
         lval->lvalue_flag = 1; 
         lval->lvalue_name = $1; 

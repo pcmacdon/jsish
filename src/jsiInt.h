@@ -430,8 +430,11 @@ typedef enum {      /* SC   type of data    comment                             
     OP_EWITH,       /* 0    -               pop trylist                                         */
     OP_RESERVED,    /* 0    jsi_ReservedInfo*   reserved, be replaced by iterstat by jmp/jmppop     */
     OP_DEBUG,       /* 0    -               DEBUG OPCODE, output top                            */
+    OP_EXPORT,      /* 0    -               Export OPCODE                                       */
     OP_LASTOP       /* 0    -               END OF OPCODE                                       */
 } jsi_Eopcode;
+
+extern int jsiOpCodesCnt[4];
 
 typedef struct jsi_OpCode {
     jsi_Eopcode op;
@@ -1538,6 +1541,7 @@ extern bool Jsi_StrIsAlnum(const char *cp);
 extern char *jsi_TrimStr(char *str);
 extern bool jsi_ModBlacklisted(Jsi_Interp *interp, const char *mod);
 extern bool jsi_FuncIsNoop(Jsi_Interp* interp, Jsi_Value *func);
+extern Jsi_RC jsi_InfoLocalsCmd(Jsi_Interp *interp, bool funcsOnly, bool varsOnly, Jsi_Value **ret);
 
 typedef enum {
     _JSI_CDATA_INFO=0,

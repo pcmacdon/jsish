@@ -94,9 +94,10 @@ static const char *jsi_op_names[OP_LASTOP] = {
     "EWITH",
     "RESERVED",
     "DEBUG"
+    "EXPORT"
 };
 
-static int jsiOpCodesCnt[3] = {0,0,0};
+int jsiOpCodesCnt[4] = {0,0,0, (sizeof(jsi_op_names)/sizeof(jsi_op_names[0]))};
 
 void jsi_FreeOpcodes(Jsi_OpCodes *ops) {
     int i;
@@ -312,6 +313,7 @@ static Jsi_OpCodes *code_newfcall(jsi_Pstate *p, jsi_Pline *line, int argc, cons
     jsi_FuncCallCheck(p,line,argc,1, name, NULL, argCodes); JSI_NEW_CODESLN(0,OP_NEWFCALL, argc);
 }
 static Jsi_OpCodes *code_ret(jsi_Pstate *p, jsi_Pline *line, int n) { JSI_NEW_CODESLN(0,OP_RET, n); }
+static Jsi_OpCodes *code_export(jsi_Pstate *p, jsi_Pline *line, int n) { JSI_NEW_CODESLN(0,OP_EXPORT, n); }
 static Jsi_OpCodes *code_delete(int n) { JSI_NEW_CODES(0,OP_DELETE, n); }
 static Jsi_OpCodes *code_chthis(jsi_Pstate *p, jsi_Pline *line, int n) { JSI_NEW_CODESLN(0,OP_CHTHIS, n); }
 static Jsi_OpCodes *code_pop(int n) { JSI_NEW_CODES(0,OP_POP, n); }

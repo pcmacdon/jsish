@@ -1056,18 +1056,6 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     while(ip < end && rc == JSI_OK) {
         int plop = ip->op;
 
-/* #define _JSI_BI_OP_SKIP_SUB(n) {\
-    ip++;\
-    if (ip->logflag != n)  {\
-        if (ip->op == OP_POP) ip++; \
-        else if (ip->op == OP_RET || ip->op == OP_ASSIGN) { \
-          rc = Jsi_LogError("invalid use of return/= here"); \
-        ip++;\
-      }}\
-    continue;\
-}
-#define _JSI_BI_OP_SKIP(N,n)  if (!interp->logOpts.N && !(logflag &(1<<n))) _JSI_BI_OP_SKIP_SUB(n)*/
-
         if (ip->logidx) { // Mask out LogDebug, etc if not enabled.
             uint oli = ip->logidx, logflag2 = jsi_GetLogFlag(interp, ip->logidx, NULL);
             interp->curIp = ip;
@@ -1077,7 +1065,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     ip++;
                 if (ip->op == OP_POP)
                     ip++;
-                else if (ip->op == OP_RET || ip->op == OP_ASSIGN) {
+                else if (ip->op == OP_RET || ip->op == OP_EXPORT || ip->op == OP_ASSIGN) {
                     rc = Jsi_LogError("invalid use of =/return here");
                     ip++;
                 }
@@ -1744,10 +1732,20 @@ undef_eval:
                 }
                 break;
             }
+            case OP_EXPORT:
+                if (!((ip+1) == end || 
+                    (ip[1].op == OP_NOP && (ip+2) == end)))
+                    Jsi_LogWarn("export is not the last statement");
             case OP_RET: {
                 if (fp->Sp>=1 && ip->data) {
                     jsiVarDeref(interp,1);
-                    Jsi_ValueMove(interp, vret, _jsi_TOP);
+                    Jsi_Value *vtop = _jsi_TOP;
+                    if (ip->op == OP_RET || !interp->framePtr->evalFuncPtr
+                        || (vtop->vt != JSI_VT_NULL && vtop->vt != JSI_VT_UNDEF))
+                        Jsi_ValueMove(interp, vret, vtop);
+                    else {
+                        jsi_InfoLocalsCmd(interp, 1, (vtop->vt == JSI_VT_UNDEF), &vret);
+                    }
                 }
                 jsiPop(interp, (uintptr_t)ip->data);
                 interp->didReturn = 1;

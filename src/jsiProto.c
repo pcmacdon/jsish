@@ -520,6 +520,36 @@ static Jsi_RC ObjectMergeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     return JSI_OK;
 }
 
+static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    if (_this->vt != JSI_VT_OBJECT || _this->d.obj->ot != JSI_OT_FUNCTION ||
+        _this->d.obj->d.fobj->func->callback != ObjectConstructor)
+        return Jsi_LogError("must call via Object.assign");
+
+    Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
+    if (!v || v->vt != JSI_VT_OBJECT || v->d.obj->ot != JSI_OT_OBJECT)
+        return Jsi_LogError("arg1: expected object");
+    Jsi_Obj *obj = v->d.obj;
+    Jsi_ValueMakeObject(interp, ret, obj);
+    int i, argc = Jsi_ValueGetLength(interp, args);
+    for (i=1; i<argc; i++) {
+        Jsi_TreeEntry *tPtr;
+        Jsi_TreeSearch search;
+        Jsi_Value *vs = Jsi_ValueArrayIndex(interp, args, i);
+        if (!vs || vs->vt != JSI_VT_OBJECT || vs->d.obj->ot != JSI_OT_OBJECT)
+            return Jsi_LogError("arg%d: expected object", i+1);
+        for (tPtr = Jsi_TreeSearchFirst(vs->d.obj->tree, &search, 0, NULL);
+            tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
+            Jsi_Value *v2 = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
+            if (v2 && v2->f.bits.dontenum == 0)
+                Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v2, 0);
+        }
+        Jsi_TreeSearchDone(&search);
+    }
+    return JSI_OK;
+}
+
 #if (JSI_HAS___PROTO__==1)
 static Jsi_RC jsi_GetPrototypeOfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
@@ -698,6 +728,7 @@ int jsi_InitFunction(Jsi_Interp *interp, int release)
 static Jsi_CmdSpec objectCmds[] = {
 #ifndef __JSI_OMITDECL
     { "Object",         ObjectConstructor,      0, 1,  "val:object|function|null=void", .help="Object constructor", .retType=(uint)JSI_TT_OBJECT, .flags=JSI_CMD_IS_CONSTRUCTOR },
+    { "assign",         ObjectAssignCmd,        1, -1, "obj:object,...", .help="Return arg1 object with assigned values", .retType=(uint)JSI_TT_OBJECT },
     { "create",         ObjectCreateCmd,        1, 2, "proto:null|object, properties:object=void", .help="Create a new object with prototype object and properties", .retType=(uint)JSI_TT_OBJECT },
 #if (JSI_HAS___PROTO__>0)
     { "getPrototypeOf", jsi_GetPrototypeOfCmd,  1, 1, "name:object|function", .help="Return prototype of an object", .retType=(uint)JSI_TT_OBJECT|JSI_TT_FUNCTION },

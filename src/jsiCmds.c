@@ -3497,15 +3497,10 @@ static Jsi_RC InfoMethodsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     return rc;
 }
 
-static Jsi_RC InfoLocalsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr)
+Jsi_RC jsi_InfoLocalsCmd(Jsi_Interp *interp, bool funcs, bool vars, Jsi_Value **ret)
 {
    // if (!interp->framePtr->funcName)
    //     return Jsi_LogError("Not in function");
-    Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
-    bool varsOnly = 0;
-    if (arg)
-        Jsi_ValueGetBoolean(interp, arg, &varsOnly);
     Jsi_ValueMakeObject(interp, ret, NULL);
     Jsi_Value *cs = interp->framePtr->incsc;
     Jsi_Obj *nobj = (*ret)->d.obj;
@@ -3516,9 +3511,9 @@ static Jsi_RC InfoLocalsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         Jsi_Value *v = (Jsi_Value*)Jsi_TreeValueGet(tPtr);
         if (v==NULL) continue;
         if (Jsi_ValueIsFunction(interp, v)) {
-            if (varsOnly) continue;
+            if (!funcs) continue;
         } else {
-            if (arg && !varsOnly) continue;
+            if (!vars) continue;
         }
 
         const char* key = (char*)Jsi_TreeKeyGet(tPtr);
@@ -3527,6 +3522,19 @@ static Jsi_RC InfoLocalsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     Jsi_TreeSearchDone(&search);
 
     return JSI_OK;
+}
+
+static Jsi_RC InfoLocalsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
+    bool vars = 1, funcs = 1;
+    if (arg) {
+        Jsi_ValueGetBoolean(interp, arg, &funcs);
+        if (funcs)
+            vars = 0;
+    }
+    return jsi_InfoLocalsCmd(interp, funcs, vars, ret);
 }
 
 static Jsi_RC InfoCompletionsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
@@ -4885,11 +4893,11 @@ static Jsi_CmdSpec infoCmds[] = {
     { "execZip",    InfoExecZipCmd,     0,  0, "", .help="If executing a .zip file, return file name", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
     { "files",      InfoFilesCmd,       0,  0, "", .help="Return list of all sourced files", .retType=(uint)JSI_TT_ARRAY },
     { "funcs",      InfoFuncsCmd,       0,  1, "arg:string|regexp|function|object=void", .help="Return details or list of matching functions", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT },
-    { "locals",     InfoLocalsCmd,      0,  1, "filter:boolean=void", .help="Return locals; use filter=true/false just vars/functions", .retType=(uint)JSI_TT_OBJECT },
     { "interp",     jsi_InterpInfo,     0,  1, "interp:userobj=void", .help="Return info on given or current interp", .retType=(uint)JSI_TT_OBJECT },
     { "isMain",     InfoIsMainCmd,      0,  0, "", .help="Return true if current script was the main script invoked from command-line", .retType=(uint)JSI_TT_BOOLEAN },
     { "keywords",   InfoKeywordsCmd,    0,  2, "isSql=false, name:string=void", .help="Return/lookup reserved keyword", .retType=(uint)JSI_TT_ARRAY|JSI_TT_BOOLEAN },
     { "level",      InfoLevelCmd,       0,  1, "level:number=void", .help="Return current level or details of a call-stack frame", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT|JSI_TT_NUMBER, .flags=0, .info=FN_infolevel },
+    { "locals",     InfoLocalsCmd,      0,  1, "filter:boolean=void", .help="Return locals; if filter=true/false omit vars/functions", .retType=(uint)JSI_TT_OBJECT },
     { "lookup",     InfoLookupCmd,      1,  1, "name:string", .help="Given string name, lookup and return value, eg: function", .retType=(uint)JSI_TT_ANY },
     { "methods",    InfoMethodsCmd,     1,  1, "val:string|regexp", .help="Return functions and commands", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT },
     { "named",      InfoNamedCmd,       0,  1, "name:string=void", .help="Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object", .retType=(uint)JSI_TT_ARRAY|JSI_TT_USEROBJ },

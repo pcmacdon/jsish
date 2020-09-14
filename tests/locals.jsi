@@ -13,7 +13,7 @@ foo();
 /*
 =!EXPECTSTART!=
 Info.locals() ==> { bar:"function bar() {...}", x:1 }
-Info.locals(false) ==> { bar:"function bar() {...}" }
-Info.locals(true) ==> { x:1 }
+Info.locals(false) ==> { x:1 }
+Info.locals(true) ==> { bar:"function bar() {...}" }
 =!EXPECTEND!=
 */

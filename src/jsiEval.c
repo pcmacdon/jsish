@@ -357,7 +357,7 @@ static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, j
             const char *str = (top?Jsi_ValueString(interp, top, NULL):"");
             if (str) {
                 if (!Jsi_Strcmp(nam, "help"))
-                    Jsi_LogError("...%s", str);
+                    Jsi_LogInfo("...%s", str);
                 else
                     Jsi_LogError("%s near %s", nam, str);
             }

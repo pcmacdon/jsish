@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.47
+//JSI Command Prototypes: version 3.0.48
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -216,6 +216,7 @@ Number.prototype.toFixed = function(num:number=0):string {};
 Number.prototype.toPrecision = function(num:number):string {};
 Number.prototype.toString = function(radix:number=10):string {};
 var Object = function(cmd,args) {};
+Object.prototype.assign = function(obj:object,...):object {};
 Object.prototype.create = function(proto:null|object, properties:object=void):object {};
 Object.prototype.freeze = function(obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true):void {};
 Object.prototype.getPrototypeOf = function(name:object|function):function|object {};

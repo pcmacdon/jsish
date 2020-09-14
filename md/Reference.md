@@ -389,7 +389,7 @@ Commands for inspecting internal state information in JSI.
 |isMain|():boolean |Return true if current script was the main script invoked from command-line.|
 |keywords|(isSql=false, name:string=void):boolean&#124;array |Return/lookup reserved keyword.|
 |level|(level:number=void):number&#124;array&#124;object |Return current level or details of a call-stack frame. With no arg, returns the number of the current stack frame level. Otherwise returns details on the specified level. The topmost level is 1, and 0 is the current level, and a negative level translates as relative to the current level.|
-|locals|(filter:boolean=void):object |Return locals; use filter=true/false just vars/functions.|
+|locals|(filter:boolean=void):object |Return locals; if filter=true/false omit vars/functions.|
 |lookup|(name:string) |Given string name, lookup and return value, eg: function.|
 |methods|(val:string&#124;regexp):array&#124;object |Return functions and commands.|
 |named|(name:string=void):array&#124;userobj |Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object.|
@@ -717,6 +717,7 @@ Commands for accessing Objects.
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Object|(val:object&#124;function&#124;null=void):object |Object constructor.|
+|assign|(obj:object,...):object |Return arg1 object with assigned values.|
 |create|(proto:null&#124;object, properties:object=void):object |Create a new object with prototype object and properties.|
 |freeze|(obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true):void |Freeze/unfreeze an object with optionally.|
 |getPrototypeOf|(name:object&#124;function):function&#124;object |Return prototype of an object.|

@@ -2341,6 +2341,9 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
             uint ilen;
             char buf[JSI_BUFSIZ*2];
             const char *jpp;
+            if (flags&JSI_EVAL_IMPORT)
+                Jsi_DSAppend(&dStr, "return (function(){ ", NULL);
+
             while (cnt<MAX_LOOP_COUNT) {
                 if (!Jsi_Gets(interp, input, buf, sizeof(buf)))
                     break;
@@ -2374,6 +2377,8 @@ cont:
             }
             if (cnt>=MAX_LOOP_COUNT)
                 Jsi_LogError("source file too large");
+            if (flags&JSI_EVAL_IMPORT)
+                Jsi_DSAppend(&dStr, "})(); ", NULL);
             str = Jsi_DSValue(&dStr);
 
         }

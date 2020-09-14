@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   0
-#define JSI_VERSION_RELEASE 46
+#define JSI_VERSION_RELEASE 47
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -138,6 +138,7 @@ typedef enum {
     JSI_EVAL_EXISTS         =0x80, // Source if exists.
     JSI_EVAL_ERRIGNORE      =0x100,// Source ignores errors.
     JSI_EVAL_NOEVAL         =0x200,// Source parses only.
+    JSI_EVAL_IMPORT         =0x400,// Source closure.
 
     /* Flags for Jsi_CmdProc */
     JSI_CALL_CONSTRUCTOR    =0x1,

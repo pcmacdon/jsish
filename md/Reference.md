@@ -1030,7 +1030,7 @@ Builtin system commands. All methods are exported as global.
 |exec|([options](#options-systemexec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
 |exit|(code:number=0):void |Exit the current interpreter.|
 |format|(format:string, ...):string |Printf style formatting: adds %q and %S.|
-|import|([options](#options-systemimport):object=void) |Same as source.|
+|import|([options](#options-systemimport):object=void) |Same as source with {import:true}.|
 |isFinite|(val):boolean |Return true if is a finite number.|
 |isMain|():boolean |Return true if current script was the main script invoked from command-line.|
 |isNaN|(val):boolean |Return true if not a number.|
@@ -1081,6 +1081,7 @@ Builtin system commands. All methods are exported as global.
 |autoIndex|*BOOL*|Look for and load Jsi_Auto.jsi auto-index file.||
 |exists|*BOOL*|Source file only if exists.||
 |global|*BOOL*|File is to be sourced in global frame rather than local.||
+|import|*BOOL*|Wrap in a function closure.||
 |isMain|*BOOL*|Coerce to true the value of Info.isMain().||
 |level|*UINT*|Frame to source file in.||
 |noEval|*BOOL*|Disable eval: just parses file to check syntax.||
@@ -1115,6 +1116,7 @@ Builtin system commands. All methods are exported as global.
 |autoIndex|*BOOL*|Look for and load Jsi_Auto.jsi auto-index file.||
 |exists|*BOOL*|Source file only if exists.||
 |global|*BOOL*|File is to be sourced in global frame rather than local.||
+|import|*BOOL*|Wrap in a function closure.||
 |isMain|*BOOL*|Coerce to true the value of Info.isMain().||
 |level|*UINT*|Frame to source file in.||
 |noEval|*BOOL*|Disable eval: just parses file to check syntax.||

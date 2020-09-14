@@ -67,10 +67,11 @@ static Jsi_RC consoleInputCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 typedef struct {
     bool trace;
     bool once;
+    bool isMain;
     bool noError;
     bool noEval;
     bool autoIndex;
-    bool isMain;
+    bool import;
     bool global;
     bool exists;
     uint level;
@@ -80,6 +81,7 @@ static Jsi_OptionSpec SourceOptions[] = {
     JSI_OPT(BOOL,   SourceData, autoIndex,  .help="Look for and load Jsi_Auto.jsi auto-index file" ),
     JSI_OPT(BOOL,   SourceData, exists, .help="Source file only if exists" ),
     JSI_OPT(BOOL,   SourceData, global, .help="File is to be sourced in global frame rather than local" ),
+    JSI_OPT(BOOL,   SourceData, import, .help="Wrap in a function closure" ),
     JSI_OPT(BOOL,   SourceData, isMain, .help="Coerce to true the value of Info.isMain()" ),
     JSI_OPT(UINT,   SourceData, level,  .help="Frame to source file in" ),
     JSI_OPT(BOOL,   SourceData, noEval, .help="Disable eval: just parses file to check syntax" ),
@@ -90,16 +92,21 @@ static Jsi_OptionSpec SourceOptions[] = {
 };
 
 
-static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr)
+static Jsi_RC SysSourceCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr, bool isimp)
 {
     jsi_Pstate *ps = interp->ps;
     Jsi_RC rc = JSI_OK;
     int flags = 0;
     int i, argc = 1;
-    SourceData data = {.trace = interp->debugOpts.includeTrace, .once = interp->debugOpts.includeOnce};
+    SourceData data = {
+        .trace = interp->debugOpts.includeTrace,
+        .once = interp->debugOpts.includeOnce,
+        .import = isimp
+    };
     Jsi_Value *v, *va = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Value *vo = Jsi_ValueArrayIndex(interp, args, 1);
+    if (!va) return JSI_ERROR;
     if (vo) {
         if (!Jsi_ValueIsObjType(interp, vo, JSI_OT_OBJECT)) { /* Future options. */
             Jsi_LogError("arg2: expected object 'options'");
@@ -121,6 +128,11 @@ static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         flags|= JSI_EVAL_ERRIGNORE;
     if (data.noEval)
         flags|= JSI_EVAL_NOEVAL;
+    if (data.import) {
+        flags|= JSI_EVAL_IMPORT;
+        if (va && Jsi_ValueIsArray(interp, va))
+            return Jsi_LogError("import can not use array of files");
+    }
     if (data.global) {
         flags|= JSI_EVAL_GLOBAL;
         if (data.level)
@@ -162,6 +174,19 @@ doit:
     interp->isMain = oisi;
     interp->includeDepth--;
     return rc;
+}
+
+static Jsi_RC SysSourceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    return SysSourceCmdEx(interp, args, _this, ret, funcPtr, 0);
+}
+
+
+static Jsi_RC SysImportCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    return SysSourceCmdEx(interp, args, _this, ret, funcPtr, 1);
 }
 
 static void jsiGetTime(long *seconds, long *milliseconds)
@@ -4958,7 +4983,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "exec",       SysExecCmd,      1,  2, "val:string, options:string|object=void", .help="Execute an OS command", .retType=(uint)JSI_TT_ANY, .flags=0, .info=FN_exec, .opts=ExecOptions},
     { "exit",       SysExitCmd,      0,  1, "code:number=0", .help="Exit the current interpreter", .retType=(uint)JSI_TT_VOID },
     { "format",     SysFormatCmd,    1, -1, "format:string, ...", .help="Printf style formatting: adds %q and %S", .retType=(uint)JSI_TT_STRING },
-    { "import",     SysSourceCmd,    1,  2, "val:string|array, options:object=void",  .help="Same as source", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
+    { "import",     SysImportCmd,    1,  2, "file:string, options:object=void",  .help="Same as source with {import:true}", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
     { "isFinite",   isFiniteCmd,     1,  1, "val", .help="Return true if is a finite number", .retType=(uint)JSI_TT_BOOLEAN },
     { "isMain",     InfoIsMainCmd,   0,  0, "", .help="Return true if current script was the main script invoked from command-line", .retType=(uint)JSI_TT_BOOLEAN },
     { "isNaN",      isNaNCmd,        1,  1, "val", .help="Return true if not a number", .retType=(uint)JSI_TT_BOOLEAN },

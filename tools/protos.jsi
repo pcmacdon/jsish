@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.46
+//JSI Command Prototypes: version 3.0.47
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -302,7 +302,7 @@ System.prototype.encodeURI = function(val:string):string {};
 System.prototype.exec = function(val:string, options:string|object=void):any {};
 System.prototype.exit = function(code:number=0):void {};
 System.prototype.format = function(format:string, ...):string {};
-System.prototype.import = function(val:string|array, options:object=void):any {};
+System.prototype.import = function(file:string, options:object=void):any {};
 System.prototype.isFinite = function(val):boolean {};
 System.prototype.isMain = function():boolean {};
 System.prototype.isNaN = function(val):boolean {};
@@ -397,7 +397,7 @@ var encodeURI = function(val:string):string {};
 var exec = function(val:string, options:string|object=void):any {};
 var exit = function(code:number=0):void {};
 var format = function(format:string, ...):string {};
-var import = function(val:string|array, options:object=void):any {};
+var import = function(file:string, options:object=void):any {};
 var isFinite = function(val):boolean {};
 var isMain = function():boolean {};
 var isNaN = function(val):boolean {};

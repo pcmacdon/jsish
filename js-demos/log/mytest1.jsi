@@ -9,7 +9,7 @@ function mytest1(args:array=void, conf:object=void) {
         label       :''         // Some other argument.
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
     for (var msg of args) {
         self.count++;
         LogDebug("testing:", msg);

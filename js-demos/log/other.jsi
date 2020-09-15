@@ -7,9 +7,7 @@ function other(args:array|string=void, conf:object=void) {
     var options = { // Module description.
         rootdir      :''      // Root directory.
     };
-    var self = {
-    };
-    parseOpts(self, options, conf);
+    var self = moduleOpts(options, {}, conf);
     
     function main() {
         LogTest('Starting', args);

@@ -19,10 +19,10 @@ function Archive(args:array, conf:object=void)
         rootdir     :null,      // Base directory.
         update      :false,     // Do a pull update if a .fossil.
         updateAll   :false,     // For all .fossil files in given directory do a pull update and exit.
-        version     :'tip'         // Version or commit
+        version     :''         // Version or commit
     };
 
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     
     function main() {
         if (args.length<1)
@@ -59,7 +59,9 @@ function Archive(args:array, conf:object=void)
         }
         var info;
         if (ext !== '.zip') {
-            mnt = Vfs.vmount({type:ext.substr(1), file:fn, version:self.version, noPatches:self.noPatches});
+            var mopts = {type:ext.substr(1), file:fn, version:self.version, noPatches:self.noPatches};
+            puts("mopts", mopts);
+            mnt = Vfs.vmount(mopts);
         } else {
             mnt = Zvfs.mount(fn);
         }

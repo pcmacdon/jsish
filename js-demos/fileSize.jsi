@@ -22,7 +22,7 @@ function fileSize(fargs, conf) {
         return self.cnt;
     }
 
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
 
     LogTest("Starting");
     

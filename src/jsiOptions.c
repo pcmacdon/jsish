@@ -564,7 +564,8 @@ bail:
             if (espec->help)
                 shelp = espec->help;
         }
-        return Jsi_LogError("for %s option %s.%s: expected \"%s\" (%s) %s", (cust?cust->name:""), sname, specPtr->name, emsg, cname, shelp);
+        return Jsi_LogError("for %s option %s.%s: expected \"%s\" (%s), not \"%s\": %s",
+            (cust?cust->name:""), sname, specPtr->name, emsg, cname, jsi_ValueTypeName(interp, argValue), shelp);
     }
 }
 

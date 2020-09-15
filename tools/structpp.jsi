@@ -16,7 +16,7 @@ function structpp(args:array, conf:object)
     
     if (typeof args !== 'object' || args.length>1)
         throw "expected 0 or 1 args";
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
     if (self.debug>0)
         dputs = console.log;
         

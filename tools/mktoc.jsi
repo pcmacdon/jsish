@@ -8,8 +8,7 @@ function mktoc(args:array, conf:object) {
         numberHdrs:false,   // Add section numbers to headers
         update:false        // Update file in place.
     };
-    var self = {};
-    parseOpts(self, options, arguments[1]);
+    var self = moduleOpts(options);
     
     function mk1toc(fname:string) {
         var rc = '', lst = [], idlst = [], lev = 0, prev = 0, cur = 0, res, top = 0;

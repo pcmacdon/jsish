@@ -1,7 +1,7 @@
 function mycall(args:array=void, conf:object=void) {
     var options = { Debug: false, Trace: false };
     var self = { cnt:0 };
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
     
     LogDebug("MYLOC 1:", args.join(','));
     LogTrace("MYLOC 2:", args.join(','));

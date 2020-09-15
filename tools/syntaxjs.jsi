@@ -14,7 +14,7 @@ function syntaxjs(args:array, conf:object=void) {
         linenumbers :false      // Some other argument.
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
     if (!args[0]) throw('expected file');
     
     function htmlEntities(str) {

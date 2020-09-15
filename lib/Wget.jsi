@@ -32,7 +32,7 @@ function Wget(fileargs:array|string, conf:object=void) {
         ws          :null,
     };
 
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     
     if (self.port === -1)
         self.port = 80;

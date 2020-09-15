@@ -140,7 +140,7 @@ function Jsi_ThrowHelp(self:object, options:object) {
 }
 
 // A general option parser. conf is an object or an array of form: -nam1 val1 -nam2 val2
-function Jsi_Conf (self:object, options:object, opts:object|null=undefined):object {
+function Jsi_Conf (options:object, self:object, opts:object|null=undefined):object {
     puts("NOTE: Jsi_Conf has been deprecated by moduleOpts");
     var i, isarr, len, topts = {};
     for (i in options)
@@ -259,13 +259,12 @@ function Jsi_SqlValues(name:string, val:object) {
 
 // Create/modify table compatible with the object: upgrade table adding missing columns that are in object.
 function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
-    var self = {};
     var options = {
         noCreate    :false,     // Create table, if not exists.
         objOpts     :{},        // Options for objOpts
         verbose     :false
     };
-    parseOpts(self, options, conf);
+    var self = parseOpts({}, options, conf);
     var cols = db.query('PRAGMA table_info("'+table+'")');
     if (!cols.length) {
         if (!self.noCreate)

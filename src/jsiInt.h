@@ -1501,6 +1501,7 @@ extern void jsi_FuncFree(Jsi_Interp *interp, Jsi_Func *func);
 extern void jsi_ToHexStr(const uchar *indata, int dlen, char *out);
 extern bool jsi_StrIsBalanced(char *str);
 extern char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt);
+extern void jsi_DumpValue(Jsi_Interp *interp, Jsi_Value *arg);
 
 #if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/

@@ -38,7 +38,7 @@ function Jspp(files:array|string=null, conf:object=undefined):string|object
     self.typeNameList = self.typeNameStr.split(' ');
     var ws;
  
-    moduleOpts(self, options);
+    moduleOpts(options, self);
 
     
     function typeValidate(typ) {

@@ -32,7 +32,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
     var ws;
     
     self.rootdir = File.pwd();
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     
     if (self.interpOptStr.length)
         self.intOpts = JSON.parse(self.interpOptStr);
@@ -90,7 +90,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
             ifExists:false  // Quietly ignore files that don't exist.
         };
         var iself = {};
-        moduleOpts(iself, ioptions);
+        moduleOpts(ioptions, iself, iconf);
         LogTrace('INCLUDE:', args); 
         var ai, fn;
         var odata = self.data, oargs = args;

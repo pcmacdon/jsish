@@ -4651,8 +4651,8 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     Jsi_RC rc = JSI_OK;
     jsi_Frame *fp = interp->framePtr, *pf = fp->parent;
     Jsi_Func *evfunc = fp->evalFuncPtr;
-    Jsi_Value *v1 = Jsi_ValueArrayIndex(interp, args, 0),
-    *v2 = Jsi_ValueArrayIndex(interp, args, 1),
+    Jsi_Value *v1 = Jsi_ValueArrayIndex(interp, args, (parse?0:1)),
+    *v2 = Jsi_ValueArrayIndex(interp, args, (parse?1:0)),
     *v3 = Jsi_ValueArrayIndex(interp, args, 2);
     if (!v1)
         v1 = Jsi_ValueMakeObject(interp, ret,  Jsi_ObjNewType(interp, JSI_OT_OBJECT));
@@ -5000,12 +5000,12 @@ static Jsi_CmdSpec sysCmds[] = {
 #endif
     { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Validate that object matches given name:type string. With single arg returns generated string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
-    { "moduleOpts", SysModuleOptsCmd,0,  3, "self:object|userobj=void, options:object=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "moduleOpts", SysModuleOptsCmd,0,  3, "options:object=void, self:object|userobj=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "moduleRun",  SysModuleRunCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide", .retType=(uint)JSI_TT_ANY, .flags=0},
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
-    { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: similar to moduleOpts but for non-modules", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: similar to moduleOpts but args are different", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object|function=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },

@@ -16,7 +16,7 @@ function Help(args, ...) {
     var index = "";
     var optsDumped = [];
     
-    moduleOpts(self, options);
+    moduleOpts(options, self);
 
     function DumpOpts(opts:array, hlp:string, nam:string, nam2:string=void) {
         var web = self.web, sbt='', ebt='';

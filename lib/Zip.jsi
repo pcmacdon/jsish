@@ -10,10 +10,7 @@ function Zip(args:string|array, conf:object=void) {
         indir       :'',        // Input directory
         verbose     :false      // Echo file name of unzip.
     };
-    var self = {
-    };
-    
-    parseOpts(self, options);
+    var self = parseOpts({}, options);
 
     function usage(str) {
         if (str != '')

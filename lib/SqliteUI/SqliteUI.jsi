@@ -61,7 +61,7 @@ function SqliteUI(files:array|string, conf:object=void)
             "CREATE UNIQUE INDEX IF NOT EXISTS savedq_idx ON saved_queries(query, dbID);"
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
 
     function DumpSql(files:string|array, skipTbls:array=void) {
         var rv = 'PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n';

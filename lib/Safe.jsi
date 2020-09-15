@@ -28,7 +28,7 @@ function Safe(fileargs:array, conf:object=void) {
         msgVal:[]
     };
     
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     
     function msgFunc(msg:string, type:string, file:string, line:number, col:number) {
         puts("GOT MSG", msg);

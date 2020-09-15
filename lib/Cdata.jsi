@@ -42,7 +42,7 @@ function Cdata(args:array, conf:object=void)
     var Ex = {asize:0, offs:1, size:2, sig:3};
     var EV = { enum:[], struct:[], vars:[] };
 
-    moduleOpts(self, options, conf);
+    moduleOpts(options, self, conf);
 
     var defs = {structs:[], enums:[], types:[], vars:[], cmds:[]};
     //var popts = { hassig:true, hassiz:false, builtinhassig:true};
@@ -58,6 +58,11 @@ function Cdata(args:array, conf:object=void)
     var staticTypes = statTypes.split(',');
     var valuePTypes = valpTypes.split(',');
     
+    function parseIntN(n) {
+        var m = parseInt(n);
+        return (isNaN(m)?0:n);
+    }
+
     function GetBaseType(styp) { //TODO: lookup with info type.
         switch (styp) {
             case 'bool':     return 'BOOL';  case 'uint':     return 'UINT'; 
@@ -79,8 +84,8 @@ function Cdata(args:array, conf:object=void)
             case 'Jsi_DString': return 'DSTRING';
             default:
                 if (styp.substr(0,6) === 'STRING') {
-                    var num = parseInt(styp.substr(6));
-                    if (isNaN(num) || num<=0) return null;
+                    var num = parseIntN(styp.substr(6));
+                    if (num<=0) return null;
                     return 'STRBUF';
                      
                 }
@@ -406,7 +411,7 @@ function Cdata(args:array, conf:object=void)
                     throw("array of enums unsupported: "+name+'.'+fname);
                 if (self.structmap[type]) {
                     csinit = "(uchar*)&jsi_csini_data_"+type;
-                    var fasize = parseInt(f.asize);
+                    var fasize = parseIntN(f.asize);
                     if (fasize && sinit == "{}") {
                         var aill = [];
                         for (var ailn = 0;  ailn<fasize; ailn++)
@@ -1067,7 +1072,7 @@ function Cdata(args:array, conf:object=void)
                     if (s === null || s.length != 3)
                         throw("invalid: "+vt);
                     flds[top].name = s[1];
-                    lastv = nval = parseInt(s[2]);
+                    lastv = nval = parseIntN(s[2]);
                 }
                 flds[top].value = nval;
             }
@@ -1212,7 +1217,7 @@ function Cdata(args:array, conf:object=void)
             } else if (nam.indexOf(':')>=0)
             {
                 nn = nam.split(':');
-                res.bit = parseInt(nn[1]);
+                res.bit = parseIntN(nn[1]);
                 nam = nn[0].trim();
                 res.flags += '|JSI_OPT_IS_BITS';
             } else if ((n = nam.indexOf('[')) && nam.substr(-1) == ']') {

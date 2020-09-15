@@ -8,7 +8,7 @@ function module(args:array|string=void, conf:object=void) {
     };
     var self = {
     };
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
     
     function main() {
         LogTest('Starting', args);

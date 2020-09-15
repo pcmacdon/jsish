@@ -35,7 +35,7 @@ function Debug(fileargs:array, conf:object=void):number {
         version:1.0,
     };
     
-    moduleOpts(self, options, conf);
+    moduleOpts(options, self, conf);
     
     var commands = {
         "break":"Break execution at a named function, line or file", 
@@ -119,6 +119,11 @@ function Debug(fileargs:array, conf:object=void):number {
         return fstr;
     }
     
+    function parseIntN(n) {
+        var m = parseInt(n);
+        return (isNaN(m)?0:n);
+    }
+    
     // Print lines of file
     function cmdList(lst:array) {
         var file = self.curfile;
@@ -127,7 +132,7 @@ function Debug(fileargs:array, conf:object=void):number {
         if (lst.length > 1) {
             var lstr = lst[1];
             if (lstr.match(/^[0-9]+$/))
-                line = parseInt(lstr);
+                line = parseIntN(lstr);
             else {
                 fstr = getFunc(lstr);
                 if (typeof fstr !== "object") {
@@ -139,7 +144,7 @@ function Debug(fileargs:array, conf:object=void):number {
             }
         }
         if (lst.length > 2)
-            num = parseInt(lst[2]);
+            num = parseIntN(lst[2]);
         if (lst.length > 3) {
             file = File.realpath(lst[3]);
             if (!File.exists(file))
@@ -218,7 +223,7 @@ function Debug(fileargs:array, conf:object=void):number {
             var ofs, nline;
             val = lst[1];
             if ((ofs=val.indexOf(':'))>0) {
-                nline=parseInt(val.substr(ofs+1));
+                nline=parseIntN(val.substr(ofs+1));
                 if (nline<=0) {
                     eputs("invalid line number: "+val);
                     return;
@@ -230,7 +235,7 @@ function Debug(fileargs:array, conf:object=void):number {
                     return;
                 }
                 bp = file+':'+nline;
-            } else if ((nline=parseInt(val))>0) {
+            } else if ((nline=parseIntN(val))>0) {
                 bp = file+':'+nline;
             } else {
                 bp = val;
@@ -259,7 +264,7 @@ function Debug(fileargs:array, conf:object=void):number {
             }
             return;
         }
-        if (val === undefined || (num=parseInt(val))<=0) {
+        if (val === undefined || (num=parseIntN(val))<=0) {
             eputs("bad index: "+val);
             return;
         }
@@ -279,7 +284,7 @@ function Debug(fileargs:array, conf:object=void):number {
             }
             return;
         }
-        if (val === undefined || (num=parseInt(val))<=0)
+        if (val === undefined || (num=parseIntN(val))<=0)
             return eputs("bad index: "+val);
         try {
             self.interp.eval('Debugger.enable('+num+','+on+')');
@@ -305,9 +310,9 @@ function Debug(fileargs:array, conf:object=void):number {
             self.curlev = self.toplev = self.interp.eval('Info.level()')-1;
         if (lst[1] !== undefined) {
             if (lst[1].substr(0,1) == '#') {
-                nlev = parseInt(lst[1].substr(1));
+                nlev = parseIntN(lst[1].substr(1));
             } else {
-                amt = parseInt(lst[1]);
+                amt = parseIntN(lst[1]);
                 if (!amt) {
                     amt = 1;
                     eputs("level invalid: "+lst[1]);

@@ -30,7 +30,7 @@ function Proxy(args:array, conf:object=void):void
         wsdebug     :0,         // Debug option for websockets.
         wsOptStr    :''         // Websocket options to add in JSON
     };
-    moduleOpts(self, options);
+    moduleOpts(options, self);
      
     function DoExit()   // Notify all going down, then exit.
     {

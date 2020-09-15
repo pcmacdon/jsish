@@ -18,7 +18,7 @@ function sockdemo(args:array|string=void, conf:object=void) {
         udp     :false          // Use udp.
     };
       
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
 
     function ClientSend() {
         puts("SEND: "+self.cnt);

@@ -31,7 +31,7 @@ function UnitTest(fileargs:array, conf:object=void):number {
         version:1.0,
         rootdir:null,
     };
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     
     function testFmt(cmd:string, lineno:number) {
         var ecp;

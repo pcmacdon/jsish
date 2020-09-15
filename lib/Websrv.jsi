@@ -54,9 +54,9 @@ function Websrv(args:string|array, conf:object=void)
         zipVer      :'',        // Version to mount in fossil.
     };
 
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     if (self.confFile != '')
-        moduleOpts(self, options, JSON.parse(File.read(self.confFile)));
+        moduleOpts(options, self, JSON.parse(File.read(self.confFile)));
     
     function DoExit()   // Notify all going down, then exit.
     {

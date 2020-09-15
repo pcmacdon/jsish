@@ -503,6 +503,13 @@ static Jsi_RC VfsMountCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     return rc;
 }
 
+void jsi_DumpValue(Jsi_Interp *interp, Jsi_Value *arg) {
+    Jsi_DString dStr = {};
+    Jsi_ValueGetDString(interp, arg, &dStr, JSI_OUTPUT_JSON);
+    puts(Jsi_DSValue(&dStr));
+    Jsi_DSFree(&dStr);
+}
+
 static Jsi_RC VfsVmountCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {

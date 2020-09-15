@@ -10,7 +10,7 @@ function wsdemo2(args:array|string=void, conf:object=void) {
         timeout:5000    // Shutdown for non-WebSocket demos.
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
 
     var page = 'wspage.html';
     

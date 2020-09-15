@@ -1038,12 +1038,12 @@ Builtin system commands. All methods are exported as global.
 |load|(shlib:string):void |Load a shared executable and invoke its _Init call.|
 |log|(val, ...):void |Same as puts, but includes file:line.|
 |matchObj|(obj:object, match:string=void, partial=false, noerror=false):string&#124;boolean |Validate that object matches given name:type string. With single arg returns generated string.|
-|moduleOpts|(self:object&#124;userobj=void, options:object=void, conf:object&#124;null&#124;undefined=void):object |Parse module options.|
+|moduleOpts|(options:object=void, self:object&#124;userobj=void, conf:object&#124;null&#124;undefined=void):object |Parse module options.|
 |moduleRun|(cmd:string&#124;null&#124;function=void, conf:array=undefined) |Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.|
 |noOp|() |A No-Op. A zero overhead command call that is useful for debugging.|
 |parseFloat|(val):number |Convert string to a double.|
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
-|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined=void):object |Parse module options: similar to moduleOpts but for non-modules.|
+|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined=void):object |Parse module options: similar to moduleOpts but args are different.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
 |provide|([options](#options-systemprovide):object&#124;function=void):void |Provide a package for use with require.. Default is the file tail-rootname|
 |puts|(val, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|

@@ -5,8 +5,7 @@ function mkindex(args:array|string, opts:object) {
     var options = { // Generate master index.
         html       :false         // Generate for html
     };
-    var self = {};
-    parseOpts(self, options, conf);
+    var self = moduleOpts(options);
     var i, rv = '', lst = File.glob('*.md').sort();
     if (!self.html) {
         rv += '# Jsi Index\n';

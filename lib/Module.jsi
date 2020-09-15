@@ -17,7 +17,7 @@ function Module(args:array, conf:object=void) {
         Trace       :false,
     };
 
-    moduleOpts(self, options);
+    moduleOpts(options, self);
     
     function setupApp(app) {
         if (app !== 'pdq') LogWarn('app is not pdq');

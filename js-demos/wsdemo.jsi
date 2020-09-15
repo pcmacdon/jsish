@@ -15,7 +15,7 @@ function wsdemo(args:array|string=void, conf:object=void) {
         wsOpts  :{}             // WebSockets options.
     };
     
-    parseOpts(self, options, conf);
+    moduleOpts(options, self, conf);
 
     function WsCloseLast(ws:userobj|null) {
         self.done = true;

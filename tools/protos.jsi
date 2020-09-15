@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.0.50
+//JSI Command Prototypes: version 3.1.0
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -310,7 +310,7 @@ System.prototype.isNaN = function(val):boolean {};
 System.prototype.load = function(shlib:string):void {};
 System.prototype.log = function(val, ...):void {};
 System.prototype.matchObj = function(obj:object, match:string=void, partial=false, noerror=false):string|boolean {};
-System.prototype.moduleOpts = function(self:object|userobj=void, options:object=void, conf:object|null|undefined=void):object {};
+System.prototype.moduleOpts = function(options:object=void, self:object|userobj=void, conf:object|null|undefined=void):object {};
 System.prototype.moduleRun = function(cmd:string|null|function=void, conf:array=undefined):any {};
 System.prototype.noOp = function():any {};
 System.prototype.parseFloat = function(val):number {};
@@ -405,7 +405,7 @@ var isNaN = function(val):boolean {};
 var load = function(shlib:string):void {};
 var log = function(val, ...):void {};
 var matchObj = function(obj:object, match:string=void, partial=false, noerror=false):string|boolean {};
-var moduleOpts = function(self:object|userobj=void, options:object=void, conf:object|null|undefined=void):object {};
+var moduleOpts = function(options:object=void, self:object|userobj=void, conf:object|null|undefined=void):object {};
 var moduleRun = function(cmd:string|null|function=void, conf:array=undefined):any {};
 var noOp = function():any {};
 var parseFloat = function(val):number {};

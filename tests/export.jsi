@@ -1,0 +1,58 @@
+// Test import and export. Export is implemented as a simple return with values.
+var a = (function() {
+   var x = 1;
+   function foo() {}
+   function bar() {}
+   export default *;
+})();
+;a;
+
+var b = (function() {
+   var x = 1;
+   function foo() {}
+   function bar() {}
+   export default +;
+})();
+;b;
+
+var c = (function() {
+   var x = 1;
+   function foo() {}
+   function bar() {}
+   export default { x:x, foo };
+})();
+;c;
+
+var d = (function() {
+   var x = 1;
+   function foo() {}
+   function bar() {}
+   var e = {x:x, bar};
+   export default e;
+})();
+;d;
+
+var i1 = import('imports/imp1.jsi');
+;i1;
+
+var i2 = import('imports/imp2.jsi');
+;i2;
+
+var i3 = source('imports/imp1.jsi');
+;i3;
+
+var i4 = source('imports/imp2.jsi');
+;i4;
+
+/*
+=!EXPECTSTART!=
+a ==> { bar:"function bar() {...}", foo:"function foo() {...}" }
+b ==> { bar:"function bar() {...}", foo:"function foo() {...}", x:1 }
+c ==> { foo:"function foo() {...}", x:1 }
+d ==> { bar:"function bar() {...}", x:1 }
+i1 ==> { foo:"function foo() {...}", x:1 }
+i2 ==> { bar2:"function bar2() {...}", foo2:"function foo2() {...}" }
+i3 ==> { foo:"function foo() {...}", x:1 }
+i4 ==> null
+=!EXPECTEND!=
+*/

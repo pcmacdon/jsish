@@ -1888,6 +1888,8 @@ static Jsi_Value* dbEvalSetColumnValue(DbEvalContext *p, int iCol, Jsi_Value **v
                 str = (char*)sqlite3_column_text(pStmt, iCol );
                 if (JSI_OK != Jsi_JSONParse(interp, str, &v, 0))
                     Jsi_LogWarnExt("JSON parse failure for CHARJSON column");
+                if (!v)
+                    v = Jsi_ValueNew(interp);
                 return v;
             }
         }

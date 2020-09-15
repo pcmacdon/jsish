@@ -210,7 +210,7 @@ Jsi_RC Jsi_JSONParse(Jsi_Interp *interp, const char *js, Jsi_Value **ret, int fl
     tok = p->tokens;
     if (tok->size<=0) {
         if (!*ret)
-            *ret = Jsi_ValueNew1(interp);
+            *ret = Jsi_ValueNew(interp);
         if (tok->type == JSI_JTYPE_OBJECT)
             Jsi_ValueMakeObject(interp, ret, Jsi_ObjNewObj(interp, NULL, 0));
         else if (tok->type == JSI_JTYPE_ARRAY)

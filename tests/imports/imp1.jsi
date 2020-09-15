@@ -1,0 +1,5 @@
+var x = 1;
+function foo() {}
+function bar() {}
+export default { x:x, foo };
+

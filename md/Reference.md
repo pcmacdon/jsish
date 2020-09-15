@@ -1082,7 +1082,7 @@ Builtin system commands. All methods are exported as global.
 |autoIndex|*BOOL*|Look for and load Jsi_Auto.jsi auto-index file.||
 |exists|*BOOL*|Source file only if exists.||
 |global|*BOOL*|File is to be sourced in global frame rather than local.||
-|import|*BOOL*|Wrap in a function closure.||
+|import|*BOOL*|Wrap file contents in a return/function closure.||
 |isMain|*BOOL*|Coerce to true the value of Info.isMain().||
 |level|*UINT*|Frame to source file in.||
 |noEval|*BOOL*|Disable eval: just parses file to check syntax.||
@@ -1117,7 +1117,7 @@ Builtin system commands. All methods are exported as global.
 |autoIndex|*BOOL*|Look for and load Jsi_Auto.jsi auto-index file.||
 |exists|*BOOL*|Source file only if exists.||
 |global|*BOOL*|File is to be sourced in global frame rather than local.||
-|import|*BOOL*|Wrap in a function closure.||
+|import|*BOOL*|Wrap file contents in a return/function closure.||
 |isMain|*BOOL*|Coerce to true the value of Info.isMain().||
 |level|*UINT*|Frame to source file in.||
 |noEval|*BOOL*|Disable eval: just parses file to check syntax.||

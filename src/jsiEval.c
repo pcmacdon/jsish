@@ -170,7 +170,8 @@ static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Valu
         }
         if (v == src)
             return JSI_OK;
-        if (v->f.bits.readonly) {
+        bool ro = v->f.bits.readonly;
+        if (ro && v->vt != JSI_VT_UNDEF) {
             if (interp->typeCheck.strict) 
                 return Jsi_LogError("assign to readonly variable");
             return JSI_OK;
@@ -180,7 +181,7 @@ static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Valu
         else
             Jsi_ValueCopy(interp,v, src);
         SIGASSERT(v, VALUE);
-        v->f.bits.readonly = 0;
+        v->f.bits.readonly = ro;
 #ifdef JSI_MEM_DEBUG
     if (!v->VD.label2)
         v->VD.label2 = "ValueAssign";
@@ -875,7 +876,8 @@ static Jsi_RC jsiPushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, 
                     Jsi_HashValueSet(hPtr, 0);
             }
         }
-        
+        if (ip->readonly)
+            v->f.bits.readonly = 1;
         Jsi_IncrRefCount(interp, v);
 
     }
@@ -936,6 +938,7 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
     Jsi_RC rc = JSI_OK;
     uint flags = (uintptr_t)ip->data, right_val = flags&1; // isident=flags&2;
     jsiVarDeref(interp,2);
+    bool ro = src->f.bits.readonly;
     Jsi_String *str = jsi_ValueString(src);
     Jsi_Obj *obj = (src->vt==JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT?src->d.obj:NULL);
     int bsc, arrayindex = (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0) ?  (int)idx->d.num : -1;
@@ -1010,6 +1013,8 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
                 assert(vp != resPtr);
                 res.vt = JSI_VT_VARIABLE;
                 res.d.lval = vp;
+                if (ro)
+                    vp->f.bits.readonly = 1;
                 Jsi_ValueCopy(interp, src, resPtr);
             }
             Jsi_DecrRefCount(interp, vp);
@@ -1618,6 +1623,9 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 }
                 Jsi_Value *v = _jsi_TOP->d.lval;
                 SIGASSERT(v, VALUE);
+                if (v->f.bits.readonly)
+                    return Jsi_LogError("assign to readonly variable");
+
                 Jsi_ValueToNumber(interp, v);
                 rc = _jsi_StrictChk(v);
                 v->d.num += inc;

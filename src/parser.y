@@ -148,8 +148,8 @@ statement:
 
 localvar:
     LOCAL { $$ = LOCAL; }
-    | LOCALLET { $$ = LOCAL; }
-    | LOCALCONST { $$ = LOCAL; }
+    | LOCALLET { $$ = LOCALLET; }
+    | LOCALCONST { $$ = LOCALCONST; }
 ;
     
 objectident:
@@ -177,7 +177,7 @@ commonstatement:
     | RETURN expr ';'   { $$ = codes_join($2, code_ret(pstate, &@2, 1)); }
     | RETURN ';'        { $$ = code_ret(pstate, &@1, 0); }
     | localvar vardecs ';' {
-        jsi_mark_local($2);
+        jsi_mark_local($2, $1);
         $$ = $2;
     }
     | THROW expr ';'    { $$ = codes_join($2, code_throw(pstate, &@2)); }
@@ -406,7 +406,7 @@ for_statement:
         jsi_ForinVar *fv;
         int inof = $6;
         Jsi_OpCodes *loc = code_local(pstate, &@5, $5);
-        jsi_mark_local(loc);
+        jsi_mark_local(loc, $4);
         fv = forinvar_new(pstate, $5, loc, NULL);
         Jsi_OpCodes *lval;
         if (fv->varname) lval = code_push_index(pstate, &@2, fv->varname, 1);
@@ -449,7 +449,7 @@ for_init:
     ';'                 { $$ = code_nop(); }
     | expr ';'          { $$ = codes_join($1, code_pop(1)); }
     | localvar vardecs ';' {
-        jsi_mark_local($2);
+        jsi_mark_local($2, $1);
         $$ = $2;
     }
 ;

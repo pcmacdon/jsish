@@ -466,15 +466,16 @@ void jsi_code_decode(Jsi_Interp *interp, jsi_OpCode *op, int currentip, char *bu
     }
 }
 
-void jsi_mark_local(Jsi_OpCodes *ops) // Mark variables as declared with "var"
+void jsi_mark_local(Jsi_OpCodes *ops, int v) // Mark variables as declared with "var"
 {
-    return;
+    if (v != LOCALCONST)
+        return;
     int i = 0;
     if (ops == NULL || ops->codes == NULL)
         return;
     while (i < ops->code_len) {
         if (ops->codes[i].op == OP_PUSHVAR)
-            ops->codes[i].local = 1;
+            ops->codes[i].readonly = 1;
         i++;
     }
 }

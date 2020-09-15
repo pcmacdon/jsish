@@ -440,7 +440,8 @@ typedef struct jsi_OpCode {
     jsi_Eopcode op;
     void *data;
     unsigned int Line:16;
-    unsigned int Lofs:8;
+    unsigned int Lofs:7;
+    unsigned int  readonly:1;
     unsigned char alloc:1;
     unsigned char nodebug:1;
     unsigned char hit:1;
@@ -814,7 +815,8 @@ void yyerror(YYLTYPE *yylloc, jsi_Pstate *ps, const char *msg);
 
 typedef struct {
     jsi_Sig sig;
-    int context_id:31;
+    int context_id:30;
+    unsigned int const:1;
     unsigned int local:1;
     jsi_Pstate *ps;
     char *varname;

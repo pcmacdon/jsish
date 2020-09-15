@@ -312,7 +312,7 @@ void Jsi_ValueDup2(Jsi_Interp *interp, Jsi_Value **to, Jsi_Value *from )
     (*to)->VD.label3 = "ValueDup2";
 #endif
     Jsi_ValueCopy(interp, *to, from);
-    (*to)->f.bits.readonly = 0;
+    //(*to)->f.bits.readonly = 0;
 }
 
 Jsi_Value *Jsi_ValueDupJSON(Jsi_Interp *interp, Jsi_Value *val)

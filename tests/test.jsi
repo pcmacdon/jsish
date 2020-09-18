@@ -1,15 +1,12 @@
-#!/usr/local/bin/jsish -u
-
-function foo(n) {
-    return "FOO"+n;
-}
-
-puts(foo(1));
-puts(foo(2));
+// FILE: test.jsi
+function test(n) { return "TEST: "+n; }
+;test('this is a test');
+;test('this to');
+test('but not this');
 
 /*
 =!EXPECTSTART!=
-FOO1
-FOO2
+test('this is a test') ==> TEST: this is a test
+test('this to') ==> TEST: this to
 =!EXPECTEND!=
 */

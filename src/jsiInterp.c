@@ -926,7 +926,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
         Jsi_Value *ret = Jsi_ReturnValue(interp);
         if (!Jsi_ValueIsType(interp, ret, JSI_VT_UNDEF)) {
             Jsi_DString dStr = {};
-            fputs(Jsi_ValueGetDString(interp, ret, &dStr, 0), stdout);
+            fputs(Jsi_ValueGetDString(interp, ret, &dStr, JSI_OUTPUT_QUOTE|JSI_OUTPUT_NEWLINES), stdout);
             Jsi_DSFree(&dStr);
             fputs("\n", stdout);
         }
@@ -1044,8 +1044,10 @@ done:
     Jsi_DSPrintf(&dStr, "[\"%s\", %d, %d, \"%s\", \"%s\", %d, \"%s\"]", curFile?curFile:"", curLine, curLevel, curFunc, opCode, bpId, emsg?emsg:"");
     interp->isInCallback = 1;
     Jsi_RC rc = JSI_ERROR;
-    if (interp->debugOpts.debugCallback)
+    if (interp->debugOpts.debugCallback) {
+        Jsi_ValueReset(interp, &interp->retValue);
         rc = Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.debugCallback, Jsi_DSValue(&dStr), &interp->retValue);
+    }
     interp->isInCallback = 0;
     if (interp->parent->exited == 0 && rc != JSI_OK)
         Jsi_LogError("debugger failure");

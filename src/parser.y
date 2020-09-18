@@ -803,6 +803,16 @@ exprlist:
         $$ = codes_join($1, $3);
         ($$)->expr_counter = exprcnt;
     }
+    | exprlist ',' ','  { 
+        int exprcnt = ($1)->expr_counter + 1;
+        $$ = codes_join($1, code_push_undef());
+        ($$)->expr_counter = exprcnt;
+    }
+    | ',' exprlist  { 
+        int exprcnt = ($2)->expr_counter + 1;
+        $$ = codes_join(code_push_undef(), $2);
+        ($$)->expr_counter = exprcnt;
+    }
 ;
 
 value:
@@ -868,6 +878,7 @@ item:
 
 array:
     '[' exprlist ']' { $$ = codes_join($2, code_array(pstate, &@2, ($2)->expr_counter)); }
+    | '[' exprlist ',' ']' { $$ = codes_join($2, code_array(pstate, &@2, ($2)->expr_counter)); }
     | '[' ']' { $$ = code_array(pstate, &@1, 0); }
 ;
 

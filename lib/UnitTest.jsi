@@ -12,11 +12,14 @@ function UnitTest(fileargs:array, conf:object=void):number {
         exec        :false,     // Use exec instead of running test in a sub-interp.
         expectFile  :null,      // File to use for expected output.
         failMax     :0,         // Quit after this many failed tests.
+        find        :'',        // Enables echo and display only lines containing string or /REGEX/f.
+        force       :false,     // Force update even with [FAIL].
         inFile      :null,      // File to use for stdin input.
         noproto     :false,     // Disable OOP keyword support: prototype, constructor, etc
         silent      :false,     // Run quietly, showing only failures.
-        time        :false,     // Show timing for all tests.
-        times       :false,     // Show timing for each tests.
+        test        :true,      // If false, only shows output without PASS/FAIL check.
+        time        :true,      // Show execution time for each test file.
+        times       :false,     // Output execution time for each individual test line: no PASS/FAIL check.
         update      :false,     // In-place update/create of EXPECT* from a run of test file(s).
         verbose     :false      // Echo values of inputs, outputs, and args.
     };
@@ -40,8 +43,8 @@ function UnitTest(fileargs:array, conf:object=void):number {
             ecp = format("printf(\"#%d: %%S ==> \",\"%s\"),times(true),puts(%s),times(false);\n", lineno, cmd, cmd);
         else {
             ecp = cmd.substr(2).trim();
-            ecp = format("printf(\"#%d: %%s ==>\", %s); try { times(true); %s; puts('\nFAIL!\n'); } "
-                + "catch(err) { puts('\nPASS!: err =',err); times(false); }\n", lineno, JSON.stringify(ecp), ecp);
+            ecp = format("printf(\"#%d: %%s ==>\", %s); try { times(true); %s; puts('\n[FAIL]! expected a throw\n'); } "
+                + "catch(err) { puts('\n[PASS]!: err =',err); times(false); }\n", lineno, JSON.stringify(ecp), ecp);
         }
         LogTrace(ecp);
         return ecp;
@@ -62,6 +65,12 @@ function UnitTest(fileargs:array, conf:object=void):number {
         var expect = null;
         if (sm)
             expect = sm[1];
+        else if (!self.update && !self.echo && self.test) {
+            if (scr.substr(0,3)==';//' || scr.indexOf('\n;//')>0) {
+                puts('[FAIL]!: '+fn+': Exceptions require an EXPECT comment; use -update');
+                return 1;
+            }
+        }
 
         var ipat = "=!INPUTSTART!=\n(.*)=!INPUTEND!=";
         var ism = scr.match(ipat);
@@ -78,6 +87,8 @@ function UnitTest(fileargs:array, conf:object=void):number {
 
         if (self.times)
             siargs.debugOpts = {testFmtCallback:'testFmt'};
+        if (self.find != '')
+            self.echo = self.silent = true;
         if (self.echo)
             ut += 2;
         if (ut) {
@@ -140,7 +151,29 @@ function UnitTest(fileargs:array, conf:object=void):number {
             //res = res.substr(0, res.length-1);
         }
         if (self.echo) {
-            puts('\n'+res);
+            if (self.find != '') {
+                var fstr = self.find, fpat = null, fii;
+                if (fstr[0] == '/' && (fii=fstr.lastIndexOf('/'))>0) {
+                    var fss = fstr.substr(1,fii-1), fflag = fstr.substr(fii+1);
+                    fpat = new RegExp(fss, fflag);
+                }
+                var dres = '', lres = res.split('\n');
+                for (var d of lres) {
+                    if (fpat) {
+                        if (!d.match(fpat)) continue;
+                    } else if (d.indexOf(fstr)<0) continue;
+                    dres += d + '\n';
+                }
+                res = dres.trim();
+                puts(res);
+            } else if (self.silent)
+                puts(res.trim());
+            else
+                puts('\n'+res);
+            return 0;
+        }
+        if (!self.test) {
+            puts(res);
             return 0;
         }
         if (self.times) {
@@ -164,6 +197,10 @@ function UnitTest(fileargs:array, conf:object=void):number {
         
         LogTrace(res);
         if (self.update) {
+            if (!self.force && res.indexOf('\n[FAIL]!:')>=0) {
+                puts("update contains a [FAIL]!: use -force");
+                return 1;
+            }
             var fdat = File.read(fn);
             if (res.indexOf('*/')>=0) throw("output contains comment terminator");
             if (!sm) {
@@ -243,8 +280,8 @@ function UnitTest(fileargs:array, conf:object=void):number {
         if (self.times)
             self.verbose = true;
         self.rootdir=Info.scriptDir();
-        if (self.echo && self.verbose)
-            throw('can not use both verbose and echo');
+        if ((self.echo) && self.verbose)
+            throw('can not use both verbose and line');
         LogTrace('Files', fileargs);
         if (fileargs.length === 1) {
             fileargs = fileargs[0];
@@ -270,6 +307,8 @@ function UnitTest(fileargs:array, conf:object=void):number {
             self.nodiff = true;
         }
         //puts(self.flst);
+        if (self.flst.length==1 && (self.echo || !self.test))
+            self.silent = true;
         for (var i of self.flst) {
             LogTrace('Doing', i);
             self.cnt++;

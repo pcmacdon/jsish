@@ -4,7 +4,7 @@ require('WebSocket', '2');
 
 function wsdemo(args:array|string=void, conf:object=void) {
     
-    var self = { done:false };
+    var self = { done:false, ws:null };
     var options = { // A minimal WebSocket demo
         client  :false,         // Run in client mode.  Default is server mode.
         count   :10,            // Number of times client sends a string.

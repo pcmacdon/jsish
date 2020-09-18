@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   1
-#define JSI_VERSION_RELEASE 0
+#define JSI_VERSION_RELEASE 1
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -158,7 +158,7 @@ typedef enum {
     JSI_OM_DONTENUM         = 0x02,     /* ecma emumerable */
     JSI_OM_DONTDEL          = 0x04,     /* ecma configurable */
     JSI_OM_INNERSHARED      = 0x08,
-    JSI_OM_ISARRAYLIST      = 0x10,
+    JSI_OM_ISFROZEN         = 0x10,
     JSI_OM_ISSTRKEY         = 0x20,
     JSI_OM_UNUSED           = 0x40,
     JSI_OM_ISSTATIC         = 0x80,

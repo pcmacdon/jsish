@@ -775,12 +775,12 @@ function DebugUI(fileargs:array, conf:object=void)
         Event.update(3000);
 
         LogDebug("Done!");
-        if (self.optdbfile)
-            delete self.optdb;
-        delete self.db;
-        delete self.ws;
+        //if (self.optdbfile)
+            //delete self.optdb;
+        //delete self.db;
+        //delete self.ws;
         //self.interp.conf({debugOpts:{putsCallback:null}});
-        delete self.interp;
+        //delete self.interp;
         return 0;
     }
     

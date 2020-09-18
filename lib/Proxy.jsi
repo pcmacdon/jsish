@@ -266,7 +266,7 @@ function Proxy(args:array, conf:object=void):void
         if (self.timeout)
             setTimeout(function () { self.done = 1; }, self.timeout);
         while (self.done == 0 && Event.update(100) ) ;
-        delete self.ws;
+        //delete self.ws;
     }
     
     main();

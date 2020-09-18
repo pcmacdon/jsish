@@ -1007,7 +1007,7 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
             snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
         else
             keyStr = Jsi_ValueString(interp, keyval, NULL);
-        if (!obj->freezeModifyOk) {
+        if (obj->freezeNoModify) {
             Jsi_LogError("frozen assign/modify key: %s", keyStr);
             return NULL;
         }
@@ -1452,6 +1452,31 @@ void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj
     iterobj->depth = depth;
 }
 
+Jsi_RC jsi_ObjSetFlag(Jsi_Interp *interp, Jsi_Obj *obj, int flag, int on) {
+    Jsi_Value *v;
+    if (obj->isarrlist) {
+        uint i;
+        for (i = 0; i<obj->arrCnt; i++) {
+            v = obj->arr[i];
+            if (!v) continue;
+            if (on) v->f.flag|=flag;
+            else v->f.flag&=~flag;
+        }
+    } else {
+        Jsi_TreeEntry *tPtr;
+        Jsi_TreeSearch search;
+        for (tPtr = Jsi_TreeSearchFirst(obj->tree, &search, 0, NULL);
+            tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
+            v = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
+            if (!v) continue;
+            if (on) v->f.flag|=flag;
+            else v->f.flag&=~flag;
+        }
+        Jsi_TreeSearchDone(&search);
+    }
+    return JSI_OK;
+}
+ 
 Jsi_Value* Jsi_ValueMakeDStringObject(Jsi_Interp *interp, Jsi_Value **vPtr, Jsi_DString *dsPtr)  {
     Jsi_Value *v = (vPtr?*vPtr:NULL);
     Jsi_Obj *obj;

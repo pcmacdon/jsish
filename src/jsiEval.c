@@ -360,7 +360,7 @@ static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, j
                 if (!Jsi_Strcmp(nam, "help"))
                     Jsi_LogInfo("...%s", str);
                 else
-                    Jsi_LogError("%s near %s", nam, str);
+                    Jsi_LogError("%s near \"%s\"", nam, str);
             }
             return JSI_ERROR;
         }
@@ -950,7 +950,7 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
             snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
         else
             keyStr = Jsi_ValueString(interp, idx, NULL);
-        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0))) {
+        if ((!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0)))) {
             rc = Jsi_LogError("frozen read undefined key: %s", keyStr);
             goto done;
         }
@@ -1623,8 +1623,14 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 }
                 Jsi_Value *v = _jsi_TOP->d.lval;
                 SIGASSERT(v, VALUE);
-                if (v->f.bits.readonly)
-                    return Jsi_LogError("assign to readonly variable");
+                if (v->f.bits.readonly) {
+                    rc = Jsi_LogError("modify readonly variable");
+                    break;
+                }
+                if (v->f.bits.frozen) {
+                    rc = Jsi_LogError("modify frozen variable");
+                    break;
+                }
 
                 Jsi_ValueToNumber(interp, v);
                 rc = _jsi_StrictChk(v);
@@ -1770,29 +1776,35 @@ undef_eval:
             }
             case OP_DELETE: {
                 int count = (uintptr_t)ip->data;
+                Jsi_Value **vPtr, *v, *vt = _jsi_TOP;
                 if (count == 1) { // Non-standard.
-                    if (_jsi_TOP->vt != JSI_VT_VARIABLE)
+                    if (vt->vt != JSI_VT_VARIABLE)
                         rc = Jsi_LogError("delete a right value");
                     else {
-                        Jsi_Value **vPtr = &_jsi_TOP->d.lval, *v = *vPtr;
+                        vPtr = &vt->d.lval; v = *vPtr;
                         SIGASSERT(v, VALUE);
                         if (v->f.bits.dontdel) {
-                            if (strict) rc = Jsi_LogWarn("delete not allowed");
-                        } else if (v != currentScope) {
-                            Jsi_ValueReset(interp,vPtr);     /* not allow to delete arguments */
-                        }
+                            if (strict) rc = Jsi_LogError("delete not allowed");
+                        } else if (v->vt == JSI_VT_OBJECT && v->d.obj->freeze)
+                            rc = Jsi_LogError("attempted to delete freeze");
+                        else if (v != currentScope)
+                            Jsi_ValueReset(interp,vPtr);
                         else if (strict)
                             Jsi_LogWarn("Delete arguments");
                     }
                     jsiPop(interp,1);
                 } else if (count == 2) {
                     jsiVarDeref(interp,2);
+                    v = _jsi_TOQ;
                     assert(fp->Sp>=2);
-                    if (strict) {
-                        if (_jsi_TOQ->vt != JSI_VT_OBJECT) Jsi_LogWarn("delete non-object key, ignore");
-                        if (_jsi_TOQ->d.obj == currentScope->d.obj) Jsi_LogWarn("Delete arguments");
+                    if (v->vt != JSI_VT_OBJECT) {
+                        if (strict) Jsi_LogWarn("delete non-object key, ignore");
+                    } else if (v->d.obj->freeze) {
+                        rc = Jsi_LogError("attempted to delete freeze");
+                    } else  {
+                        if (strict && v->d.obj == currentScope->d.obj) Jsi_LogWarn("Delete arguments");
+                        jsiValueObjDelete(interp, v, vt, 0);
                     }
-                    jsiValueObjDelete(interp, _jsi_TOQ, _jsi_TOP, 0);
                     
                     jsiPop(interp,2);
                 } else Jsi_LogBug("delete");
@@ -2054,7 +2066,7 @@ void jsi_DumpStackTrace(Jsi_Interp *interp) {
             fn = cp +1;
         Jsi_DSPrintf(&dStr, "#%d: %s:%d: ", fp->level, fn, line);
         if (func && fp->incsc) {
-            Jsi_ValueGetDString(interp, args, &aStr, 1);
+            Jsi_ValueGetDString(interp, args, &aStr, JSI_OUTPUT_QUOTE);
             char *sp = Jsi_DSValue(&aStr);
             int len = Jsi_Strlen(sp);
             if (len>1) {
@@ -2155,26 +2167,27 @@ static Jsi_RC jsiJsPreprocessLine(Jsi_Interp* interp, char *buf, size_t bsiz, ui
                 snprintf(buf, bsiz, "puts(`%s`);\n", ucp); //output a 'Comment'
                 
             else if (interp->debugOpts.testFmtCallback) {
+                Jsi_Interp *pinterp = interp->parent;
                 Jsi_DString kStr={};
-                Jsi_Value *vrc = Jsi_ValueNew1(interp);
+                Jsi_Value *vrc = Jsi_ValueNew1(pinterp);
                 Jsi_DSPrintf(&kStr, "[\"%s\", %d ]", ucp, lineNo);
-                Jsi_RC rcs = Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.testFmtCallback, Jsi_DSValue(&kStr), &vrc);
+                Jsi_RC rcs = Jsi_FunctionInvokeJSON(pinterp, interp->debugOpts.testFmtCallback, Jsi_DSValue(&kStr), &vrc);
                 if (rcs == JSI_OK) {
-                    const char *cps = Jsi_ValueString(interp, vrc, NULL);
+                    const char *cps = Jsi_ValueString(pinterp, vrc, NULL);
                     if (!cps)
                         rcs = JSI_ERROR;
                     else
                         snprintf(buf, bsiz, "%s", cps);
                 }
-                Jsi_DecrRefCount(interp, vrc);
+                Jsi_DecrRefCount(pinterp, vrc);
                 Jsi_DSFree(&kStr);
                 if (rcs != JSI_OK)
                     return Jsi_LogError("failure in debugOpts.testFmtCallback");
             } else if (ilen>3 && ubuf[0]=='/' && ubuf[0]=='/') {
                 char *ecp = ubuf+2;
                 while (*ecp && isspace(*ecp)) ecp++;
-                snprintf(buf, bsiz, "printf(`%%s ==>`, \"%s\"); try { %s; puts('\\nFAIL!\\n'); } "
-                    "catch(err) { puts('\\nPASS!: err =',err); }\n", ecp, ecp);
+                snprintf(buf, bsiz, "printf(`%%s ==>`, \"%s\"); try { %s; puts('\\n[FAIL]!: expected a throw\\n'); } "
+                    "catch(err) { puts('\\n[PASS]!: err =',err); }\n", ecp, ecp);
             } else {
                 snprintf(buf, bsiz, "printf(`%%s ==> `,`%s`),puts(%s);\n", ucp, ucp);
             }

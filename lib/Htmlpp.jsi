@@ -12,7 +12,7 @@ var JsiHtmlpp_callback = null;
 function Htmlpp(files:array|string=null, conf:object=undefined):string|object
 {    
     var options = { // Preprocess html evaluating Jsi code between  <? ?> tags (like php).
-        delInterp   :true,      // Delete interp when done.
+        delInterp   :false,     // Delete interp when done.
         incsMax     :1000,      // Maximum number of includes
         interpOptStr:'',        // Options for subinterp as JSON string.
         interp      :null,      // Interp to use (instead of creating one)

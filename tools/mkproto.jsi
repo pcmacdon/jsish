@@ -2,6 +2,10 @@
 // Generate function prototypes for Jsi builtin cmds.
 
 function mkproto(...) {
+    var options = {
+       out: '' // output file
+    };
+    var self = moduleOpts(options);
 
     function DumpArgs(ci:object) {
         var argStr = ci.args;
@@ -59,7 +63,11 @@ function mkproto(...) {
             continue;
         }
     }
-    return '//JSI Command Prototypes: version '+ver+'\nthrow("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");\n\n' + rv;
+    var res = '//JSI Command Prototypes: version '+ver+'\nthrow("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");\n\n' + rv;
+    if (self.out!='')
+        File.write(self.out,res);
+    else
+        puts(res);
 }
 
 moduleRun(mkproto);

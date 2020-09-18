@@ -374,23 +374,33 @@ static Jsi_RC ObjectFreezeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         *rval = Jsi_ValueArrayIndex(interp, args, 3);
     if (!val || !Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
         return Jsi_LogError("arg 1: expected object");
-    if (fval && !Jsi_ValueIsBoolean(interp, fval))
-        return Jsi_LogError("arg 2: expected bool");
+    Jsi_Obj *obj = val->d.obj;
+    if (fval) {
+        if (Jsi_ValueIsNull(interp, fval))
+            return Jsi_JSONParseFmt(interp, ret, "{freeze:%s, modifyok:%s, readcheck:%s}",
+                obj->freeze?"true":"false",
+                obj->freezeNoModify?"false":"true",
+                obj->freezeReadCheck?"true":"false");
+        if (!Jsi_ValueIsBoolean(interp, fval))
+            return Jsi_LogError("arg 2: expected bool|null");
+    }
     if (bval && !Jsi_ValueIsBoolean(interp, bval))
         return Jsi_LogError("arg 3: expected bool");
     if (rval && !Jsi_ValueIsBoolean(interp, rval))
         return Jsi_LogError("arg 4: expected bool");
-    bool bnum = 1, rnum = 1, fnum = 1;
+    bool bnum = 1, rnum = 1, fnum = 1, obnum = !obj->freezeNoModify;
     if (bval)
         Jsi_GetBoolFromValue(interp, bval, &bnum);
     if (rval)
         Jsi_GetBoolFromValue(interp, rval, &rnum);
     if (fval)
         Jsi_GetBoolFromValue(interp, fval, &fnum);
-    Jsi_Obj *obj = val->d.obj;
     obj->freeze = fnum;
-    obj->freezeModifyOk = bnum;
+    obj->freezeNoModify = !bnum;
     obj->freezeReadCheck = rnum;
+    if (obnum != bnum) {
+        jsi_ObjSetFlag(interp, obj, JSI_OM_ISFROZEN, !bnum);
+    }
     return JSI_OK;
 
 }
@@ -736,7 +746,7 @@ static Jsi_CmdSpec objectCmds[] = {
     { "hasOwnProperty", jsi_HasOwnPropertyCmd,  1, 1, "name:string", .help="Returns a true if object has the specified property", .retType=(uint)JSI_TT_BOOLEAN },
     { "is",             ObjectIsCmd, 2, 2, "value1, value2", .help="Tests if two values are equal", .retType=(uint)JSI_TT_BOOLEAN },
     { "isPrototypeOf",  ObjectIsPrototypeOfCmd, 1, 1, "name", .help="Tests for an object in another object's prototype chain", .retType=(uint)JSI_TT_BOOLEAN },
-    { "freeze",         ObjectFreezeCmd,        1, 4, "obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true", .help="Freeze/unfreeze an object with optionally", .retType=(uint)JSI_TT_VOID },
+    { "freeze",         ObjectFreezeCmd,        1, 4, "obj:object, freeze:boolean|null=true, modifyok:boolean=true, readcheck:boolean=true", .help="Freeze/unfreeze an object with optionally", .retType=(uint)JSI_TT_VOID|JSI_TT_OBJECT },
     { "keys",           ObjectKeysCmd,          0, 1, "obj:object|function=void", .help="Return the keys of an object or array", .retType=(uint)JSI_TT_ARRAY },
     { "merge",          ObjectMergeCmd,         1, 1, "obj:object|function", .help="Return new object containing merged values", .retType=(uint)JSI_TT_OBJECT },
     { "propertyIsEnumerable", ObjectPropertyIsEnumerableCmd,1, 1, "name", .help="Determine if a property is enumerable", .retType=(uint)JSI_TT_BOOLEAN },

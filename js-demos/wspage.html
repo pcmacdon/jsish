@@ -1,39 +1,16 @@
-<!-- USAGE: "jsish -W wsdemo.html" -->
-<!DOCTYPE html>
-<html>
-<body onload='DoInit()' >
-Minimal web page using websockets
-<p />
-
-<input id="myinput" size=30></input>
-<!-- <img src="/jsitechno2.png"> -->
-
+<body onload='onload()'>  <!-- wspage.html -->
+Minimal Jsi websocket page: <input id="myinput" size=30></input>
 <script>
-var ws, cnt = 0;
-function WsRecv(msg) {
-    console.log("WsRecv: "+msg.data);
-    var s = JSON.parse(msg.data);
-    var id = document.getElementById('myinput');
-    id.value = cnt+': '+msg.data;
-    if (s.cmd == "exit")
-        ws.close();
-    else {
-        var r = { resp:s.cmd }
-        r.cmd = (cnt++ >= 10 ? 'exit' : 'process');
-        setTimeout(function() { ws.send(JSON.stringify(r)); }, 1000);
-    }
-}
-    
-function DoInit() {
-    var url = document.URL.replace(/^http/,'ws');
-    console.log('URL: '+url);
-    ws = new WebSocket(url, 'ws');
-    ws.onmessage = WsRecv;
-    ws.onopen = function() {
-        ws.send('{"cmd":"init"}');
+function onload() {
+    var cnt = 0, s, r, ws = new WebSocket(document.URL.replace(/^http/,'ws'), 'ws');
+    ws.onopen = function() { ws.send('{"cmd":"init"}'); };
+    ws.onmessage = function(msg) {
+        document.getElementById('myinput').value = cnt+': '+msg.data;
+        s = JSON.parse(msg.data);
+        if (s.cmd == "exit") return ws.close();
+        r = { resp:s.cmd, cmd:(cnt++ >= 10 ? 'exit' : 'process') };
+        setTimeout(function() {ws.send(JSON.stringify(r)); }, 1000);
     };
 }
-
 </script>
 </body>
-</html>

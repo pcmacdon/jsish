@@ -56,7 +56,7 @@ function Wget(fileargs:array|string, conf:object=void) {
         self.done = true;
         if (self.fd) {
             self.fd.close();
-            delete self.fd;
+            //delete self.fd;
         }
         if (self.onDone)
             self.onDone(id, self, isError);
@@ -136,7 +136,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             update(200);
             LogTrace("UPDATE");
         }
-        delete self.ws;
+        //delete self.ws;
         if (self.response !== '')
             return self.response;
     }

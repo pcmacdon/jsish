@@ -55,16 +55,16 @@ delete ii;
 7
 s = ii.eval('return File.read('/tmp/xx.txt');') ==> hi
 ii.eval('File.write('~/xx.txt','bye');') ==>
-PASS!: err = write access denied by safe interp: ~/xx.txt
+[PASS]!: err = write access denied by safe interp: ~/xx.txt
 ii = new Interp({isSafe:true, safeMode:'lockdown', safeWriteDirs:['/tmp/'], safeReadDirs:['/tmp/']}) ==> "#Interp_3"
 ii.eval('var fp = new Channel('/tmp/xx.txt','w'); fp.write('upd'); delete fp;') ==> undefined
 ii.eval('Interp.conf({maxDepth:1000});//LOCKCONF') ==>
-PASS!: err = Error isSafe disallows updating option: "maxDepth"
+[PASS]!: err = Error isSafe disallows updating option: "maxDepth"
 File.remove('/tmp/xx.txt',true) ==> undefined
 File.write('/tmp/xx.txt','') ==> 0
 ii.eval('var db = new Sqlite('/tmp/xx.txt'); db.eval('CREATE TABLE foo(a,b)');') ==> undefined
 ii.eval('db = new Sqlite('/tmp/xx.db');//LOCKWRITE') ==>
-PASS!: err = Safe accces denied
+[PASS]!: err = Safe accces denied
 SAFE EXEC:  no exec in safe mode
 SUBINTERP:  subinterps disallowed
 =!EXPECTEND!=

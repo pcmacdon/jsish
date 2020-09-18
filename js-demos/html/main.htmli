@@ -19,7 +19,7 @@ What are some reasons for using Jsi:
 <?
   include('sub1.html');
   var secns = [4, 5, 6];
-  for (var i in secns) {
+  for (i in secns) {
       var secn = secns[i];
       include('subN.html');
   }

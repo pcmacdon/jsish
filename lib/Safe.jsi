@@ -119,7 +119,7 @@ function Safe(fileargs:array, conf:object=void) {
             puts("Running in safe interp: file=",fn,', args=',self.args,', indir=',self.rootdir,'\nWith options:', sopts);
         self.interp = new Interp(sopts);
         var val = self.interp.conf('retValue');
-        delete self.interp;
+        //delete self.interp;
         if (!self.retAll)
             return val;
         all.retVal = val;

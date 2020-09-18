@@ -45,7 +45,8 @@ function Websrv(args:string|array, conf:object=void)
         trace       :false,     // Tracing output.
         udata       :{},        // Shortcut add of udata to wsOpts.
         url         :"",        // The file/url to serve out and clears timeout.
-        urlPrefix   :'/Websrv', // Prefix for urls
+        urlPrefix   :'',        // Prefix for urls
+        urlUnknown  :'',        // Url to redirect 404 to.
         useridPass  :'',        // USER:PASS for web GUI.
         vueConvert  :false,     // Util to convert file .vue files to .js, output in -rootdir
         wsdebug     :0,         // Debug option for websockets.
@@ -61,7 +62,7 @@ function Websrv(args:string|array, conf:object=void)
     function DoExit()   // Notify all going down, then exit.
     {
         if (self.ignoreExit) return;
-        WsSend(-1, 'exit');
+        WsSend(-1, 'exit', {});
         setTimeout(function () {self.done = 1; }, 1000); 
     }
 
@@ -151,9 +152,9 @@ function Websrv(args:string|array, conf:object=void)
             var ret = self.onRecv(ws, id, dat);
             if (ret) {
                 if (typeof(ret) !== 'array' )
-                    return WsSend(id, dat.cmd, ret);
+                    return WsSend(id, dat.cmd, {data:ret});
                 if (ret.length !== 2) throw('array size != 2: '+ret.toString());
-                WsSend(id, ret[0], ret[1]);
+                WsSend(id, ret[0], {data:ret[1]});
             }
             return;
         }
@@ -165,7 +166,7 @@ function Websrv(args:string|array, conf:object=void)
                 case 'init':
                     msg = InitData(id);
                     LogTrace("MSG:", msg);
-                    WsSend(id, 'init', msg);
+                    WsSend(id, 'init', {data:msg});
                     break;
                 case 'run':
                     var app = dat.data;
@@ -183,7 +184,7 @@ function Websrv(args:string|array, conf:object=void)
                 default: LogWarn("unknown cmd:", dat.cmd); break;
             }
         } catch (e) {
-          LogWarn("ERROR:",e);
+          LogWarn("ERROR:",e,data);
         }
         LogTrace("Done");
     }
@@ -449,6 +450,7 @@ function Websrv(args:string|array, conf:object=void)
             port:self.port,
             rootdir:self.rootdir,
             urlPrefix:self.urlPrefix,
+            urlUnknown:self.urlUnknown,
             sslCert:self.sslcert,
             sslKey:self.sslkey,
             ssl:self.ssl,
@@ -517,7 +519,7 @@ function Websrv(args:string|array, conf:object=void)
         if (self.timeout)
             setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
         while (self.done == 0 && Event.update(100) ) ;
-        delete self.ws;
+        //delete self.ws;
     }
     
     if (self.srcFile !== '')

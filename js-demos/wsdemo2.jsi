@@ -4,10 +4,10 @@ require('WebSocket', '2');
 
 function wsdemo2(args:array|string=void, conf:object=void) {
 
-    var self = { };
+    var self = { ws:null };
     var options = { // Demo for exercising Websrv. Called with arg 1-6
         noexit:false,    // Ignore exit request in websocket demo.
-        timeout:5000    // Shutdown for non-WebSocket demos.
+        timeout:30000    // Shutdown for non-WebSocket demos.
     };
     
     moduleOpts(options, self, conf);

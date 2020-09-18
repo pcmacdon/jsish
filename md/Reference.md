@@ -719,7 +719,7 @@ Commands for accessing Objects.
 |Object|(val:object&#124;function&#124;null=void):object |Object constructor.|
 |assign|(obj:object,...):object |Return arg1 object with assigned values.|
 |create|(proto:null&#124;object, properties:object=void):object |Create a new object with prototype object and properties.|
-|freeze|(obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true):void |Freeze/unfreeze an object with optionally.|
+|freeze|(obj:object, freeze:boolean&#124;null=true, modifyok:boolean=true, readcheck:boolean=true):object&#124;void |Freeze/unfreeze an object with optionally.|
 |getPrototypeOf|(name:object&#124;function):function&#124;object |Return prototype of an object.|
 |hasOwnProperty|(name:string):boolean |Returns a true if object has the specified property.|
 |is|(value1, value2):boolean |Tests if two values are equal.|
@@ -1043,7 +1043,7 @@ Builtin system commands. All methods are exported as global.
 |noOp|() |A No-Op. A zero overhead command call that is useful for debugging.|
 |parseFloat|(val):number |Convert string to a double.|
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
-|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined=void):object |Parse module options: similar to moduleOpts but args are different.|
+|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined=void):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
 |provide|([options](#options-systemprovide):object&#124;function=void):void |Provide a package for use with require.. Default is the file tail-rootname|
 |puts|(val, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
@@ -1338,6 +1338,7 @@ Commands for managing WebSocket server/client connections.
 |udata|*OBJ*|User data.||
 |urlPrefix|*STRKEY*|Prefix in url to strip from path; for reverse proxy..||
 |urlRedirect|*STRKEY*|Redirect when no url or /, and adds cookie sessionJsi..||
+|urlUnknown|*STRKEY*|Redirect for unknown page or 404..||
 |useridPass|*STRKEY*|The USERID:PASSWORD to use for basic authentication.||
 |version|*OBJ*|WebSocket version info.|readOnly|
 ### Options "WebSocket.idconf"
@@ -1434,3 +1435,4 @@ Console input and output to stderr.
 |---|---|---|---|
 |mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
+

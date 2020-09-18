@@ -525,7 +525,7 @@ struct Jsi_Obj {
     uint isNoOp:1;
     uint isBlob:1;
     uint freeze:1;
-    uint freezeModifyOk:1;
+    uint freezeNoModify:1;
     uint freezeReadCheck:1;
     uint unused2:13;
     union {                     /* switched on by value of "ot" */
@@ -566,7 +566,7 @@ struct Jsi_Value {
             uint dontenum:1;  /* Dont enumerate. */
             uint dontdel:1;
             uint innershared:1; /* All above used only for objkeys. */
-            uint isarrlist:1;
+            uint frozen:1;
             uint isstrkey:1;    /* Key string registered in interp->strKeyTbl (do not free) */
             uint local:1;       // Used to detect a function creating a global var.
             uint lookupfailed:1;// Indicates failed lookup, string is stored in lookupFail below.
@@ -1502,6 +1502,7 @@ extern void jsi_ToHexStr(const uchar *indata, int dlen, char *out);
 extern bool jsi_StrIsBalanced(char *str);
 extern char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt);
 extern void jsi_DumpValue(Jsi_Interp *interp, Jsi_Value *arg);
+extern Jsi_RC jsi_ObjSetFlag(Jsi_Interp *interp, Jsi_Obj *obj, int flag, int on);
 
 #if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/

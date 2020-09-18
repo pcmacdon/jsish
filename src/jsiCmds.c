@@ -98,7 +98,7 @@ static Jsi_RC SysSourceCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     jsi_Pstate *ps = interp->ps;
     Jsi_RC rc = JSI_OK;
     int flags = 0;
-    int i, argc = 1;
+    int i = 0, argc = 1;
     SourceData data = {
         .trace = interp->debugOpts.includeTrace,
         .once = interp->debugOpts.includeOnce,
@@ -1702,7 +1702,7 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                 continue;
             }
             Jsi_DSSetLength(&oStr, 0);
-            Jsi_ValueGetDString(interp, v, &oStr, 1);
+            Jsi_ValueGetDString(interp, v, &oStr, JSI_OUTPUT_QUOTE);
             Jsi_DSAppend(&dStr, Jsi_DSValue(&oStr), NULL);
         }
     }
@@ -4085,7 +4085,7 @@ static Jsi_RC SysQuoteCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
 {
     Jsi_DString dStr = {};
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
-    const char *str = Jsi_ValueGetDString(interp, arg, &dStr, 1);
+    const char *str = Jsi_ValueGetDString(interp, arg, &dStr, JSI_OUTPUT_QUOTE);
     Jsi_ValueMakeStringDup(interp, ret, str);
     Jsi_DSFree(&dStr);
     return JSI_OK;
@@ -4605,7 +4605,7 @@ static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_DecrRefCount(interp, vpargs);
     if (rc == JSI_OK && !Jsi_ValueIsUndef(interp, *ret) && isMain && funcPtr && funcPtr->callflags.bits.isdiscard) {
         Jsi_DSSetLength(&dStr, 0);
-        cp = Jsi_ValueGetDString(interp, *ret, &dStr, 0);
+        cp = Jsi_ValueGetDString(interp, *ret, &dStr, JSI_OUTPUT_QUOTE|JSI_OUTPUT_NEWLINES);
         if (cp && (!(cp=Jsi_Strrchr(cp, '\n')) || cp[1]))
             Jsi_DSAppend(&dStr, "\n", NULL);
         Jsi_Puts(interp, jsi_Stdout, Jsi_DSValue(&dStr), -1);
@@ -4744,7 +4744,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                     help = jsi_FindHelpStr(fstr, key, &hStr);
                     int vlen, klen = Jsi_Strlen(key);
                     Jsi_DSSetLength(&vStr, 0);
-                    vstr = Jsi_ValueGetDString(interp, v, &vStr, 1);
+                    vstr = Jsi_ValueGetDString(interp, v, &vStr, JSI_OUTPUT_QUOTE);
                     vlen = Jsi_Strlen(vstr);
                     if (!isLong)
                         Jsi_DSPrintf(&dStr, " -%s", key);
@@ -4829,7 +4829,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     if (rc == JSI_OK && !nofreeze) {
         Jsi_Obj *obj = v1->d.obj;
         obj->freeze = 1;
-        obj->freezeModifyOk = 1;
+        obj->freezeNoModify = 0;
         obj->freezeReadCheck = 1;
     }
     return rc;
@@ -5005,9 +5005,9 @@ static Jsi_CmdSpec sysCmds[] = {
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
-    { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: similar to moduleOpts but args are different", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object|function=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
+    { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },

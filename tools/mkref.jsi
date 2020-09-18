@@ -320,7 +320,7 @@ function mkref(args:array|string, opts:object) {
         }
         return repre + rlnks + index + rv + "<p>" + resfx;
     }
-    return rv;
+    puts(rv);
 }
 
 runModule(mkref);

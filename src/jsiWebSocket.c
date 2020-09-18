@@ -136,7 +136,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     int flags;
     jsi_wsStatData stats;
     char *iface;
-    const char* urlPrefix, *urlRedirect;
+    const char* urlPrefix, *urlRedirect, *urlUnknown;
     const char *localhostName;
     const char *clientName;
     const char *clientIP;
@@ -367,6 +367,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(OBJ,    jsi_wsCmdObj, udata,      .help="User data"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlPrefix,  .help="Prefix in url to strip from path; for reverse proxy."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlRedirect,.help="Redirect when no url or /, and adds cookie sessionJsi."),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, urlUnknown, .help="Redirect for unknown page or 404."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, useridPass, .help="The USERID:PASSWORD to use for basic authentication"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, version,    .help="WebSocket version info", jsi_IIRO),
     JSI_OPT_END(jsi_wsCmdObj, .help="Websocket options")
@@ -1302,7 +1303,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
 
     int uplen=(cmdPtr->urlPrefix?Jsi_Strlen(cmdPtr->urlPrefix):0);
 
-    if (inPtr && cmdPtr->urlPrefix && !Jsi_Strncmp(inPtr, cmdPtr->urlPrefix, uplen))
+    if (inPtr && uplen && !Jsi_Strncmp(inPtr, cmdPtr->urlPrefix, uplen))
         inPtr += uplen;
 
     if (cmdPtr->redirDisable) {// Try to defray redirect loops.
@@ -1616,6 +1617,10 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     if ((native && Jsi_InterpSafe(interp) && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_READ) != JSI_OK) ||
         (Jsi_Stat(interp, fname, &jsb) || jsb.st_size<=0)) {
 nofile:
+        if (cmdPtr->urlUnknown && cmdPtr->urlUnknown[0]) {
+            rc = lws_http_redirect(wsi, 301, (uchar*)cmdPtr->urlUnknown, Jsi_Strlen(cmdPtr->urlUnknown), &p, end);
+            goto done;
+        }
         if (cmdPtr->onUnknown || pss->onUnknown) {
             Jsi_Value *uk = (pss->onUnknown?pss->onUnknown:cmdPtr->onUnknown);
             Jsi_RC jrc = jsi_wsGetCmd(interp, cmdPtr, pss, wsi, inPtr, uk, NULL);
@@ -3158,7 +3163,7 @@ bail:
         goto bail;
     }
     const char *up = cmdPtr->urlPrefix, *ur = cmdPtr->urlRedirect;
-    if (up && ur && Jsi_Strncmp(ur, up, Jsi_Strlen(up))) {
+    if (up && ur && up[0] && ur[0] && Jsi_Strncmp(ur, up, Jsi_Strlen(up))) {
         Jsi_LogErrorExt("urlRedirect does not start with urlPrefix");
         goto bail;
     }

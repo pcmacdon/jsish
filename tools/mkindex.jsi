@@ -18,7 +18,7 @@ function mkindex(args:array|string, opts:object) {
             rv += '<li><a href="'+i+'">'+i+'</a></li>\n';
         rv += '</ul>\n';
     }
-    return rv;
+    puts(rv);
 }
 
 runModule(mkindex);

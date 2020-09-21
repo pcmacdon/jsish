@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   1
-#define JSI_VERSION_RELEASE 3
+#define JSI_VERSION_RELEASE 4
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -1496,7 +1496,7 @@ JSI_EXTERN void* Jsi_DbHandle(Jsi_Interp *interp, Jsi_Db* db); /*STUB = 399*/
 /* -- */
 
 
-/* --CData-- */
+/* --C-Extension-- */
 
 #define  JSI_CDATA_OPTION_CHANGED(name) \
         (vrPtr->spec && Jsi_OptionsChanged(interp, vrPtr->spec, #name, NULL))

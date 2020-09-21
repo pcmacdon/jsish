@@ -361,11 +361,11 @@ function DebugUI(fileargs:array, conf:object=void)
             return;
         switch (cmd) {
             case 'bp':
-                var blst = self.interp.eval('Debugger.info()');
+                var blst = self.interp.eval('Util.dbgInfo()');
                 if ((!blst) || blst.length<=0)
                     return;
                 for (var i in blst.sort()) {
-                    var bp = self.interp.eval('Debugger.info('+blst[i]+')');
+                    var bp = self.interp.eval('Util.dbgInfo('+blst[i]+')');
                     str = format("#%-5d: enabled=%s hits=%d, ", bp.id, bp.enabled?"true, ":"false,", bp.hits);
                     switch (bp.type) {
                         case 'line': str += format("file=%s:%d", bp.file, bp.line); break;
@@ -395,10 +395,10 @@ function DebugUI(fileargs:array, conf:object=void)
     }
 
     function webBPUpdate() {
-        var bps = [], blst = self.interp.eval('Debugger.info()');
+        var bps = [], blst = self.interp.eval('Util.dbgIfo()');
         if (blst && blst.length) {
             for (var i in blst.sort()) {
-                var bp = self.interp.eval('Debugger.info('+blst[i]+')');
+                var bp = self.interp.eval('Util.dbgInfo('+blst[i]+')');
                 bps.push(bp);
             }
         }
@@ -441,7 +441,7 @@ function DebugUI(fileargs:array, conf:object=void)
         //printf("BP: %s\n", bp);
         var done = false;
         try {
-            var b = self.interp.eval('Debugger.add("'+bp+'", '+(temp?"true":"false")+')');
+            var b = self.interp.eval('Util.dbgAdd("'+bp+'", '+(temp?"true":"false")+')');
             wputs((temp?"temporary ":"") +"breakpoint #"+b+" set: "+bp);
             done = true;
         } catch(e) {
@@ -457,9 +457,9 @@ function DebugUI(fileargs:array, conf:object=void)
     function cmdDelete(lst:array, line:number, func:string, file:string) {
         var bp, num, val = lst[1];
         if (lst.length == 1) {
-            var bps = self.interp.eval('Debugger.info()');
+            var bps = self.interp.eval('Util.dbgInfo()');
             for (var i in bps) {
-                self.interp.eval('Debugger.remove('+bps[i]+')');
+                self.interp.eval('Util.dbgRemove('+bps[i]+')');
             }
         } else {
             if (val === undefined || (num=parseIntN(val))<=0) {
@@ -467,7 +467,7 @@ function DebugUI(fileargs:array, conf:object=void)
                 return;
             }
             try {
-                self.interp.eval('Debugger.remove('+num+')');
+                self.interp.eval('Util.dbgRemove('+num+')');
             } catch(e) {
                 eputs("remove failed: "+e);
             }
@@ -478,15 +478,15 @@ function DebugUI(fileargs:array, conf:object=void)
     function cmdEnable(lst:array, on:boolean) {
         var bp, num, val = lst[1];
         if (lst.length == 1) {
-            var bps = self.interp.eval('Debugger.info()');
+            var bps = self.interp.eval('Util.dbgInfo()');
             for (var i in bps) {
-                self.interp.eval('Debugger.enable('+bps[i]+','+on+')');
+                self.interp.eval('Util.dbgEnable('+bps[i]+','+on+')');
             }
         } else {
             if (val === undefined || (num=parseIntN(val))<=0)
                 return eputs("bad index: "+val);
             try {
-                self.interp.eval('Debugger.enable('+num+','+on+')');
+                self.interp.eval('Util.dbgEnable('+num+','+on+')');
             } catch(e) {
                 return eputs("enable failed: "+e);
             }

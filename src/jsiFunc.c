@@ -620,8 +620,8 @@ void jsi_InitLocalVar(Jsi_Interp *interp, Jsi_Value *arguments, Jsi_Func *who)
                 Jsi_Value *v __attribute__((unused));
                 Jsi_Value *kPtr = &key; // Note: a string key so no reset needed.
                 Jsi_ValueMakeStringKey(interp, &kPtr, argkey);
-                v = jsi_ValueObjKeyAssign(interp, arguments, kPtr, NULL, JSI_OM_DONTENUM);
-                jsi_ValueDebugLabel(v, "locals", who->name);
+                jsi_ValueObjKeyAssign(interp, arguments, kPtr, NULL, JSI_OM_DONTENUM);
+                //jsi_ValueDebugLabel(v, "locals", who->name);
             }
         }
     }

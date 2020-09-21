@@ -1009,7 +1009,7 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
     
     if (!kstr)
         kstr = Jsi_ValueToString(interp, keyval, NULL);
-    if (obj && obj->setters) {
+    if (obj && obj->setters && value) {
         Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, kstr, 0);
         if (v) {
             Jsi_Value *vpargs, *vargs[2], *retStr = Jsi_ValueNew1(interp);

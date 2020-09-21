@@ -804,7 +804,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Archive');", JSI_EVAL_ISMAIN);
                 break;
             case 'c':
-                rc = Jsi_EvalString(interp, "puts(moduleRun('Cdata'));", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "puts(moduleRun('Cextn'));", JSI_EVAL_ISMAIN);
                 break;
             case 'd':
                 interp->debugOpts.isDebugger = 1;

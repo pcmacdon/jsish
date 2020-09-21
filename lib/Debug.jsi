@@ -181,9 +181,9 @@ function Debug(fileargs:array, conf:object=void):number {
             return;
         switch (cmd) {
             case 'breakpoints':
-                var blst = self.interp.eval('Debugger.info()');
+                var blst = self.interp.eval('Util.dbgInfo()');
                 for (var i in blst.sort()) {
-                    var bp = self.interp.eval('Debugger.info('+blst[i]+')');
+                    var bp = self.interp.eval('Util.dbgInfo('+blst[i]+')');
                     str = format("#%-5d: enabled=%s hits=%d, ", bp.id, bp.enabled?"true, ":"false,", bp.hits);
                     switch (bp.type) {
                         case 'line': str += format("file=%s:%d", bp.file, bp.line); break;
@@ -248,7 +248,7 @@ function Debug(fileargs:array, conf:object=void):number {
         }
         //printf("BP: %s\n", bp);
         try {
-            var b = self.interp.eval('Debugger.add("'+bp+'", '+(temp?"true":"false")+')');
+            var b = self.interp.eval('Util.dbgAdd("'+bp+'", '+(temp?"true":"false")+')');
             puts((temp?"temporary ":"") +"breakpoint #"+b+" set: "+bp);
         } catch(e) {
             puts("add failed: "+e);
@@ -258,9 +258,9 @@ function Debug(fileargs:array, conf:object=void):number {
     function cmdDelete(lst:array, line:number, func:string, file:string) {
         var bp, num, val = lst[1];
         if (lst.length == 1) {
-            var bps = self.interp.eval('Debugger.info()');
+            var bps = self.interp.eval('Util.dbgInfo()');
             for (var i in bps) {
-                self.interp.eval('Debugger.remove('+bps[i]+')');
+                self.interp.eval('Util.dbgRemove('+bps[i]+')');
             }
             return;
         }
@@ -269,7 +269,7 @@ function Debug(fileargs:array, conf:object=void):number {
             return;
         }
         try {
-            self.interp.eval('Debugger.remove('+num+')');
+            self.interp.eval('Util.dbgRemove('+num+')');
         } catch(e) {
             eputs("remove failed: "+e);
         }
@@ -278,16 +278,16 @@ function Debug(fileargs:array, conf:object=void):number {
     function cmdEnable(lst:array, on:boolean) {
         var bp, num, val = lst[1];
         if (lst.length == 1) {
-            var bps = self.interp.eval('Debugger.info()');
+            var bps = self.interp.eval('Util.dbgInfo()');
             for (var i in bps) {
-                self.interp.eval('Debugger.enable('+bps[i]+','+on+')');
+                self.interp.eval('Util.dbgEnable('+bps[i]+','+on+')');
             }
             return;
         }
         if (val === undefined || (num=parseIntN(val))<=0)
             return eputs("bad index: "+val);
         try {
-            self.interp.eval('Debugger.enable('+num+','+on+')');
+            self.interp.eval('Util.dbgEnable('+num+','+on+')');
         } catch(e) {
             eputs("enable failed: "+e);
         }

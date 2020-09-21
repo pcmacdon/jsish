@@ -57,12 +57,12 @@ test: all
 	./cmds
 	echo 'exit(0);' | ./dbdemo -benchmark
 	$(MAKE) -C stubs test
-	$(MAKE) -C cdata
+	$(MAKE) -C cextn
 
 clean:
 	rm -rf *.so *.o simple listdemo litedemo dbdemo cmds demo1 demo2 minimal minimalsh treedemo
 	$(MAKE) -C stubs clean
-	$(MAKE) -C cdata clean
+	$(MAKE) -C cextn clean
 
 cleanall:
 

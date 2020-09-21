@@ -4,7 +4,7 @@ require('Jsish');
 
 // A C-API generator for structs, enums, maps, and extensions.
 
-function Cdata(args:array, conf:object=void)
+function Cextn(args:array, conf:object=void)
 {
     
     var options = {         // The C-API preprocessor for structs and enums.
@@ -36,7 +36,7 @@ function Cdata(args:array, conf:object=void)
         Trace       :false, jscHeaderStr:'', parmFlags:'',
         objOptCmdStr:'', objCmdStr:'', selfSuffix:'',
     };
-    self.pkg = require('Cdata', 0);
+    self.pkg = require('Cextn', 0);
     self.version = self.pkg.version;
     self.verStr = self.pkg.verStr;
     var Ex = {asize:0, offs:1, size:2, sig:3};
@@ -1716,7 +1716,7 @@ int main(int argc, char *argv[])
     return retval;
 }
 
-provide(Cdata, "2", {logmask:'debug,trace'});
+provide(Cextn, "2", {logmask:'debug,trace'});
 if (isMain())
-    puts(moduleRun(Cdata));
+    puts(moduleRun(Cextn));
 

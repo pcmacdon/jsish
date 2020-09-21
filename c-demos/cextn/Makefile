@@ -1,6 +1,6 @@
 JSIROOT=../..
 OTHER=
-CSTRFN=../../lib/Cdata.jsi 
+CSTRFN=../../lib/Cextn.jsi 
 JSISH=../../jsish
 NOLINE=false
 #CSTRPP=$(JSISH) $(CSTRFN) 

@@ -4901,16 +4901,6 @@ static Jsi_CmdSpec eventCmds[] = {
 };
 #endif
 
-#ifndef JSI_OMIT_DEBUG
-static Jsi_CmdSpec debugCmds[] = {
-    { "add",        DebugAddCmd,    1,  2, "val:string|number, temp:boolean=false", .help="Add a breakpoint for line, file:line or func", .retType=(uint)JSI_TT_NUMBER },
-    { "remove",     DebugRemoveCmd, 1,  1, "id:number", .help="Remove breakpoint", .retType=(uint)JSI_TT_VOID },
-    { "enable",     DebugEnableCmd, 2,  2, "id:number, on:boolean", .help="Enable/disable breakpoint", .retType=(uint)JSI_TT_VOID },
-    { "info",       DebugInfoCmd,   0,  1, "id:number=void", .help="Return info about one breakpoint, or list of bp numbers", .retType=(uint)JSI_TT_OBJECT|JSI_TT_ARRAY },
-    { NULL, 0,0,0,0,  .help="Debugger breakpoint management" }
-};
-#endif
-
 static Jsi_CmdSpec infoCmds[] = {
     { "argv0",      InfoArgv0Cmd,       0,  0, "", .help="Return initial start script file name", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
     { "cmds",       InfoCmdsCmd,        0,  2, "val:string|regexp='*', options:object=void", .help="Return details or list of matching commands", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT, .flags=0, .info=0, .opts=InfoCmdsOptions },
@@ -4992,6 +4982,12 @@ static Jsi_RC SysLogErrorCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
 static Jsi_CmdSpec utilCmds[] = {
 #ifndef JSI_OMIT_BASE64
     { "argArray",   SysArgArrayCmd,  1,  1, "arg:any|undefined", .help="Coerces non-null to an array, if necessary", .retType=(uint)JSI_TT_ARRAY|JSI_TT_NULL },
+#ifndef JSI_OMIT_DEBUG
+    { "dbgAdd",     DebugAddCmd,    1,  2, "val:string|number, temp:boolean=false", .help="Debugger add a breakpoint for line, file:line or func", .retType=(uint)JSI_TT_NUMBER },
+    { "dbgRemove",  DebugRemoveCmd, 1,  1, "id:number", .help="Debugger remove breakpoint", .retType=(uint)JSI_TT_VOID },
+    { "dbgEnable",  DebugEnableCmd, 2,  2, "id:number, on:boolean", .help="Debugger enable/disable breakpoint", .retType=(uint)JSI_TT_VOID },
+    { "dbgInfo",    DebugInfoCmd,   0,  1, "id:number=void", .help="Debugger return info about one breakpoint, or list of bp numbers", .retType=(uint)JSI_TT_OBJECT|JSI_TT_ARRAY },
+#endif
     { "complete",   SysCompleteCmd,  1,  1, "val:string",.help="Return true if string is complete command with balanced braces, etc", .retType=(uint)JSI_TT_BOOLEAN },
     { "base64",     SysBase64Cmd,    1,  2, "val:string, decode:boolean=false",.help="Base64 encode/decode a string", .retType=(uint)JSI_TT_STRING },
     { "hexStr",     SysHexStrCmd,    1,  2, "val:string, decode:boolean=false",.help="Hex encode/decode a string", .retType=(uint)JSI_TT_STRING },
@@ -5081,9 +5077,6 @@ Jsi_RC jsi_InitCmds(Jsi_Interp *interp, int release)
     Jsi_CommandCreateSpecs(interp, "Util",   utilCmds,   NULL, 0);
 #ifndef JSI_OMIT_EVENT
     Jsi_CommandCreateSpecs(interp, "Event",  eventCmds,  NULL, 0);
-#endif
-#ifndef JSI_OMIT_DEBUG
-    Jsi_CommandCreateSpecs(interp, "Debugger",  debugCmds,  NULL, 0);
 #endif
     return JSI_OK;
 }

@@ -89,22 +89,6 @@ Commands for accessing Channel objects for file IO.
 |write|(data):number |Write data to file.|
 
 
-## Debugger
-
-
-
-Debugger breakpoint management.
-
-
-### Methods
-|Method|Function Argument Types|Description|
-|---|---|---|
-|add|(val:string&#124;number, temp:boolean=false):number |Add a breakpoint for line, file:line or func.|
-|enable|(id:number, on:boolean):void |Enable/disable breakpoint.|
-|info|(id:number=void):array&#124;object |Return info about one breakpoint, or list of bp numbers.|
-|remove|(id:number):void |Remove breakpoint.|
-
-
 ## Event
 
 
@@ -1006,6 +990,10 @@ Utilities commands.
 |base64|(val:string, decode:boolean=false):string |Base64 encode/decode a string.|
 |complete|(val:string):boolean |Return true if string is complete command with balanced braces, etc.|
 |crc32|(val:string, crcSeed=0):number |Calculate 32-bit CRC.|
+|dbgAdd|(val:string&#124;number, temp:boolean=false):number |Debugger add a breakpoint for line, file:line or func.|
+|dbgEnable|(id:number, on:boolean):void |Debugger enable/disable breakpoint.|
+|dbgInfo|(id:number=void):array&#124;object |Debugger return info about one breakpoint, or list of bp numbers.|
+|dbgRemove|(id:number):void |Debugger remove breakpoint.|
 |decrypt|(val:string, key:string):string |Decrypt data using BTEA encryption. Keys that are not 16 bytes use the MD5 hash of the key.|
 |encrypt|(val:string, key:string):string |Encrypt data using BTEA encryption. Keys that are not 16 bytes use the MD5 hash of the key.|
 |fromCharCode|(code:number):string |Return char with given character code.|

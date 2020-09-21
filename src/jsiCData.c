@@ -17,11 +17,6 @@
 #include <stdint.h>
 #include <sys/time.h>
 
-#define UdcGet(udf, _this, funcPtr) \
-   CDataObj *udf = (typeof(udf))Jsi_UserObjGetData(interp, _this, funcPtr); \
-    if (!udf) \
-        return Jsi_LogError("CData.%s called with non-CData object", funcPtr->cmdSpec->name);
-
 enum { jsi_CTYP_DYN_MEMORY=(1LL<<32), jsi_CTYP_STRUCT=(1LL<<33), jsi_CTYP_ENUM=(1LL<<34) };
 
 typedef struct {

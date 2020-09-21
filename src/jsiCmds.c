@@ -2453,29 +2453,39 @@ dumpfunc:
     if (func->retType)
         Jsi_ObjInsert(interp, nobj, "retType", Jsi_ValueNewStringKey(interp, jsi_typeName(interp, func->retType, &dStr)), 0);
     Jsi_DSFree(&dStr);
+    /*
     if (func->scriptData) {
         lval = Jsi_ValueNewStringKey(interp, func->scriptData);
         Jsi_ObjInsert(interp, nobj, "script", lval, 0);
         const char *ftype = (func->scriptData?"eval":"script");
-        if (!func->opcodes) {
-            ftype = (func->callback == jsi_AliasInvoke ? "alias" : "builtin");
-        } else {
-            int l1 = func->opcodes->codes->Line;
-            int l2 = func->bodyline.last_line;
-            if (l1>l2) { int lt = l1; l1 = l2; l2 = lt; }
-            lval = Jsi_ValueNewNumber(interp, (Jsi_Number)l1);
-            Jsi_ObjInsert(interp, nobj, "lineStart", lval, 0);
-            lval = Jsi_ValueNewNumber(interp, (Jsi_Number)l2);
-            Jsi_ObjInsert(interp, nobj, "lineEnd", lval, 0);
-            int len;
-            const char *cp = jsi_FuncGetCode(interp, func, &len);
-            if (cp) {
-                lval = Jsi_ValueNewBlob(interp, (uchar*)cp, len);
-                Jsi_ObjInsert(interp, nobj, "code", lval, 0);
-            }
+        } */
+    const char *ftype = "script";
+    if (!func->opcodes || func->opcodes->code_len<=0) {
+        ftype = (func->callback == jsi_AliasInvoke ? "alias" : "builtin");
+    } else {
+        int l1 = func->opcodes->codes->Line;
+        int l2 = func->bodyline.last_line;
+        if (l1>l2) { int lt = l1; l1 = l2; l2 = lt; }
+        lval = Jsi_ValueNewNumber(interp, (Jsi_Number)l1);
+        Jsi_ObjInsert(interp, nobj, "lineStart", lval, 0);
+        lval = Jsi_ValueNewNumber(interp, (Jsi_Number)l2);
+        Jsi_ObjInsert(interp, nobj, "lineEnd", lval, 0);
+        Jsi_OpCodes *s = func->opcodes;
+        if (s->code_len >= 2 && s->codes[0].op == OP_PUSHVSTR && s->codes[1].op == OP_POP) {
+            Jsi_String *stp = (Jsi_String*)func->opcodes->codes[0].data;
+            lval = Jsi_ValueNewBlob(interp, (uchar*)stp->str, stp->len);
+            Jsi_ObjInsert(interp, nobj, "userStr", lval, 0);
+            
         }
-        Jsi_ObjInsert(interp, nobj, "ftype", Jsi_ValueNewStringKey(interp, ftype), 0);
+        /*int len;
+        const char *cp = jsi_FuncGetCode(interp, func, &len);
+        if (cp) {
+            lval = Jsi_ValueNewBlob(interp, (uchar*)cp, len);
+            Jsi_ObjInsert(interp, nobj, "code", lval, 0);
+        }*/
     }
+    Jsi_ObjInsert(interp, nobj, "ftype", Jsi_ValueNewStringKey(interp, ftype), 0);
+
     return JSI_OK;
 }
 dumpvar:
@@ -3484,6 +3494,27 @@ static Jsi_RC InfoCmdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     return InfoCmdsCmdSub(interp, arg, _this, ret, funcPtr, data.constructor, 1, nobj, ff);
 }
 
+static Jsi_RC InfoObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
+    if (!arg || arg->vt != JSI_VT_OBJECT)
+        return Jsi_LogError("Expected object");
+    Jsi_Obj *obj = arg->d.obj;
+    Jsi_JSONParseFmt(interp, ret, "{objType:\"%s\"}",  jsi_ObjectTypeName(interp, obj->ot));
+    Jsi_Obj *nobj = (*ret)->d.obj;
+    if (obj->setters) {
+        Jsi_Value *fval = Jsi_ValueNew1(interp);
+        Jsi_HashKeysDump(interp, obj->setters, &fval, 0);
+        Jsi_ObjInsert(interp, nobj, "setters", fval, 0);
+    }
+    if (obj->getters) {
+        Jsi_Value *fval = Jsi_ValueNew1(interp);
+        Jsi_HashKeysDump(interp, obj->getters, &fval, 0);
+        Jsi_ObjInsert(interp, nobj, "getters", fval, 0);
+    }
+    return JSI_OK;
+}
 
 static Jsi_RC InfoMethodsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
@@ -4901,6 +4932,7 @@ static Jsi_CmdSpec infoCmds[] = {
     { "lookup",     InfoLookupCmd,      1,  1, "name:string", .help="Given string name, lookup and return value, eg: function", .retType=(uint)JSI_TT_ANY },
     { "methods",    InfoMethodsCmd,     1,  1, "val:string|regexp", .help="Return functions and commands", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT },
     { "named",      InfoNamedCmd,       0,  1, "name:string=void", .help="Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object", .retType=(uint)JSI_TT_ARRAY|JSI_TT_USEROBJ },
+    { "obj",        InfoObjCmd,         1,  1, "val:object", .help="Return details about object", .retType=(uint)JSI_TT_OBJECT },
     { "options",    InfoOptionsCmd,     0,  1, "ctype:boolean=false", .help="Return Option type name, or with true the C type", .retType=(uint)JSI_TT_ARRAY },
     { "package",    InfoPackageCmd,     1,  1, "pkgName:string", .help="Return info about provided package if exists, else null", .retType=(uint)JSI_TT_OBJECT|JSI_TT_NULL },
     { "platform",   InfoPlatformCmd,    0,  0, "", .help="N/A. Returns general platform information for JSI", .retType=(uint)JSI_TT_OBJECT  },
@@ -5005,7 +5037,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
-    { "parseOpts",  SysParseOptsCmd, 2,  3, "self:object|userobj, options:object, conf:object|null|undefined=void", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "parseOpts",  SysParseOptsCmd, 3,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },

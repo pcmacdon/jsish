@@ -127,8 +127,8 @@ function Cdata(args:array, conf:object=void)
         if (!File.readable(fnc))
             LogWarn('file not found: '+fnc);
         var s = '-g -Og -O0 -Wall -fPIC -DJSI__SQLITE=1'
-            + ' -DJSI__READLINE=1 -fno-diagnostics-show-caret -Wc++-compat'
-            + ' -Wwrite-strings -DJSI_CDATA_MAIN=1 -x c -rdynamic';
+            + ' -DJSI__READLINE=1 -fno-diagnostics-show-caret'
+            + ' -DJSI_CDATA_MAIN=1 -x c -rdynamic';
         if (args.length<=1 && self.memDebug)
             s += ' -DJSI__MEMDEBUG=1';
 
@@ -137,7 +137,7 @@ function Cdata(args:array, conf:object=void)
         if (!File.readable('jsi.c') && !File.readable(pDir+'/jsi.c'))
             LogWarn('can not locate jsi.c');
         var wDir = pDir + '/websocket';
-        s += ' -I'+srcDir;
+        s += ' -I'+srcDir+ ' -I'+srcDir+'/..';
         var isWS = File.readable(wDir+'/build/unix/libwebsockets.a');
         if (isWS)
             s += format(' -DJSI__WEBSOCKET=1 -I%s/src/lib  -I%s/src/build -I%s/unix -I%s/build/unix ', wDir, wDir, wDir, wDir);
@@ -245,6 +245,7 @@ function Cdata(args:array, conf:object=void)
                     evIt.help = f.label;
                 if (f.flags)
                     evIt.flags = f.flags;
+                f.value = parseInt(f.value);
                 if (f.value === 0)
                     self.enumzero[name] = 1;
                 f.value = format('0x%x', f.value);
@@ -907,6 +908,7 @@ function Cdata(args:array, conf:object=void)
             throw('defined "function ~" without constructor');
         ffpre += ind+'{ NULL, .help="'+def.label+'" }\n  };\n';
         self.cmddef += '\n' + ifpre + ffpre;
+        self.pre += '#define JSI_EXT_OPTS cmdPtr->popts \n';
         if (!isObj)
             self.pre += '\n#define JSI_CDATA_HAS_COMMANDS\n';
 
@@ -957,7 +959,7 @@ function Cdata(args:array, conf:object=void)
 #include "jsi.h"
 #else
 #if (!defined(CDATA_MULTI_INC) || defined(CDATA_JSI_C_MAIN_Demo))
-#include "jsi.c"
+#include "jsish.c"
 #else
 #include "jsi.h"
 #define JSI_CDATA_SHARED 2
@@ -971,7 +973,6 @@ function Cdata(args:array, conf:object=void)
         var scnm = self.icode[name+'_'];
         if (!scnm) scnm = '';
         self.out = self.preface + ' ' + self.verStr + ' from: '+self.infile+'\n\n'
-            + '#define JSI_EXT_OPTS cmdPtr->popts \n'
             + self.jscHeaderStr.replace(/Demo/g, name) + self.outcode
         /*+ "#ifndef _JSI_CDEFS_"+name+"_H_\n"
         + "#define _JSI_CDEFS_"+name+"_H_\n\n"
@@ -1003,7 +1004,7 @@ function Cdata(args:array, conf:object=void)
 
         
         + "\n\nstatic const Jsi_CData_Static* jsi_c_init_"+name+"(Jsi_Interp *interp) {\n"
-        + '  if (interp && (Jsi_PkgRequire(interp, "Cdata", 0)<0 || \n'
+        + '  if (interp && (Jsi_PkgRequire(interp, "CData", 0)<0 || \n'
         + "      JSI_OK != Jsi_CDataRegister(interp, &CS_STATICS_"+name+"))) return NULL;\n\n"
 
         + self.cmddefs 
@@ -1716,5 +1717,6 @@ int main(int argc, char *argv[])
 }
 
 provide(Cdata, "2", {logmask:'debug,trace'});
-moduleRun(Cdata);
+if (isMain())
+    puts(moduleRun(Cdata));
 

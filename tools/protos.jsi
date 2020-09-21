@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.1.1
+//JSI Command Prototypes: version 3.1.2
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -144,6 +144,7 @@ Info.prototype.locals = function(filter:boolean=void):object {};
 Info.prototype.lookup = function(name:string):any {};
 Info.prototype.methods = function(val:string|regexp):array|object {};
 Info.prototype.named = function(name:string=void):array|userobj {};
+Info.prototype.obj = function(val:object):object {};
 Info.prototype.options = function(ctype:boolean=false):array {};
 Info.prototype.package = function(pkgName:string):object|null {};
 Info.prototype.platform = function():object {};
@@ -315,9 +316,9 @@ System.prototype.moduleRun = function(cmd:string|null|function=void, conf:array=
 System.prototype.noOp = function():any {};
 System.prototype.parseFloat = function(val):number {};
 System.prototype.parseInt = function(val:any, base:number=10):number {};
-System.prototype.parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined=void):object {};
+System.prototype.parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined):object {};
 System.prototype.printf = function(format:string, ...):void {};
-System.prototype.provide = function(name:string|null|function=void, version:number|string=void, options:object|function=void):void {};
+System.prototype.provide = function(name:string|null|function=void, version:number|string=void, options:object=void):void {};
 System.prototype.puts = function(val, ...):void {};
 System.prototype.quote = function(val:string):string {};
 System.prototype.require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};
@@ -410,9 +411,9 @@ var moduleRun = function(cmd:string|null|function=void, conf:array=undefined):an
 var noOp = function():any {};
 var parseFloat = function(val):number {};
 var parseInt = function(val:any, base:number=10):number {};
-var parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined=void):object {};
+var parseOpts = function(self:object|userobj, options:object, conf:object|null|undefined):object {};
 var printf = function(format:string, ...):void {};
-var provide = function(name:string|null|function=void, version:number|string=void, options:object|function=void):void {};
+var provide = function(name:string|null|function=void, version:number|string=void, options:object=void):void {};
 var puts = function(val, ...):void {};
 var quote = function(val:string):string {};
 var require = function(name:string=void, version:number|string=1, options:object=void):number|array|object {};

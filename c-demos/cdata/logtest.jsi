@@ -1,0 +1,15 @@
+#!/usr/local/bin/jsish --I unitTest=1 %s
+var c;
+;require('Car', 1, {log:'debug,trace'});
+;c = new Car();
+;c.shift(2);
+
+/*
+=!EXPECTSTART!=
+require('Car', 1, {log:'debug,trace'}) ==> 1
+c = new Car() ==> logtest.jsi:4: debug: Starting    (c-extn [Car])
+"#Car_1"
+c.shift(2) ==> logtest.jsi:5: trace: Carshift    (c-extn [Car])
+2
+=!EXPECTEND!=
+*/

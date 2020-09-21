@@ -1,0 +1,52 @@
+#!/usr/local/bin/jsish -c -test true %s
+// Bee uses a global data struct.
+if (File.exists('Bee.so'))
+    return load('Bee.so');
+
+CEnum('BeeType', 'Drone, Worker, Queen');
+CStruct('Bee', ` int max; int buzzCnt; int stingCnt; int pollinateCnt; BeeType type; STRING flower; `);
+var Bee_Data = new CData('Bee');
+
+let Bee = { // Extension to create Bee commands.
+
+    /*MyVars = {
+        Bee Bee_Data;
+    }; */
+
+
+    conf: function (options:object|string=void):any { // Function to configure Bee options
+        `C:
+        `;
+    },
+
+    buzz: function(n1:number):number { // Buzz
+        `C:
+        Bee_Data.buzzCnt += n1;
+        Jsi_Number n = Bee_Data.buzzCnt;
+        RETURN(n);
+        `;
+        return Bee_Data.buzzCnt += n1;
+    },
+
+    sting: function(victim:string, times:number):string { // Sting
+        `C:
+        char buf[BUFSIZ];
+        Bee_Data.stingCnt += times;
+        snprintf(buf, sizeof(buf), "stung %s %g times", victim, times);
+        RETURN(buf); //:string
+        `;
+        Bee_Data.stingCnt += times;
+    },
+
+    pollinate: function(flower:string='daisy', times:number=1):void { // Pollinate
+        `C:
+        Bee_Data.pollinateCnt += times;
+        Jsi_Stzcpy(Bee_Data.flower, flower);
+        RETURN(); //:undefined
+        `;
+        Bee_Data.pollinateCnt += times;
+    }
+    
+};
+
+puts(Bee.buzz(3));

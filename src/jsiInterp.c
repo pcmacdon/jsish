@@ -640,7 +640,7 @@ static Jsi_RC freeBindObjTbl(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr)
 }
 
 /* TODO: incr ref before add then just decr till done. */
-static Jsi_RC freeValueTbl(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr) {
+Jsi_RC jsi_freeValueEntry(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr) {
     Jsi_Value *val = (Jsi_Value *)ptr;
     if (!val) return JSI_OK;
     SIGASSERT(val,VALUE);
@@ -804,7 +804,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Archive');", JSI_EVAL_ISMAIN);
                 break;
             case 'c':
-                rc = Jsi_EvalString(interp, "moduleRun('Cdata');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "puts(moduleRun('Cdata'));", JSI_EVAL_ISMAIN);
                 break;
             case 'd':
                 interp->debugOpts.isDebugger = 1;
@@ -1196,7 +1196,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->funcObjTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, freeFuncObjTbl);
     interp->funcsTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, freeFuncsTbl);
     interp->bindTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, freeBindObjTbl);
-    interp->protoTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL/*freeValueTbl*/);
+    interp->protoTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL/*jsi_freeValueEntry*/);
     interp->regexpTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, regExpFree);
     interp->preserveTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, jsi_HashFree);
     interp->loadTbl = (parent?parent->loadTbl:Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_FreeOneLoadHandle));
@@ -1394,11 +1394,11 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
         interp->lexkeyTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
     else
         interp->lexkeyTbl = jsiIntData.mainInterp->lexkeyTbl;
-    interp->thisTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, freeValueTbl);
+    interp->thisTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, jsi_freeValueEntry);
     interp->userdataTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, freeUserdataTbl);
     interp->varTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
     interp->codeTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, freeCodeTbl);
-    interp->genValueTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD,freeValueTbl);
+    interp->genValueTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD,jsi_freeValueEntry);
     interp->genObjTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, freeGenObjTbl);
 #ifdef JSI_MEM_DEBUG
     interp->codesTbl = (interp == jsiIntData.mainInterp ? Jsi_HashNew(interp, JSI_KEYS_ONEWORD, NULL) : jsiIntData.mainInterp->codesTbl);

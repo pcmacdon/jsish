@@ -107,6 +107,8 @@ Jsi_RC jsi_InitLexer(Jsi_Interp *interp, int release)
         { "array", TYPEARRAY },
         { "null", TYPENULL },
         { "export", EXPORT },
+        { "set", OBJSET },
+        { "get", OBJGET },
         { "...", ELLIPSIS },
         { "debugger", __DEBUG }
     };

@@ -543,6 +543,7 @@ struct Jsi_Obj {
     Jsi_Tree *tree;                 /* Tree storage (should be union with array). */
     Jsi_Value *__proto__;           /* TODO: memory leaks when this is changed */
     struct Jsi_Obj *constructor;
+    Jsi_Hash *setters, *getters;
     // struct Jsi_Value *next, *prev; // TODO: GC for container objects.
     // int gc_ref; 
 #ifdef JSI_MEM_DEBUG
@@ -855,7 +856,6 @@ struct Jsi_Func {
     Jsi_CmdSpec *parentSpec;
     uint retType;  /* Type name: or of Jsi_otype*/
     int callCnt;
-    const char *scriptData;
     jsi_Pline bodyline; /* Body line info. */
     const char *bodyStr; // Non-builtin func script body.
     int endPos, startPos;
@@ -863,7 +863,9 @@ struct Jsi_Func {
     double subTime, allTime;
     Jsi_FuncObj *fobj;
     struct jsi_PkgInfo *pkg;
-    bool isArrow;
+    bool isArrow:1;
+    bool isSet:1;
+    bool isGet:1;
     jsi_FileInfo* filePtr;
 };
 
@@ -1493,6 +1495,7 @@ extern Jsi_Value *jsi_LoadFunction(Jsi_Interp *interp, const char *str, Jsi_Valu
 extern Jsi_RC jsi_SysExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr, bool restricted);
 extern void jsi_ObjInsertCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add);
+extern Jsi_RC jsi_freeValueEntry(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr);
 
 extern Jsi_FuncObj *jsi_FuncObjNew(Jsi_Interp *interp, Jsi_Func *func);
 extern void jsi_FuncObjFree(Jsi_FuncObj *fobj);

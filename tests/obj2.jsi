@@ -1,0 +1,37 @@
+var x = {
+   export:99,
+   _foo:0,
+   _bar:0,
+   set foo(val) {
+      x._foo=val;
+   },
+   get foo() {
+     return x._foo+1;
+   },
+   set bar(val) {
+      x._bar=val;
+   },
+   get bar() {
+     return x._bar-1;
+   },
+};
+;x.bar;
+;x.foo;
+x.foo=9;
+;x.foo;
+;x.export++;
+;x.export;
+;Info.vars(x);
+;Info.obj(x);
+
+/*
+=!EXPECTSTART!=
+x.bar ==> -1
+x.foo ==> 1
+x.foo ==> 10
+x.export++ ==> 99
+x.export ==> 100
+Info.vars(x) ==> [ "_bar", "_foo", "export" ]
+Info.obj(x) ==> { getters:[ "foo", "bar" ], objType:"object", setters:[ "foo", "bar" ] }
+=!EXPECTEND!=
+*/

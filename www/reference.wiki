@@ -393,6 +393,7 @@ Commands for inspecting internal state information in JSI.
 |lookup|(name:string) |Given string name, lookup and return value, eg: function.|
 |methods|(val:string&#124;regexp):array&#124;object |Return functions and commands.|
 |named|(name:string=void):array&#124;userobj |Returns command names for builtin Objects, eg: 'File', 'Interp', sub-Object names, or the named object.|
+|obj|(val:object):object |Return details about object.|
 |options|(ctype:boolean=false):array |Return Option type name, or with true the C type.|
 |package|(pkgName:string):object&#124;null |Return info about provided package if exists, else null.|
 |platform|():object |N/A. Returns general platform information for JSI.|
@@ -1043,9 +1044,9 @@ Builtin system commands. All methods are exported as global.
 |noOp|() |A No-Op. A zero overhead command call that is useful for debugging.|
 |parseFloat|(val):number |Convert string to a double.|
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
-|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined=void):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
+|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
-|provide|([options](#options-systemprovide):object&#124;function=void):void |Provide a package for use with require.. Default is the file tail-rootname|
+|provide|([options](#options-systemprovide):object=void):void |Provide a package for use with require.. Default is the file tail-rootname|
 |puts|(val, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
 |quote|(val:string):string |Return quoted string.|
 |require|([options](#options-systemrequire):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|

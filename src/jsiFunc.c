@@ -491,14 +491,16 @@ int jsi_FuncSigsMatch(jsi_Pstate *pstate, Jsi_Func *f1, Jsi_Func *f2)
 }
 
 /* TODO: if not in a file (an eval) save copy of body string from pstate->lexer??? */
-Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops, jsi_Pline* line, const char *name, int isArrow)
+Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops,
+    jsi_Pline* line, const char *name, int flags)
 {
     Jsi_Interp *interp = pstate->interp;
     Jsi_ScopeStrs *localvar = jsi_ScopeGetVarlist(pstate);
     Jsi_Func *f = jsi_FuncNew(interp);
     jsi_Lexer *l = pstate->lexer;
-    if (isArrow)
-        f->isArrow = isArrow;
+    f->isArrow = flags&1;
+    f->isSet = flags&2;
+    f->isGet = flags&4;
     f->type = FC_NORMAL;
     f->opcodes = ops;
     f->argnames = args;

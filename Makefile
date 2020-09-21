@@ -280,7 +280,7 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: jsi.c jsish.c jsimin $(ALLTARGS) $(STATICLIBS) $(PROGBIN) shared
+all: jsish.c jsimin $(ALLTARGS) $(STATICLIBS) $(PROGBIN) shared
 # checkcfgver
 
 help:

@@ -1,0 +1,124 @@
+______________________________________
+techno overload  Created by Brian Kent
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Thanks for Downloading techno overload.
+
+This font contains alternative extra characters.  Here's how
+to use them:
+-To type in the alternative extra characters, Press and Hold
+ALT, then on the Number Pad, type in the #'s (listed below)
+then when you release the ALT key, the character will appear.
+
+[Alternate Character | #'s to type in | Actual Character]
+
+4  0208  Ð
+4  0209  Ñ
+7  0210  Ò
+@  0211  Ó
+A  0212  Ô
+B  0213  Õ
+C  0214  Ö
+D  0215  ×
+E  0216  Ø
+F  0217  Ù
+G  0218  Ú
+H  0219  Û
+I  0220  Ü
+M  0221  Ý
+N  0222  Þ
+P  0223  ß
+Q  0224  à
+Q  0225  á
+R  0226  â
+T  0227  ã
+V  0228  ä
+W  0229  å
+X  0231  ç
+X  0232  è
+Z  0233  é
+a  0234  ê
+b  0235  ë
+d  0236  ì
+e  0237  í
+f  0238  î
+g  0239  ï
+h  0240  ð
+k  0241  ñ
+m  0242  ò
+n  0243  ó
+p  0244  ô
+q  0245  õ
+r  0246  ö
+s  0247  ÷
+s  0248  ø
+t  0249  ù
+v  0250  ú
+w  0251  û
+x  0252  ü
+x  0253  ý
+y  0254  þ
+z  0255  ÿ
+
+Included with this Font (and this text file) is an image
+chart 'TechXtraChart.gif' showing all of the alternative
+extra characters.
+
+
+If you have any questions or comments, you can e-mail me at
+kentpw@norwich.net
+
+You can visit my Homepage <ÆNIGMA GAMES & FONTS> at
+http://www.aenigmafonts.com/
+
+____________
+!!! NOTE !!!
+¯¯¯¯¯¯¯¯¯¯¯¯
+This font has been updated!  I've edited the (BRK) in the font name
+to just BRK.  It seems that Adobe Illustrator and web pages with CSS
+don't like fonts with ( and ) in their name.
+
+________________
+INSTALLING FONTS
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  There's a couple of ways to install Fonts. The 'easy' way to
+install fonts is to just Unzip/place the font file [.ttf] into your
+Windows\Fonts directory (I always use this method). If you're unable
+to do it the 'easy' way, then try to do it this way (for Windows
+95/98/NT):
+
+1] Unzip the Font(s) to a folder (or somewhere, just remember where
+you unzipped it) on your Computer.
+
+2] Next, click on the START button, then select SETTINGS then
+CONTROL PANEL.
+
+3] When the Control Panel Window pops up, Double Click on FONTS.
+
+4] When the FONTS window pops up, select File then Install New Font...
+
+5] A Add Fonts window will pop up, just go to the folder that you
+unzipped the Font(s) to, select the Font(s) and then click on OK.
+Now the Font(s) are installed.
+
+  Now you can use the Font(s) in programs the utilize Fonts.  Make
+sure that you install the font(s) first, then open up your apps
+(so the app will recognize the font).    Sometimes you'll have to
+wait until you computer 'auto-refreshes' for programs to recognize
+fonts (Windows is sometimes slow to do that).  You can refresh your
+computer quicker by going into Windows Explorer -or- My Computer and
+press F5 (or in the menubar select VIEW then REFRESH).
+
+
+__________
+DISCLAIMER
+¯¯¯¯¯¯¯¯¯¯
+-The font(s) in this zip file were created by me (Brian Kent).  All
+of my Fonts are Freeware, you can use them any way you want to
+(Personal use, Commercial use, or whatever).
+
+-If you have a Font related site and would like to offer my fonts on
+your site, go right ahead. All I ask is that you keep this text file
+intact with the Font.
+
+-You may not Sell or Distribute my Fonts for profit or alter them in
+any way without asking me first.  [e-mail -  kentpw@norwich.net]

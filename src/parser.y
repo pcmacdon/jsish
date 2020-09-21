@@ -41,7 +41,7 @@
 %destructor { } <str>
 */
 
-%type <opcodes> array commonstatement delete_statement do_statement expr expr_opt exprlist exprlist_opt itemident itemfunc
+%type <opcodes> array commonstatement delete_statement do_statement expr expr_opt exprlist exprlist_opt itemident itemfunc itemres
 %type <opcodes> fcall_exprs for_cond for_init for_statement func_expr func_statement func_statement_block if_statement item items iterstatement lvalue
 %type <opcodes> object objexport statement statements statement_or_empty switch_statement try_statement value vardec vardecs while_statement with_statement
 %type <scopes> args args_opt argsa arrowargs
@@ -97,6 +97,8 @@
 %token TYPEARRAY
 %token ELLIPSIS
 %token EXPORT
+%token OBJSET
+%token OBJGET
 %token ARROW
 %token __DEBUG
 
@@ -790,6 +792,15 @@ lvalue:
             ($$)->lvalue_flag = 6;
         }
     }
+    | lvalue '.' itemres {
+        if (($1)->lvalue_flag&2) {
+            $$ = codes_join3($1, code_subscript(pstate, &@1, 3), $3); 
+            ($$)->lvalue_flag = 2;
+        } else {
+            $$ = codes_join($1, $3);
+            ($$)->lvalue_flag = 6;
+        }
+    }
 ;
 
 exprlist_opt:   { $$ = NULL; }
@@ -866,14 +877,58 @@ items:
     /* | items '.' '.' '.' IDENTIFIER { } //TODO:??? */
 ;
 
+itemres: /* Support reserved words in objects. */
+    OBJSET { $$ = code_push_string(pstate,&@1, "set"); }
+    | OBJGET { $$ = code_push_string(pstate,&@1, "get"); }
+    | CONTINUE { $$ = code_push_string(pstate,&@1, "continue"); }
+    | RETURN { $$ = code_push_string(pstate,&@1, "return"); }
+    | BREAK { $$ = code_push_string(pstate,&@1, "break"); }
+    | THROW { $$ = code_push_string(pstate,&@1, "throw"); }
+    | DEFAULT { $$ = code_push_string(pstate,&@1, "default"); }
+    | CASE { $$ = code_push_string(pstate,&@1, "case"); }
+    | EXPORT { $$ = code_push_string(pstate,&@1, "export"); }
+    | TYPEANY { $$ = code_push_string(pstate,&@1, "any"); }
+    | TYPEARRAY { $$ = code_push_string(pstate,&@1, "array"); }
+    | TYPESTRING { $$ = code_push_string(pstate,&@1, "string"); }
+    | TYPENUMBER { $$ = code_push_string(pstate,&@1, "number"); }
+    | TYPEBOOLEAN { $$ = code_push_string(pstate,&@1, "boolean"); }
+    | TYPEREGEXP { $$ = code_push_string(pstate,&@1, "regexp"); }
+    | TYPEITEROBJ { $$ = code_push_string(pstate,&@1, "iterobj"); }
+    | TYPEUSEROBJ { $$ = code_push_string(pstate,&@1, "userobj"); }
+    | ARGUMENTS { $$ = code_push_string(pstate,&@1, "arguments"); }
+    | _THIS { $$ = code_push_string(pstate,&@1, "this"); }
+    | DELETE { $$ = code_push_string(pstate,&@1, "delete"); }
+    | NEW { $$ = code_push_string(pstate,&@1, "deletnewe"); }
+    | LOCAL { $$ = code_push_string(pstate,&@1, "var"); }
+    | LOCALLET { $$ = code_push_string(pstate,&@1, "let"); }
+    | LOCALCONST { $$ = code_push_string(pstate,&@1, "const"); }
+    | VOID { $$ = code_push_string(pstate,&@1, "void"); }
+    | __DEBUG { $$ = code_push_string(pstate,&@1, "debugger"); }
+    | TYPEOBJECT { $$ = code_push_string(pstate,&@1, "object"); }
+    | WITH { $$ = code_push_string(pstate,&@1, "with"); }
+    | FUNC { $$ = code_push_string(pstate,&@1, "function"); }
+    | TYPEOF { $$ = code_push_string(pstate,&@1, "typeof"); }
+    | INSTANCEOF { $$ = code_push_string(pstate,&@1, "instanceof"); }
+;
 item:
     IDENTIFIER ':' expr { $$ = codes_join(code_push_string(pstate,&@1, $1), $3); }
     | strlit ':' expr   { $$ = codes_join(code_push_vstring(pstate,&@1, $1), $3); }
+    | itemres':' expr   { $$ = codes_join($1, $3); }
     | FNUMBER ':' expr { $$ = codes_join(code_push_num($1), $3);  }
     | _TRUE ':' expr { $$ = codes_join(code_push_bool(1), $3);  }
     | _FALSE ':' expr { $$ = codes_join(code_push_bool(0), $3);  }
     | UNDEF ':' expr { $$ = codes_join(code_push_undef(), $3);  }
     | TYPENULL ':' expr { $$ = codes_join(code_push_null(), $3);  }
+    | OBJSET IDENTIFIER '(' IDENTIFIER ')' func_statement_block {
+        Jsi_ScopeStrs *args = jsi_argInsert(pstate, NULL, $4, NULL, &@4, 0 );
+        $$ = codes_join(code_push_string(pstate,&@2, $2), 
+            code_push_func(pstate,  &@3, jsi_FuncMake(pstate, args, $6, &@1, $2, 2)));
+    }
+    | OBJGET IDENTIFIER '(' ')' func_statement_block {
+        Jsi_ScopeStrs *args = jsi_ArgsOptAdd(pstate, jsi_ScopeStrsNew());
+        $$ = codes_join(code_push_string(pstate,&@2, $2), 
+            code_push_func(pstate,  &@3, jsi_FuncMake(pstate, args, $5, &@1, $2, 4)));
+    }
 ;
 
 array:

@@ -93,7 +93,7 @@ static const char *jsi_op_names[OP_LASTOP] = {
     "WITH",
     "EWITH",
     "RESERVED",
-    "DEBUG"
+    "DEBUG",
     "EXPORT"
 };
 

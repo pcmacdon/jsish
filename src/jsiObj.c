@@ -298,6 +298,10 @@ void Jsi_ObjFree(Jsi_Interp *interp, Jsi_Obj *obj)
         obj->VD.hPtr = NULL;
     }
 #endif
+    if (obj->setters)
+        Jsi_HashDelete(obj->setters);
+    if (obj->getters)
+        Jsi_HashDelete(obj->getters);
     /* printf("Free obj: %x\n", (int)obj); */
     switch (obj->ot) {
         case JSI_OT_STRING:
@@ -522,7 +526,36 @@ Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
     int i;
     for (i = 0; i < count; i += 2) {
         if (!items[i] || !items[i+1]) continue;
-        Jsi_Value *v = Jsi_ValueDup(interp, items[i+1]);
+        Jsi_Value *v = items[i+1];
+        Jsi_String *jstr;
+        if (v->vt == JSI_VT_OBJECT && v->d.obj->ot == JSI_OT_FUNCTION 
+            && ((jstr=(jsi_ValueString(items[i])))))
+        {
+            Jsi_FuncObj *fobj = v->d.obj->d.fobj;
+            Jsi_Hash *h = NULL;
+            if (fobj->func->isSet) {
+                if (!obj->setters)
+                    obj->setters = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_freeValueEntry);
+                h = obj->setters ;
+            } else if (fobj->func->isGet) {
+                if (!obj->getters)
+                    obj->getters = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_freeValueEntry);
+                h = obj->getters;
+            }
+            if (h) {
+                bool isNew;
+                Jsi_HashEntry *hPtr = Jsi_HashEntryNew(h, jstr->str, &isNew);
+                if (!hPtr || !isNew)
+                    Jsi_LogWarn("ignoring duplicate object %s for %s", fobj->func->isSet?"set":"get", jstr->str);
+                else {
+                    v = Jsi_ValueDup(interp, v);
+                    Jsi_HashValueSet(hPtr, v);
+                    Jsi_IncrRefCount(interp, v);
+                }
+                continue;
+            }
+        }
+        v = Jsi_ValueDup(interp, v);
         ObjInsertFromValue(interp, obj, items[i], v);
         Jsi_DecrRefCount(interp, v);
     }

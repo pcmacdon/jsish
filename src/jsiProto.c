@@ -543,6 +543,7 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (!v || v->vt != JSI_VT_OBJECT || v->d.obj->ot != JSI_OT_OBJECT)
         return Jsi_LogError("arg1: expected object");
     Jsi_Obj *obj = v->d.obj;
+    Jsi_RC rc = JSI_OK;
     Jsi_ValueMakeObject(interp, ret, obj);
     int i, argc = Jsi_ValueGetLength(interp, args);
     for (i=1; i<argc; i++) {
@@ -552,14 +553,14 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         if (!vs || vs->vt != JSI_VT_OBJECT || vs->d.obj->ot != JSI_OT_OBJECT)
             return Jsi_LogError("arg%d: expected object", i+1);
         for (tPtr = Jsi_TreeSearchFirst(vs->d.obj->tree, &search, 0, NULL);
-            tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
+            tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
             Jsi_Value *v2 = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
             if (v2 && v2->f.bits.dontenum == 0)
-                Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v2, 0);
+                rc = Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v2, 0);
         }
         Jsi_TreeSearchDone(&search);
     }
-    return JSI_OK;
+    return rc;
 }
 
 #if (JSI_HAS___PROTO__==1)
@@ -662,7 +663,7 @@ static Jsi_RC ObjectCreateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
             tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
             Jsi_Value *v = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
             if (v && v->f.bits.dontenum == 0)
-                Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
+                rc = Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
         }
         Jsi_TreeSearchDone(&search);
     }

@@ -1037,6 +1037,69 @@ static Jsi_RC jsiValueAssignCheck(Jsi_Interp *interp, Jsi_Value *val, int lop) {
     return JSI_OK;
 }
 
+// Copying version of above.
+static Jsi_RC jsi_ObjArraySetDup(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int n)
+{
+    if (Jsi_ObjArraySizer(interp, obj, n) <= 0)
+        return JSI_ERROR;
+    if (value->vt == JSI_VT_OBJECT)
+        jsi_ObjInsertObjCheck(interp, obj, value, 1);
+
+    if (obj->arr[n])
+    {
+        Jsi_ValueCopy(interp, obj->arr[n], value);
+        return JSI_OK;
+    }
+    Assert(obj->arrCnt<=obj->arrMaxSize);
+    Jsi_Value *v = Jsi_ValueNew1(interp);
+    int m;
+    Jsi_ValueCopy(interp,v, value);
+    obj->arr[n] = v;
+    m = Jsi_ObjGetLength(interp, obj);
+    if ((n+1) > m)
+       Jsi_ObjSetLength(interp, obj, n+1);
+    return JSI_OK;
+}
+
+// Insert into either an array or object.
+static Jsi_RC jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *keyval, Jsi_Value *value, int flag)
+{
+    /* TODO: array["1"] also extends the length of array? */
+    const char *kstr = NULL;
+    
+    int arrayindex = -1;
+    if (keyval->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(keyval->d.num) && keyval->d.num >= 0) {
+        arrayindex = (int)keyval->d.num;
+        if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
+            target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
+            return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);
+        }
+    }
+    Jsi_String *jstr = jsi_ValueString(keyval);
+    if (jstr)
+        kstr = jstr->str;
+    else
+        kstr = Jsi_ValueToString(interp, keyval, NULL);
+
+#if (defined(JSI_HAS___PROTO__) && JSI_HAS___PROTO__==2)
+    if (kstr[0] == '_' && Jsi_Strcmp(kstr, "__proto__")==0) {
+        Jsi_Obj *obj = target->d.obj;
+        obj->__proto__ = Jsi_ValueDup(interp, value);
+        //obj->clearProto = 1;
+        return JSI_OK;
+    }
+#endif
+    Jsi_Value *v = Jsi_ValueDup(interp, value);
+
+    if (Jsi_ObjInsert(interp, target->d.obj, kstr, v, flag) != JSI_OK) {
+        Jsi_DecrRefCount(interp, v);
+        return JSI_ERROR;
+    }
+    Jsi_DecrRefCount(interp, v);
+    return JSI_OK;
+}
+
+
 Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes, 
      jsi_ScopeChain *scope, Jsi_Value *currentScope,
      Jsi_Value *_this, Jsi_Value *vret)
@@ -1226,10 +1289,9 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     if (v3->vt == JSI_VT_OBJECT) {
                         if (strict && sval->vt == JSI_VT_UNDEF)
                             rc = jsiValueAssignCheck(interp, sval, lop);
-                        if (!jsi_ValueObjKeyAssign(interp, v3, dval, sval, 0))
-                            rc = JSI_ERROR;
-                        jsi_ValueDebugLabel(sval, "assign", NULL);
-                    } else if (strict)
+                        if (rc == JSI_OK)
+                            rc = jsi_ValueObjKeyAssign(interp, v3, dval, sval, 0);
+                    } else
                         rc = Jsi_LogError("assign to a non-exist object");
                     jsiClearStack(interp,3);
                     Jsi_ValueCopy(interp,v3, sval);

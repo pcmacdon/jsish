@@ -976,81 +976,6 @@ Jsi_Value *Jsi_StringSplit(Jsi_Interp *interp, const char *str, const char *spli
     return nret;
 }
 
-Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *keyval, Jsi_Value *value, int flag)
-{
-    /* TODO: array["1"] also extends the length of array? */
-    Jsi_Obj *obj = target->d.obj;
-    const char *kstr = NULL;
-    
-    int arrayindex = -1;
-    if (keyval->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(keyval->d.num) && keyval->d.num >= 0) {
-        arrayindex = (int)keyval->d.num;
-        if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
-            target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
-            return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);
-        }
-    }
-    Jsi_String *jstr = jsi_ValueString(keyval);
-    if (jstr)
-        kstr = jstr->str;
-    else
-        kstr = Jsi_ValueToString(interp, keyval, NULL);
-    if (obj && obj->setters && value) {
-        Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, kstr, 0);
-        if (v) {
-            Jsi_Value *vpargs, *vargs[2], *retStr = Jsi_ValueNew1(interp);
-            vargs[0] = value;
-            vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, 1, 0));
-            Jsi_IncrRefCount(interp, value);
-            Jsi_IncrRefCount(interp, vpargs);
-            Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
-            Jsi_DecrRefCount(interp, vpargs);
-            Jsi_DecrRefCount(interp, value);
-            Jsi_DecrRefCount(interp, retStr);
-            if (rc != JSI_OK || flag&JSI_OM_DONTENUM)
-                return NULL;
-            return keyval;// TODO, should not return this!!!
-        }
-    }
-
-    if (obj && value && target->d.obj->freeze) {
-        Jsi_Obj *obj = target->d.obj;
-        Jsi_Value *v;
-        char keyBuf[100], *keyStr = keyBuf;
-        if (arrayindex>=0)
-            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
-        else
-            keyStr = Jsi_ValueString(interp, keyval, NULL);
-        if (obj->freezeNoModify) {
-            Jsi_LogError("frozen assign/modify key: %s", keyStr);
-            return NULL;
-        }
-        if (!keyStr || !(v = Jsi_ValueObjLookup(interp, target, keyStr, 0))) {
-            Jsi_LogError("frozen assign key: %s", keyStr);
-            return NULL;
-        }
-    }
-    
-#if (defined(JSI_HAS___PROTO__) && JSI_HAS___PROTO__==2)
-    if (Jsi_Strcmp(kstr, "__proto__")==0) {
-        Jsi_Obj *obj = target->d.obj;
-        obj->__proto__ = Jsi_ValueDup(interp, value);
-        //obj->clearProto = 1;
-        return obj->__proto__;
-    }
-#endif
-    Jsi_Value *v = Jsi_ValueNew1(interp);
-    if (value)
-        Jsi_ValueCopy(interp, v, value);
-
-    if (Jsi_ObjInsert(interp, target->d.obj, kstr, v, flag) != JSI_OK) {
-        Jsi_DecrRefCount(interp, v);
-        return NULL;
-    }
-    Jsi_DecrRefCount(interp, v);
-    return v;
-}
-
 static Jsi_Value *jsi_ValueLookupBase(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret)
 {
     if (!target)
@@ -1354,28 +1279,20 @@ char *Jsi_ValueArrayIndexToStr(Jsi_Interp *interp, Jsi_Value *args, int index, i
     return res;
 }
 
+// Insert val into target and add flags to it.
 Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi_Value *val, int flags)
 {
-    if (target == NULL)
-        target = interp->csc;
-    if (target->vt != JSI_VT_OBJECT) {
-        if (interp->typeCheck.strict)
-            Jsi_LogWarn("Target is not object");
-        return JSI_ERROR;
-    }
+    if (target->vt != JSI_VT_OBJECT)
+        return Jsi_LogError("Target is not object");
     target->f.flag |= flags;
-    if (Jsi_ObjInsert(interp, target->d.obj, key, val, flags))
-        return JSI_OK;
-    return JSI_ERROR;
+    return Jsi_ObjInsert(interp, target->d.obj, key, val, flags);
 }
 
+// If an array set value in array, else in object.
 Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_Value *val, int flags)
 {
-    if (target->vt != JSI_VT_OBJECT) {
-        if (interp->typeCheck.strict)
-            Jsi_LogWarn("Target is not object");
-        return JSI_ERROR;
-    }
+    if (target->vt != JSI_VT_OBJECT)
+        return Jsi_LogError("Target is not object");
     Jsi_Obj *obj = target->d.obj;
     
     if (obj->isarrlist) {
@@ -1387,8 +1304,7 @@ Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_
     }
     char unibuf[JSI_MAX_NUMBER_STRING];
     Jsi_NumberItoA10(key, unibuf, sizeof(unibuf));
-    Jsi_ObjInsert(interp, obj, unibuf, val, flags);
-    return JSI_OK;
+    return Jsi_ObjInsert(interp, obj, unibuf, val, flags);
 }
 
 /* OBJ INTERFACE TO BTREE */
@@ -1420,6 +1336,34 @@ Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Valu
 {
     Jsi_TreeEntry *hPtr;
     SIGASSERT(val, VALUE);
+
+    if (obj && obj->setters && val) {
+        Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, key, 0);
+        if (v) {
+            Jsi_Value *vpargs, *vargs[2], *retStr = Jsi_ValueNew1(interp);
+            vargs[0] = val;
+            vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, 1, 0));
+            Jsi_IncrRefCount(interp, val);
+            Jsi_IncrRefCount(interp, vpargs);
+            Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
+            Jsi_DecrRefCount(interp, vpargs);
+            Jsi_DecrRefCount(interp, val);
+            Jsi_DecrRefCount(interp, retStr);
+            if (rc != JSI_OK || flags&JSI_OM_DONTENUM)
+                return JSI_ERROR;
+            return JSI_OK;
+        }
+    }
+
+    if (val && obj->freeze) {
+        if (obj->freezeNoModify)
+            return Jsi_LogError("frozen assign/modify key: %s", key);
+        if (!key || !(Jsi_TreeObjGetValue(obj, key, 0)))
+            return Jsi_LogError("frozen assign key: %s", key);
+    }
+
+
+
     if (val->vt == JSI_VT_OBJECT)
         jsi_ObjInsertObjCheck(interp, obj, val, 1); 
     hPtr = Jsi_TreeObjSetValue(obj, key, val, 0);

@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   1
-#define JSI_VERSION_RELEASE 2
+#define JSI_VERSION_RELEASE 3
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -286,7 +286,7 @@ typedef struct {
 } Jsi_InterpOpts;
 
 JSI_EXTERN Jsi_Interp* Jsi_InterpNew(Jsi_InterpOpts *opts); /*STUB = 1*/
-JSI_EXTERN Jsi_Interp* Jsi_InterpMain(int argc, char **argv, Jsi_InitProc* initProc); /*STUB = 422*/ /*LAST*/
+JSI_EXTERN Jsi_Interp* Jsi_InterpMain(int argc, char **argv, Jsi_InitProc* initProc); /*STUB = 422*/
 JSI_EXTERN void Jsi_InterpDelete( Jsi_Interp* interp); /*STUB = 2*/
 JSI_EXTERN void Jsi_InterpOnDelete(Jsi_Interp *interp, Jsi_DeleteProc *freeProc, void *ptr);  /*STUB = 3*/
 JSI_EXTERN Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags); /*STUB = 4*/
@@ -486,6 +486,8 @@ JSI_EXTERN void Jsi_IterObjFree(Jsi_IterObj *iobj); /*STUB = 413*/
 JSI_EXTERN void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth); /*STUB = 414*/
 JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
 JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val); /*STUB = 420*/
+JSI_EXTERN Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck); /*STUB = 423*/
+JSI_EXTERN Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback); /*STUB = 424*/ /*LAST*/
 
 struct Jsi_IterObj {
     Jsi_Interp *interp;

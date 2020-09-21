@@ -519,6 +519,51 @@ static Jsi_TreeEntry* ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_V
     return Jsi_ObjInsert(interp, obj, key, nv, flags);
 }
 
+Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck) {
+    bool obnum = !obj->freezeNoModify;
+    obj->freeze = freeze;
+    obj->freezeNoModify = !modifyOk;
+    obj->freezeReadCheck = readCheck;    
+    if (obnum != modifyOk)
+        jsi_ObjSetFlag(interp, obj, JSI_OM_ISFROZEN, !modifyOk);
+    return JSI_OK;
+}
+
+Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback) {
+    Jsi_Hash *h = NULL;
+    Jsi_HashEntry *hPtr;
+    if (isSet) {
+        if (!obj->setters && callback)
+            obj->setters = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_freeValueEntry);
+        h = obj->setters;
+    } else {
+        if (!obj->getters && callback)
+            obj->getters = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_freeValueEntry);
+        h = obj->getters;
+    }
+    if (callback) {
+        bool isNew;
+        hPtr = Jsi_HashEntryNew(h, name, &isNew);
+        if (!hPtr || !isNew)
+            Jsi_LogWarn("ignoring duplicate object %s for %s", isSet?"set":"get", name);
+        else {
+            Jsi_HashValueSet(hPtr, callback);
+            Jsi_IncrRefCount(interp, callback);
+        }
+    } else if (h && name) {
+        hPtr = Jsi_HashEntryFind(h, name);
+        if (!hPtr)
+            Jsi_LogWarn("%s accessor not found for %s", isSet?"set":"get", name);
+        else {
+            callback = Jsi_HashValueGet(hPtr);
+            if (callback)
+                Jsi_DecrRefCount(interp, callback);
+            Jsi_HashEntryDelete(hPtr);
+        }
+    }
+    return h;
+}
+
 Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
 {
     Jsi_Obj *obj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);

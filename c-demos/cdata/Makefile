@@ -11,26 +11,15 @@ STATICS=Bee Car Baker
 
 all: shared
 
-shared: Tiny.so Bee.so Car.so Baker.so Bag.so Vimy.so VarTest.so Sum.so
+shared: Tiny.so Bee.so Car.so Baker.so Bag.so Sum.so
 
 static: $(STATICS)
 
 test: shared
 	$(JSISH) -u ext_test.jsi
-	$(JSISH) -u cdatatest.jsi
 	$(JSISH) -u bagtest.jsi
 	$(JSISH) -u tinytest.jsi
-	$(JSISH) -u vimytest.jsi
 	$(JSISH) -u logtest.jsi
-
-Vimy.so: Vimy.c $(DEPS)
-	$(CC) `$(CCGET) $@`
-
-Vimy: Vimy.c $(DEPS)
-	$(CC) `$(CCGET) $@`
-
-VarTest.so: VarTest.c $(DEPS)
-	$(CC) `$(CCGET) $@`
 
 Tiny: Tiny.c $(DEPS)
 	$(CC) `$(CCGET) $@`

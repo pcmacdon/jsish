@@ -398,9 +398,8 @@ static Jsi_RC ObjectFreezeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     obj->freeze = fnum;
     obj->freezeNoModify = !bnum;
     obj->freezeReadCheck = rnum;
-    if (obnum != bnum) {
+    if (obnum != bnum)
         jsi_ObjSetFlag(interp, obj, JSI_OM_ISFROZEN, !bnum);
-    }
     return JSI_OK;
 
 }

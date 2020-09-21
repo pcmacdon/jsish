@@ -1007,6 +1007,27 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
     }
     /* TODO: array["1"] also extern the length of array */
     
+    if (!kstr)
+        kstr = Jsi_ValueToString(interp, keyval, NULL);
+    if (obj && obj->setters) {
+        Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, kstr, 0);
+        if (v) {
+            Jsi_Value *vpargs, *vargs[2], *retStr = Jsi_ValueNew1(interp);
+            vargs[0] = value;
+            vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, 1, 0));
+            Jsi_IncrRefCount(interp, value);
+            Jsi_IncrRefCount(interp, vpargs);
+            Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
+            Jsi_DecrRefCount(interp, vpargs);
+            Jsi_DecrRefCount(interp, value);
+            Jsi_DecrRefCount(interp, retStr);
+            if (rc != JSI_OK || flag&JSI_OM_DONTENUM)
+                return NULL;
+            return keyval;// TODO, should not return this!!!
+        }
+        
+    }
+
     if (obj && value && target->d.obj->freeze) {
         Jsi_Obj *obj = target->d.obj;
         Jsi_Value *v;
@@ -1027,26 +1048,6 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
     if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
         target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
         return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);
-    }
-    if (!kstr)
-        kstr = Jsi_ValueToString(interp, keyval, NULL);
-    if (obj && obj->setters) {
-        Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, kstr, 0);
-        if (v) {
-            Jsi_Value *vpargs, *vargs[2], *retStr = Jsi_ValueNew1(interp);
-            vargs[0] = value;
-            vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, 1, 0));
-            Jsi_IncrRefCount(interp, value);
-            Jsi_IncrRefCount(interp, vpargs);
-            Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
-            Jsi_DecrRefCount(interp, vpargs);
-            Jsi_DecrRefCount(interp, value);
-            Jsi_DecrRefCount(interp, retStr);
-            if (rc != JSI_OK || flag&JSI_OM_DONTENUM)
-                return NULL;
-            return keyval;// TODO, should not return this!!!
-        }
-        
     }
     
 #if (defined(JSI_HAS___PROTO__) && JSI_HAS___PROTO__==2)

@@ -4,8 +4,12 @@ if (File.exists('Bee.so'))
     return load('Bee.so');
 
 CEnum('BeeType', 'Drone, Worker, Queen');
+
 CStruct('Bee', ` int max; int buzzCnt; int stingCnt; int pollinateCnt; BeeType type; STRING flower; `);
-var Bee_Data = new CData('Bee');
+
+var b = new CData('Bee'), Bee_Data = b;
+
+b.buzzCnt += b.stingCnt*2;
 
 let Bee = { // Extension to create Bee commands.
 

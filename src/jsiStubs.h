@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "f021be68c79822a0a51be41bcdcd230e"
+#define JSI_STUBS_MD5 "620a82a5186f41bf96d7127b57b6d310"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -451,6 +451,8 @@ typedef struct Jsi_Stubs {
     Jsi_RC(*_Jsi_ObjGetValues)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val);
     Jsi_PkgOpts*(*_Jsi_CommandPkgOpts)(Jsi_Interp *interp, Jsi_Func *func);
     Jsi_Interp*(*_Jsi_InterpMain)(int argc, char **argv, Jsi_InitProc* initProc);
+    Jsi_RC(*_Jsi_ObjFreeze)(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck);
+    Jsi_Hash*(*_Jsi_ObjAccessor)(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback);
     void *endPtr;
 } Jsi_Stubs;
 
@@ -881,6 +883,8 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_ObjGetValues,\
     Jsi_CommandPkgOpts,\
     Jsi_InterpMain,\
+    Jsi_ObjFreeze,\
+    Jsi_ObjAccessor,\
     NULL
 
 #ifdef JSI_USE_STUBS
@@ -1307,6 +1311,8 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_ObjGetValues(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjGetValues(n0,n1,n2))
 #define Jsi_CommandPkgOpts(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_CommandPkgOpts(n0,n1))
 #define Jsi_InterpMain(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_InterpMain(n0,n1,n2))
+#define Jsi_ObjFreeze(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjFreeze(n0,n1,n2,n3,n4))
+#define Jsi_ObjAccessor(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessor(n0,n1,n2,n3,n4))
 
 #endif
 

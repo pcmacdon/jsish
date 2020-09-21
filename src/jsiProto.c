@@ -161,7 +161,7 @@ static Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func
             else {
                 v = Jsi_ValueNew(interp);
             }
-            jsi_ValueObjSet(interp, args, argkey, v, JSI_OM_DONTENUM | JSI_OM_INNERSHARED, 1);
+            Jsi_ObjInsert(interp, args->d.obj, argkey, v, JSI_OM_DONTENUM | JSI_OM_INNERSHARED);
         }
     }
     return (nrc == JSI_ERROR?nrc:rc);
@@ -198,7 +198,9 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
         if (adds && cs && (cs->flags&JSI_CMDSPEC_NONTHIS))
             adds = 0;
         funcPtr->callflags.bits.addargs = 0;
-        jsi_InitLocalVar(interp, args, funcPtr);
+        rc = jsi_InitLocalVar(interp, args, funcPtr);
+        if (rc != JSI_OK)
+            goto done;
     
         if (!calltrc) {
             if (funcPtr->type == FC_NORMAL)
@@ -263,7 +265,7 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
             rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
         interp->callDepth--;
     }
-
+done:
     jsi_SharedArgs(interp, args, funcPtr, 0);
     interp->curFunction = oldCurFunc;
     interp->activeFunc = prevActive;
@@ -511,22 +513,23 @@ static Jsi_RC ObjectMergeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     Jsi_ValueMakeObject(interp, ret, obj);
     Jsi_TreeEntry *tPtr;
     Jsi_TreeSearch search;
+    Jsi_RC rc = JSI_OK;
     for (tPtr = Jsi_TreeSearchFirst(_this->d.obj->tree, &search, 0, NULL);
-        tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
+        tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
         Jsi_Value *v = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
         if (v && v->f.bits.dontenum == 0)
-            Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
+            rc = Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
     }
     Jsi_TreeSearchDone(&search);
     for (tPtr = Jsi_TreeSearchFirst(v->d.obj->tree, &search, 0, NULL);
-        tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
+        tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
         Jsi_Value *v = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
         if (v && v->f.bits.dontenum == 0)
-            Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
+            rc = Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
     }
     Jsi_TreeSearchDone(&search);
 
-    return JSI_OK;
+    return rc;
 }
 
 static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
@@ -638,7 +641,8 @@ static Jsi_RC ObjectCreateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Obj *obj;
     Jsi_Value *proto = Jsi_ValueArrayIndex(interp, args,0);
     Jsi_Value *props = Jsi_ValueArrayIndex(interp, args,1);
-
+    Jsi_RC rc = JSI_OK;
+    
     if (proto->vt != JSI_VT_NULL && proto->vt != JSI_VT_OBJECT) 
         return Jsi_LogError("arg 1 is not a proto object or null");
     if (props && (props->vt != JSI_VT_OBJECT || props->d.obj->ot != JSI_OT_OBJECT)) 
@@ -655,14 +659,14 @@ static Jsi_RC ObjectCreateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         Jsi_TreeEntry *tPtr;
         Jsi_TreeSearch search;
         for (tPtr = Jsi_TreeSearchFirst(pobj->tree, &search, 0, NULL);
-            tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
+            tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
             Jsi_Value *v = (Jsi_Value *)Jsi_TreeValueGet(tPtr);
             if (v && v->f.bits.dontenum == 0)
                 Jsi_ObjInsert(interp, obj, (const char *)Jsi_TreeKeyGet(tPtr), v, 0);
         }
         Jsi_TreeSearchDone(&search);
     }
-    return JSI_OK;
+    return rc;
     
 }
 

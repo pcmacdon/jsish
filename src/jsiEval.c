@@ -858,13 +858,12 @@ static Jsi_RC jsiPushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, 
             if (v) 
                 fvar->local = 1;
             else {
-                /* add to global scope.  TODO: do not define if a right_val??? */
-                Jsi_Value *global_scope = scope->chains_cnt > 0 ? scope->chains[0]:currentScope;
-                Jsi_Value key = VALINIT, *kPtr = &key; // Note: a string key so no reset needed.
-                Jsi_ValueMakeStringKey(interp, &kPtr, varname);
-                v = jsi_ValueObjKeyAssign(interp, global_scope, &key, NULL, JSI_OM_DONTENUM);
-                if (!v)
-                    return JSI_ERROR;
+                /* add to scope.  TODO: do not define if a right_val??? */
+                Jsi_Value *cscope = scope->chains_cnt > 0 ? scope->chains[0]:currentScope;
+                Jsi_RC rc = Jsi_ObjInsert(interp, cscope->d.obj, varname, v=Jsi_ValueNew(interp), JSI_OM_DONTENUM);
+                if (rc != JSI_OK)
+                    return rc;
+                
                 if (v->vt == JSI_VT_UNDEF) {
                     v->d.lookupFail = varname;
                     v->f.bits.lookupfailed = 1;
@@ -1307,9 +1306,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_LOCAL: {
-                Jsi_Value key = VALINIT, *kPtr = &key; // Note we use a string key so no reset needed.
-                Jsi_ValueMakeStringKey(interp, &kPtr, (char*)ip->data);
-                jsi_ValueObjKeyAssign(interp, currentScope, kPtr, NULL, JSI_OM_DONTENUM);
+                rc = Jsi_ObjInsert(interp, currentScope->d.obj, (char*)ip->data, Jsi_ValueNew(interp), 0);
                 context_id = ps->_context_id++;
                 break;
             }

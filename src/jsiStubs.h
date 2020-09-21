@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "620a82a5186f41bf96d7127b57b6d310"
+#define JSI_STUBS_MD5 "10ffca3d3bdee8292c9eb47ab8422550"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -121,9 +121,9 @@ typedef struct Jsi_Stubs {
     const char*(*_Jsi_ObjTypeStr)(Jsi_Interp *interp, Jsi_Obj *obj);
     Jsi_otype(*_Jsi_ObjTypeGet)(Jsi_Obj *obj);
     void    (*_Jsi_ObjListifyArray)(Jsi_Interp *interp, Jsi_Obj *obj);
-    Jsi_RC     (*_Jsi_ObjArraySet)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int arrayindex);
-    Jsi_RC     (*_Jsi_ObjArrayAdd)(Jsi_Interp *interp, Jsi_Obj *o, Jsi_Value *v);
-    Jsi_TreeEntry*(*_Jsi_ObjInsert)(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *nv, int flags);
+    Jsi_RC (*_Jsi_ObjArraySet)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int arrayindex);
+    Jsi_RC (*_Jsi_ObjArrayAdd)(Jsi_Interp *interp, Jsi_Obj *o, Jsi_Value *v);
+    Jsi_RC (*_Jsi_ObjInsert)(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *nv, int flags);
     void   (*_Jsi_ObjFromDS)(Jsi_DString *dsPtr, Jsi_Obj *obj);
     Jsi_Value*(*_Jsi_ValueNew)(Jsi_Interp *interp);
     Jsi_Value*(*_Jsi_ValueNew1)(Jsi_Interp *interp);

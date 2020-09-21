@@ -976,38 +976,24 @@ Jsi_Value *Jsi_StringSplit(Jsi_Interp *interp, const char *str, const char *spli
     return nret;
 }
 
-void jsi_ValueObjSet(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi_Value *value, int flags, int isstrkey)
-{
-    Jsi_TreeEntry *hPtr;
-    if (target->vt != JSI_VT_OBJECT) {
-        if (interp->typeCheck.strict)
-            Jsi_LogWarn("Target is not object: %d", target->vt);
-        return;
-    }
-    hPtr = Jsi_ObjInsert(interp, target->d.obj, key, value, (isstrkey?JSI_OM_ISSTRKEY:0));
-    if (!hPtr)
-        return;
-    hPtr->f.flags |= (flags&JSI_TREE_USERFLAG_MASK);
-}
-
 Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *keyval, Jsi_Value *value, int flag)
 {
-    int arrayindex = -1;
+    /* TODO: array["1"] also extends the length of array? */
+    Jsi_Obj *obj = target->d.obj;
     const char *kstr = NULL;
-    Jsi_Obj *obj = NULL;
-    if (target->vt == JSI_VT_OBJECT && target->d.obj->ot == JSI_OT_OBJECT)
-        obj = target->d.obj;
     
+    int arrayindex = -1;
     if (keyval->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(keyval->d.num) && keyval->d.num >= 0) {
         arrayindex = (int)keyval->d.num;
-    } else {
-        Jsi_String *jstr = jsi_ValueString(keyval);
-        if (jstr)
-            kstr = jstr->str;
+        if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
+            target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
+            return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);
+        }
     }
-    /* TODO: array["1"] also extern the length of array */
-    
-    if (!kstr)
+    Jsi_String *jstr = jsi_ValueString(keyval);
+    if (jstr)
+        kstr = jstr->str;
+    else
         kstr = Jsi_ValueToString(interp, keyval, NULL);
     if (obj && obj->setters && value) {
         Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, kstr, 0);
@@ -1025,7 +1011,6 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
                 return NULL;
             return keyval;// TODO, should not return this!!!
         }
-        
     }
 
     if (obj && value && target->d.obj->freeze) {
@@ -1045,10 +1030,6 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
             return NULL;
         }
     }
-    if (arrayindex >= 0 && (uint)arrayindex < interp->maxArrayList &&
-        target->vt == JSI_VT_OBJECT && target->d.obj->arr) {
-        return jsi_ObjArraySetDup(interp, target->d.obj, value, arrayindex);
-    }
     
 #if (defined(JSI_HAS___PROTO__) && JSI_HAS___PROTO__==2)
     if (Jsi_Strcmp(kstr, "__proto__")==0) {
@@ -1062,7 +1043,10 @@ Jsi_Value *jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Valu
     if (value)
         Jsi_ValueCopy(interp, v, value);
 
-    jsi_ValueObjSet(interp, target, kstr, v, flag, (Jsi_ValueIsStringKey(interp, keyval)? JSI_OM_ISSTRKEY:0));
+    if (Jsi_ObjInsert(interp, target->d.obj, kstr, v, flag) != JSI_OK) {
+        Jsi_DecrRefCount(interp, v);
+        return NULL;
+    }
     Jsi_DecrRefCount(interp, v);
     return v;
 }
@@ -1432,22 +1416,20 @@ static void IterObjInsert(Jsi_IterObj *io, Jsi_TreeEntry *hPtr)
     IterObjInsertKey(io, (const char*)Jsi_TreeKeyGet(hPtr));
 }
 
-Jsi_TreeEntry * Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
+Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
 {
     Jsi_TreeEntry *hPtr;
     SIGASSERT(val, VALUE);
-    /*if (val)
-        Jsi_IncrRefCount(interp, val);*/
     if (val->vt == JSI_VT_OBJECT)
-        jsi_ObjInsertCheck(interp, obj, val, 1); 
-    hPtr = Jsi_TreeObjSetValue(obj, key, val, (flags&JSI_OM_ISSTRKEY));
+        jsi_ObjInsertObjCheck(interp, obj, val, 1); 
+    hPtr = Jsi_TreeObjSetValue(obj, key, val, 0);
     if ((flags&JSI_OM_DONTDEL))
         val->f.bits.dontdel = hPtr->f.bits.dontdel = 1;
     if ((flags&JSI_OM_READONLY))
         val->f.bits.readonly =hPtr->f.bits.readonly = 1;
     if ((flags&JSI_OM_DONTENUM))
         val->f.bits.dontenum =hPtr->f.bits.dontenum = 1;
-    return hPtr;
+    return JSI_OK;
 }
 
 static Jsi_RC IterGetKeysCallback(Jsi_Tree* tree, Jsi_TreeEntry *hPtr, void *data)

@@ -1437,7 +1437,7 @@ enum {StrKeyAny = 0, StrKeyFunc = 0x1, StrKeyCmd = 0x2, StrKeyVar = 0x2};
 
 //char* jsi_KeyLookup(Jsi_Interp *interp, const char *str);
 extern char* jsi_KeyFind(Jsi_Interp *interp, const char *str, int nocreate, int *isKey);
-extern void jsi_InitLocalVar(Jsi_Interp *interp, Jsi_Value *arguments, Jsi_Func *who);
+extern Jsi_RC jsi_InitLocalVar(Jsi_Interp *interp, Jsi_Value *arguments, Jsi_Func *who);
 extern Jsi_Value *jsi_GlobalContext(Jsi_Interp *interp);
 extern void jsi_AddEventHandler(Jsi_Interp *interp);
 extern Jsi_RC jsi_SetOption(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /*UNUSED*/, void* rec, Jsi_Value *argValue, Jsi_Wide flags, bool isSafe);
@@ -1466,7 +1466,6 @@ extern Jsi_Obj *jsi_UserObjFromName(Jsi_Interp *interp, const char *name);
 
 extern Jsi_RC Zvfs_Mount( Jsi_Interp *interp, Jsi_Value *archive, Jsi_Value *mount, Jsi_Value **ret);
 extern Jsi_Value* jsi_ObjArraySetDup(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int arrayindex);
-extern void jsi_ValueObjSet(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi_Value *value, int flags, int isstrkey);
 extern void jsi_ValueSubscriptLen(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret, int right_val);
 extern Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret);
 extern Jsi_Value* jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value *value, int flag);
@@ -1494,7 +1493,7 @@ extern Jsi_RC jsi_FuncArgsToString(Jsi_Interp *interp, Jsi_Func *f, Jsi_DString 
 extern Jsi_Value *jsi_LoadFunction(Jsi_Interp *interp, const char *str, Jsi_Value *tret);
 extern Jsi_RC jsi_SysExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr, bool restricted);
-extern void jsi_ObjInsertCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add);
+extern void jsi_ObjInsertObjCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add);
 extern Jsi_RC jsi_freeValueEntry(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr);
 
 extern Jsi_FuncObj *jsi_FuncObjNew(Jsi_Interp *interp, Jsi_Func *func);

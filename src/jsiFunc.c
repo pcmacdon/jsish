@@ -608,23 +608,19 @@ bool jsi_FuncIsNoop(Jsi_Interp* interp, Jsi_Value *func) {
     return (f->callback == jsi_NoOpCmd);
 }
 
-void jsi_InitLocalVar(Jsi_Interp *interp, Jsi_Value *arguments, Jsi_Func *who)
+Jsi_RC jsi_InitLocalVar(Jsi_Interp *interp, Jsi_Value *arguments, Jsi_Func *who)
 {
     SIGASSERTV(who, FUNC);
+    Jsi_RC rc = JSI_OK;
     if (who->localnames) {
         int i;
-        for (i = 0; i < who->localnames->count; ++i) {
+        for (i = 0; i < who->localnames->count && rc == JSI_OK; ++i) {
             const char *argkey = jsi_ScopeStrsGet(who->localnames, i);
-            if (argkey) {
-                DECL_VALINIT(key);// = VALINIT;
-                Jsi_Value *v __attribute__((unused));
-                Jsi_Value *kPtr = &key; // Note: a string key so no reset needed.
-                Jsi_ValueMakeStringKey(interp, &kPtr, argkey);
-                jsi_ValueObjKeyAssign(interp, arguments, kPtr, NULL, JSI_OM_DONTENUM);
-                //jsi_ValueDebugLabel(v, "locals", who->name);
-            }
+            if (argkey)
+                rc = Jsi_ObjInsert(interp, arguments->d.obj, argkey, Jsi_ValueNew(interp), 0);
         }
     }
+    return rc;
 }
 
 Jsi_RC jsi_FuncArgsToString(Jsi_Interp *interp, Jsi_Func *f, Jsi_DString *dStr, int withTypes)

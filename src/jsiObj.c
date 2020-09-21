@@ -166,7 +166,7 @@ static Jsi_RC DeleteTreeValue(Jsi_Interp *interp, Jsi_TreeEntry *ti, void *p) {
 }
 
 // TODO: implement python style GC for objects: http://www.arctrix.com/nas/python/gc/
-void jsi_ObjInsertCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add)
+void jsi_ObjInsertObjCheck(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, bool add)
 {
     if (!add) return;
     if (obj == value->d.obj && !interp->memLeakCnt++)
@@ -374,7 +374,7 @@ Jsi_RC Jsi_ObjArrayAdd(Jsi_Interp *interp, Jsi_Obj *o, Jsi_Value *v)
         return JSI_ERROR;
     o->arr[len] = v;
     if (v && v->vt == JSI_VT_OBJECT)
-        jsi_ObjInsertCheck(interp, o, v, 1);
+        jsi_ObjInsertObjCheck(interp, o, v, 1);
     if (v)
         Jsi_IncrRefCount(interp, v);
     assert(o->arrCnt<=o->arrMaxSize);
@@ -395,7 +395,7 @@ Jsi_RC Jsi_ObjArraySet(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int a
     if (value)
         Jsi_IncrRefCount(interp, value);
     if (value && value->vt == JSI_VT_OBJECT)
-        jsi_ObjInsertCheck(interp, obj, value, 1);
+        jsi_ObjInsertObjCheck(interp, obj, value, 1);
     m = Jsi_ObjGetLength(interp, obj);
     if ((n+1) > m)
        Jsi_ObjSetLength(interp, obj, n+1);
@@ -408,7 +408,7 @@ Jsi_Value *jsi_ObjArraySetDup(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value
     if (Jsi_ObjArraySizer(interp, obj, n) <= 0)
         return NULL;
     if (value->vt == JSI_VT_OBJECT)
-        jsi_ObjInsertCheck(interp, obj, value, 1);
+        jsi_ObjInsertObjCheck(interp, obj, value, 1);
 
     if (obj->arr[n])
     {
@@ -501,7 +501,7 @@ Jsi_Obj *Jsi_ObjNewArray(Jsi_Interp *interp, Jsi_Value **items, int count, int c
 
 /****** END ARRAY ************/
 
-static Jsi_TreeEntry* ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *keyVal, Jsi_Value *nv)
+static Jsi_RC ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *keyVal, Jsi_Value *nv)
 {
     const char *key = NULL;
     int flags = 0;

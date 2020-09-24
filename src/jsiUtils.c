@@ -297,7 +297,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
             Jsi_DString jStr={}, kStr={};
             Jsi_DSPrintf(&kStr, "[%s, \"%s\", \"%s\", %d, %d ]",
                 Jsi_JSONQuote(interp, buf1, -1, &jStr), mt, curFile, line, lofs);
-            if (Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.msgCallback, Jsi_DSValue(&kStr), NULL) != JSI_OK)
+            if (Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.msgCallback, Jsi_DSValue(&kStr), NULL, NULL) != JSI_OK)
                 code = 1;
             Jsi_DSFree(&jStr);
             Jsi_DSFree(&kStr);
@@ -366,7 +366,7 @@ static char *FindEndB(char *cp) {
 }
 
 
-/* Lookup "name" within object "inObj", ie.  "inObj.name"  */
+/* Lookup "name" within object "inObj", ie.  "inObj.name" or inObj[9]  */
 Jsi_Value *Jsi_NameLookup2(Jsi_Interp *interp, const char *name, const char *inObj)
 {
     Jsi_Value *v;
@@ -497,6 +497,10 @@ typedef struct {
 bool Jsi_StrIsAlnum(const char *cp)
 {
     if (!cp || !*cp) return 0;
+    if (isalpha(*cp) || *cp == '_')
+        cp++;
+    else
+        return 0;
     while (*cp)
         if (isalnum(*cp) || *cp == '_')
             cp++;
@@ -673,11 +677,11 @@ static Jsi_RC jsi_ObjectGetFmt(Jsi_Interp *interp, const char *key, Jsi_Value *v
     return rc;
 }
 
-static Jsi_RC jsi_objectGetterFmt(Jsi_Interp *interp, Jsi_HashEntry *hPtr, objwalker *ow)
+static Jsi_RC jsi_objectGetterFmt(Jsi_Interp *interp, Jsi_HashEntry *hPtr, objwalker *ow, Jsi_Value* _this)
 {
     const char *key = (char*)Jsi_HashKeyGet(hPtr);
     Jsi_Value *v = interp->GetterValue;
-    Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, 0);
+    Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, _this, 0);
     if (rc != JSI_OK)
         return JSI_ERROR;
     return jsi_ObjectGetFmt(interp, key, v, ow);
@@ -844,7 +848,7 @@ outstr:
                     Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
                     for (hPtr = Jsi_HashSearchFirst(o->getters, &search);
                         hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
-                        jsi_objectGetterFmt(interp, hPtr, owPtr);
+                        jsi_objectGetterFmt(interp, hPtr, owPtr, v);
                     }
                 } else {
                     Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
@@ -1435,6 +1439,7 @@ Jsi_List *Jsi_ListNew(Jsi_Interp *interp, Jsi_Wide flags, Jsi_HashDeleteProc *fr
     list->opts.flags = flags;
     list->opts.freeHashProc = freeProc;
     list->opts.interp = interp;
+    list->opts.refCnt = 1;
     list->opts.mapType = JSI_MAP_LIST;
     list->opts.keyType = (Jsi_Key_Type)-1;
     return list;
@@ -1442,6 +1447,7 @@ Jsi_List *Jsi_ListNew(Jsi_Interp *interp, Jsi_Wide flags, Jsi_HashDeleteProc *fr
 
 Jsi_RC Jsi_ListConf(Jsi_List *listPtr, Jsi_MapOpts *opts, bool set)
 {
+    SIGASSERT(listPtr, LIST);
     if (set) {
         listPtr->opts = *opts;
     } else {
@@ -1450,9 +1456,13 @@ Jsi_RC Jsi_ListConf(Jsi_List *listPtr, Jsi_MapOpts *opts, bool set)
     return JSI_OK;
 }
 
-void Jsi_ListDelete(Jsi_List *list) {
+int Jsi_ListDelete(Jsi_List *list) {
+    SIGASSERT(list, LIST);
+    if (--list->opts.refCnt>0) // Shared hash check.
+        return list->opts.refCnt;    
     Jsi_ListClear(list);
     free(list);
+    return 0;
 }
 
 void Jsi_ListClear(Jsi_List *list) {
@@ -1471,6 +1481,7 @@ void Jsi_ListClear(Jsi_List *list) {
 Jsi_ListEntry* Jsi_ListPush(Jsi_List *list, Jsi_ListEntry *item, Jsi_ListEntry *before)
 {
     Assert(item && list);
+    SIGASSERT(list, LIST);
     if (item->list && (item->list->head == item || item->prev || item->next)) {
         Assert(list->opts.freeListProc == item->list->opts.freeListProc);
         Jsi_ListPop(item->list, item);
@@ -1625,15 +1636,18 @@ void Jsi_MapClear (Jsi_Map *mapPtr) {
     }
 }
 
-void Jsi_MapDelete (Jsi_Map *mapPtr) {
+int Jsi_MapDelete (Jsi_Map *mapPtr) {
     SIGASSERTV(mapPtr, MAP);
+    int r = 0;
     switch (mapPtr->typ) {
-        case JSI_MAP_HASH: Jsi_HashDelete(mapPtr->v.hash); break;
-        case JSI_MAP_TREE: Jsi_TreeDelete(mapPtr->v.tree); break;
-        case JSI_MAP_LIST: Jsi_ListDelete(mapPtr->v.list); break;
-        default: return;
+        case JSI_MAP_HASH: r = Jsi_HashDelete(mapPtr->v.hash); break;
+        case JSI_MAP_TREE: r = Jsi_TreeDelete(mapPtr->v.tree); break;
+        case JSI_MAP_LIST: r = Jsi_ListDelete(mapPtr->v.list); break;
+        default: return -1;
     }
-    Jsi_Free(mapPtr);
+    if (r==0)
+        Jsi_Free(mapPtr);
+    return r;
 }
 Jsi_MapEntry* Jsi_MapSet(Jsi_Map *mapPtr, const void *key, const void *value){
     SIGASSERT(mapPtr, MAP);

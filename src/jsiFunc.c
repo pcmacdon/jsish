@@ -623,7 +623,7 @@ Jsi_RC jsi_InitLocalVar(Jsi_Interp *interp, Jsi_Value *arguments, Jsi_Func *who)
         for (i = 0; i < who->localnames->count && rc == JSI_OK; ++i) {
             const char *argkey = jsi_ScopeStrsGet(who->localnames, i);
             if (argkey)
-                rc = Jsi_ObjInsert(interp, arguments->d.obj, argkey, Jsi_ValueNew(interp), 0);
+                rc = Jsi_ValueInsert(interp, arguments, argkey, Jsi_ValueNew(interp), 0);
         }
     }
     return rc;
@@ -889,7 +889,7 @@ done:
 }
 
 /* Call function that returns a bool with a single argument. Returns -1, else 0/1 for false/true,  */
-int Jsi_FunctionInvokeBool(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg)
+int Jsi_FunctionInvokeBool(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_Value* _this)
 {
     if (interp->deleting)
         return JSI_ERROR;
@@ -906,7 +906,7 @@ int Jsi_FunctionInvokeBool(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg)
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, &arg, 1, 1));
     }
     Jsi_IncrRefCount(interp, vpargs);
-    rc = Jsi_FunctionInvoke(interp, func, vpargs, &frPtr, NULL);
+    rc = Jsi_FunctionInvoke(interp, func, vpargs, &frPtr, _this);
     Jsi_DecrRefCount(interp, vpargs);
     if (rc == JSI_OK)
         bres = Jsi_ValueIsTrue(interp, frPtr);
@@ -921,7 +921,7 @@ int Jsi_FunctionInvokeBool(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg)
 }
 
 // Invoke function with one string argument.
-Jsi_RC Jsi_FunctionInvokeString(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_DString *dStr)
+Jsi_RC Jsi_FunctionInvokeString(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_DString *dStr, Jsi_Value* _this)
 {
     if (interp->deleting)
         return JSI_ERROR;
@@ -937,7 +937,7 @@ Jsi_RC Jsi_FunctionInvokeString(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, &arg, 1, 1));
     }
     Jsi_IncrRefCount(interp, vpargs);
-    rc = Jsi_FunctionInvoke(interp, func, vpargs, &frPtr, NULL);
+    rc = Jsi_FunctionInvoke(interp, func, vpargs, &frPtr, _this);
     Jsi_DecrRefCount(interp, vpargs);
     if (rc != JSI_OK)
         Jsi_LogError("function call failed");

@@ -1506,8 +1506,8 @@ extern bool jsi_StrIsBalanced(char *str);
 extern char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt);
 extern void jsi_DumpValue(Jsi_Interp *interp, Jsi_Value *arg);
 extern Jsi_RC jsi_ObjSetFlag(Jsi_Interp *interp, Jsi_Obj *obj, int flag, int on);
-extern Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, int flags);
-extern Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, int flags);
+extern Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, Jsi_Value *_this, int flags);
+extern Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, Jsi_Value *_this, int flags);
 
 #if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/

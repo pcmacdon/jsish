@@ -194,14 +194,14 @@ Jsi_RC Jsi_EvalCmdJSON(Jsi_Interp *interp, const char *cmd, const char *jsonArgs
 }
 
 /* Call a function with JSON args.  Return a primative. */
-Jsi_RC Jsi_FunctionInvokeJSON(Jsi_Interp *interp, Jsi_Value *func, const char *json, Jsi_Value **ret)
+Jsi_RC Jsi_FunctionInvokeJSON(Jsi_Interp *interp, Jsi_Value *func, const char *json, Jsi_Value **ret, Jsi_Value *_this)
 {
     if (!Jsi_ValueIsFunction(interp, func))
         return JSI_ERROR;
     Jsi_Value *aPtr = Jsi_ValueNew1(interp);
     Jsi_RC rc = Jsi_JSONParse(interp, json, &aPtr, 0);
     if (rc == JSI_OK)
-        rc = Jsi_FunctionInvoke(interp, func, aPtr, ret, NULL);
+        rc = Jsi_FunctionInvoke(interp, func, aPtr, ret, _this);
     Jsi_DecrRefCount(interp, aPtr);
     return rc;
 }
@@ -213,7 +213,7 @@ Jsi_RC Jsi_CommandInvokeJSON(Jsi_Interp *interp, const char *cmdstr, const char 
 {
     Jsi_Value *func = Jsi_NameLookup(interp, cmdstr);
     if (func)
-        return Jsi_FunctionInvokeJSON(interp, func, json, ret);
+        return Jsi_FunctionInvokeJSON(interp, func, json, ret, NULL);
     return Jsi_LogError("can not find cmd: %s", cmdstr);
 }
 
@@ -1043,7 +1043,7 @@ done:
     Jsi_RC rc = JSI_ERROR;
     if (interp->debugOpts.debugCallback) {
         Jsi_ValueReset(interp, &interp->retValue);
-        rc = Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.debugCallback, Jsi_DSValue(&dStr), &interp->retValue);
+        rc = Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.debugCallback, Jsi_DSValue(&dStr), &interp->retValue, NULL);
     }
     interp->isInCallback = 0;
     if (interp->parent->exited == 0 && rc != JSI_OK)
@@ -2365,7 +2365,7 @@ static Jsi_RC SubInterpEvalCallback(Jsi_Interp *interp, void* data)
             jsi_AliasCreateCmd(interp, Jsi_DSValue(&se->func), (AliasCmd*)se->acdata);
         }
         else if (se->acfunc) {
-            if (JSI_OK != Jsi_FunctionInvokeJSON(interp, se->acfunc, Jsi_DSValue(&se->data), NULL))
+            if (JSI_OK != Jsi_FunctionInvokeJSON(interp, se->acfunc, Jsi_DSValue(&se->data), NULL, NULL))
                 rc = JSI_ERROR;
             Jsi_DecrRefCount(interp, se->acfunc);
         }

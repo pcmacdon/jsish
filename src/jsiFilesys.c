@@ -1021,7 +1021,7 @@ int Jsi_Puts(Jsi_Interp *interp, Jsi_Channel chan, const char *str, int size)
             Jsi_DString jStr={}, kStr={};
             Jsi_DSPrintf(&kStr, "[%s, %d]",
                 Jsi_JSONQuote(interp, str, size, &jStr), (chan->fp == stderr?1:0));
-            if (Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.putsCallback, Jsi_DSValue(&kStr), NULL) != JSI_OK)
+            if (Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.putsCallback, Jsi_DSValue(&kStr), NULL, NULL) != JSI_OK)
                 code = 1;
             Jsi_DSFree(&jStr);
             Jsi_DSFree(&kStr);

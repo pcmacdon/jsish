@@ -1540,7 +1540,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                 Jsi_DSAppend(&jStr, "[null]", NULL);
                 Jsi_DSAppend(&jStr, "]", NULL);
                 vrc = Jsi_ValueNew1(interp);
-                evrc = Jsi_FunctionInvokeJSON(interp, hv, Jsi_DSValue(&jStr), &vrc);
+                evrc = Jsi_FunctionInvokeJSON(interp, hv, Jsi_DSValue(&jStr), &vrc, NULL);
                 if (Jsi_InterpGone(interp))
                     return -1;
                 if (evrc != JSI_OK || !vrc || !Jsi_ValueIsObjType(interp, vrc, JSI_OT_OBJECT)) {
@@ -1563,14 +1563,14 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             if (hdlPtr->objVar) {  // Call the obj.parse function.
                 Jsi_DSAppend(&jStr, "[\"", buf, "\"]", NULL); // TODO: JSON encode.
                 vrc = Jsi_ValueNew1(interp);
-                evrc = Jsi_FunctionInvokeJSON(interp, hdlPtr->objVar, Jsi_DSValue(&jStr), &vrc);
+                evrc = Jsi_FunctionInvokeJSON(interp, hdlPtr->objVar, Jsi_DSValue(&jStr), &vrc, NULL);
                 isalloc = 1;
             }
             else if (Jsi_ValueIsFunction(interp, hv)) {
                 //printf("CNCNN: %s\n", Jsi_DSValue(&cmdPtr->cName));
                 Jsi_DSAppend(&jStr, "[\"", buf, "\", {wsName:\"", Jsi_DSValue(&cmdPtr->cName), "\"", "}]", NULL); // TODO: JSON encode.
                 vrc = Jsi_ValueNew1(interp);
-                evrc = Jsi_FunctionInvokeJSON(interp, hv, Jsi_DSValue(&jStr), &vrc);
+                evrc = Jsi_FunctionInvokeJSON(interp, hv, Jsi_DSValue(&jStr), &vrc, NULL);
                 isalloc = 1;
             } else {
                 // One shot invoke of string command.

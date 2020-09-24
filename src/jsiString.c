@@ -672,7 +672,7 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             else {
                 Jsi_Value *inStr = Jsi_ValueNewStringDup(interp, source_str);
                 Jsi_IncrRefCount(interp, inStr);
-                Jsi_RC rc = Jsi_FunctionInvokeString(interp, repVal, inStr, &dStr);
+                Jsi_RC rc = Jsi_FunctionInvokeString(interp, repVal, inStr, &dStr, _this);
                 if (Jsi_InterpGone(interp))
                     return JSI_ERROR;
                 if (rc != JSI_OK) {
@@ -789,7 +789,7 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             Jsi_DSFree(&sStr);
             Jsi_IncrRefCount(interp, inStr);
             if (maxArgs==1) {
-                Jsi_RC rc = Jsi_FunctionInvokeString(interp, repVal, inStr, &dStr);
+                Jsi_RC rc = Jsi_FunctionInvokeString(interp, repVal, inStr, &dStr, _this);
                 if (Jsi_InterpGone(interp))
                     return JSI_ERROR;
                 if (rc != JSI_OK) {
@@ -814,7 +814,7 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
                 vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, items, i, 0));
                 Jsi_IncrRefCount(interp, vpargs);
                 ret = Jsi_ValueNew1(interp);
-                rc = Jsi_FunctionInvoke(interp, repVal, vpargs, &ret, NULL);
+                rc = Jsi_FunctionInvoke(interp, repVal, vpargs, &ret, _this);
                 if (Jsi_InterpGone(interp))
                     return JSI_ERROR;
                 Jsi_DecrRefCount(interp, vpargs);

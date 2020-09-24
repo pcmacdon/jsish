@@ -67,11 +67,11 @@ static Jsi_RC consoleInputCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 typedef struct {
     bool trace;
     bool once;
+    bool import;
     bool isMain;
     bool noError;
     bool noEval;
     bool autoIndex;
-    bool import;
     bool global;
     bool exists;
     uint level;
@@ -525,7 +525,7 @@ static Jsi_RC SysExitCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
             return Jsi_LogError("arg1: expected number 'code'");
     }
     if (interp->onExit && interp->parent) {
-        bool b = Jsi_FunctionInvokeBool(interp->parent, interp->onExit, v);
+        bool b = Jsi_FunctionInvokeBool(interp->parent, interp->onExit, v, _this);
         if (Jsi_InterpGone(interp))
             return JSI_ERROR;
         if (b)
@@ -1851,7 +1851,7 @@ Jsi_RC jsi_AssertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         }
         Jsi_Value *vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, NULL, 0, 0));
         Jsi_IncrRefCount(interp, vpargs);
-        rc = Jsi_FunctionInvoke(interp, v, vpargs, ret, NULL);
+        rc = Jsi_FunctionInvoke(interp, v, vpargs, ret, _this);
         Jsi_DecrRefCount(interp, vpargs);
         if (rc != JSI_OK)
             return JSI_OK;
@@ -4099,7 +4099,7 @@ static Jsi_RC SysTimesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     gettimeofday(&tv, NULL);
     start = (Jsi_Wide) tv.tv_sec * 1000000 + tv.tv_usec;
     for (i=0; i<n && rc == JSI_OK; i++) {
-        rc = Jsi_FunctionInvoke(interp, func, NULL, ret, NULL);
+        rc = Jsi_FunctionInvoke(interp, func, NULL, ret, _this);
     }
     gettimeofday(&tv, NULL);
     end = (Jsi_Wide) tv.tv_sec * 1000000 + tv.tv_usec;
@@ -4635,7 +4635,7 @@ static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     ofunc = interp->framePtr->funcName;
     interp->framePtr->arguments = vpargs;
     interp->framePtr->funcName = "moduleRun";
-    rc = Jsi_FunctionInvoke(interp, cmd, vpargs, ret, NULL);
+    rc = Jsi_FunctionInvoke(interp, cmd, vpargs, ret, _this);
     interp->framePtr->arguments = oargs;
     interp->framePtr->funcName = ofunc;
     Jsi_DecrRefCount(interp, cmd);
@@ -4709,7 +4709,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
         if (v==NULL) continue;
         const char *key = (char*)Jsi_TreeKeyGet(tPtr);
         if (!Jsi_ValueObjLookup(interp, v1, key, 1))
-            Jsi_ObjInsert(interp, v1->d.obj, key, v, 0);
+            Jsi_ValueInsert(interp, v1, key, v, 0);
     }
     if (v2)
         Jsi_TreeSearchDone(&search);
@@ -4840,7 +4840,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                     }
             }
             if (rc == JSI_OK)
-                Jsi_ObjInsert(interp, v1->d.obj, key, val, 0);
+                Jsi_ValueInsert(interp, v1, key, val, 0);
         }
         Jsi_TreeSearchDone(&search);
     }

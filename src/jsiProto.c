@@ -161,7 +161,7 @@ static Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func
             else {
                 v = Jsi_ValueNew(interp);
             }
-            Jsi_ObjInsert(interp, args->d.obj, argkey, v, JSI_OM_DONTENUM | JSI_OM_INNERSHARED);
+            Jsi_ValueInsert(interp, args, argkey, v, JSI_OM_DONTENUM | JSI_OM_INNERSHARED);
         }
     }
     return (nrc == JSI_ERROR?nrc:rc);
@@ -426,7 +426,7 @@ static Jsi_RC ObjectValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (!Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
         return Jsi_LogError("can not call values() with non-object");
     Jsi_ValueMakeArrayObject(interp, ret, NULL);
-    return Jsi_ObjGetValues(interp, Jsi_ValueGetObj(interp, val), *ret);
+    return Jsi_ObjGetValues(interp, Jsi_ValueGetObj(interp, val), *ret, _this);
 }
 
 Jsi_RC jsi_ObjectToStringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,

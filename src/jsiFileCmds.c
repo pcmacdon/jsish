@@ -899,7 +899,7 @@ static Jsi_OptionSpec GlobOptions[] = {
 
 static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg,
     const char *zPattern, const char* path, GlobData *opts, int deep,
-    int cnt)
+    int cnt, Jsi_Value* _this)
 {
     if (cnt>interp->maxIncDepth || !path)
         return Jsi_LogError("runaway File.globs");
@@ -1004,7 +1004,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
                     continue;
                 Jsi_DString sStr = {};
                 Jsi_DSAppend(&sStr, spath, "/", z, mid, NULL);
-                rc = SubGlobsDirectory(interp, obj, NULL, NULL, Jsi_DSValue(&sStr), opts, deep, cnt+1);
+                rc = SubGlobsDirectory(interp, obj, NULL, NULL, Jsi_DSValue(&sStr), opts, deep, cnt+1, _this);
                 Jsi_DSFree(&sStr);
                 continue;
             }
@@ -1016,7 +1016,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
                 Jsi_DSAppend(&sStr, spath, (spath[0]?"/":""),  z, NULL);
                 if (opts->dirFilter && Jsi_ValueIsFunction(interp, opts->dirFilter)) {
                     bres=Jsi_FunctionInvokeBool(interp, opts->dirFilter,
-                        Jsi_ValueNewStringDup(interp, Jsi_DSValue(&sStr)));
+                        Jsi_ValueNewStringDup(interp, Jsi_DSValue(&sStr)), _this);
                     if (Jsi_InterpGone(interp)) {
                         rc = JSI_ERROR;
                         goto done;
@@ -1029,7 +1029,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
                 if (opts->types && Jsi_Strchr(opts->types, 'd'))
                     goto dumpit;
                 zz = Jsi_DSValue(&sStr);
-                rc = SubGlobsDirectory(interp, obj, reg, zPattern, zz, opts, deep+1, cnt+1);
+                rc = SubGlobsDirectory(interp, obj, reg, zPattern, zz, opts, deep+1, cnt+1, _this);
                 Jsi_DSFree(&sStr);
                 if (opts->limit>0 && opts->cnt >= opts->limit)
                     goto done;
@@ -1095,7 +1095,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
         if (opts->filter && Jsi_ValueIsFunction(interp, opts->filter)) {
             Jsi_Value *nval = Jsi_ValueNewStringDup(interp, z);
             Jsi_IncrRefCount(interp, nval);
-            bres=Jsi_FunctionInvokeBool(interp, opts->filter, nval);
+            bres=Jsi_FunctionInvokeBool(interp, opts->filter, nval, _this);
             if (Jsi_InterpGone(interp)) {
                 rc = JSI_ERROR;
                 goto done;
@@ -1237,7 +1237,7 @@ static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     if (pat == NULL || Jsi_ValueIsNull(interp, pat))
         dcp = "*";
     else if (Jsi_ValueIsObjType(interp, pat, JSI_OT_REGEXP))
-        rc = SubGlobsDirectory(interp, obj, pat, NULL, dcp, &Data, 0, 0);
+        rc = SubGlobsDirectory(interp, obj, pat, NULL, dcp, &Data, 0, 0, _this);
     else {
         dcp = Jsi_ValueString(interp, pat, NULL);
         if (!dcp) {
@@ -1259,7 +1259,7 @@ static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     } else
         dcp = Jsi_DSAppend(&dStr, dcp, NULL);
         
-    rc = SubGlobsDirectory(interp, obj, NULL, zPattern, dcp, &Data, 0, 0);
+    rc = SubGlobsDirectory(interp, obj, NULL, zPattern, dcp, &Data, 0, 0, _this);
     if (rc != JSI_OK)
         Jsi_ValueMakeUndef(interp, ret);   
     else if (Data.retCount)

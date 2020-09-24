@@ -451,6 +451,7 @@ Jsi_Tree *Jsi_TreeNew(Jsi_Interp *interp, unsigned int keyType, Jsi_TreeDeletePr
     treePtr->typ = (Jsi_Map_Type)JSI_MAP_TREE;
     treePtr->root = NULL;
     treePtr->opts.interp = interp;
+    treePtr->opts.refCnt = 1;
     treePtr->numEntries = 0;
     treePtr->epoch = 0;
     treePtr->opts.keyType = (Jsi_Key_Type)keyType;
@@ -507,16 +508,19 @@ void Jsi_TreeClear (Jsi_Tree *treePtr)
         (*treePtr->opts.lockTreeProc)(treePtr, 0);
 }
 
-void Jsi_TreeDelete (Jsi_Tree *treePtr)
+int Jsi_TreeDelete (Jsi_Tree *treePtr)
 {
     SIGASSERTV(treePtr, TREE);
+    if (--treePtr->opts.refCnt>0) // Shared tree check.
+        return treePtr->opts.refCnt;
     if (treePtr->flags.destroyed)
-        return;
+        return -1;
     //Jsi_TreeClear(treePtr);
     treePtr->flags.destroyed = 1;
     destroy_node(treePtr->opts.interp, treePtr->root);
     _JSI_MEMCLEAR(treePtr);
     Jsi_Free(treePtr);
+    return 0;
 }
 
 /* Swap positions of nodes in tree.  This avoids moving the value, which we can't do for strings/structs. */

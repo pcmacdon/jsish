@@ -22,7 +22,11 @@ struct jsi_Pstate;
 #ifndef SQLITE_VERSION
 #include "sqlite/src/sqlite3.c"
 #endif //SQLITE_VERSION
+#ifdef __cplusplus
+#include "lws/src/src/lws.h"
+#else // __cplusplus
 #include "lws/src/lwsSingle.c"
+#endif //__cplusplus
 #include "src/jsiCode.c"
 #include "src/jsiLexer.c"
 #include "src/jsiFunc.c"

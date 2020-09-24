@@ -4,16 +4,16 @@ var x = {
    _foo:0,
    _bar:'',
    set foo(val) {
-      x._foo=val;
+      this._foo=val;
    },
    get foo() {
-     return x._foo;
+     return this._foo;
    },
    set bar(val) {
-      x._bar=val;
+      this._bar=val;
    },
    get bar() {
-     return x._bar;
+     return this._bar;
    },
 };
 ;x.bar = 'x';
@@ -40,7 +40,7 @@ x.foo=9 ==> 9
 x.foo ==> 9
 x.export++ ==> 99
 x.export ==> 100
-x.foo++ ==> 100
+x.foo++ ==> 9
 Info.vars(x) ==> [ "_bar", "_foo", "export" ]
 i=Info.obj(x) ==> { freeze:false, freezeModify:true, freezeReadCheck:false, getters:[ "foo", "bar" ], objType:"object", setters:[ "foo", "bar" ], spec:undefined }
 keys ==> [ "bar", "foo" ]

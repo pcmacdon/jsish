@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "8da7a9baf8c22efef48939d296defc64"
+#define JSI_STUBS_MD5 "aff068ab3a03d873e96f46a828943e9b"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -90,9 +90,9 @@ typedef struct Jsi_Stubs {
     Jsi_RC(*_Jsi_FunctionArguments)(Jsi_Interp *interp, Jsi_Value *func, int *argcPtr);
     Jsi_RC(*_Jsi_FunctionApply)(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret);
     Jsi_RC(*_Jsi_FunctionInvoke)(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Value *args, Jsi_Value **ret, Jsi_Value *_this);
-    Jsi_RC(*_Jsi_FunctionInvokeJSON)(Jsi_Interp *interp, Jsi_Value *tocall, const char *json, Jsi_Value **ret);
-    int(*_Jsi_FunctionInvokeBool)(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg);
-    Jsi_RC(*_Jsi_FunctionInvokeString)(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_DString *dStr);
+    Jsi_RC(*_Jsi_FunctionInvokeJSON)(Jsi_Interp *interp, Jsi_Value *tocall, const char *json, Jsi_Value **ret, Jsi_Value *_this);
+    int(*_Jsi_FunctionInvokeBool)(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_Value* _this);
+    Jsi_RC(*_Jsi_FunctionInvokeString)(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_DString *dStr, Jsi_Value* _this);
     Jsi_Value*(*_Jsi_VarLookup)(Jsi_Interp *interp, const char *varname);
     Jsi_Value*(*_Jsi_NameLookup)(Jsi_Interp *interp, const char *varname);
     Jsi_Value*(*_Jsi_NameLookup2)(Jsi_Interp *interp, const char *name, const char *inObj);
@@ -278,7 +278,7 @@ typedef struct Jsi_Stubs {
     void(*_Jsi_NumberUtoA10)(Jsi_UWide, char* buf, int bsiz);
     Jsi_Hash*(*_Jsi_HashNew)(Jsi_Interp *interp, uint keyType, Jsi_HashDeleteProc *freeProc);
     Jsi_RC(*_Jsi_HashConf)(Jsi_Hash *hashPtr, Jsi_MapOpts *opts, bool set);
-    void(*_Jsi_HashDelete)(Jsi_Hash *hashPtr);
+    int(*_Jsi_HashDelete)(Jsi_Hash *hashPtr);
     void(*_Jsi_HashClear)(Jsi_Hash *hashPtr);
     Jsi_HashEntry*(*_Jsi_HashSet)(Jsi_Hash *hashPtr, const void *key, void *value);
     void*(*_Jsi_HashGet)(Jsi_Hash *hashPtr, const void *key, int flags);
@@ -295,7 +295,7 @@ typedef struct Jsi_Stubs {
     uint(*_Jsi_HashSize)(Jsi_Hash *hashPtr);
     Jsi_Tree*(*_Jsi_TreeNew)(Jsi_Interp *interp, uint keyType, Jsi_TreeDeleteProc *freeProc);
     Jsi_RC(*_Jsi_TreeConf)(Jsi_Tree *treePtr, Jsi_MapOpts *opts, bool set);
-    void(*_Jsi_TreeDelete)(Jsi_Tree *treePtr);
+    int(*_Jsi_TreeDelete)(Jsi_Tree *treePtr);
     void(*_Jsi_TreeClear)(Jsi_Tree *treePtr);
     Jsi_TreeEntry*(*_Jsi_TreeObjSetValue)(Jsi_Obj* obj, const char *key, Jsi_Value *val, int isstrkey);
     Jsi_Value*    (*_Jsi_TreeObjGetValue)(Jsi_Obj* obj, const char *key, int isstrkey);
@@ -317,7 +317,7 @@ typedef struct Jsi_Stubs {
     Jsi_RC(*_Jsi_TreeKeysDump)(Jsi_Interp *interp, Jsi_Tree *hashPtr, Jsi_Value **ret, int flags);
     Jsi_List*(*_Jsi_ListNew)(Jsi_Interp *interp, Jsi_Wide flags, Jsi_HashDeleteProc *freeProc);
     Jsi_RC(*_Jsi_ListConf)(Jsi_List *list, Jsi_MapOpts *opts, bool set);
-    void(*_Jsi_ListDelete)(Jsi_List *list);
+    int(*_Jsi_ListDelete)(Jsi_List *list);
     void(*_Jsi_ListClear)(Jsi_List *list);
     void*(*_Jsi_ListValueGet)(Jsi_ListEntry *list);
     void(*_Jsi_ListValueSet)(Jsi_ListEntry *list, const void *value);
@@ -339,7 +339,7 @@ typedef struct Jsi_Stubs {
     void(*_Jsi_StackFreeElements)(Jsi_Interp *interp, Jsi_Stack *stack, Jsi_DeleteProc *freeFunc);
     Jsi_Map*(*_Jsi_MapNew)(Jsi_Interp *interp, Jsi_Map_Type mapType, Jsi_Key_Type keyType, Jsi_MapDeleteProc *freeProc);
     Jsi_RC(*_Jsi_MapConf)(Jsi_Map *mapPtr, Jsi_MapOpts *opts, bool set);
-    void(*_Jsi_MapDelete)(Jsi_Map *mapPtr);
+    int(*_Jsi_MapDelete)(Jsi_Map *mapPtr);
     void(*_Jsi_MapClear)(Jsi_Map *mapPtr);
     Jsi_MapEntry*(*_Jsi_MapSet)(Jsi_Map *mapPtr, const void *key, const void *value);
     void*(*_Jsi_MapGet)(Jsi_Map *mapPtr, const void *key, int flags);
@@ -448,15 +448,15 @@ typedef struct Jsi_Stubs {
     Jsi_RC(*_Jsi_SqlObjBinds)(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts*opts);
     Jsi_RC(*_Jsi_UserObjName)(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr);
     Jsi_Value*(*_Jsi_ValueNewRegExp)(Jsi_Interp *interp, const char *regtxt, const char* modifiers);
-    Jsi_RC(*_Jsi_ObjGetValues)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal);
+    Jsi_RC(*_Jsi_ObjGetValues)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal, Jsi_Value *_this);
     Jsi_PkgOpts*(*_Jsi_CommandPkgOpts)(Jsi_Interp *interp, Jsi_Func *func);
     Jsi_Interp*(*_Jsi_InterpMain)(int argc, char **argv, Jsi_InitProc* initProc);
     Jsi_RC(*_Jsi_ObjFreeze)(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck);
-    Jsi_Hash*(*_Jsi_ObjAccessor)(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback);
+    Jsi_Hash*(*_Jsi_ObjAccessor)(Jsi_Interp *interp, Jsi_Obj *obj, const char *name, bool isSet, Jsi_Value* callback, int flags);
     Jsi_Value*(*_Jsi_ValueNewFunction)(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, void *privData);
-    Jsi_AccessorSpec*(*_Jsi_ObjAccessorWithSpec)(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, uchar *dataPtr, Jsi_Value* callback, uint flags);
+    Jsi_AccessorSpec*(*_Jsi_ObjAccessorWithSpec)(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, void *dataPtr, Jsi_Value* callback, int flags);
     Jsi_Func*(*_Jsi_FunctionFromValue)(Jsi_Interp *interp, Jsi_Value* value);
-    Jsi_RC (*_Jsi_NewVariable)(Jsi_Interp *interp, const char *name, Jsi_Value *val, uint flags);
+    Jsi_RC (*_Jsi_NewVariable)(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags);
     void *endPtr;
 } Jsi_Stubs;
 
@@ -958,9 +958,9 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_FunctionArguments(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionArguments(n0,n1,n2))
 #define Jsi_FunctionApply(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionApply(n0,n1,n2,n3))
 #define Jsi_FunctionInvoke(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvoke(n0,n1,n2,n3,n4))
-#define Jsi_FunctionInvokeJSON(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvokeJSON(n0,n1,n2,n3))
-#define Jsi_FunctionInvokeBool(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvokeBool(n0,n1,n2))
-#define Jsi_FunctionInvokeString(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvokeString(n0,n1,n2,n3))
+#define Jsi_FunctionInvokeJSON(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvokeJSON(n0,n1,n2,n3,n4))
+#define Jsi_FunctionInvokeBool(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvokeBool(n0,n1,n2,n3))
+#define Jsi_FunctionInvokeString(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionInvokeString(n0,n1,n2,n3,n4))
 #define Jsi_VarLookup(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_VarLookup(n0,n1))
 #define Jsi_NameLookup(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_NameLookup(n0,n1))
 #define Jsi_NameLookup2(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_NameLookup2(n0,n1,n2))
@@ -1316,11 +1316,11 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_SqlObjBinds(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_SqlObjBinds(n0,n1,n2))
 #define Jsi_UserObjName(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_UserObjName(n0,n1,n2))
 #define Jsi_ValueNewRegExp(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewRegExp(n0,n1,n2))
-#define Jsi_ObjGetValues(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjGetValues(n0,n1,n2))
+#define Jsi_ObjGetValues(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjGetValues(n0,n1,n2,n3))
 #define Jsi_CommandPkgOpts(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_CommandPkgOpts(n0,n1))
 #define Jsi_InterpMain(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_InterpMain(n0,n1,n2))
 #define Jsi_ObjFreeze(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjFreeze(n0,n1,n2,n3,n4))
-#define Jsi_ObjAccessor(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessor(n0,n1,n2,n3,n4))
+#define Jsi_ObjAccessor(n0,n1,n2,n3,n4,n5) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessor(n0,n1,n2,n3,n4,n5))
 #define Jsi_ValueNewFunction(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewFunction(n0,n1,n2,n3))
 #define Jsi_ObjAccessorWithSpec(n0,n1,n2,n3,n4,n5) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessorWithSpec(n0,n1,n2,n3,n4,n5))
 #define Jsi_FunctionFromValue(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionFromValue(n0,n1))

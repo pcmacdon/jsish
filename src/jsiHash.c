@@ -407,6 +407,7 @@ Jsi_HashNew(Jsi_Interp *interp, unsigned int keyType, Jsi_HashDeleteProc freePro
     tablePtr->opts.mapType = (Jsi_Map_Type)JSI_MAP_HASH;
     tablePtr->typ = JSI_MAP_HASH;
     tablePtr->opts.interp = interp;
+    tablePtr->opts.refCnt = 1;
     tablePtr->buckets = tablePtr->staticBuckets;
 #if !(JSI_SMALL_HASH_TABLE && !(JSI_SMALL_HASH_TABLE & (JSI_SMALL_HASH_TABLE - 1)))
 #error "small hash must be a power of two"
@@ -519,11 +520,15 @@ Jsi_HashClear(Jsi_Hash *tablePtr)
 }
 
 
-void
+int
 Jsi_HashDelete(Jsi_Hash *tablePtr)
 {
+    SIGASSERT(tablePtr, HASH);
+    if (--tablePtr->opts.refCnt>0) // Shared hash check.
+        return tablePtr->opts.refCnt;
     Jsi_HashClear(tablePtr);
     Jsi_Free(tablePtr);
+    return 0;
 }
 
 Jsi_HashEntry *

@@ -496,7 +496,7 @@ static Jsi_RC VfsMountCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_IncrRefCount(interp, vpargs);
     for (i=0; i<n; i++)
         Jsi_IncrRefCount(interp, vargs[i]);
-    Jsi_RC rc = Jsi_FunctionInvoke(interp, cmd, vpargs, ret, NULL);
+    Jsi_RC rc = Jsi_FunctionInvoke(interp, cmd, vpargs, ret, _this);
     for (i=0; i<n; i++)
         Jsi_DecrRefCount(interp, vargs[i]);
     Jsi_DecrRefCount(interp, vpargs);
@@ -595,7 +595,7 @@ static Jsi_RC VfsVmountCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         
         Jsi_IncrRefCount(interp, vargs[0]);
         Jsi_IncrRefCount(interp, vpargs);
-        Jsi_RC jrc = Jsi_FunctionInvoke(interp, cmdPtr->callback, vpargs, &retStr, NULL);
+        Jsi_RC jrc = Jsi_FunctionInvoke(interp, cmdPtr->callback, vpargs, &retStr, _this);
         Jsi_DecrRefCount(interp, vpargs);
         Jsi_DecrRefCount(interp, vargs[0]);
         if (jrc != JSI_OK) {
@@ -619,7 +619,7 @@ static Jsi_RC VfsVmountCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
         
         Jsi_IncrRefCount(interp, vargs[0]);
         Jsi_IncrRefCount(interp, vpargs);
-        Jsi_RC jrc = Jsi_FunctionInvoke(interp, cmdPtr->callback, vpargs, &retStr, NULL);
+        Jsi_RC jrc = Jsi_FunctionInvoke(interp, cmdPtr->callback, vpargs, &retStr, _this);
         Jsi_DecrRefCount(interp, vpargs);
         Jsi_DecrRefCount(interp, vargs[0]);
         if (jrc != JSI_OK) {
@@ -719,7 +719,7 @@ static Jsi_RC VfsUnmountCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         
         Jsi_IncrRefCount(interp, vargs[0]);
         Jsi_IncrRefCount(interp, vpargs);
-        jrc = Jsi_FunctionInvoke(interp, cmdPtr->callback, vpargs, &retStr, NULL);
+        jrc = Jsi_FunctionInvoke(interp, cmdPtr->callback, vpargs, &retStr, _this);
         Jsi_DecrRefCount(interp, vpargs);
         Jsi_DecrRefCount(interp, vargs[0]);
         Jsi_DecrRefCount(interp, retStr);

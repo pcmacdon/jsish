@@ -46,9 +46,9 @@ Jsi_RC Jsi_Initdyno(Jsi_Interp *interp, int release) {
     Jsi_IncrRefCount(interp, dynObj);
 
     Jsi_Obj *obj = Jsi_ValueGetObj(interp, dynObj);
-    Jsi_ObjAccessor(interp, obj, 1, "foo", ocmd);
-    Jsi_ObjAccessor(interp, obj, 0, "foo", ocmd);
-    Jsi_ObjAccessor(interp, obj, 1, "bar", ocmd);
-    Jsi_ObjAccessor(interp, obj, 0, "bar", ocmd);
+    Jsi_ObjAccessor(interp, obj, "foo", 1, ocmd, 0);
+    Jsi_ObjAccessor(interp, obj, "foo", 0, ocmd, 0);
+    Jsi_ObjAccessor(interp, obj, "bar", 1, ocmd, 0);
+    Jsi_ObjAccessor(interp, obj, "bar", 0, ocmd, 0);
     return JSI_OK;
 }

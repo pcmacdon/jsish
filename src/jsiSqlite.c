@@ -1940,7 +1940,7 @@ static Jsi_RC dbEvalCallCmd( DbEvalContext *p, Jsi_Interp *interp, Jsi_RC result
             Jsi_ObjInsert(interp, argso, apColName[i], nnv, 0);
         }
         Jsi_IncrRefCount(interp, varg1);
-        bool rb = Jsi_FunctionInvokeBool(interp, p->tocall, varg1);
+        bool rb = Jsi_FunctionInvokeBool(interp, p->tocall, varg1, NULL);
         Jsi_DecrRefCount(interp, varg1);
         if (Jsi_InterpGone(interp))
             return JSI_ERROR;
@@ -2548,17 +2548,6 @@ static void dbOutputHexBlob(Jsi_DString *dStr, const void *pBlob, int nBlob){
   Jsi_DSAppend(dStr, "X'", NULL);
   for(i=0; i<nBlob; i++){ snprintf(out, sizeof(out),"%02x",zBlob[i]&0xff);Jsi_DSAppend(dStr, out, NULL); }
   Jsi_DSAppend(dStr, "'", NULL);
-}
-
-bool dbIsAlnumStr(const char *cp)
-{
-    if (!cp || !*cp) return 0;
-    while (*cp)
-        if (isalnum(*cp) || *cp == '_')
-            cp++;
-        else
-            return 0;
-    return 1;
 }
 
 #define FN_sqlexec JSI_INFO("\

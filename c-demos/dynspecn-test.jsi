@@ -1,0 +1,31 @@
+#!/usr/bin/env jsish
+
+;require('dynspecn');
+
+var keys, s, v;
+;sobj;
+;arr;
+;arr[0];
+;arr[0].id = 32;
+;arr[0];
+;sobj.id;
+;sobj.id = arr[0].id;
+;sobj.id;
+;dobj.n;
+;darr[0];
+
+/*
+=!EXPECTSTART!=
+require('dynspecn') ==> 1
+sobj ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] }
+arr ==> [ { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] }, { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] } ]
+arr[0] ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] }
+arr[0].id = 32 ==> 32
+arr[0] ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:32, desc:"", isdirty:false, name:"", max:0, markSet:[] }
+sobj.id ==> 0
+sobj.id = arr[0].id ==> 32
+sobj.id ==> 32
+dobj.n ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] }
+darr[0] ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] }
+=!EXPECTEND!=
+*/

@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   1
-#define JSI_VERSION_RELEASE 7
+#define JSI_VERSION_RELEASE 8
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -211,6 +211,8 @@ typedef enum {
     JSI_DBI_NOCREATE     =0x0002, /* Db must already exist. */
     JSI_DBI_NO_MUTEX     =0x0004, /* Disable mutex. */
     JSI_DBI_FULL_MUTEX   =0x0008, /* Use full mutex. */
+    
+    JSI_ACCESSOR_SUBFIELD= 0x001, /* Setup subfields in Jsi_ObjAccessor */ 
     
     JSI_MAX_NUMBER_STRING=100,
     JSI_BUFSIZ=8192
@@ -437,9 +439,9 @@ JSI_EXTERN Jsi_Func* Jsi_FunctionFromValue(Jsi_Interp *interp, Jsi_Value* value)
 JSI_EXTERN Jsi_RC Jsi_FunctionArguments(Jsi_Interp *interp, Jsi_Value *func, int *argcPtr); /*STUB = 59*/
 JSI_EXTERN Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret); /*STUB = 60*/
 JSI_EXTERN Jsi_RC Jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Value *args, Jsi_Value **ret, Jsi_Value *_this); /*STUB = 61*/
-JSI_EXTERN Jsi_RC Jsi_FunctionInvokeJSON(Jsi_Interp *interp, Jsi_Value *tocall, const char *json, Jsi_Value **ret); /*STUB = 62*/
-JSI_EXTERN int Jsi_FunctionInvokeBool(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg); /*STUB = 63*/
-JSI_EXTERN Jsi_RC Jsi_FunctionInvokeString(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_DString *dStr); /*STUB = 64*/
+JSI_EXTERN Jsi_RC Jsi_FunctionInvokeJSON(Jsi_Interp *interp, Jsi_Value *tocall, const char *json, Jsi_Value **ret, Jsi_Value *_this); /*STUB = 62*/
+JSI_EXTERN int Jsi_FunctionInvokeBool(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_Value* _this); /*STUB = 63*/
+JSI_EXTERN Jsi_RC Jsi_FunctionInvokeString(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *arg, Jsi_DString *dStr, Jsi_Value* _this); /*STUB = 64*/
 JSI_EXTERN Jsi_Value* Jsi_VarLookup(Jsi_Interp *interp, const char *varname); /*STUB = 65*/
 JSI_EXTERN Jsi_Value* Jsi_NameLookup(Jsi_Interp *interp, const char *varname); /*STUB = 66*/
 JSI_EXTERN Jsi_Value* Jsi_NameLookup2(Jsi_Interp *interp, const char *name, const char *inObj); /*STUB = 67*/
@@ -487,10 +489,10 @@ JSI_EXTERN Jsi_IterObj* Jsi_IterObjNew(Jsi_Interp *interp, Jsi_IterProc *iterPro
 JSI_EXTERN void Jsi_IterObjFree(Jsi_IterObj *iobj); /*STUB = 413*/
 JSI_EXTERN void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth); /*STUB = 414*/
 JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
-JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal); /*STUB = 420*/
+JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal, Jsi_Value *_this); /*STUB = 420*/
 JSI_EXTERN Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck); /*STUB = 423*/
-JSI_EXTERN Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback); /*STUB = 424*/
-JSI_EXTERN Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, uchar *dataPtr, Jsi_Value* callback, uint flags); /*STUB = 426*/
+JSI_EXTERN Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, const char *name, bool isSet, Jsi_Value* callback, int flags); /*STUB = 424*/
+JSI_EXTERN Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, void *dataPtr, Jsi_Value* callback, int flags); /*STUB = 426*/
 
 struct Jsi_IterObj {
     Jsi_Interp *interp;
@@ -693,7 +695,7 @@ JSI_EXTERN const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str); /*STUB =
 JSI_EXTERN const char* Jsi_KeyLookup(Jsi_Interp *interp, const char *str); /*STUB = 225*/
 JSI_EXTERN bool Jsi_IsReserved(Jsi_Interp *interp, const char* str, bool sql); /*STUB = 415*/
 JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts*opts); /*STUB = 417*/
-JSI_EXTERN Jsi_RC  Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, uint flags); /*STUB = 428*/ /*LAST*/
+JSI_EXTERN Jsi_RC  Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags); /*STUB = 428*/ /*LAST*/
 
 JSI_EXTERN Jsi_RC Jsi_DatetimeFormat(Jsi_Interp *interp, Jsi_Number date, const char *fmt, int isUtc, Jsi_DString *dStr);  /*STUB = 226*/
 JSI_EXTERN Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, int isUtc, Jsi_Number *datePtr, bool noMsg); /*STUB = 227*/
@@ -743,6 +745,7 @@ typedef struct Jsi_MapOpts {
     Jsi_Key_Type keyType; // Read-only
     Jsi_Interp *interp;
     Jsi_Wide flags;
+    int refCnt;           // Shared map.
     void *user, *user2;
     Jsi_MapFmtKeyProc *fmtKeyProc;
     Jsi_RBCompareProc *compareTreeProc;
@@ -766,7 +769,7 @@ typedef struct Jsi_HashSearch {
 
 JSI_EXTERN Jsi_Hash* Jsi_HashNew(Jsi_Interp *interp, uint keyType, Jsi_HashDeleteProc *freeProc); /*STUB = 248*/
 JSI_EXTERN Jsi_RC Jsi_HashConf(Jsi_Hash *hashPtr, Jsi_MapOpts *opts, bool set); /*STUB = 249*/
-JSI_EXTERN void Jsi_HashDelete(Jsi_Hash *hashPtr); /*STUB = 250*/
+JSI_EXTERN int Jsi_HashDelete(Jsi_Hash *hashPtr); /*STUB = 250*/
 JSI_EXTERN void Jsi_HashClear(Jsi_Hash *hashPtr); /*STUB = 251*/
 JSI_EXTERN Jsi_HashEntry* Jsi_HashSet(Jsi_Hash *hashPtr, const void *key, void *value); /*STUB = 252*/
 JSI_EXTERN void* Jsi_HashGet(Jsi_Hash *hashPtr, const void *key, int flags); /*STUB = 253*/
@@ -796,7 +799,7 @@ typedef struct Jsi_TreeSearch {
 
 JSI_EXTERN Jsi_Tree* Jsi_TreeNew(Jsi_Interp *interp, uint keyType, Jsi_TreeDeleteProc *freeProc); /*STUB = 265*/
 JSI_EXTERN Jsi_RC Jsi_TreeConf(Jsi_Tree *treePtr, Jsi_MapOpts *opts, bool set); /*STUB = 266*/
-JSI_EXTERN void Jsi_TreeDelete(Jsi_Tree *treePtr); /*STUB = 267*/
+JSI_EXTERN int Jsi_TreeDelete(Jsi_Tree *treePtr); /*STUB = 267*/
 JSI_EXTERN void Jsi_TreeClear(Jsi_Tree *treePtr); /*STUB = 268*/
 JSI_EXTERN Jsi_TreeEntry* Jsi_TreeObjSetValue(Jsi_Obj* obj, const char *key, Jsi_Value *val, int isstrkey); /*STUB = 269*/
 JSI_EXTERN Jsi_Value*     Jsi_TreeObjGetValue(Jsi_Obj* obj, const char *key, int isstrkey); /*STUB = 270*/
@@ -846,7 +849,7 @@ typedef struct Jsi_ListSearch {
 
 JSI_EXTERN Jsi_List* Jsi_ListNew(Jsi_Interp *interp, Jsi_Wide flags, Jsi_HashDeleteProc *freeProc); /*STUB = 287*/
 JSI_EXTERN Jsi_RC Jsi_ListConf(Jsi_List *list, Jsi_MapOpts *opts, bool set); /*STUB = 288*/
-JSI_EXTERN void Jsi_ListDelete(Jsi_List *list); /*STUB = 289*/
+JSI_EXTERN int Jsi_ListDelete(Jsi_List *list); /*STUB = 289*/
 JSI_EXTERN void Jsi_ListClear(Jsi_List *list); /*STUB = 290*/
 //#define Jsi_ListSet(l, before, value) Jsi_ListPush(l, before, Jsi_ListEntryNew(l, value))
 //#define Jsi_ListGet(l, le) (le)->value 
@@ -908,7 +911,7 @@ typedef struct Jsi_MapSearch {
 
 JSI_EXTERN Jsi_Map* Jsi_MapNew(Jsi_Interp *interp, Jsi_Map_Type mapType, Jsi_Key_Type keyType, Jsi_MapDeleteProc *freeProc); /*STUB = 309*/
 JSI_EXTERN Jsi_RC Jsi_MapConf(Jsi_Map *mapPtr, Jsi_MapOpts *opts, bool set); /*STUB = 310*/
-JSI_EXTERN void Jsi_MapDelete (Jsi_Map *mapPtr); /*STUB = 311*/
+JSI_EXTERN int Jsi_MapDelete (Jsi_Map *mapPtr); /*STUB = 311*/
 JSI_EXTERN void Jsi_MapClear (Jsi_Map *mapPtr); /*STUB = 312*/
 JSI_EXTERN Jsi_MapEntry* Jsi_MapSet(Jsi_Map *mapPtr, const void *key, const void *value); /*STUB = 313*/
 JSI_EXTERN void* Jsi_MapGet(Jsi_Map *mapPtr, const void *key, int flags); /*STUB = 314*/
@@ -1499,7 +1502,7 @@ typedef struct Jsi_AccessorSpec {
     const char *objName;
     Jsi_Value *callback;
     void *dataPtr;
-    uint flags;
+    int flags;
     Jsi_Value* varVal;
     Jsi_Obj *varObj;
     bool callAlloc;

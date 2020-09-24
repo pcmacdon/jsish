@@ -992,24 +992,7 @@ static Jsi_Value *jsi_ValueLookupBase(Jsi_Interp *interp, Jsi_Value *target, Jsi
     if (obj->getters) {
         Jsi_HashEntry *hPtr = Jsi_HashEntryFind(obj->getters, keyStr);
         if (hPtr) {
-            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, 0);
-       /* Jsi_Value *vget = (hPtr?(Jsi_Value*)Jsi_HashValueGet(hPtr):NULL);
-        if (vget) {
-            Jsi_Value *vpargs = NULL, *vargs[2], *vres = interp->GetterValue;
-            Jsi_FuncObj *fobj = vget->d.obj->d.fobj;
-            int i = 0;
-            if (!fobj->func->isGet) {
-                vargs[i++] = Jsi_ValueNewStringDup(interp, keyStr);
-                Jsi_IncrRefCount(interp, vargs[0]);
-                vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, i, 0));
-                Jsi_IncrRefCount(interp, vpargs);
-            }
-            
-            Jsi_RC rc = Jsi_FunctionInvoke(interp, vget, vpargs, &vres, NULL);
-            if (vpargs) {
-                Jsi_DecrRefCount(interp, vargs[0]);
-                Jsi_DecrRefCount(interp, vpargs);
-            }*/
+            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, target, 0);
             if (rc == JSI_OK) {
                 v = interp->GetterValue;
                 v->f.bits.isgetter = 1;
@@ -1302,18 +1285,12 @@ char *Jsi_ValueArrayIndexToStr(Jsi_Interp *interp, Jsi_Value *args, int index, i
     return res;
 }
 
-Jsi_RC Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, uint flags) {
-    return Jsi_ObjInsert(interp, interp->csc->d.obj, name, val, 0);
+Jsi_RC Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags) {
+    if (!val)
+        val = Jsi_ValueNew(interp);
+    return Jsi_ValueInsert(interp, interp->csc, name, val, flags);
 }
 
-// Insert val into target and add flags to it.
-Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi_Value *val, int flags)
-{
-    if (target->vt != JSI_VT_OBJECT)
-        return Jsi_LogError("Target is not object");
-    target->f.flag |= flags;
-    return Jsi_ObjInsert(interp, target->d.obj, key, val, flags);
-}
 
 // If an array set value in array, else in object.
 Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_Value *val, int flags)
@@ -1324,14 +1301,14 @@ Jsi_RC Jsi_ValueInsertArray(Jsi_Interp *interp, Jsi_Value *target, int key, Jsi_
     
     if (obj->isarrlist) {
         if (key >= 0 && (uint)key < interp->maxArrayList) {
-            Jsi_ObjArraySet(interp, obj, val, key);
+            Jsi_ValueArraySet(interp, target, val, key);
             return JSI_OK;
         }
         return JSI_ERROR;
     }
     char unibuf[JSI_MAX_NUMBER_STRING];
     Jsi_NumberItoA10(key, unibuf, sizeof(unibuf));
-    return Jsi_ObjInsert(interp, obj, unibuf, val, flags);
+    return Jsi_ValueInsert(interp, target, unibuf, val, flags);
 }
 
 /* OBJ INTERFACE TO BTREE */
@@ -1359,7 +1336,7 @@ static void IterObjInsert(Jsi_IterObj *io, Jsi_TreeEntry *hPtr)
     IterObjInsertKey(io, (const char*)Jsi_TreeKeyGet(hPtr));
 }
 
-Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, int flags)
+Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, Jsi_Value *_this, int flags)
 {
     const char *key = (char*)Jsi_HashKeyGet(hPtr);
     Jsi_Value *v = (Jsi_Value*)Jsi_HashValueGet(hPtr);
@@ -1377,7 +1354,7 @@ Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, i
     vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, i, 0));
     Jsi_IncrRefCount(interp, val);
     Jsi_IncrRefCount(interp, vpargs);
-    Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
+    Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, _this);
     Jsi_DecrRefCount(interp, vpargs);
     Jsi_DecrRefCount(interp, val);
     if (i>1)
@@ -1388,7 +1365,7 @@ Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, i
     return JSI_OK;
 }
 
-Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, int flags)
+Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, Jsi_Value *_this, int flags)
 {
     const char *key = (char*)Jsi_HashKeyGet(hPtr);
     Jsi_Value *vcall = (Jsi_Value*)Jsi_HashValueGet(hPtr);
@@ -1404,7 +1381,7 @@ Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres,
         Jsi_IncrRefCount(interp, vpargs);
     }
     
-    Jsi_RC rc = Jsi_FunctionInvoke(interp, vcall, vpargs, vres, NULL);
+    Jsi_RC rc = Jsi_FunctionInvoke(interp, vcall, vpargs, vres, _this);
     if (vpargs) {
         Jsi_DecrRefCount(interp, vargs[0]);
         Jsi_DecrRefCount(interp, vpargs);
@@ -1412,7 +1389,7 @@ Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres,
     return rc;
 }
 
-Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
+static Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, Jsi_Value *_this, int flags)
 {
     Jsi_TreeEntry *hPtr;
     SIGASSERT(val, VALUE);
@@ -1420,7 +1397,7 @@ Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Valu
     if (obj && obj->setters && val) {
         Jsi_HashEntry *hPtr = Jsi_HashEntryFind(obj->setters, key);
         if (hPtr)
-            return jsi_SetterCall(interp, hPtr, val, 0);
+            return jsi_SetterCall(interp, hPtr, val, _this, 0);
     }
 
     if (val && obj->freeze) {
@@ -1440,6 +1417,20 @@ Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Valu
     if ((flags&JSI_OM_DONTENUM))
         val->f.bits.dontenum =hPtr->f.bits.dontenum = 1;
     return JSI_OK;
+}
+
+// Insert val into target and add flags to it.
+Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi_Value *val, int flags)
+{
+    if (target->vt != JSI_VT_OBJECT)
+        return Jsi_LogError("Target is not object");
+    target->f.flag |= flags;
+    return jsi_ObjValInsert(interp, target->d.obj, key, val, target, flags);
+}
+
+Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
+{
+    return jsi_ObjValInsert(interp, obj, key, val, NULL, flags);
 }
 
 static Jsi_RC IterGetKeysCallback(Jsi_Tree* tree, Jsi_TreeEntry *hPtr, void *data)
@@ -1481,7 +1472,7 @@ void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj
         iterobj->isgetter = 1;
         for (hPtr = Jsi_HashSearchFirst(to->getters, &search);
             hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
-                const char *key = Jsi_HashKeyGet(hPtr);
+                const char *key = (char*)Jsi_HashKeyGet(hPtr);
                 IterObjInsertKey(iterobj, key);
         }
         return;

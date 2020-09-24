@@ -32,7 +32,7 @@ static Jsi_OptionSpec MyOptions[] = {
     JSI_OPT_END(        MyData)
 };
 
-Jsi_InitProc Jsi_Initdynspec;
+Jsi_InitProc Jsi_Initdynspecn;
 static int calls = 0;
 
 bool filterproc(Jsi_AccessorSpec *ap, const char *key, Jsi_Value *val) {
@@ -43,19 +43,33 @@ bool filterproc(Jsi_AccessorSpec *ap, const char *key, Jsi_Value *val) {
     return 0;
 }
 
-Jsi_RC Jsi_Initdynspec(Jsi_Interp *interp, int release) {
-    static MyData mydata  = {};
+Jsi_RC Jsi_Initdynspecn(Jsi_Interp *interp, int release) {
+    static MyData mydata  = {}, mydata2[4] = {};
 
     if (release) {
         return JSI_OK;
     }
-    Jsi_LogDebug("LOADED DYNSPEC");
-    Jsi_PkgProvide(interp, "dynspec", 1, Jsi_Initdynspec);
+    Jsi_LogDebug("LOADED DYNSPECN");
+    Jsi_PkgProvide(interp, "dynspecn", 1, Jsi_Initdynspecn);
 
-    Jsi_AccessorSpec *ap  = Jsi_ObjAccessorWithSpec(interp, "sobj",  MyOptions, (uchar*)&mydata,  NULL, 0);
+    Jsi_AccessorSpec
+        *ap  = Jsi_ObjAccessorWithSpec(interp, "sobj",  MyOptions, (uchar*)&mydata,  NULL, 0);
     if (!ap)
         return JSI_ERROR;
 
+    /* This implicitly cause an eval of "arr[0] = {}", etc  */
+    if (JSI_OK != Jsi_NewVariable(interp, "arr", Jsi_ValueNewArray(interp, NULL, 0), 0) ||
+        !Jsi_ObjAccessorWithSpec(interp, "arr[0]", MyOptions, (uchar*)&mydata2[0], NULL, 0) ||
+        !Jsi_ObjAccessorWithSpec(interp, "arr[1]", MyOptions, (uchar*)&mydata2[1], NULL, 0))
+        return JSI_ERROR;
+
+
+    /* Pre-created vars. */
+    if (JSI_OK != Jsi_EvalString(interp, "var darr = [{}]; var dobj = {n:{}};", 0))
+        return JSI_ERROR;
+    if (!Jsi_ObjAccessorWithSpec(interp, "darr[0]", MyOptions, (uchar*)&mydata2[2], NULL, 0) 
+        || !Jsi_ObjAccessorWithSpec(interp, "dobj.n", MyOptions, (uchar*)&mydata2[3], NULL, 0))
+        return JSI_ERROR;
     ap->filterProc = filterproc;
 
     return JSI_OK;

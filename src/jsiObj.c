@@ -3,7 +3,7 @@
 #include "jsiInt.h"
 #endif
 
-static void jsi_AccessorConfFree(Jsi_Interp* interp, Jsi_Obj* obj);
+static void jsi_AccessorSpecFree(Jsi_Interp* interp, Jsi_Obj* obj);
 
 /******************* TREE ACCESS **********************/
 
@@ -124,7 +124,7 @@ static Jsi_RC ObjListifyValuesCallback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void
     return JSI_OK;
 }
 
-Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal)
+Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal, Jsi_Value *_this)
 {
     if (!Jsi_ValueIsObjType(interp, outVal, JSI_OT_ARRAY))
         return Jsi_LogBug("outVal is not an array");
@@ -136,7 +136,7 @@ Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal)
         for (hPtr = Jsi_HashSearchFirst(obj->getters, &search);
             hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
             Jsi_Value *val = Jsi_ValueNew(interp);
-            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &val, 0);
+            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &val, _this, 0);
             if (Jsi_ObjArrayAdd(interp, to, val) != JSI_OK || rc != JSI_OK)
                 return JSI_ERROR;
         }
@@ -295,7 +295,6 @@ Jsi_Obj *Jsi_ObjNewType(Jsi_Interp *interp, Jsi_otype otype)
 void Jsi_ObjFree(Jsi_Interp *interp, Jsi_Obj *obj)
 {
     interp->dbPtr->objCnt--;
-    //assert(obj->refcnt == 0);
     //jsi_AllObjOp(interp, obj, 0);
 #ifdef JSI_MEM_DEBUG
     if (interp != obj->VD.interp)
@@ -311,8 +310,7 @@ void Jsi_ObjFree(Jsi_Interp *interp, Jsi_Obj *obj)
     if (obj->getters)
         Jsi_HashDelete(obj->getters);
     if (obj->accessorSpec)
-        jsi_AccessorConfFree(interp, obj);
-    /* printf("Free obj: %x\n", (int)obj); */
+        jsi_AccessorSpecFree(interp, obj);
     switch (obj->ot) {
         case JSI_OT_STRING:
             if (!obj->isstrkey)
@@ -515,7 +513,7 @@ Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyO
     return JSI_OK;
 }
 
-Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback) {
+Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, const char *name, bool isSet, Jsi_Value* callback, int flags) {
     Jsi_Hash *h = NULL;
     Jsi_HashEntry *hPtr;
     if (obj->ot != JSI_OT_OBJECT) {
@@ -545,7 +543,7 @@ Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const ch
         if (!hPtr)
             Jsi_LogWarn("%s accessor not found for %s", isSet?"set":"get", name);
         else {
-            callback = Jsi_HashValueGet(hPtr);
+            callback = (Jsi_Value*)Jsi_HashValueGet(hPtr);
             if (callback)
                 Jsi_DecrRefCount(interp, callback);
             Jsi_HashEntryDelete(hPtr);
@@ -554,13 +552,14 @@ Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const ch
     return h;
 }
 
-static void jsi_AccessorConfFree(Jsi_Interp* interp, Jsi_Obj* obj) {
+static void jsi_AccessorSpecFree(Jsi_Interp* interp, Jsi_Obj* obj) {
     Jsi_AccessorSpec *adv = obj->accessorSpec;
     if (!adv) return;
     if (adv->filterProc)
         (*adv->filterProc)(adv, NULL, NULL);
     if (adv->callAlloc)
         Jsi_DecrRefCount(interp, adv->callback);
+    Jsi_OptionsFree(interp, adv->spec, adv->dataPtr, 0);
     Jsi_Free(adv);
 }
 
@@ -597,12 +596,12 @@ Jsi_CmdProcDecl(jsi_AccessorCallback) {
 
 // Establish set/get accessors using a spec.
 Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, 
-    uchar *dataPtr, Jsi_Value* callback, uint flags) {
+    void *dataPtr, Jsi_Value* callback, int flags) {
     Jsi_AccessorSpec ad = {
         .sig=JSI_SIG_ACCESSOR, .spec=spec, .objName=objName, .callback=callback, .dataPtr=dataPtr, .flags=flags
     };
     Jsi_OptionSpec *specPtr = spec;
-    if (!objName || !spec || (!callback && !dataPtr)) {
+    if (!objName || !objName[0] || !spec || (!callback && !dataPtr)) {
         Jsi_LogError("must give spec, objName and either callback or dataPtr");
         return NULL;
     }
@@ -610,13 +609,24 @@ Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objNam
         Jsi_LogError("invalid options");
         return NULL;
     }
-    Jsi_DString dStr = {};
-    int isVar = (!Jsi_Strchr(objName, '.') && !Jsi_Strchr(objName, '['));
-    const char *var = isVar?"var ":"",
-        *ev = Jsi_DSPrintf(&dStr, "%s%s = {};",var, objName);
-    if (JSI_OK != Jsi_EvalString(interp, ev, 0))
-        return NULL;
     ad.varVal = Jsi_NameLookup(interp, objName);
+    if (!ad.varVal) {
+        if (Jsi_StrIsAlnum(objName)) {
+            ad.varVal = Jsi_ValueNewObj(interp, NULL);
+            if (ad.varVal && Jsi_NewVariable(interp, objName, ad.varVal, 0) != JSI_OK) {
+                Jsi_LogWarn("failed to setup new variable");
+                return NULL;
+            }
+        } else {
+            // Fallback to creating via an eval.
+            Jsi_DString dStr = {};
+            Jsi_RC rc = Jsi_EvalString(interp, Jsi_DSPrintf(&dStr, "%s = {};", objName), 0);
+            Jsi_DSFree(&dStr);
+            ad.varVal = Jsi_NameLookup(interp, objName);
+            if (JSI_OK != rc)
+                return NULL;
+        }
+    }
     if (ad.varVal)
         ad.varObj = Jsi_ValueGetObj(interp, ad.varVal);
     if (!ad.varVal || !ad.varObj) {
@@ -632,13 +642,13 @@ Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objNam
         adp->callAlloc = 1;
     }
     while (specPtr->id>=JSI_OPTION_BOOL && specPtr->id < JSI_OPTION_END && specPtr->name) {
-        Jsi_ObjAccessor(interp, ad.varObj, 0, specPtr->name, callback);
-        Jsi_ObjAccessor(interp, ad.varObj, 1, specPtr->name, callback);
+        Jsi_ObjAccessor(interp, adp->varObj, specPtr->name, 0, callback, flags);
+        Jsi_ObjAccessor(interp, adp->varObj, specPtr->name, 1, callback, flags);
         // TODO: option for subspecs to add handlers for field.sub
-        // if (flags&JSI_ACC_SUBFIELDS) ....
+        // if (flags&JSI_ACCESSOR_SUBFIELDS) ....
         specPtr++;
     }
-    ad.varObj->accessorSpec = adp;
+    adp->varObj->accessorSpec = adp;
     return adp;
 }
 

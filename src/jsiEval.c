@@ -674,7 +674,7 @@ void jsi_TraceFuncCall(Jsi_Interp *interp, Jsi_Func *fstatic, jsi_OpCode *iPtr,
                 (ret?"null":Jsi_JSONQuote(interp, Jsi_DSValue(&aStr),-1, &jStr)),
                 (ret?Jsi_JSONQuote(interp, Jsi_DSValue(&dStr),-1, &lStr):"null"),
                  fname, ip->Line, ip->Lofs);
-            if (Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.traceCallback, Jsi_DSValue(&kStr), NULL) != JSI_OK)
+            if (Jsi_FunctionInvokeJSON(interp->parent, interp->debugOpts.traceCallback, Jsi_DSValue(&kStr), NULL, NULL) != JSI_OK)
                 Jsi_DSPrintf(&pStr, "failed trace call\n");
             Jsi_DSFree(&jStr);
             Jsi_DSFree(&kStr);
@@ -860,7 +860,7 @@ static Jsi_RC jsiPushVar(jsi_Pstate *ps, jsi_OpCode *ip, jsi_ScopeChain *scope, 
             else {
                 /* add to scope.  TODO: do not define if a right_val??? */
                 Jsi_Value *cscope = scope->chains_cnt > 0 ? scope->chains[0]:currentScope;
-                Jsi_RC rc = Jsi_ObjInsert(interp, cscope->d.obj, varname, v=Jsi_ValueNew(interp), JSI_OM_DONTENUM);
+                Jsi_RC rc = Jsi_ValueInsert(interp, cscope, varname, v=Jsi_ValueNew(interp), JSI_OM_DONTENUM);
                 if (rc != JSI_OK)
                     return rc;
                 
@@ -1074,7 +1074,7 @@ static Jsi_RC jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_V
 #endif
     Jsi_Value *v = Jsi_ValueDup(interp, value);
 
-    if (Jsi_ObjInsert(interp, target->d.obj, kstr, v, flag) != JSI_OK) {
+    if (Jsi_ValueInsert(interp, target, kstr, v, flag) != JSI_OK) {
         Jsi_DecrRefCount(interp, v);
         return JSI_ERROR;
     }
@@ -1159,7 +1159,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 Jsi_DString nStr;
                 Jsi_DSInit(&nStr);
                 Jsi_DSPrintf(&nStr, "[\"#Interp_%d\", %d]", interp->objId, interp->opCnt);//TODO: use actual time interval rather than opCnt.
-                if (Jsi_FunctionInvokeJSON(interp->parent, interp->busyCallback, Jsi_DSValue(&nStr), NULL) != JSI_OK)
+                if (Jsi_FunctionInvokeJSON(interp->parent, interp->busyCallback, Jsi_DSValue(&nStr), NULL, NULL) != JSI_OK)
                     rc = JSI_ERROR;
                 Jsi_DSFree(&nStr);
             }
@@ -1357,7 +1357,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_LOCAL: {
-                rc = Jsi_ObjInsert(interp, currentScope->d.obj, (char*)ip->data, Jsi_ValueNew(interp), 0);
+                rc = Jsi_ValueInsert(interp, currentScope, (char*)ip->data, Jsi_ValueNew(interp), 0);
                 context_id = ps->_context_id++;
                 break;
             }
@@ -1691,7 +1691,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 }
                 if (hPtrGet) {
                     // Modified getter.
-                    jsi_SetterCall(interp, hPtrGet, v, 0);
+                    jsi_SetterCall(interp, hPtrGet, v, _jsi_TOQ, 0);
                     hPtrGet = NULL;
                 }
                 break;
@@ -2225,7 +2225,7 @@ static Jsi_RC jsiJsPreprocessLine(Jsi_Interp* interp, char *buf, size_t bsiz, ui
                 Jsi_DString kStr={};
                 Jsi_Value *vrc = Jsi_ValueNew1(pinterp);
                 Jsi_DSPrintf(&kStr, "[\"%s\", %d ]", ucp, lineNo);
-                Jsi_RC rcs = Jsi_FunctionInvokeJSON(pinterp, interp->debugOpts.testFmtCallback, Jsi_DSValue(&kStr), &vrc);
+                Jsi_RC rcs = Jsi_FunctionInvokeJSON(pinterp, interp->debugOpts.testFmtCallback, Jsi_DSValue(&kStr), &vrc, NULL);
                 if (rcs == JSI_OK) {
                     const char *cps = Jsi_ValueString(pinterp, vrc, NULL);
                     if (!cps)
@@ -2259,7 +2259,7 @@ static Jsi_RC jsiJsPreprocessLineCB(Jsi_Interp* interp, char *buf, size_t bsiz, 
         buf[ilen-2] = 0; // Remove last char and newline.
         Jsi_Value *inStr = Jsi_ValueNewStringDup(interp, buf+1);
         Jsi_IncrRefCount(interp, inStr);
-        Jsi_RC rc = Jsi_FunctionInvokeString(interp, interp->jsppCallback, inStr, &dStr);
+        Jsi_RC rc = Jsi_FunctionInvokeString(interp, interp->jsppCallback, inStr, &dStr, NULL);
         if (Jsi_InterpGone(interp))
             return JSI_ERROR;
         if (rc != JSI_OK) {

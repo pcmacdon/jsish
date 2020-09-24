@@ -616,7 +616,7 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
         vobjs[3] = _this;
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
-        rc = Jsi_FunctionInvoke(interp, func, vpargs, &nrPtr, NULL);
+        rc = Jsi_FunctionInvoke(interp, func, vpargs, &nrPtr, _this);
         Jsi_DecrRefCount(interp, vpargs);
         if (rc != JSI_OK)
             break;

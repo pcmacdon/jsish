@@ -440,7 +440,11 @@ jsish.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
 	@echo "#ifndef SQLITE_VERSION" >> $@
 	@echo '#include "sqlite/src/sqlite3.c"'  >> $@
 	@echo "#endif //SQLITE_VERSION" >> $@
+	@echo "#ifdef __cplusplus" >> $@
+	@echo '#include "lws/src/src/lws.h"'  >> $@
+	@echo "#else // __cplusplus" >> $@
 	@echo '#include "lws/src/lwsSingle.c"'  >> $@
+	@echo "#endif //__cplusplus" >> $@
 	@for ii in  src/jsiCode.c $(PCFILES); do echo '#include "'$$ii'"' >> $@; done
 	@echo "#ifndef JSI_LITE_ONLY" >> $@
 	@for ii in $(ACFILES); do echo '#include "'$$ii'"' >> $@; done

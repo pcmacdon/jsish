@@ -1333,7 +1333,7 @@ static Jsi_RC mdbEvalCallCmd( MyDbEvalContext *p, Jsi_Interp *interp, Jsi_RC res
             Jsi_ObjInsert(interp, argso, apColName[i], nnv, 0);
         }
         Jsi_IncrRefCount(interp, varg1);
-        bool rb = Jsi_FunctionInvokeBool(interp, p->tocall, varg1);
+        bool rb = Jsi_FunctionInvokeBool(interp, p->tocall, varg1, NULL);
         if (Jsi_InterpGone(interp))
             return JSI_ERROR;
         Jsi_DecrRefCount(interp, varg1);

@@ -34,7 +34,7 @@ for (var i of keys) {
 /*
 =!EXPECTSTART!=
 require('dynspec') ==> 1
-sobj ==> {}
+sobj ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:0, desc:"", isdirty:false, name:"", max:0, markSet:[] }
 keys=Object.keys(sobj) ==> [ "mark", "rowid", "myTime", "id", "desc", "isdirty", "name", "max", "markSet" ]
 Info.obj(sobj) ==> { freeze:true, freezeModify:true, freezeReadCheck:true, getters:[ "mark", "rowid", "myTime", "id", "desc", "isdirty", "name", "max", "markSet" ], objType:"object", setters:[ "mark", "rowid", "myTime", "id", "desc", "isdirty", "name", "max", "markSet" ], spec:[ { cName:"Jsi_Strbuf", help:"Fixed size char buf", initOnly:false, name:"name", noCase:false, readOnly:false, required:false, size:16, type:"STRBUF" }, { cName:"Jsi_DString", help:"Description field of arbitrary length", initOnly:false, name:"desc", noCase:false, readOnly:false, required:false, size:224, type:"DSTRING" }, { cName:"int", help:"Int id", initOnly:false, name:"id", noCase:false, readOnly:false, required:false, size:4, type:"INT" }, { cName:"double", help:"Max value", initOnly:false, name:"max", noCase:false, readOnly:false, required:false, size:8, type:"DOUBLE" }, { cName:"time_d", help:"milliseconds since 1970", initOnly:false, name:"myTime", noCase:false, readOnly:false, required:false, size:8, type:"TIME_D" }, { cName:"", customArg:{ enumList:[ "", "A", "B", "C", "D", "F" ], help:"one value from list", name:"enum" }, customArgHelp:"", data:[ "", "A", "B", "C", "D", "F" ], help:"Marks", initOnly:false, name:"mark", noCase:false, readOnly:false, required:false, size:4, type:"CUSTOM" }, { cName:"", customArg:{ bitSet:[ "", "A", "B", "C", "D", "F" ], help:"An int field accessed a bit at a time", name:"bitset" }, customArgHelp:"", data:[ "", "A", "B", "C", "D", "F" ], help:"A bit set of marks", initOnly:false, name:"markSet", noCase:false, readOnly:false, required:false, size:4, type:"CUSTOM" }, { cName:"int64_t", flags:1024, help:"DB rowid for update/insert; not stored in db", initOnly:false, name:"rowid", noCase:false, readOnly:false, required:false, size:8, type:"INT64" }, { cName:"bool", flags:256, help:"Dirty bit flag: not stored in db", initOnly:false, name:"isdirty", noCase:false, readOnly:false, required:false, size:1, type:"BOOL" } ] }
 sobj.id = 3 ==> 3
@@ -53,14 +53,21 @@ sobj.markSet = s ==> [ "B", "C", "D" ]
 v = {} ==> {}
 v[i]=sobj[i] ==> B
 v[i]=sobj[i] ==> 4
-v[i]=sobj[i] ==> 2020-09-23T11:51:37
+v[i]=sobj[i] ==> 2020-09-24T09:29:56
 v[i]=sobj[i] ==> 4
 v[i]=sobj[i] ==> My desc
 v[i]=sobj[i] ==> true
 v[i]=sobj[i] ==> Someone
 v[i]=sobj[i] ==> 2
 v[i]=sobj[i] ==> [ "B", "C", "D" ]
-v ==> { desc:"My desc", id:4, isdirty:true, mark:"B", markSet:[ "B", "C", "D" ], max:2, myTime:"2020-09-23T11:51:37", name:"Someone", rowid:4 }
-Object.assign(sobj,{isdirty:false, rowid:3}) ==> {}
+v ==> { desc:"My desc", id:4, isdirty:true, mark:"B", markSet:[ "B", "C", "D" ], max:2, myTime:"2020-09-24T09:29:56", name:"Someone", rowid:4 }
+Object.assign(sobj,{isdirty:false, rowid:3}) ==> { mark:"B", rowid:3, myTime:"2020-09-24T09:29:56", id:4, desc:"", isdirty:false, name:"Someone", max:2, markSet:[ "B", "C", "D" ] }
+sobj.isdirty ==> false
+Object.values(sobj) ==> [ "B", 3, "2020-09-24T09:29:56", 4, "", false, "Someone", 2, [ "B", "C", "D" ] ]
+arr[0].id = 32 ==> 32
+arr[0] ==> { mark:"", rowid:0, myTime:"1969-12-31T16:00:00", id:32, desc:"", isdirty:false, name:"", max:0, markSet:[] }
+sobj.id ==> 4
+sobj.id = arr[0].id ==> 32
+sobj.id ==> 32
 =!EXPECTEND!=
 */

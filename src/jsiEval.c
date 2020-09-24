@@ -935,27 +935,9 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
     Jsi_Value *currentScope)
 {
     Jsi_RC rc = JSI_OK;
-    uint flags = (uintptr_t)ip->data, right_val = flags&1; // isident=flags&2;
-    jsiVarDeref(interp,2);
-    bool ro = src->f.bits.readonly;
     Jsi_String *str = jsi_ValueString(src);
-    Jsi_Obj *obj = (src->vt==JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT?src->d.obj:NULL);
-    int bsc, arrayindex = (idx->vt == JSI_VT_NUMBER && Jsi_NumberIsInteger(idx->d.num) && idx->d.num >= 0) ?  (int)idx->d.num : -1;
-
-    if (obj && obj->freeze && obj->freezeReadCheck) {
-        Jsi_Value *v;
-        char keyBuf[100], *keyStr = keyBuf;
-        if (arrayindex>=0)
-            snprintf(keyBuf, sizeof(keyBuf), "%d", arrayindex);
-        else
-            keyStr = Jsi_ValueString(interp, idx, NULL);
-        if ((!keyStr || !(v = Jsi_ValueObjLookup(interp, src, keyStr, 0)))) {
-            rc = Jsi_LogError("frozen read undefined key: %s", keyStr);
-            goto done;
-        }
-    }
-
-    if (str && Jsi_ValueIsNumber(interp, idx)) { // String index, eg. "abc"[1]
+    // A string index "abc"[1]
+    if (str && Jsi_ValueIsNumber(interp, idx)) {
         int bLen, cLen;
         char bbuf[10], *cp = Jsi_ValueString(interp, src, &bLen);
         int n = (int)idx->d.num;
@@ -979,49 +961,50 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
             }
             Jsi_ValueMakeStringDup(interp, &src, bbuf);
         }
-        goto done;
+        return rc;
     }
-    Jsi_ValueToObject(interp, src);
-    bsc = Jsi_ValueIsObjType(interp, src, JSI_OT_NUMBER); // Previous bad subscript.
+
+    uint flags = (uintptr_t)ip->data, right_val = flags&1; // isident=flags&2;
+    bool ro = src->f.bits.readonly;
+    Jsi_Obj *obj = (src->vt==JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_OBJECT?src->d.obj:NULL);
+    int bsc = (src->vt==JSI_VT_OBJECT && src->d.obj->ot == JSI_OT_NUMBER); // Previous bad subscript.
+
     if (bsc == 0 && interp->lastSubscriptFail && interp->lastSubscriptFail->vt != JSI_VT_UNDEF)
         Jsi_ValueReset(interp, &interp->lastSubscriptFail);
-
-    {
-        Jsi_Value res = VALINIT, 
-            *resPtr = &res,
-            *vp = jsi_ValueSubscript(interp, src, idx, &resPtr);
-        if (!vp && bsc == 0) {
-            /* eg. so we can list available commands for  "db.xx()" */
-            if (idx->vt == JSI_VT_STRING)
-                interp->lastSubscriptFailStr = idx->d.s.str;
-            Jsi_ValueDup2(interp, &interp->lastSubscriptFail, src);
-        }
-        if (vp)
-            Jsi_IncrRefCount(interp, vp);
-        jsiClearStack(interp,2);
-        if (!vp)
-            Jsi_ValueMakeUndef(interp, &src);
-        else {
-            //printf("IDX(%p): %s\n", idx, Jsi_ValueString(interp, idx, NULL));
-            if (right_val || vp->f.bits.readonly) {
-                if (vp == resPtr && (res.vt == JSI_VT_OBJECT || res.vt == JSI_VT_STRING))  // TODO:*** Undo using ValueCopy. ***
-                    Jsi_ValueMove(interp, src, vp);
-                else
-                    Jsi_ValueCopy(interp, src, vp);
-            } else {
-                assert(vp != resPtr);
-                res.vt = JSI_VT_VARIABLE;
-                res.d.lval = vp;
-                if (ro)
-                    vp->f.bits.readonly = 1;
-                Jsi_ValueCopy(interp, src, resPtr);
-            }
-            Jsi_DecrRefCount(interp, vp);
+        Jsi_ValueToObject(interp, src);
+    Jsi_Value res = VALINIT, 
+        *resPtr = &res,
+        *vp = jsi_ValueSubscript(interp, src, idx, &resPtr, right_val);
+    if (!vp && bsc == 0) {
+        /* eg. so we can list available commands for  "db.xx()" */
+        if (idx->vt == JSI_VT_STRING)
+            interp->lastSubscriptFailStr = idx->d.s.str;
+        Jsi_ValueDup2(interp, &interp->lastSubscriptFail, src);
+    }
+    if (!vp) {
+        Jsi_ValueMakeUndef(interp, &src);
+        if (obj && obj->freeze && obj->freezeReadCheck) {
+            const char *keyStr = Jsi_ValueToString(interp, idx, NULL);
+            rc = Jsi_LogError("object freeze: read undefined \"%s\"", keyStr);
         }
     }
-    
-done:
-    jsiPop(interp, 1);
+    else {
+        Jsi_IncrRefCount(interp, vp);
+        if (right_val || vp->f.bits.readonly) {
+            if (vp == resPtr && (res.vt == JSI_VT_OBJECT || res.vt == JSI_VT_STRING))  // TODO:*** Undo using ValueCopy. ***
+                Jsi_ValueMove(interp, src, vp);
+            else
+                Jsi_ValueCopy(interp, src, vp);
+        } else {
+            assert(vp != resPtr);
+            res.vt = JSI_VT_VARIABLE;
+            res.d.lval = vp;
+            if (ro)
+                vp->f.bits.readonly = 1;
+            Jsi_ValueCopy(interp, src, resPtr);
+        }
+        Jsi_DecrRefCount(interp, vp);
+    }
     return rc;
 }
 
@@ -1110,6 +1093,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     jsi_OpCode *ip = &opcodes->codes[0], *end = &opcodes->codes[opcodes->code_len];
     jsi_TryList  *trylist = NULL;
     jsi_Frame *fp = interp->framePtr;
+    Jsi_HashEntry *hPtrGet = NULL;
     bool strict = interp->typeCheck.strict;
     const char *curFile = NULL, *throwStr;
     
@@ -1122,6 +1106,8 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     
     while(ip < end && rc == JSI_OK) {
         int plop = ip->op;
+        if (lop != OP_SUBSCRIPT)
+            hPtrGet = NULL;
 
         if (ip->logidx) { // Mask out LogDebug, etc if not enabled.
             uint oli = ip->logidx, logflag2 = jsi_GetLogFlag(interp, ip->logidx, NULL);
@@ -1271,7 +1257,10 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_SUBSCRIPT: {
+                jsiVarDeref(interp,2);
                 rc = jsiEvalSubscript(interp, _jsi_TOQ, _jsi_TOP, ip, end, currentScope);
+                jsiPop(interp, 1);
+                hPtrGet = interp->hPtrGet;
                 break;
             }
             case OP_ASSIGN: {
@@ -1629,7 +1618,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 } else {
                     while (io->iter < io->count) {
                         if (!io->isArrayList) {
-                            if (Jsi_ValueKeyPresent(interp, _jsi_STACKIDX(fp->Sp-3), io->keys[io->iter],1)) 
+                            if (io->isgetter || Jsi_ValueKeyPresent(interp, _jsi_STACKIDX(fp->Sp-3), io->keys[io->iter],1)) 
                                 break;
                         } else {
                             while (io->cur < io->obj->arrCnt) {
@@ -1675,19 +1664,19 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_INC:
             case OP_DEC: {
                 int inc = ip->op == OP_INC ? 1 : -1;
-                
-                if (_jsi_TOP->vt != JSI_VT_VARIABLE) {
+                Jsi_Value *v, *t = _jsi_TOP;
+                if (t->vt != JSI_VT_VARIABLE) {
                     rc = Jsi_LogError("operand not left value");
                     break;
                 }
-                Jsi_Value *v = _jsi_TOP->d.lval;
+                v = t->d.lval;
                 SIGASSERT(v, VALUE);
                 if (v->f.bits.readonly) {
                     rc = Jsi_LogError("modify readonly variable");
                     break;
                 }
                 if (v->f.bits.frozen) {
-                    rc = Jsi_LogError("modify frozen variable");
+                    rc = Jsi_LogError("object freeze: attempted modify");
                     break;
                 }
 
@@ -1696,8 +1685,14 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 v->d.num += inc;
                     
                 jsiVarDeref(interp,1);
+                t = _jsi_TOP;
                 if (ip->data) {
-                    _jsi_TOP->d.num -= inc;
+                    t->d.num -= inc;
+                }
+                if (hPtrGet) {
+                    // Modified getter.
+                    jsi_SetterCall(interp, hPtrGet, v, 0);
+                    hPtrGet = NULL;
                 }
                 break;
             }
@@ -1845,7 +1840,7 @@ undef_eval:
                         if (v->f.bits.dontdel) {
                             if (strict) rc = Jsi_LogError("delete not allowed");
                         } else if (v->vt == JSI_VT_OBJECT && v->d.obj->freeze)
-                            rc = Jsi_LogError("attempted to delete freeze");
+                            rc = Jsi_LogError("object freeze: attempted delete");
                         else if (v != currentScope)
                             Jsi_ValueReset(interp,vPtr);
                         else if (strict)
@@ -1859,7 +1854,7 @@ undef_eval:
                     if (v->vt != JSI_VT_OBJECT) {
                         if (strict) Jsi_LogWarn("delete non-object key, ignore");
                     } else if (v->d.obj->freeze) {
-                        rc = Jsi_LogError("attempted to delete freeze");
+                        rc = Jsi_LogError("object freeze: attempted delete");
                     } else  {
                         if (strict && v->d.obj == currentScope->d.obj) Jsi_LogWarn("Delete arguments");
                         jsiValueObjDelete(interp, v, vt, 0);
@@ -2216,7 +2211,7 @@ static Jsi_RC jsiJsPreprocessLine(Jsi_Interp* interp, char *buf, size_t bsiz, ui
         }
         if (buf[ilen-1]=='\n' && buf[ilen-2]==';' && (2*ilen+12)<bsiz) {
             if (Jsi_Strchr(buf, '`')) {
-                return Jsi_LogError("back-tick is illegal in unitTest on line %d: %s", lineNo, buf);
+                return Jsi_LogError("back-tick is illegal in testMode on line %d: %s", lineNo, buf);
             }
             char ubuf[bsiz], *ucp = ubuf;
             buf[ilen-=2] = 0;
@@ -2441,10 +2436,10 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                 //if (!noncmt++)
                 //    fncOfs = Jsi_DSLength(&dStr)-uskip;
                 jpp = interp->jsppChars;
-                if (jpp || interp->unitTest)
+                if (jpp || interp->testMode)
                     ilen = Jsi_Strlen(buf);
-                if (interp->unitTest && buf[0]==';' && buf[1] && buf[2]) {
-                    if (interp->unitTest&1 && jsiJsPreprocessLine(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)
+                if (interp->testMode && buf[0]==';' && buf[1] && buf[2]) {
+                    if (interp->testMode&1 && jsiJsPreprocessLine(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)
                         goto bail;
                 } else if (interp->jsppCallback && interp->jsppChars) {
                     if (jsiJsPreprocessLineCB(interp, buf, sizeof(buf), ilen, jppOpts, cnt) != JSI_OK)

@@ -1,0 +1,14 @@
+#!/usr/bin/env jsish
+
+;require('dyn');
+//load('./dyn.so');
+;dyn(1,2,3);
+
+
+
+/*
+=!EXPECTSTART!=
+require('dyn') ==> 1
+dyn(1,2,3) ==> 3
+=!EXPECTEND!=
+*/

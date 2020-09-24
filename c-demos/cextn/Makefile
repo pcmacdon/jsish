@@ -16,10 +16,10 @@ shared: Tiny.so Bee.so Car.so Baker.so Bag.so Sum.so
 static: $(STATICS)
 
 test: shared
-	$(JSISH) -u ext_test.jsi
-	$(JSISH) -u bagtest.jsi
-	$(JSISH) -u tinytest.jsi
-	$(JSISH) -u logtest.jsi
+	$(JSISH) -t ext_test.jsi
+	$(JSISH) -t bagtest.jsi
+	$(JSISH) -t tinytest.jsi
+	$(JSISH) -t logtest.jsi
 
 Tiny: Tiny.c $(DEPS)
 	$(CC) `$(CCGET) $@`

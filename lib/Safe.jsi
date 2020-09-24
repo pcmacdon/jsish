@@ -13,7 +13,7 @@ function Safe(fileargs:array, conf:object=void) {
         putsCmd     :null,      // Command to relay Interp.putsCallback.
         quiet       :false,     // Quiet mode
         retAll      :false,     // Return object with these fields: retVal, putsVal, msgVal.
-        unitTest    :false,     // Enable unit test output (ie. like -U).
+        testMode    :false,     // Enable unit test output (ie. like -U).
         write       :false,     // Enable write to given dir.
     };
     var self = {
@@ -60,8 +60,8 @@ function Safe(fileargs:array, conf:object=void) {
             isdir = File.isdir(fn);
         if (!isdir && ext != '.jsi' && ext != '.js')
             throw("Safe module file extension "+ext+" not one of: .js .jsi: ");
-        if (self.unitTest && (isdir || self.noRead))
-            throw('can not use both unitTest and noRead or directory arg');
+        if (self.testMode && (isdir || self.noRead))
+            throw('can not use both testMode and noRead or directory arg');
         var sopts = {isSafe:true, name:'safeProg'};
         if (self.paranoid) {
             self.noRead = true;
@@ -94,8 +94,8 @@ function Safe(fileargs:array, conf:object=void) {
                     sopts.safeWriteDirs = sopts.safeReadDirs;
             }
 
-            if (self.unitTest) {
-                sopts.unitTest = 1;
+            if (self.testMode) {
+                sopts.testMode = 1;
                 sopts.asserts = true;
             }
         } else {

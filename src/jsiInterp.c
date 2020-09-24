@@ -35,17 +35,11 @@ static Jsi_OptionSpec InterpDebugOptions[] = {
     JSI_OPT(BOOL,  Jsi_DebugInterp, pkgTrace,       .help="Trace package loads" ),
     JSI_OPT(CUSTOM,Jsi_DebugInterp, putsCallback,   .help="Comand in parent interp to handle puts output", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"msg:string, isStderr:number" ),
     JSI_OPT(CUSTOM,Jsi_DebugInterp, traceCallback,  .help="Comand in parent interp to handle traceCall", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"cmd:string, args:string, ret:string, file:string, line:number, col:number" ),
-    JSI_OPT(CUSTOM,Jsi_DebugInterp, testFmtCallback,.help="Comand in parent interp to format unittest string", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"cmd:string, line:number" ),
+    JSI_OPT(CUSTOM,Jsi_DebugInterp, testFmtCallback,.help="Comand in parent interp to format testing strings", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"cmd:string, line:number" ),
     JSI_OPT_END(Jsi_DebugInterp, .help="Interp options for debugging")
 };
 
 Jsi_OptionSpec jsi_InterpLogOptions[] = {
-    /*JSI_OPT(BOOL,   jsi_LogOptions, Test,    .help="Enable LogTest messages" ),
-    JSI_OPT(BOOL,   jsi_LogOptions, Debug,   .help="Enable LogDebug messages" ),
-    JSI_OPT(BOOL,   jsi_LogOptions, Trace,   .help="Enable LogTrace messages" ),
-    JSI_OPT(BOOL,   jsi_LogOptions, Info,    .help="Enable LogInfo messages" ),
-    JSI_OPT(BOOL,   jsi_LogOptions, Warn,    .help="Enable LogWarn messages" ),
-    JSI_OPT(BOOL,   jsi_LogOptions, Error,   .help="Enable LogError messages" ),*/
     JSI_OPT(BOOL,   jsi_LogOptions, time,    .help="Prefix with time" ),
     JSI_OPT(BOOL,   jsi_LogOptions, date,    .help="Prefix with date" ),
     JSI_OPT(BOOL,   jsi_LogOptions, file,    .help="Ouptut contains file:line" ),
@@ -74,6 +68,7 @@ static Jsi_OptionSpec InterpSubOptions[] = {
     JSI_OPT(BOOL,  jsi_SubOptions, outUndef,    .help="In interactive mode output result values that are undefined"),
     JSI_OPT(STRKEY,jsi_SubOptions, prompt,      .help="Prompt for interactive mode ('$ ')" ),
     JSI_OPT(STRKEY,jsi_SubOptions, prompt2,     .help="Prompt for interactive mode line continue ('> ')" ),
+    JSI_OPT(BOOL,  jsi_SubOptions, traceAccess, .help="Trace set/gets setup using Jsi_ObjAccessorWithSpec"),
     JSI_OPT_END(jsi_SubOptions, .help="Lesser sub-feature options")
 };
 
@@ -142,7 +137,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(CUSTOM,Jsi_Interp, typeCheck,   .help="Type-check control options", .flags=0, .custom=Jsi_Opt_SwitchBitset, .data=jsi_TypeChkStrs),
     JSI_OPT(INT,   Jsi_Interp, typeWarnMax, .help="Type checking is silently disabled after this many warnings (50)" ),
     JSI_OPT(OBJ,   Jsi_Interp, udata,       .help="User data"),
-    JSI_OPT(UINT,  Jsi_Interp, unitTest,    .help="Unit test control bits: 1=subst, 2=Puts with file:line prefix" ),
+    JSI_OPT(UINT,  Jsi_Interp, testMode,    .help="Unit test control bits: 1=subst, 2=Puts with file:line prefix" ),
     JSI_OPT_END(Jsi_Interp, .help="Options for the Jsi interpreter")
 };
 
@@ -235,7 +230,7 @@ Jsi_RC Jsi_CleanValue(Jsi_Interp *interp, Jsi_Interp *tointerp, Jsi_Value *val, 
         case JSI_VT_BOOL: Jsi_ValueMakeBool(tointerp, ret, val->d.val); return rc;
         case JSI_VT_NUMBER: Jsi_ValueMakeNumber(tointerp, ret, val->d.num); return rc;
         case JSI_VT_STRING:
-            iskey = val->f.bits.isstrkey;
+            iskey = 1;//val->f.bits.isstrkey;
             cp = val->d.s.str;
             len = val->d.s.len;
 makestr:
@@ -776,6 +771,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "\nPREFIX-OPTS:\n"
           "  --E CODE\tJavascript to evaluate before program starts\n"
           "  --I OPT=VAL\tInterp option bits: equivalent to Interp.conf({OPT:VAL}); VAL defaults to true.\n"
+          "  --T \t\tSApply testMode transforms showing their output: a shortcut for --I testMode=1\n"
           "\nCOMMAND-OPTS:\n"
           "  -a\t\tArchive: mount an archive (zip, sqlar or fossil repo) and run module.\n"
           "  -c\t\tCData: generate .c or JSON output from a .jsc description.\n"
@@ -784,7 +780,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "  -h ?CMD?\tHelp: show help for jsish or its commands.\n"
           "  -m\t\tModule: utility create/manage/invoke a Module.\n"
           "  -s\t\tSafe: runs script in safe sub-interp.\n"
-          "  -u\t\tUnitTest: test script file(s) or directories .js/.jsi files.\n"
+          "  -t\t\tTesting of scripts or directories of scripts with .js/.jsi extension.\n"
           "  -w\t\tWget: web client to download file from url.\n"
           "  -v\t\tVersion: show version detail: add an arg to show only X.Y.Z\n"
           "  -z\t\tZip: append/manage zip files at end of executable.\n"
@@ -853,8 +849,9 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             case 'S':
                 rc = Jsi_EvalString(interp, "moduleRun('SqliteUI');", JSI_EVAL_ISMAIN);
                 break;
+            case 't':
             case 'u':
-                rc = Jsi_EvalString(interp, "exit(moduleRun('UnitTest'));", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "exit(moduleRun('Testing'));", JSI_EVAL_ISMAIN);
                 break;
             case 'v': {
                 char str[200] = "\n";
@@ -881,7 +878,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Zip');", JSI_EVAL_ISMAIN);
                 break;
             default:
-                puts("usage: jsish [ --E CODE | --I OPT:VAL ] \n\t"
+                puts("usage: jsish [ --E CODE | --I OPT:VAL | --T ] \n\t"
                 "-a | -c | -d | -D | -e CODE | -h | J | -m | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
                 return jsi_DoExit(interp, 1);
         }
@@ -1055,15 +1052,15 @@ done:
 }
 
 static void jsi_UnitTestSetup(Jsi_Interp *interp)  {
-    if (interp->unitTest&2) {
+    if (interp->testMode&2) {
         interp->logOpts.before = 1;
         interp->logOpts.full = 1;
         interp->tracePuts = 1;
         interp->noStderr = 1;
     }
-    if (interp->unitTest&1)
+    if (interp->testMode&1)
         interp->log |= JSI_LOG_ASSERT;
-    if ((interp->unitTest&3) == 3)
+    if ((interp->testMode&3) == 3)
         interp->tracePuts = 1;
 }
 
@@ -1162,6 +1159,8 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
             switch (aio[2]) {
                 case 'E':
                     continue;
+                case 'T':
+                    continue;
                 case 'I': {
                     const char *aio2 = argv[iocnt+1];
                     if (!Jsi_Strncmp("memDebug:", aio2, sizeof("memDebug")))
@@ -1199,7 +1198,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->protoTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL/*jsi_freeValueEntry*/);
     interp->regexpTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, regExpFree);
     interp->preserveTbl = Jsi_HashNew(interp, JSI_KEYS_ONEWORD, jsi_HashFree);
-    interp->loadTbl = (parent?parent->loadTbl:Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_FreeOneLoadHandle));
+    interp->loadTbl = (parent&&0?parent->loadTbl:Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_FreeOneLoadHandle));
     interp->packageHash = Jsi_HashNew(interp, JSI_KEYS_STRING, packageHashFree);
     interp->aliasHash = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_AliasFree);
 
@@ -1233,6 +1232,11 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
                 case 'E': {
                     Jsi_DSAppend(&interp->interpEvalQ, argv[iocnt+1], NULL);
                     interp->iskips+=2;
+                    continue;
+                }
+                case 'T': {
+                    interp->testMode=1;
+                    interp->iskips+=1;
                     continue;
                 }
                 case 'I':  {
@@ -1403,6 +1407,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
 #ifdef JSI_MEM_DEBUG
     interp->codesTbl = (interp == jsiIntData.mainInterp ? Jsi_HashNew(interp, JSI_KEYS_ONEWORD, NULL) : jsiIntData.mainInterp->codesTbl);
 #endif
+    interp->GetterValue = Jsi_ValueNew1(interp);
     if (interp->typeCheck.all|interp->typeCheck.parse|interp->typeCheck.funcsig)
         interp->staticFuncsTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
     if (!jsiIntData.isInit) {
@@ -1844,6 +1849,7 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
     Jsi_HashDelete(interp->genValueTbl);
     Jsi_HashDelete(interp->genObjTbl);
     Jsi_HashDelete(interp->aliasHash);
+    Jsi_DecrRefCount(interp, interp->GetterValue);
     if (interp->staticFuncsTbl)
         Jsi_HashDelete(interp->staticFuncsTbl);
     if (interp->breakpointHash)
@@ -1915,7 +1921,7 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
 #if JSI__ZVFS==1
     Jsi_InitZvfs(interp, mainFlag);
 #endif
-    if (!interp->parent)
+   // if (!interp->parent)
         Jsi_HashDelete(interp->loadTbl);
     if (interp->packageHash)
         Jsi_HashDelete(interp->packageHash);

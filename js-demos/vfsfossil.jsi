@@ -1,4 +1,4 @@
-#!/usr/local/bin/jsish --U %s
+#!/usr/local/bin/jsish --I testMode=1 %s
 // Note: if was a real unit test it would fail as info changes in fossil, but we show output below anyways.
 
 
@@ -18,7 +18,7 @@ x = File.read(mnt+'/lib/SqliteUI/html/sqlite.jsi');
 ;File.readable(fn);
 ;File.executable(fn);
 var conf = Vfs.conf(mnt);
-;conf.keys();
+;Object.keys(conf);
 conf.fileList=null;
 ;conf;
 ;Vfs.conf(mnt,'file');
@@ -82,7 +82,7 @@ stat=File.lstat(fn) ==>  { atime:1491728710, blksize:0, blocks:0, ctime:14917287
 format('%#o', stat.mode) ==>  0100444
 File.readable(fn) ==>  true
 File.executable(fn) ==>  false
-conf.keys() ==>  [ "callback", "extra", "fileList", "info", "mount", "noAddDirs", "param", "target", "type", "user" ]
+Object.keys(conf) ==>  [ "callback", "extra", "fileList", "info", "mount", "noAddDirs", "param", "target", "type", "user" ]
 conf ==>  { callback:"function Fossil(op:string, mount:string, arg:string|object|null) {...}", extra:null, fileList:null, info:{ UUID:"e3e238de1e120ea4c52082a8b1f127689d04a64e", comment:"Release 2.4.50 rename -debug to -Debug, etc and parseOpts accept implicitly. All FS functions now take interp argument (mostly). Cleanup docs to match. (user: pmacdona)", parent:"999330ee402c86ca6f3465f5385e0552f7b29871 2018-06-23 03:37:30 UTC", subDir:"", tags:[ "Release 1.0.0", "Release 1.1.0", "Release 2.0.0", "Release 2.1.0", "Release 2.2.0", "Release 2.3", "Release 2.4", "trunk" ], uuid:"e3e238de1e120ea4c52082a8b1f127689d04a64e 2018-06-23 17:14:22 UTC", version:"tip" }, mount:"/vfs1", noAddDirs:false, param:null, target:"../../../jsi.fossil", type:"fossil", user:null }
 Vfs.conf(mnt,'target') ==>  ../../../jsi.fossil
 Vfs.fileconf(mnt, 'README.md') ==>  { data:"# Readme\n\n## http://jsish.org\n\nJsi is a javascript interpreter with:\n\n+ Tight C integration with extensive C-API.\n+ Extensions for Filesystem, OS, WebSocket, Sqlite, MySql, etc.\n+ Integrated debugging (command-line or optional GUI-web).\n+ Web framework, with example applications.\n+ Sub-interpreters and introspection (modelled after Tcl).\n+ Easy embedding within C applications.\n\nJsi implements an extended Ecmascript with functions supporting types and default values:\n\n> __function foo (a:number, b:string=\'\'):number {}__\n\nThese functions can also be preprocessed to javascript, ie. for use in Web Browsers.\n\n\n## Building Jsi\n\nTo build:\n\n    cd jsi\n    ./configure\n    make", file:"README.md", perms:292, size:677, timestamp:"2017-04-09 02:05:10" }

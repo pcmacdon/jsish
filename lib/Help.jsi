@@ -297,7 +297,7 @@ function Help(args, ...) {
                 var nowork = ['Jsi_Conf', 'Jsi_Conf', 'Jsi_Opts', 'Zip', 'Jsi_AutoMake', 'Make', 
                     'Jsi_Main', 'Jsi_AutoPkg', 'Jsi_LogFile', 'Jsi_Run'],
                     modl=[];
-                for (var i of Jsi_Auto.keys()) {
+                for (var i of Object.keys(Jsi_Auto)) {
                     if (i.substr(0,4) != 'Jsi_') continue;
                     if (nowork.indexOf(i)>=0) continue;
                     modl.push(i);

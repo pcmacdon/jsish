@@ -31,6 +31,7 @@ typedef struct LoadData {
 #else
     void *handle;
 #endif
+    Jsi_Interp *interp;
     Jsi_InitProc *onload;
 } LoadData;
 
@@ -147,6 +148,7 @@ doinit:
             d->name = (char*)Jsi_HashKeyGet(hPtr);
             d->fpath = pathName;
             d->onload = onload;
+            d->interp = interp;
             Jsi_HashValueSet(hPtr, d);
             return JSI_OK;
         }
@@ -168,7 +170,7 @@ Jsi_RC Jsi_LoadLibrary(Jsi_Interp *interp, const char *pathName, bool noInit)
 Jsi_RC jsi_FreeOneLoadHandle(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *ptr) {
     LoadData *d = (LoadData*)ptr;
     if (d->onload)
-        (*d->onload)(interp, interp==jsiIntData.mainInterp?2:1);
+        (*d->onload)(d->interp, d->interp==jsiIntData.mainInterp?2:1);
 #ifndef JSI_OMIT_LOAD
     dlclose(d->handle);
 #endif

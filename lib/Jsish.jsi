@@ -254,7 +254,7 @@ function Jsi_AutoMake(objName:string) {
 }
 
 function Jsi_SqlValues(name:string, val:object) {
-    return 'VALUES($'+name+'('+val.keys().join('),$'+name+'(')+'))';
+    return 'VALUES($'+name+'('+Object.keys(val).join('),$'+name+'(')+'))';
 }
 
 // Create/modify table compatible with the object: upgrade table adding missing columns that are in object.

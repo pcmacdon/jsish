@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.1.5
+//JSI Command Prototypes: version 3.1.7
 throw("NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG");
 
 var Array = function(cmd,args) {};
@@ -186,19 +186,19 @@ Number.prototype.toString = function(radix:number=10):string {};
 var Object = function(cmd,args) {};
 Object.prototype.assign = function(obj:object,...):object {};
 Object.prototype.create = function(proto:null|object, properties:object=void):object {};
-Object.prototype.freeze = function(obj:object, freeze:boolean|null=true, modifyok:boolean=true, readcheck:boolean=true):object|void {};
+Object.prototype.freeze = function(obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true):object|void {};
 Object.prototype.getPrototypeOf = function(name:object|function):function|object {};
 Object.prototype.hasOwnProperty = function(name:string):boolean {};
 Object.prototype.is = function(value1, value2):boolean {};
 Object.prototype.isPrototypeOf = function(name):boolean {};
-Object.prototype.keys = function(obj:object|function=void):array {};
+Object.prototype.keys = function(obj:object|function|array):array {};
 Object.prototype.merge = function(obj:object|function):object {};
 Object.prototype.propertyIsEnumerable = function(name):boolean {};
 Object.prototype.setPrototypeOf = function(name:object, value:object):any {};
 Object.prototype.toLocaleString = function(quote:boolean=false):string {};
 Object.prototype.toString = function(quote:boolean=false):string {};
 Object.prototype.valueOf = function():any {};
-Object.prototype.values = function(obj:object=void):array {};
+Object.prototype.values = function(obj:object):array {};
 var RegExp = function(cmd,args) {};
 RegExp.prototype.exec = function(val:string):array|object|null {};
 RegExp.prototype.test = function(val:string):boolean {};

@@ -1,0 +1,31 @@
+#!/usr/bin/env jsish
+
+;require('dyno');
+
+;dynObj;
+;dynObj.bar;
+;dynObj.foo = 3;
+;++dynObj.foo;
+;dynObj.foo;
+
+;dynObj.bar = 5;
+;dynObj.bar++;
+;dynObj.bar++;
+
+try { dynObj.crc; puts('[FAIL]:! expected throw'); } catch(e) { puts('[PASS]:!',e); }
+
+
+/*
+=!EXPECTSTART!=
+require('dyno') ==> 1
+dynObj ==> {}
+dynObj.bar ==> 0
+dynObj.foo = 3 ==> 3
+++dynObj.foo ==> 4
+dynObj.foo ==> 4
+dynObj.bar = 5 ==> 5
+dynObj.bar++ ==> 5
+dynObj.bar++ ==> 6
+[PASS]:! object freeze: read undefined "crc"
+=!EXPECTEND!=
+*/

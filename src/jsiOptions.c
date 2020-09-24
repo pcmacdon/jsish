@@ -1149,6 +1149,10 @@ static void jsi_DumpOptionSpec(Jsi_Interp *interp, Jsi_Obj *nobj, Jsi_OptionSpec
 
 void jsi_DumpOptionSpecs(Jsi_Interp *interp, Jsi_Obj *nobj, Jsi_OptionSpec* spec)
 {
+    if (nobj->isarrlist == 0) {
+        Jsi_LogBug("expected array");
+        return;
+    }
     int i = 0;
     while (spec[i].id>=JSI_OPTION_BOOL && spec[i].id < JSI_OPTION_END) {
         Jsi_Obj *sobj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);

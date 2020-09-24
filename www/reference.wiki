@@ -317,7 +317,7 @@ Commands for accessing interps.
 |typeCheck|*ARRAY*|Type-check control options. (zero or more of: **none**, **parse**, **run**, **all**, **error**, **strict**, **noundef**, **nowith**, **funcsig**)||
 |typeWarnMax|*INT*|Type checking is silently disabled after this many warnings (50).||
 |udata|*OBJ*|User data.||
-|unitTest|*UINT*|Unit test control bits: 1=subst, 2=Puts with file:line prefix.||
+|testMode|*UINT*|Unit test control bits: 1=subst, 2=Puts with file:line prefix.||
 ### Options "debugOpts"
 |Option|Type|Description|Flags|
 |---|---|---|---|
@@ -331,7 +331,7 @@ Commands for accessing interps.
 |pkgTrace|*BOOL*|Trace package loads.||
 |putsCallback|*CUSTOM*|Comand in parent interp to handle puts output.||
 |traceCallback|*CUSTOM*|Comand in parent interp to handle traceCall.||
-|testFmtCallback|*CUSTOM*|Comand in parent interp to format unittest string.||
+|testFmtCallback|*CUSTOM*|Comand in parent interp to format testing strings.||
 ### Options "logOpts"
 |Option|Type|Description|Flags|
 |---|---|---|---|
@@ -363,6 +363,7 @@ Commands for accessing interps.
 |outUndef|*BOOL*|In interactive mode output result values that are undefined.||
 |prompt|*STRKEY*|Prompt for interactive mode ('$ ').||
 |prompt2|*STRKEY*|Prompt for interactive mode line continue ('> ').||
+|traceAccess|*BOOL*|Trace set/gets setup using Jsi_ObjAccessorWithSpec.||
 
 
 ## JSON
@@ -548,19 +549,19 @@ Commands for accessing Objects.
 |Object|(val:object&#124;function&#124;null=void):object |Object constructor.|
 |assign|(obj:object,...):object |Return arg1 object with assigned values.|
 |create|(proto:null&#124;object, properties:object=void):object |Create a new object with prototype object and properties.|
-|freeze|(obj:object, freeze:boolean&#124;null=true, modifyok:boolean=true, readcheck:boolean=true):object&#124;void |Freeze/unfreeze an object with optionally.|
+|freeze|(obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true):object&#124;void |Freeze/unfreeze an object with optionally.|
 |getPrototypeOf|(name:object&#124;function):function&#124;object |Return prototype of an object.|
 |hasOwnProperty|(name:string):boolean |Returns a true if object has the specified property.|
 |is|(value1, value2):boolean |Tests if two values are equal.|
 |isPrototypeOf|(name):boolean |Tests for an object in another object's prototype chain.|
-|keys|(obj:object&#124;function=void):array |Return the keys of an object or array.|
+|keys|(obj:object&#124;function&#124;array):array |Return the keys of an object, array or function. Frozen empty objects will return getters.|
 |merge|(obj:object&#124;function):object |Return new object containing merged values.|
 |propertyIsEnumerable|(name):boolean |Determine if a property is enumerable.|
 |setPrototypeOf|(name:object, value:object) |Set prototype of an object.|
 |toLocaleString|(quote:boolean=false):string |Convert to string.|
 |toString|(quote:boolean=false):string |Convert to string.|
 |valueOf|() |Returns primitive value.|
-|values|(obj:object=void):array |Return the  values of an object.|
+|values|(obj:object):array |Return the  values of an object.|
 
 
 ## RegExp

@@ -520,7 +520,7 @@ function SqliteUI(files:array|string, conf:object=void)
     function WsOpen(ws:userobj, id:number)
     {
         var hdrs = self.ws.header(id);
-        LogDebug('OPEN:', hdrs.keys(), "\n", hdrs);
+        LogDebug('OPEN:', Object.keys(hdrs), "\n", hdrs);
         LogTrace('HDRS:', self.ws.header(id,'get '));
     }
         

@@ -557,7 +557,7 @@ function DebugUI(fileargs:array, conf:object=void)
             if (i.indexOf(val) === 0)
                 mat.push(i);
         if (mat.length === 0)
-            eputs("Command '"+val+"' not one of: " + cmds.keys().join(','));
+            eputs("Command '"+val+"' not one of: " + Object.keys(cmds).join(','));
         else if (mat.length === 1)
             return mat[0];
         else
@@ -659,7 +659,7 @@ function DebugUI(fileargs:array, conf:object=void)
             case 'up':      cmdLevel(inlst, true); break;
             case 'where':   cmdWhere(inlst,line,func,file); break;
             case 'xeval':   cmdEval(inp, true); break;
-            default: eputs("ERROR '"+cmd+"' not one of: " + commands.keys().join(','));
+            default: eputs("ERROR '"+cmd+"' not one of: " + Object.keys(commands).join(','));
         }
         if (self.stopped)
             webStopped();

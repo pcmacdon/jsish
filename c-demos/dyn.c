@@ -6,6 +6,7 @@ Jsi_CmdProcDecl(DynCmd) {
     for (i=0; i<n; i++)
         printf("  arguments[%d] = '%s'\n", i, 
             Jsi_ValueArrayIndexToStr(interp, args, i, NULL));
+    Jsi_ValueMakeNumber(interp, ret, n);
     return JSI_OK;
 }
 

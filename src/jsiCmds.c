@@ -3501,18 +3501,26 @@ static Jsi_RC InfoObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     if (!arg || arg->vt != JSI_VT_OBJECT)
         return Jsi_LogError("Expected object");
     Jsi_Obj *obj = arg->d.obj;
-    Jsi_JSONParseFmt(interp, ret, "{objType:\"%s\"}",  jsi_ObjectTypeName(interp, obj->ot));
+    Jsi_JSONParseFmt(interp, ret, "{objType:\"%s\", freeze:%s, freezeModify:%s, freezeReadCheck:%s}", 
+        jsi_ObjectTypeName(interp, obj->ot),
+        obj->freeze?"true":"false",
+        (!obj->freezeNoModify)?"true":"false",
+        obj->freezeReadCheck?"true":"false");
     Jsi_Obj *nobj = (*ret)->d.obj;
-    if (obj->setters) {
-        Jsi_Value *fval = Jsi_ValueNew1(interp);
+    Jsi_Value *fval = Jsi_ValueNewArray(interp, NULL, 0);
+    if (obj->setters) 
         Jsi_HashKeysDump(interp, obj->setters, &fval, 0);
-        Jsi_ObjInsert(interp, nobj, "setters", fval, 0);
-    }
-    if (obj->getters) {
-        Jsi_Value *fval = Jsi_ValueNew1(interp);
+    Jsi_ObjInsert(interp, nobj, "setters", fval, 0);
+    fval = Jsi_ValueNewArray(interp, NULL, 0);
+    if (obj->getters)
         Jsi_HashKeysDump(interp, obj->getters, &fval, 0);
-        Jsi_ObjInsert(interp, nobj, "getters", fval, 0);
-    }
+    Jsi_ObjInsert(interp, nobj, "getters", fval, 0);
+    if (obj->accessorSpec && obj->accessorSpec->spec) {
+        fval = Jsi_ValueNewArray(interp, NULL, 0);
+        jsi_DumpOptionSpecs(interp, fval->d.obj, obj->accessorSpec->spec);
+    } else
+        fval = Jsi_ValueNew(interp);
+    Jsi_ObjInsert(interp, nobj, "spec", fval, 0);
     return JSI_OK;
 }
 
@@ -3694,7 +3702,7 @@ Jsi_Value * jsi_CommandCreate(Jsi_Interp *interp, const char *name, Jsi_CmdProc 
         csdot = NULL;
     }
     if (!csdot) {
-        n = jsi_MakeFuncValue(interp, cmdProc, name, NULL, cspec);
+        n = jsi_MakeFuncValue(interp, cmdProc, name, NULL, cspec, NULL);
         Jsi_IncrRefCount(interp, n);
         Jsi_ObjDecrRefCount(interp, n->d.obj);
         Jsi_Func *f = n->d.obj->d.fobj->func;
@@ -3710,7 +3718,7 @@ Jsi_Value * jsi_CommandCreate(Jsi_Interp *interp, const char *name, Jsi_CmdProc 
     Jsi_DSFree(&dStr);
     if (cs) {
     
-        n = jsi_MakeFuncValue(interp, cmdProc, csdot+1, NULL, cspec);
+        n = jsi_MakeFuncValue(interp, cmdProc, csdot+1, NULL, cspec, NULL);
         Jsi_IncrRefCount(interp, n);
         Jsi_ObjDecrRefCount(interp, n->d.obj);
         Jsi_Func *f = n->d.obj->d.fobj->func;
@@ -4820,6 +4828,11 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                 case JSI_VT_UNDEF:
                 case JSI_VT_NULL:
                     break;
+                case JSI_VT_BOOL:
+                    if (vTyp == JSI_VT_NUMBER && (val->d.num==1 || val->d.num==0)) {
+                        oTyp = vTyp;
+                        val = Jsi_ValueNewBoolean(interp, (val->d.num==1));
+                    }
                 default:
                     if (oTyp != vTyp) {
                         rc = Jsi_LogError("type mismatch for '%s': '%s' is not a %s",

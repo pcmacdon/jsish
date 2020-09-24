@@ -466,17 +466,17 @@ uchroot: src/uchroot.c
 	gcc -g -o uchroot src/uchroot.c && sudo chown root.root uchroot && sudo chmod u+s uchroot
 	
 test:
-	./jsish -u tests
+	./jsish -t tests
 
 testsys:
 	tools/testsys.sh
 
 # This requires building with memdebug.
 testmem:
-	JSI_INTERP_OPTS='{memDebug:1}' ./jsish -u tests
+	JSI_INTERP_OPTS='{memDebug:1}' ./jsish -t tests
 
 testwall:
-	JSI_INTERP_OPTS='{typeCheck:["strict"], strict:true}' ./jsish -u tests
+	JSI_INTERP_OPTS='{typeCheck:["strict"], strict:true}' ./jsish -t tests
 
 testvg:
 	tools/testjs.sh -jsish ./jsish -valgrind tests
@@ -498,8 +498,6 @@ install: all
 	-cp Socket$(SHLEXT) $(PREFIX)/lib/jsi
 	-cp MySql$(SHLEXT) $(PREFIX)/lib/jsi
 
-setup:
-	egrep -s 'complete -W .*jsish' ~/.bashrc || echo "complete -W '-h --help -v --version -d --debug -D --debugui -u --unittest -s --safe -Z --zip -S --sqliteui -W --websrv -H --htmli -J --jsi -c --cdata -C --cssi -m --make -M --module -e --eval -t --tracecall -T --typecheck -t --tracecall' -f '*.jsi'  'jsish'\n" >> ~/.bashrc
 remake: clean all
 
 clean:

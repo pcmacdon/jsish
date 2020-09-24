@@ -910,6 +910,7 @@ itemres: /* Support reserved words in objects. */
     | TYPEOF { $$ = code_push_string(pstate,&@1, "typeof"); }
     | INSTANCEOF { $$ = code_push_string(pstate,&@1, "instanceof"); }
 ;
+
 item:
     IDENTIFIER ':' expr { $$ = codes_join(code_push_string(pstate,&@1, $1), $3); }
     | strlit ':' expr   { $$ = codes_join(code_push_vstring(pstate,&@1, $1), $3); }

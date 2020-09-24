@@ -313,7 +313,7 @@ static Jsi_RC jsi_FunctionBindCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     if (!Jsi_ValueIsFunction(interp, tocall) || !tocall->d.obj->d.fobj) 
         return Jsi_LogError("can not execute expression, expression is not a function");
     
-    Jsi_Value *oval = jsi_MakeFuncValue(interp, jsi_FuncBindCall, NULL, ret, NULL);
+    Jsi_Value *oval = jsi_MakeFuncValue(interp, jsi_FuncBindCall, NULL, ret, NULL, NULL);
     Jsi_Obj *obj = oval->d.obj;
     Jsi_FuncObj *fo = obj->d.fobj;
     Jsi_Func *fstatic = tocall->d.obj->d.fobj->func;
@@ -377,15 +377,8 @@ static Jsi_RC ObjectFreezeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (!val || !Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
         return Jsi_LogError("arg 1: expected object");
     Jsi_Obj *obj = val->d.obj;
-    if (fval) {
-        if (Jsi_ValueIsNull(interp, fval))
-            return Jsi_JSONParseFmt(interp, ret, "{freeze:%s, modifyok:%s, readcheck:%s}",
-                obj->freeze?"true":"false",
-                obj->freezeNoModify?"false":"true",
-                obj->freezeReadCheck?"true":"false");
-        if (!Jsi_ValueIsBoolean(interp, fval))
-            return Jsi_LogError("arg 2: expected bool|null");
-    }
+    if (fval && !Jsi_ValueIsBoolean(interp, fval))
+        return Jsi_LogError("arg 2: expected bool|null");
     if (bval && !Jsi_ValueIsBoolean(interp, bval))
         return Jsi_LogError("arg 3: expected bool");
     if (rval && !Jsi_ValueIsBoolean(interp, rval))
@@ -409,11 +402,11 @@ static Jsi_RC ObjectFreezeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 static Jsi_RC ObjectKeysCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-   int argc = Jsi_ValueGetLength(interp, args);
-   Jsi_Value *val = _this;
+    int argc = Jsi_ValueGetLength(interp, args);
+    Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0);
    
-   if (argc>0)
-        val = Jsi_ValueArrayIndex(interp, args, 0);
+    if (argc != 1 || !val)
+       return Jsi_LogError("must call via Object.keys");
 
     Jsi_RC rc = Jsi_ValueGetKeys(interp, val, *ret);
     if (rc != JSI_OK)
@@ -424,11 +417,11 @@ static Jsi_RC ObjectKeysCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
 static Jsi_RC ObjectValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-   int argc = Jsi_ValueGetLength(interp, args);
-   Jsi_Value *val = _this;
+    int argc = Jsi_ValueGetLength(interp, args);
+    Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0);
    
-   if (argc>0)
-        val = Jsi_ValueArrayIndex(interp, args, 0);
+    if (argc != 1 || !val)
+       return Jsi_LogError("must call via Object.keys");
 
     if (!Jsi_ValueIsObjType(interp, val, JSI_OT_OBJECT))
         return Jsi_LogError("can not call values() with non-object");
@@ -750,8 +743,8 @@ static Jsi_CmdSpec objectCmds[] = {
     { "hasOwnProperty", jsi_HasOwnPropertyCmd,  1, 1, "name:string", .help="Returns a true if object has the specified property", .retType=(uint)JSI_TT_BOOLEAN },
     { "is",             ObjectIsCmd, 2, 2, "value1, value2", .help="Tests if two values are equal", .retType=(uint)JSI_TT_BOOLEAN },
     { "isPrototypeOf",  ObjectIsPrototypeOfCmd, 1, 1, "name", .help="Tests for an object in another object's prototype chain", .retType=(uint)JSI_TT_BOOLEAN },
-    { "freeze",         ObjectFreezeCmd,        1, 4, "obj:object, freeze:boolean|null=true, modifyok:boolean=true, readcheck:boolean=true", .help="Freeze/unfreeze an object with optionally", .retType=(uint)JSI_TT_VOID|JSI_TT_OBJECT },
-    { "keys",           ObjectKeysCmd,          0, 1, "obj:object|function=void", .help="Return the keys of an object or array", .retType=(uint)JSI_TT_ARRAY },
+    { "freeze",         ObjectFreezeCmd,        1, 4, "obj:object, freeze:boolean=true, modifyok:boolean=true, readcheck:boolean=true", .help="Freeze/unfreeze an object with optionally", .retType=(uint)JSI_TT_VOID|JSI_TT_OBJECT },
+    { "keys",           ObjectKeysCmd,          1, 1, "obj:object|function|array", .help="Return the keys of an object, array or function. Frozen empty objects will return getters", .retType=(uint)JSI_TT_ARRAY },
     { "merge",          ObjectMergeCmd,         1, 1, "obj:object|function", .help="Return new object containing merged values", .retType=(uint)JSI_TT_OBJECT },
     { "propertyIsEnumerable", ObjectPropertyIsEnumerableCmd,1, 1, "name", .help="Determine if a property is enumerable", .retType=(uint)JSI_TT_BOOLEAN },
 #if (JSI_HAS___PROTO__>0)
@@ -759,7 +752,7 @@ static Jsi_CmdSpec objectCmds[] = {
 #endif
     { "toLocaleString", ObjectToLocaleStringCmd,0, 1, "quote:boolean=false", .help="Convert to string", .retType=(uint)JSI_TT_STRING },
     { "toString",       jsi_ObjectToStringCmd,  0, 1, "quote:boolean=false", .help="Convert to string", .retType=(uint)JSI_TT_STRING }, 
-    { "values",         ObjectValuesCmd,        0, 1, "obj:object=void", .help="Return the  values of an object", .retType=(uint)JSI_TT_ARRAY },
+    { "values",         ObjectValuesCmd,        1, 1, "obj:object", .help="Return the  values of an object", .retType=(uint)JSI_TT_ARRAY },
     { "valueOf",        ObjectValueOfCmd,       0, 0, "", .help="Returns primitive value", .retType=(uint)JSI_TT_ANY },
     { NULL, 0,0,0,0, .help="Commands for accessing Objects" }
 #endif
@@ -789,20 +782,20 @@ Jsi_RC jsi_InitProto(Jsi_Interp *interp, int release)
     interp->Function_prototype_prototype->d.obj->__proto__ = interp->Object_prototype;
     
     /* Function.prototype.__proto__ pointed to Jsi_Obj.prototype */
-    interp->Function_prototype = jsi_MakeFuncValue(interp, jsi_FunctionPrototypeConstructor, "prototype", NULL, NULL);
+    interp->Function_prototype = jsi_MakeFuncValue(interp, jsi_FunctionPrototypeConstructor, "prototype", NULL, NULL, NULL);
     //Jsi_IncrRefCount(interp, interp->Function_prototype);
     Jsi_ValueInsertFixed(interp, interp->Function_prototype, "prototype", 
                               interp->Function_prototype_prototype);
     interp->Function_prototype->d.obj->__proto__ = interp->Object_prototype;
     
     /* Jsi_Obj.__proto__ pointed to Function.prototype */
-    Jsi_Value *_Object = jsi_MakeFuncValue(interp, ObjectConstructor, "prototype", NULL, NULL);
+    Jsi_Value *_Object = jsi_MakeFuncValue(interp, ObjectConstructor, "prototype", NULL, NULL, NULL);
     //Jsi_IncrRefCount(interp, _Object);
     Jsi_ValueInsertFixed(interp, _Object, "prototype", interp->Object_prototype);
     _Object->d.obj->__proto__ = interp->Function_prototype;
 
     /* both Function.prototype,__proto__ pointed to Function.prototype */
-    Jsi_Value *_Function = jsi_MakeFuncValue(interp, jsi_Function_constructor, "prototype", NULL, NULL);
+    Jsi_Value *_Function = jsi_MakeFuncValue(interp, jsi_Function_constructor, "prototype", NULL, NULL, NULL);
     //Jsi_IncrRefCount(interp, _Function);
     Jsi_ValueInsertFixed(interp, _Function, "prototype", interp->Function_prototype);
     _Function->d.obj->__proto__ = interp->Function_prototype;

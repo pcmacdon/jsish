@@ -204,7 +204,7 @@ saw_eof:
                     break;
                 default: 
                     buf[bufi++] = n;
-                    if (!interp->unitTest)
+                    if (!interp->testMode)
                         Jsi_LogParse("Unsupported string escape: \\%c", n);
             }
         } else {

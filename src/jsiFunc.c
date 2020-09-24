@@ -23,6 +23,12 @@ void *Jsi_FunctionPrivData(Jsi_Func *funcPtr)
     return funcPtr->privData;
 }
 
+Jsi_Func* Jsi_FunctionFromValue(Jsi_Interp *interp, Jsi_Value* value) {
+    if (!Jsi_ValueIsFunction(interp, value))
+        return NULL;
+    return value->d.obj->d.fobj->func;
+}
+
 const char *jsi_TypeName(Jsi_Interp *interp, Jsi_ttype otyp)
 {
     switch (otyp) {
@@ -690,7 +696,7 @@ Jsi_RC Jsi_FuncObjToString(Jsi_Interp *interp, Jsi_Func *f, Jsi_DString *dStr, i
     return JSI_OK;
 }
 
-Jsi_Value *jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, Jsi_Value** toVal, Jsi_CmdSpec *cspec)
+Jsi_Value *jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, Jsi_Value** toVal, Jsi_CmdSpec *cspec, void* privData)
 {
     Jsi_Obj *o = Jsi_ObjNew(interp);
     Jsi_Func *f = jsi_FuncNew(interp);
@@ -698,7 +704,7 @@ Jsi_Value *jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const ch
     o->ot = JSI_OT_FUNCTION;
     f->type = FC_BUILDIN;
     f->callback = callback;
-    f->privData = NULL;
+    f->privData = privData;
     o->d.fobj = jsi_FuncObjNew(interp, f);
     f->cmdSpec = cspec;
     if (!cspec) {
@@ -710,6 +716,12 @@ Jsi_Value *jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const ch
     }
     f->callback = callback;
     return Jsi_ValueMakeObject(interp, toVal, o);
+}
+
+Jsi_Value *Jsi_ValueNewFunction(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, void *privData) {
+    Jsi_Value *f = jsi_MakeFuncValue(interp, callback, name, NULL, NULL, privData);
+    Jsi_ObjDecrRefCount(interp, f->d.obj); // Caller manages refcount.
+    return f;
 }
 
 Jsi_Value *jsi_MakeFuncValueSpec(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, void *privData)

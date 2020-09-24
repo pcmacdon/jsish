@@ -1,4 +1,4 @@
-#!/usr/local/bin/jsish --I unitTest=1 %s
+#!/usr/local/bin/jsish --I testMode=1 %s
 
 var n, m, c, p;
 

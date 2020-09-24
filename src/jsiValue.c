@@ -182,12 +182,9 @@ static void ValueFree(Jsi_Interp *interp, Jsi_Value* v)
             Jsi_DecrRefCount(interp, v->d.lval);
             break;
         case JSI_VT_STRING:
-            if (v->d.s.str && !v->f.bits.isstrkey) {
-                Jsi_Free(v->d.s.str);
-                /*Jsi_HashEntry *hPtr;
-                if ((hPtr = Jsi_HashEntryFind(strDebug, v->d.s.str)))
-                    Jsi_HashEntryDelete(hPtr);*/
-            }
+            //if (v->d.s.str && !v->f.bits.isstrkey) 
+                // Jsi_Free(v->d.s.str);
+    
             break;
         default:
             break;
@@ -264,9 +261,9 @@ static void jsi_ValueCopyMove(Jsi_Interp *interp, Jsi_Value *to, Jsi_Value *from
         if (to->refCnt) {
             switch (to->vt) {
                 case JSI_VT_STRING:
-                    if (!to->f.bits.isstrkey) {
+                    /*if (!to->f.bits.isstrkey) {
                         to->d.s.str = Jsi_StrdupLen(to->d.s.str, to->d.s.len);
-                    }
+                    }*/
                     break;
                 case JSI_VT_OBJECT:
                     Jsi_ObjIncrRefCount(interp,to->d.obj);
@@ -423,7 +420,7 @@ bool Jsi_ValueIsNumber(Jsi_Interp *interp, Jsi_Value *pv)
 
 bool Jsi_ValueIsStringKey(Jsi_Interp* interp, Jsi_Value *key)
 {
-    if (key->vt == JSI_VT_STRING && key->f.bits.isstrkey)
+    if (key->vt == JSI_VT_STRING /*&& key->f.bits.isstrkey*/)
         return 1;
     if (key->vt == JSI_VT_OBJECT && key->d.obj->ot == JSI_OT_STRING && key->d.obj->isstrkey)
         return 1;
@@ -722,8 +719,8 @@ Jsi_RC Jsi_ValueToObject(Jsi_Interp *interp, Jsi_Value *v)
         }
         case JSI_VT_STRING: {
             o->d.s = v->d.s;
-            if (!v->f.bits.isstrkey)
-                o->d.s.str = (char*)Jsi_KeyAdd(interp, v->d.s.str);
+            //if (!v->f.bits.isstrkey)
+            //    o->d.s.str = (char*)Jsi_KeyAdd(interp, v->d.s.str);
             o->isstrkey = 1;
             o->ot = JSI_OT_STRING;
             o->__proto__ = interp->String_prototype;
@@ -819,7 +816,7 @@ void jsi_ValueToPrimitive(Jsi_Interp *interp, Jsi_Value **vPtr)
         case JSI_OT_STRING:
             if (obj->isstrkey) {
                 res.d.s = obj->d.s;
-                res.f.bits.isstrkey = 1;
+                //res.f.bits.isstrkey = 1;
                 obj->d.s.str = NULL;
             } else {
                 if (obj->refcnt==1) {
@@ -884,7 +881,7 @@ static void jsi_ValueToPrimitiveRes(Jsi_Interp *interp, Jsi_Value *v, Jsi_Value 
         case JSI_OT_STRING:
             rPtr->vt = JSI_VT_STRING;
             rPtr->d.s = obj->d.s;
-            rPtr->f.bits.isstrkey = 1;
+            //rPtr->f.bits.isstrkey = 1;
             break;
         default:
             break;
@@ -976,7 +973,7 @@ Jsi_Value *Jsi_StringSplit(Jsi_Interp *interp, const char *str, const char *spli
     return nret;
 }
 
-static Jsi_Value *jsi_ValueLookupBase(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret)
+static Jsi_Value *jsi_ValueLookupBase(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret, bool right_val)
 {
     if (!target)
         return NULL;
@@ -987,32 +984,55 @@ static Jsi_Value *jsi_ValueLookupBase(Jsi_Interp *interp, Jsi_Value *target, Jsi
     const char *keyStr = Jsi_ValueToString(interp, key, NULL);
     if (!keyStr)
         return NULL;
-    bool isStrKey = (key->vt == JSI_VT_STRING && key->f.bits.isstrkey);
+    bool isStrKey = (key->vt == JSI_VT_STRING /*&& key->f.bits.isstrkey*/);
     Jsi_Value *v = Jsi_ValueObjLookup(interp, target, (char*)keyStr, isStrKey);
     if (v)
         return v;
     Jsi_Obj *obj = target->d.obj;
     if (obj->getters) {
-        Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->getters, keyStr, 0);
-        if (v) {
-            Jsi_RC rc = Jsi_FunctionInvoke(interp, v, NULL, ret, NULL);
-            if (rc == JSI_OK)
-                return *ret;
+        Jsi_HashEntry *hPtr = Jsi_HashEntryFind(obj->getters, keyStr);
+        if (hPtr) {
+            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, 0);
+       /* Jsi_Value *vget = (hPtr?(Jsi_Value*)Jsi_HashValueGet(hPtr):NULL);
+        if (vget) {
+            Jsi_Value *vpargs = NULL, *vargs[2], *vres = interp->GetterValue;
+            Jsi_FuncObj *fobj = vget->d.obj->d.fobj;
+            int i = 0;
+            if (!fobj->func->isGet) {
+                vargs[i++] = Jsi_ValueNewStringDup(interp, keyStr);
+                Jsi_IncrRefCount(interp, vargs[0]);
+                vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, i, 0));
+                Jsi_IncrRefCount(interp, vpargs);
+            }
+            
+            Jsi_RC rc = Jsi_FunctionInvoke(interp, vget, vpargs, &vres, NULL);
+            if (vpargs) {
+                Jsi_DecrRefCount(interp, vargs[0]);
+                Jsi_DecrRefCount(interp, vpargs);
+            }*/
+            if (rc == JSI_OK) {
+                v = interp->GetterValue;
+                v->f.bits.isgetter = 1;
+                if (obj->setters)
+                    interp->hPtrGet = Jsi_HashEntryFind(obj->setters, keyStr);
+                return v;
+            }
+            //else Jsi_DecrRefCount(interp, vres);
             return NULL;
         }
         
     }
     if (obj->__proto__)
-        return jsi_ValueLookupBase(interp, obj->__proto__, key, ret);
+        return jsi_ValueLookupBase(interp, obj->__proto__, key, ret, right_val);
     return NULL;
 }
 
 
-Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret)
+Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret, bool right_val)
 {
     int len;
     Jsi_ValueReset(interp, ret);
-    Jsi_Value *v = jsi_ValueLookupBase(interp, target, key, ret);
+    Jsi_Value *v = jsi_ValueLookupBase(interp, target, key, ret, right_val);
     if (v)
         return v;
     const char *keyStr = Jsi_ValueString(interp, key, NULL);
@@ -1187,6 +1207,9 @@ Jsi_RC Jsi_ValueGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *ret)
         r->arrCnt = n;
         return JSI_OK;
     }
+    if (to->tree && to->tree->numEntries==0 && to->getters && to->accessorSpec)
+        return Jsi_HashKeysDump(interp, to->getters, &ret, 0);
+    
     io = Jsi_IterObjNew(interp, NULL);
     Jsi_IterGetKeys(interp, target, io, 0);
     if (Jsi_ObjArraySizer(interp, r, io->count) <= 0) {
@@ -1279,6 +1302,10 @@ char *Jsi_ValueArrayIndexToStr(Jsi_Interp *interp, Jsi_Value *args, int index, i
     return res;
 }
 
+Jsi_RC Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, uint flags) {
+    return Jsi_ObjInsert(interp, interp->csc->d.obj, name, val, 0);
+}
+
 // Insert val into target and add flags to it.
 Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, Jsi_Value *val, int flags)
 {
@@ -1332,37 +1359,76 @@ static void IterObjInsert(Jsi_IterObj *io, Jsi_TreeEntry *hPtr)
     IterObjInsertKey(io, (const char*)Jsi_TreeKeyGet(hPtr));
 }
 
+Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, int flags)
+{
+    const char *key = (char*)Jsi_HashKeyGet(hPtr);
+    Jsi_Value *v = (Jsi_Value*)Jsi_HashValueGet(hPtr);
+    if (!v || !key)
+        return JSI_ERROR;
+    Jsi_Value *vpargs, *vargs[3], *retStr = Jsi_ValueNew1(interp);
+    Jsi_FuncObj *fobj = v->d.obj->d.fobj;
+    int i = 0;
+    if (!fobj->func->isSet) {
+        vargs[0] = Jsi_ValueNewStringDup(interp, key);
+        Jsi_IncrRefCount(interp, vargs[0]);
+        i++;
+    }
+    vargs[i++] = val;
+    vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, i, 0));
+    Jsi_IncrRefCount(interp, val);
+    Jsi_IncrRefCount(interp, vpargs);
+    Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
+    Jsi_DecrRefCount(interp, vpargs);
+    Jsi_DecrRefCount(interp, val);
+    if (i>1)
+        Jsi_DecrRefCount(interp, vargs[0]);
+    Jsi_DecrRefCount(interp, retStr);
+    if (rc != JSI_OK || flags&JSI_OM_DONTENUM)
+        return JSI_ERROR;
+    return JSI_OK;
+}
+
+Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, int flags)
+{
+    const char *key = (char*)Jsi_HashKeyGet(hPtr);
+    Jsi_Value *vcall = (Jsi_Value*)Jsi_HashValueGet(hPtr);
+    if (!vcall || !key)
+        return Jsi_LogBug("bad getter");
+    Jsi_Value *vpargs = NULL, *vargs[2];
+    Jsi_FuncObj *fobj = vcall->d.obj->d.fobj;
+    int i = 0;
+    if (!fobj->func->isGet) {
+        vargs[i++] = Jsi_ValueNewStringDup(interp, key);
+        Jsi_IncrRefCount(interp, vargs[0]);
+        vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, i, 0));
+        Jsi_IncrRefCount(interp, vpargs);
+    }
+    
+    Jsi_RC rc = Jsi_FunctionInvoke(interp, vcall, vpargs, vres, NULL);
+    if (vpargs) {
+        Jsi_DecrRefCount(interp, vargs[0]);
+        Jsi_DecrRefCount(interp, vpargs);
+    }
+    return rc;
+}
+
 Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
 {
     Jsi_TreeEntry *hPtr;
     SIGASSERT(val, VALUE);
 
     if (obj && obj->setters && val) {
-        Jsi_Value *v = (Jsi_Value*)Jsi_HashGet(obj->setters, key, 0);
-        if (v) {
-            Jsi_Value *vpargs, *vargs[2], *retStr = Jsi_ValueNew1(interp);
-            vargs[0] = val;
-            vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, 1, 0));
-            Jsi_IncrRefCount(interp, val);
-            Jsi_IncrRefCount(interp, vpargs);
-            Jsi_RC rc = Jsi_FunctionInvoke(interp, v, vpargs, &retStr, NULL);
-            Jsi_DecrRefCount(interp, vpargs);
-            Jsi_DecrRefCount(interp, val);
-            Jsi_DecrRefCount(interp, retStr);
-            if (rc != JSI_OK || flags&JSI_OM_DONTENUM)
-                return JSI_ERROR;
-            return JSI_OK;
-        }
+        Jsi_HashEntry *hPtr = Jsi_HashEntryFind(obj->setters, key);
+        if (hPtr)
+            return jsi_SetterCall(interp, hPtr, val, 0);
     }
 
     if (val && obj->freeze) {
         if (obj->freezeNoModify)
-            return Jsi_LogError("frozen assign/modify key: %s", key);
+            return Jsi_LogError("object freeze: attempted assign/modify \"%s\"", key);
         if (!key || !(Jsi_TreeObjGetValue(obj, key, 0)))
-            return Jsi_LogError("frozen assign key: %s", key);
+            return Jsi_LogError("object freeze: attempted assign \"%s\"", key);
     }
-
-
 
     if (val->vt == JSI_VT_OBJECT)
         jsi_ObjInsertObjCheck(interp, obj, val, 1); 
@@ -1409,7 +1475,18 @@ void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj
             cs++;
         }
         return;
+    } else if (depth==0 && to && to->ot==JSI_OT_OBJECT && to->tree && to->tree->numEntries==0 && to->getters && to->accessorSpec) {
+        Jsi_HashEntry *hPtr;
+        Jsi_HashSearch search;
+        iterobj->isgetter = 1;
+        for (hPtr = Jsi_HashSearchFirst(to->getters, &search);
+            hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
+                const char *key = Jsi_HashKeyGet(hPtr);
+                IterObjInsertKey(iterobj, key);
+        }
+        return;
     }
+
     iterobj->depth = depth;
     Jsi_TreeWalk(target->d.obj->tree, IterGetKeysCallback, iterobj, 0);
     if (target->d.obj->__proto__ && target != target->d.obj->__proto__)
@@ -1566,7 +1643,7 @@ Jsi_Value* Jsi_ValueMakeStringKey(Jsi_Interp *interp, Jsi_Value **vPtr, const ch
     v->vt = JSI_VT_STRING;
     v->d.s.str = (char*)Jsi_KeyAdd(interp,s);
     v->d.s.len = Jsi_Strlen(s);
-    v->f.bits.isstrkey = 1;
+   // v->f.bits.isstrkey = 1;
     return v;
 }
 
@@ -1623,7 +1700,7 @@ Jsi_Value* Jsi_ValueNewStringKey(Jsi_Interp *interp, const char *s) {
     v->vt = JSI_VT_STRING;
     v->d.s.str = (char*)Jsi_KeyAdd(interp,s);
     v->d.s.len = Jsi_Strlen(s);
-    v->f.bits.isstrkey = 1;
+    //v->f.bits.isstrkey = 1;
     return v;
 }
 
@@ -1633,7 +1710,7 @@ Jsi_Value* Jsi_ValueNewStringConst(Jsi_Interp *interp, const char *s, int len) {
     v->vt = JSI_VT_STRING;
     v->d.s.str = (char*)s;
     v->d.s.len = (len<0?Jsi_Strlen(s):(uint)len);
-    v->f.bits.isstrkey = 1;
+    //v->f.bits.isstrkey = 1;
     return v;
 }
 

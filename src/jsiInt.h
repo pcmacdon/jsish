@@ -256,7 +256,7 @@ typedef enum {
     JSI_SIG_USER_REG, JSI_SIG_EVENT, JSI_SIG_MAP, JSI_SIG_REGEXP,
     JSI_SIG_ARGTYPE, JSI_SIG_FORINVAR, JSI_SIG_CASELIST, JSI_SIG_CASESTAT,
     JSI_SIG_FASTVAR, JSI_SIG_INTERPSTREVENT, JSI_SIG_ALIASCMD, JSI_SIG_SOCKET, JSI_SIG_SOCKETPSS,
-    JSI_SIG_NAMEDATA
+    JSI_SIG_NAMEDATA, JSI_SIG_ACCESSOR
 } jsi_Sig;
 
 #define Jsi_LogType(fmt,...) Jsi_LogMsg(interp, NULL, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
@@ -512,6 +512,7 @@ typedef struct
 } jsi_ValueDebug;
 #endif
 
+
 struct Jsi_Obj {
 #ifdef JSI_HAS_SIG
     jsi_Sig sig;
@@ -544,6 +545,7 @@ struct Jsi_Obj {
     Jsi_Value *__proto__;           /* TODO: memory leaks when this is changed */
     struct Jsi_Obj *constructor;
     Jsi_Hash *setters, *getters;
+    Jsi_AccessorSpec *accessorSpec;
     // struct Jsi_Value *next, *prev; // TODO: GC for container objects.
     // int gc_ref; 
 #ifdef JSI_MEM_DEBUG
@@ -568,7 +570,7 @@ struct Jsi_Value {
             uint dontdel:1;
             uint innershared:1; /* All above used only for objkeys. */
             uint frozen:1;
-            uint isstrkey:1;    /* Key string registered in interp->strKeyTbl (do not free) */
+            uint isgetter:1;    /* Value was from a getter. */
             uint local:1;       // Used to detect a function creating a global var.
             uint lookupfailed:1;// Indicates failed lookup, string is stored in lookupFail below.
         } bits;
@@ -1045,6 +1047,7 @@ typedef struct {
     int dblPrec;
     const char *blacklist;
     const char *prompt, *prompt2;
+    bool traceAccess;
 } jsi_SubOptions;
 
 extern Jsi_OptionSpec jsi_InterpLogOptions[];
@@ -1125,7 +1128,7 @@ struct Jsi_Interp {
     bool noNetwork;
     bool noInput;
     jsi_AssertMode assertMode;
-    uint unitTest;
+    uint testMode;
     const char *jsppChars;
     Jsi_Value *jsppCallback;
     bool noConfig;
@@ -1258,6 +1261,7 @@ struct Jsi_Interp {
     Jsi_Value *Array_prototype;
     Jsi_Value *RegExp_prototype;
     Jsi_Value *Date_prototype;
+    Jsi_Value *GetterValue;
     
     Jsi_Value *NaNValue;
     Jsi_Value *InfValue;
@@ -1268,7 +1272,7 @@ struct Jsi_Interp {
     Jsi_Obj* cleanObjs[4];
     Jsi_Obj* allObjs;
     Jsi_Value* allValues, *udata;
-
+    Jsi_HashEntry *hPtrGet;
     Jsi_Value *busyCallback;
     const char *confFile;
     int busyInterval;
@@ -1465,8 +1469,7 @@ extern void jsi_UserObjToName(Jsi_Interp *interp, Jsi_UserObj *uobj, Jsi_DString
 extern Jsi_Obj *jsi_UserObjFromName(Jsi_Interp *interp, const char *name);
 
 extern Jsi_RC Zvfs_Mount( Jsi_Interp *interp, Jsi_Value *archive, Jsi_Value *mount, Jsi_Value **ret);
-extern void jsi_ValueSubscriptLen(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret, int right_val);
-extern Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret);
+extern Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *key, Jsi_Value **ret, bool right_val);
 extern void jsi_ValueObjGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *ret, bool isof);
 extern Jsi_Value* jsi_ObjArrayLookup(Jsi_Interp *interp, Jsi_Obj *obj, const char *key);
 extern Jsi_Value* jsi_ProtoObjValueNew1(Jsi_Interp *interp, const char *name);
@@ -1475,7 +1478,7 @@ extern Jsi_Value* jsi_ObjValueNew(Jsi_Interp *interp);
 extern Jsi_Value* Jsi_ValueDup(Jsi_Interp *interp, Jsi_Value *v);
 extern int jsi_ValueToOInt32(Jsi_Interp *interp, Jsi_Value *v);
 extern Jsi_RC jsi_FreeOneLoadHandle(Jsi_Interp *interp, Jsi_HashEntry *hPtr, void *handle);
-extern Jsi_Value* jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, Jsi_Value** toVal, Jsi_CmdSpec *cspec);
+extern Jsi_Value* jsi_MakeFuncValue(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, Jsi_Value** toVal, Jsi_CmdSpec *cspec, void *privData);
 extern Jsi_Value* jsi_MakeFuncValueSpec(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, void *privData);
 extern bool jsi_FuncArgCheck(Jsi_Interp *interp, Jsi_Func *f, const char *argStr);
 extern bool jsi_CommandArgCheck(Jsi_Interp *interp, Jsi_CmdSpec *cmdSpec, Jsi_Func *f, const char *parent);
@@ -1503,6 +1506,8 @@ extern bool jsi_StrIsBalanced(char *str);
 extern char* jsi_RlGetLine(Jsi_Interp* interp, const char *prompt);
 extern void jsi_DumpValue(Jsi_Interp *interp, Jsi_Value *arg);
 extern Jsi_RC jsi_ObjSetFlag(Jsi_Interp *interp, Jsi_Obj *obj, int flag, int on);
+extern Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, int flags);
+extern Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, int flags);
 
 #if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/

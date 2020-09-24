@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   1
-#define JSI_VERSION_RELEASE 5
+#define JSI_VERSION_RELEASE 7
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -251,6 +251,7 @@ typedef struct Jsi_OpCodes Jsi_OpCodes;
 typedef struct Jsi_Chan* Jsi_Channel;
 typedef struct Jsi_CS_Ctx Jsi_CS_Ctx;
 typedef struct Jsi_OptionSpec Jsi_OptionSpec;
+typedef struct Jsi_AccessorSpec Jsi_AccessorSpec;
 
 typedef struct Jsi_OptionSpec Jsi_StructSpec;
 typedef struct Jsi_OptionSpec Jsi_FieldSpec;
@@ -432,6 +433,7 @@ JSI_EXTERN Jsi_CmdSpec* Jsi_FunctionGetSpecs(Jsi_Func *funcPtr); /*STUB = 55*/
 JSI_EXTERN bool Jsi_FunctionIsConstructor(Jsi_Func *funcPtr); /*STUB = 56*/
 JSI_EXTERN bool Jsi_FunctionReturnIgnored(Jsi_Interp *interp, Jsi_Func *funcPtr); /*STUB = 57*/
 JSI_EXTERN void* Jsi_FunctionPrivData(Jsi_Func *funcPtr); /*STUB = 58*/
+JSI_EXTERN Jsi_Func* Jsi_FunctionFromValue(Jsi_Interp *interp, Jsi_Value* value); /*STUB = 427*/
 JSI_EXTERN Jsi_RC Jsi_FunctionArguments(Jsi_Interp *interp, Jsi_Value *func, int *argcPtr); /*STUB = 59*/
 JSI_EXTERN Jsi_RC Jsi_FunctionApply(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret); /*STUB = 60*/
 JSI_EXTERN Jsi_RC Jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Value *args, Jsi_Value **ret, Jsi_Value *_this); /*STUB = 61*/
@@ -485,9 +487,10 @@ JSI_EXTERN Jsi_IterObj* Jsi_IterObjNew(Jsi_Interp *interp, Jsi_IterProc *iterPro
 JSI_EXTERN void Jsi_IterObjFree(Jsi_IterObj *iobj); /*STUB = 413*/
 JSI_EXTERN void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj, int depth); /*STUB = 414*/
 JSI_EXTERN int Jsi_ObjArraySizer(Jsi_Interp *interp, Jsi_Obj *obj, uint n); /*STUB = 35*/
-JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val); /*STUB = 420*/
+JSI_EXTERN Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal); /*STUB = 420*/
 JSI_EXTERN Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck); /*STUB = 423*/
-JSI_EXTERN Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback); /*STUB = 424*/ /*LAST*/
+JSI_EXTERN Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback); /*STUB = 424*/
+JSI_EXTERN Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, uchar *dataPtr, Jsi_Value* callback, uint flags); /*STUB = 426*/
 
 struct Jsi_IterObj {
     Jsi_Interp *interp;
@@ -497,6 +500,7 @@ struct Jsi_IterObj {
     uint iter;
     bool isArrayList;            /* If an array list do not store keys. */
     bool isof;
+    bool isgetter;
     Jsi_Obj *obj;
     uint cur;                    /* Current array cursor. */
     int depth;                  /* Used to create list of keys. */
@@ -522,6 +526,7 @@ JSI_EXTERN Jsi_Value* Jsi_ValueNewStringDup(Jsi_Interp *interp, const char *s); 
 JSI_EXTERN Jsi_Value* Jsi_ValueNewArray(Jsi_Interp *interp, const char **items, int count); /*STUB = 107*/
 JSI_EXTERN Jsi_Value* Jsi_ValueNewObj(Jsi_Interp *interp, Jsi_Obj *o) ; /*STUB = 108*/
 JSI_EXTERN Jsi_Value* Jsi_ValueNewRegExp(Jsi_Interp *interp, const char *regtxt, const char* modifiers); /*STUB = 419*/
+JSI_EXTERN Jsi_Value* Jsi_ValueNewFunction(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, void *privData); /*STUB = 425*/
 #define Jsi_ValueNewBlobString(interp, s) Jsi_ValueNewBlob(interp, (uchar*)s, Jsi_Strlen(s))
 #define Jsi_ValueNewArrayObj(interp, items, count, copy) Jsi_ValueNewObj(interp, Jsi_ObjNewArray(interp, items, count, copy))
 
@@ -688,6 +693,7 @@ JSI_EXTERN const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str); /*STUB =
 JSI_EXTERN const char* Jsi_KeyLookup(Jsi_Interp *interp, const char *str); /*STUB = 225*/
 JSI_EXTERN bool Jsi_IsReserved(Jsi_Interp *interp, const char* str, bool sql); /*STUB = 415*/
 JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts*opts); /*STUB = 417*/
+JSI_EXTERN Jsi_RC  Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, uint flags); /*STUB = 428*/ /*LAST*/
 
 JSI_EXTERN Jsi_RC Jsi_DatetimeFormat(Jsi_Interp *interp, Jsi_Number date, const char *fmt, int isUtc, Jsi_DString *dStr);  /*STUB = 226*/
 JSI_EXTERN Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, int isUtc, Jsi_Number *datePtr, bool noMsg); /*STUB = 227*/
@@ -815,7 +821,7 @@ JSI_EXTERN Jsi_RC Jsi_TreeKeysDump(Jsi_Interp *interp, Jsi_Tree *hashPtr, Jsi_Va
 
 /* --LIST-- */
 typedef struct Jsi_List {
-    uint sig;
+    Jsi_Sig sig;
     int numEntries;
     Jsi_ListEntry *head;
     Jsi_ListEntry *tail;
@@ -823,7 +829,7 @@ typedef struct Jsi_List {
 } Jsi_List;
 
 typedef struct Jsi_ListEntry {
-    uint sig;
+    Jsi_Sig sig;
     Jsi_Map_Type typ;    
     struct Jsi_ListEntry *next;
     struct Jsi_ListEntry *prev;
@@ -1486,6 +1492,27 @@ JSI_EXTERN int Jsi_AddAutoFiles(Jsi_Interp *interp, const char *dir);  /*STUB = 
 
 /* -- */
 
+/* Accessor set/get handle. */
+typedef struct Jsi_AccessorSpec {
+    Jsi_Sig sig;
+    Jsi_OptionSpec *spec;
+    const char *objName;
+    Jsi_Value *callback;
+    void *dataPtr;
+    uint flags;
+    Jsi_Value* varVal;
+    Jsi_Obj *varObj;
+    bool callAlloc;
+    bool trace;
+    uint setCnt;
+    uint getCnt;
+    uint errCnt;
+    uint filterCnt;
+    const char *lastField;
+    bool lastWasSet;
+    bool (*filterProc)(struct Jsi_AccessorSpec *cnf, const char *key, Jsi_Value *val);
+    void *udata;
+} Jsi_AccessorSpec;
 
 
 /* --DATABASE-- */
@@ -1579,7 +1606,8 @@ typedef char STRING65536[(1<<16)+1];
 #define JSI_STUBS_STRUCTSIZES (sizeof(Jsi_MapSearch)+sizeof(Jsi_TreeSearch) \
     +sizeof(Jsi_HashSearch)+sizeof(Jsi_Filesystem)+sizeof(Jsi_Chan)+sizeof(Jsi_Event) \
     +sizeof(Jsi_CDataDb)+sizeof(Jsi_Stack)+sizeof(Jsi_OptionSpec)+sizeof(Jsi_CmdSpec) \
-    +sizeof(Jsi_UserObjReg)+sizeof(Jsi_String) + sizeof(Jsi_PkgOpts) + sizeof(Jsi_SqlObjOpts))
+    +sizeof(Jsi_UserObjReg)+sizeof(Jsi_String) + sizeof(Jsi_PkgOpts) + sizeof(Jsi_SqlObjOpts) \
+    +sizeof(Jsi_AccessorSpec))
 
 #ifndef JSI_OMIT_STUBS
 #ifdef JSI_USE_STUBS

@@ -452,11 +452,11 @@ Jsi_Value *Jsi_NameLookup(Jsi_Interp *interp, const char *name)
             Jsi_Value *kv = Jsi_VarLookup(interp, kstr);
             if (!kv)
                 goto bail;
-            v = jsi_ValueSubscript(interp, v, kv, &nvPtr);
+            v = jsi_ValueSubscript(interp, v, kv, &nvPtr, 0);
             goto keyon;
         } else {
             Jsi_ValueMakeStringKey(interp, &kPtr, kstr);
-            v = jsi_ValueSubscript(interp, v, kPtr, &nvPtr);
+            v = jsi_ValueSubscript(interp, v, kPtr, &nvPtr, 0);
 keyon:
             if (!v)
                 goto bail;
@@ -650,35 +650,49 @@ char *jsi_TrimStr(char *str) {
 
 static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, objwalker *owPtr);
 
-static Jsi_RC _object_get_callback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *data)
+static Jsi_RC jsi_ObjectGetFmt(Jsi_Interp *interp, const char *key, Jsi_Value *v, objwalker *ow)
 {
-    Jsi_Value *v;
-    objwalker *ow = (objwalker *)data;
     Jsi_DString *dStr = ow->dStr;
     int len;
-    char *str;
-    if ((hPtr->f.bits.dontenum))
-        return JSI_OK;
-    v =(Jsi_Value*) Jsi_TreeValueGet(hPtr);
     if ((ow->quote&JSI_OUTPUT_JSON) && v && v->vt == JSI_VT_UNDEF)
         return JSI_OK;
-    str = (char*)Jsi_TreeKeyGet(hPtr);
     char *cp = Jsi_DSValue(dStr);
     len = Jsi_DSLength(dStr);
     if (len>=2 && (cp[len-2] != '{' || cp[len-1] == '}'))
         Jsi_DSAppend(dStr, ", ", NULL);
-    if (((ow->quote&JSI_OUTPUT_JSON) == 0 || (ow->quote&JSI_JSON_STRICT) == 0) && Jsi_StrIsAlnum(str)
-        && !Jsi_HashEntryFind(tree->opts.interp->lexkeyTbl, str))
-        Jsi_DSAppend(dStr, str, NULL);
+    if (((ow->quote&JSI_OUTPUT_JSON) == 0 || (ow->quote&JSI_JSON_STRICT) == 0) && Jsi_StrIsAlnum(key)
+        && !Jsi_HashEntryFind(interp->lexkeyTbl, key))
+        Jsi_DSAppend(dStr, key, NULL);
     else
         /* JSON/spaces, etc requires quoting the name. */
-        Jsi_DSAppend(dStr, "\"", str, "\"", NULL);
+        Jsi_DSAppend(dStr, "\"", key, "\"", NULL);
     Jsi_DSAppend(dStr, ":", NULL);
     ow->depth++;
-    Jsi_RC rc = jsiValueGetString(tree->opts.interp, v, dStr, ow);
+    Jsi_RC rc = jsiValueGetString(interp, v, dStr, ow);
     ow->depth--;
     return rc;
 }
+
+static Jsi_RC jsi_objectGetterFmt(Jsi_Interp *interp, Jsi_HashEntry *hPtr, objwalker *ow)
+{
+    const char *key = (char*)Jsi_HashKeyGet(hPtr);
+    Jsi_Value *v = interp->GetterValue;
+    Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, 0);
+    if (rc != JSI_OK)
+        return JSI_ERROR;
+    return jsi_ObjectGetFmt(interp, key, v, ow);
+}
+
+static Jsi_RC _object_get_callback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *data)
+{
+    if ((hPtr->f.bits.dontenum))
+        return JSI_OK;
+    Jsi_Value *v =(Jsi_Value*) Jsi_TreeValueGet(hPtr);
+    const char *key = (char*)Jsi_TreeKeyGet(hPtr);
+    objwalker *ow = (objwalker *)data;
+    return jsi_ObjectGetFmt(tree->opts.interp, key, v, ow);
+}
+
 
 /* Format value into dStr.  Toplevel caller does init/free. */
 static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, objwalker *owPtr)
@@ -824,10 +838,20 @@ outstr:
                 Jsi_DSAppend(dStr,len?" ":"","]", NULL);
             } else {
                 int len = Jsi_TreeSize(o->tree);
-                Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
-                owPtr->depth++;
-                Jsi_TreeWalk(o->tree, _object_get_callback, owPtr, 0);
-                owPtr->depth--;
+                if (len==0 && o->getters && o->accessorSpec && (len=o->getters->numEntries)) {
+                    Jsi_HashEntry *hPtr;
+                    Jsi_HashSearch search;
+                    Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
+                    for (hPtr = Jsi_HashSearchFirst(o->getters, &search);
+                        hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
+                        jsi_objectGetterFmt(interp, hPtr, owPtr);
+                    }
+                } else {
+                    Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
+                    owPtr->depth++;
+                    Jsi_TreeWalk(o->tree, _object_get_callback, owPtr, 0);
+                    owPtr->depth--;
+                }
                 Jsi_DSAppend(dStr,len?" ":"","}", NULL);
             }
             return JSI_OK;

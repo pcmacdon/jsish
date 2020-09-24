@@ -3,6 +3,8 @@
 #include "jsiInt.h"
 #endif
 
+static void jsi_AccessorConfFree(Jsi_Interp* interp, Jsi_Obj* obj);
+
 /******************* TREE ACCESS **********************/
 
 Jsi_Value *Jsi_TreeObjGetValue(Jsi_Obj* obj, const char *key, int isstrkey) {
@@ -122,25 +124,31 @@ static Jsi_RC ObjListifyValuesCallback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void
     return JSI_OK;
 }
 
-Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val)
+Jsi_RC Jsi_ObjGetValues(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal)
 {
-    if (!Jsi_ValueIsObjType(interp, val, JSI_OT_ARRAY))
-        return Jsi_LogError("Dest is not an array");
-
-    Jsi_TreeWalk(obj->tree, ObjListifyValuesCallback, Jsi_ValueGetObj(interp, val), 0);
+    if (!Jsi_ValueIsObjType(interp, outVal, JSI_OT_ARRAY))
+        return Jsi_LogBug("outVal is not an array");
+    
+    Jsi_Obj *to = ((outVal->vt == JSI_VT_OBJECT && outVal->d.obj->ot == JSI_OT_OBJECT)?outVal->d.obj:NULL);
+    if (obj && obj->tree && obj->tree->numEntries==0 && obj->getters && obj->accessorSpec) {
+        Jsi_HashEntry *hPtr;
+        Jsi_HashSearch search;
+        for (hPtr = Jsi_HashSearchFirst(obj->getters, &search);
+            hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
+            Jsi_Value *val = Jsi_ValueNew(interp);
+            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &val, 0);
+            if (Jsi_ObjArrayAdd(interp, to, val) != JSI_OK || rc != JSI_OK)
+                return JSI_ERROR;
+        }
+        return JSI_OK;
+    }
+    Jsi_TreeWalk(obj->tree, ObjListifyValuesCallback, Jsi_ValueGetObj(interp, outVal), 0);
     return JSI_OK;
 }
 
 void Jsi_IterObjFree(Jsi_IterObj *iobj)
 {
     if (!iobj->isArrayList) {
-        /*
-        uint i;
-        for (i = 0; i < iobj->count; i++) {
-            if (iobj->keys[i]) {
-                Jsi_TreeDecrRef(iobj->keys[i]);// TODO: ??? 
-            }
-        }*/
         if (iobj->keys)
             Jsi_Free(iobj->keys);
     }
@@ -302,6 +310,8 @@ void Jsi_ObjFree(Jsi_Interp *interp, Jsi_Obj *obj)
         Jsi_HashDelete(obj->setters);
     if (obj->getters)
         Jsi_HashDelete(obj->getters);
+    if (obj->accessorSpec)
+        jsi_AccessorConfFree(interp, obj);
     /* printf("Free obj: %x\n", (int)obj); */
     switch (obj->ot) {
         case JSI_OT_STRING:
@@ -483,7 +493,7 @@ static Jsi_RC ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *ke
     int flags = 0;
     Jsi_DString dStr = {};
     if (keyVal->vt == JSI_VT_STRING) {
-        flags = (keyVal->f.bits.isstrkey ? JSI_OM_ISSTRKEY : 0);
+        flags = JSI_OM_ISSTRKEY;//(keyVal->f.bits.isstrkey ? JSI_OM_ISSTRKEY : 0);
         key = keyVal->d.s.str;
     } else if (keyVal->vt == JSI_VT_OBJECT && keyVal->d.obj->ot == JSI_OT_STRING) {
         Jsi_Obj *o = keyVal->d.obj;
@@ -508,6 +518,10 @@ Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyO
 Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback) {
     Jsi_Hash *h = NULL;
     Jsi_HashEntry *hPtr;
+    if (obj->ot != JSI_OT_OBJECT) {
+        Jsi_LogError("expected object type JSI_OT_OBJECT");
+        return NULL;
+    }
     if (isSet) {
         if (!obj->setters && callback)
             obj->setters = Jsi_HashNew(interp, JSI_KEYS_STRING, jsi_freeValueEntry);
@@ -540,6 +554,94 @@ Jsi_Hash* Jsi_ObjAccessor(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const ch
     return h;
 }
 
+static void jsi_AccessorConfFree(Jsi_Interp* interp, Jsi_Obj* obj) {
+    Jsi_AccessorSpec *adv = obj->accessorSpec;
+    if (!adv) return;
+    if (adv->filterProc)
+        (*adv->filterProc)(adv, NULL, NULL);
+    if (adv->callAlloc)
+        Jsi_DecrRefCount(interp, adv->callback);
+    Jsi_Free(adv);
+}
+
+// Handle set/get.
+Jsi_CmdProcDecl(jsi_AccessorCallback) {
+    Jsi_AccessorSpec *adv = (Jsi_AccessorSpec *)funcPtr->privData;
+    if (!adv || adv->sig != JSI_SIG_ACCESSOR)
+        return Jsi_LogBug("Invalid accessor callback");
+    int n = Jsi_ValueGetLength(interp, args);
+    const char *field = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+    if (n != 1 && n != 2)
+        return Jsi_LogError("expected 1 or 2 args");
+    Jsi_Value *val = (n>1?Jsi_ValueArrayIndex(interp, args, 1):NULL);
+    if (adv->trace || interp->subOpts.traceAccess)
+        fprintf(stderr, "CALLBACK: %s.%s \n", adv->objName, field);
+    Jsi_RC rc = JSI_ERROR;
+    bool isSet = (n==2);
+    if (adv->filterProc && (*adv->filterProc)(adv, field, val)) {
+        adv->filterCnt++;
+        return JSI_OK;
+    }
+    if (n == 1) {
+        adv->getCnt++;
+        rc = Jsi_OptionsGet(interp, adv->spec, adv->dataPtr, field, ret, 0);
+    } else if (val) {
+        adv->setCnt++;
+        rc = Jsi_OptionsSet(interp, adv->spec, adv->dataPtr, field, val, JSI_OPTS_IS_UPDATE);
+    } else
+        adv->errCnt++;
+    adv->lastField = field;
+    adv->lastWasSet = isSet;
+    return rc;
+}
+
+// Establish set/get accessors using a spec.
+Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, 
+    uchar *dataPtr, Jsi_Value* callback, uint flags) {
+    Jsi_AccessorSpec ad = {
+        .sig=JSI_SIG_ACCESSOR, .spec=spec, .objName=objName, .callback=callback, .dataPtr=dataPtr, .flags=flags
+    };
+    Jsi_OptionSpec *specPtr = spec;
+    if (!objName || !spec || (!callback && !dataPtr)) {
+        Jsi_LogError("must give spec, objName and either callback or dataPtr");
+        return NULL;
+    }
+    if (!Jsi_OptionsValid(interp, spec)) {
+        Jsi_LogError("invalid options");
+        return NULL;
+    }
+    Jsi_DString dStr = {};
+    int isVar = (!Jsi_Strchr(objName, '.') && !Jsi_Strchr(objName, '['));
+    const char *var = isVar?"var ":"",
+        *ev = Jsi_DSPrintf(&dStr, "%s%s = {};",var, objName);
+    if (JSI_OK != Jsi_EvalString(interp, ev, 0))
+        return NULL;
+    ad.varVal = Jsi_NameLookup(interp, objName);
+    if (ad.varVal)
+        ad.varObj = Jsi_ValueGetObj(interp, ad.varVal);
+    if (!ad.varVal || !ad.varObj) {
+        Jsi_LogError("invalid objName");
+        return NULL;
+    }
+    Jsi_ObjFreeze(interp, ad.varObj, 1, 1, 1);
+    Jsi_AccessorSpec *adp = (Jsi_AccessorSpec*)Jsi_Calloc(1, sizeof(*adp));
+    *adp = ad;
+    if (!callback) {
+        callback = adp->callback = Jsi_ValueNewFunction(interp, jsi_AccessorCallback, NULL, adp);
+        Jsi_IncrRefCount(interp, callback);
+        adp->callAlloc = 1;
+    }
+    while (specPtr->id>=JSI_OPTION_BOOL && specPtr->id < JSI_OPTION_END && specPtr->name) {
+        Jsi_ObjAccessor(interp, ad.varObj, 0, specPtr->name, callback);
+        Jsi_ObjAccessor(interp, ad.varObj, 1, specPtr->name, callback);
+        // TODO: option for subspecs to add handlers for field.sub
+        // if (flags&JSI_ACC_SUBFIELDS) ....
+        specPtr++;
+    }
+    ad.varObj->accessorSpec = adp;
+    return adp;
+}
+
 Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
 {
     Jsi_Obj *obj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);
@@ -547,7 +649,7 @@ Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
     int i;
     for (i = 0; i < count; i += 2) {
         if (!items[i] || !items[i+1]) continue;
-        Jsi_Value *v = items[i+1];
+        Jsi_Value *nv, *v = items[i+1];
         Jsi_String *jstr;
         if (v->vt == JSI_VT_OBJECT && v->d.obj->ot == JSI_OT_FUNCTION 
             && ((jstr=(jsi_ValueString(items[i])))))
@@ -564,14 +666,14 @@ Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
                 h = obj->getters;
             }
             if (h) {
+                // Is a set/get accessor.
                 bool isNew;
                 Jsi_HashEntry *hPtr = Jsi_HashEntryNew(h, jstr->str, &isNew);
                 if (!hPtr || !isNew)
                     Jsi_LogWarn("ignoring duplicate object %s for %s", fobj->func->isSet?"set":"get", jstr->str);
                 else {
-                    v = Jsi_ValueDup(interp, v);
-                    Jsi_HashValueSet(hPtr, v);
-                    Jsi_IncrRefCount(interp, v);
+                    nv = Jsi_ValueDup(interp, v);
+                    Jsi_HashValueSet(hPtr, nv);
                 }
                 continue;
             }

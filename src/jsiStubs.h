@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "ddf4cf9ca32a54a3ab3b9a21ae172a78"
+#define JSI_STUBS_MD5 "8da7a9baf8c22efef48939d296defc64"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -448,11 +448,15 @@ typedef struct Jsi_Stubs {
     Jsi_RC(*_Jsi_SqlObjBinds)(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts*opts);
     Jsi_RC(*_Jsi_UserObjName)(Jsi_Interp *interp, Jsi_Value *v, Jsi_DString *dStr);
     Jsi_Value*(*_Jsi_ValueNewRegExp)(Jsi_Interp *interp, const char *regtxt, const char* modifiers);
-    Jsi_RC(*_Jsi_ObjGetValues)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *val);
+    Jsi_RC(*_Jsi_ObjGetValues)(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *outVal);
     Jsi_PkgOpts*(*_Jsi_CommandPkgOpts)(Jsi_Interp *interp, Jsi_Func *func);
     Jsi_Interp*(*_Jsi_InterpMain)(int argc, char **argv, Jsi_InitProc* initProc);
     Jsi_RC(*_Jsi_ObjFreeze)(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck);
     Jsi_Hash*(*_Jsi_ObjAccessor)(Jsi_Interp *interp, Jsi_Obj *obj, bool isSet, const char *name, Jsi_Value* callback);
+    Jsi_Value*(*_Jsi_ValueNewFunction)(Jsi_Interp *interp, Jsi_CmdProc *callback, const char *name, void *privData);
+    Jsi_AccessorSpec*(*_Jsi_ObjAccessorWithSpec)(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, uchar *dataPtr, Jsi_Value* callback, uint flags);
+    Jsi_Func*(*_Jsi_FunctionFromValue)(Jsi_Interp *interp, Jsi_Value* value);
+    Jsi_RC (*_Jsi_NewVariable)(Jsi_Interp *interp, const char *name, Jsi_Value *val, uint flags);
     void *endPtr;
 } Jsi_Stubs;
 
@@ -885,6 +889,10 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_InterpMain,\
     Jsi_ObjFreeze,\
     Jsi_ObjAccessor,\
+    Jsi_ValueNewFunction,\
+    Jsi_ObjAccessorWithSpec,\
+    Jsi_FunctionFromValue,\
+    Jsi_NewVariable,\
     NULL
 
 #ifdef JSI_USE_STUBS
@@ -1313,6 +1321,10 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_InterpMain(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_InterpMain(n0,n1,n2))
 #define Jsi_ObjFreeze(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjFreeze(n0,n1,n2,n3,n4))
 #define Jsi_ObjAccessor(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessor(n0,n1,n2,n3,n4))
+#define Jsi_ValueNewFunction(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewFunction(n0,n1,n2,n3))
+#define Jsi_ObjAccessorWithSpec(n0,n1,n2,n3,n4,n5) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessorWithSpec(n0,n1,n2,n3,n4,n5))
+#define Jsi_FunctionFromValue(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionFromValue(n0,n1))
+#define Jsi_NewVariable(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_NewVariable(n0,n1,n2,n3))
 
 #endif
 

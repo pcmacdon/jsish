@@ -1,4 +1,4 @@
-#!/usr/local/bin/jsish --U %s
+#!/usr/local/bin/jsish --I testMode=1 %s
 
 ;'\n === Enabling LogDebug in fileSize.jsi only ===';
 ;require('fileSize');

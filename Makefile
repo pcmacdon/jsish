@@ -280,7 +280,7 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: jsish.c jsimin $(ALLTARGS) $(STATICLIBS) $(PROGBIN) shared
+all: jsish.c $(ALLTARGS) $(STATICLIBS) $(PROGBIN) shared
 # checkcfgver
 
 help:
@@ -300,6 +300,7 @@ modules: $(BUILDMODS)
 $(PROGBINA): src/parser.c $(OBJS) src/main.o libjsi.a
 	$(AR) r libjsi.a $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(SQLITELIB) src/main.o $(LNKFLAGS) -o $(PROGBINA) $(LDFLAGS)
+	test -f jsimin || cp $(PROGBINA) jsimin
 	$(MAKE) modules
 
 libjsi$(SHLEXT): $(OBJS)
@@ -313,13 +314,13 @@ jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
 
 shared: libjsi$(SHLEXT) libjsish$(SHLEXT) jsishs$(EXEEXT)
 
-jsimin:
-ifeq ($(PROGBINMIN),)
-	./configure
-	@echo "Need to rerun make due to re-configure"
-	$(MAKE)
-	exit 0
-endif
+#jsimin:
+#ifeq ($(PROGBINMIN),)
+#	./configure
+#	@echo "Need to rerun make due to re-configure"
+#	$(MAKE)
+#	exit 0
+#endif
 
 $(PROGBIN): $(PROGBINA)  .FORCE
 ifneq ($(JSI__ZIPLIB),1)

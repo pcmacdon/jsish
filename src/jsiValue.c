@@ -25,20 +25,20 @@ void jsi_OBJCHK(Jsi_Obj *obj) {
 
 bool Jsi_IsShared(Jsi_Interp* interp, Jsi_Value *v)
 {
-    SIGASSERT(v,VALUE);
+    SIGASSERTRET(v,VALUE,0);
     return (v->refCnt > 1);
 }
 
 int Jsi_IncrRefCount(Jsi_Interp* interp, Jsi_Value *v)
 {
-    SIGASSERT(v,VALUE);
+    SIGASSERTRET(v,VALUE,-1);
     assert(v->refCnt>=0);
     jsi_DebugValue(v,"Incr", jsi_DebugValueCallIdx(), interp);
     return ++(v->refCnt);
 }
 
 int Jsi_DecrRefCount(Jsi_Interp* interp, Jsi_Value *v) {
-    SIGASSERT(v,VALUE);
+    SIGASSERTRET(v,VALUE,0);
     if (v->refCnt<=0) {
 #ifdef JSI_MEM_DEBUG
         fprintf(stderr, "Value decr with ref %d: VD.Idx=%d\n", v->refCnt, v->VD.Idx);
@@ -336,7 +336,7 @@ Jsi_Value *Jsi_ValueObjLookup(Jsi_Interp *interp, Jsi_Value *target, const char 
         }
     }
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->typeCheck.strict)
+        if (!interp->noCheck)
             Jsi_LogWarn("Target is not object: %d", target->vt);
         return NULL;
     }
@@ -699,7 +699,7 @@ Jsi_RC Jsi_ValueToObject(Jsi_Interp *interp, Jsi_Value *v)
     switch(v->vt) {
         case JSI_VT_UNDEF:
         case JSI_VT_NULL:
-            if (interp->typeCheck.strict)
+            if (!interp->noCheck)
                 rc = Jsi_LogError("converting a undefined/null value to object");
             o->d.num = 0;
             o->ot = JSI_OT_NUMBER;
@@ -992,12 +992,10 @@ static Jsi_Value *jsi_ValueLookupBase(Jsi_Interp *interp, Jsi_Value *target, Jsi
     if (obj->getters) {
         Jsi_HashEntry *hPtr = Jsi_HashEntryFind(obj->getters, keyStr);
         if (hPtr) {
-            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, target, 0);
+            Jsi_RC rc = jsi_GetterCall(interp, hPtr, &interp->GetterValue, target, JSI_ACCESSOR_TOOBJECT);
             if (rc == JSI_OK) {
                 v = interp->GetterValue;
                 v->f.bits.isgetter = 1;
-                if (obj->setters)
-                    interp->hPtrGet = Jsi_HashEntryFind(obj->setters, keyStr);
                 return v;
             }
             //else Jsi_DecrRefCount(interp, vres);
@@ -1150,7 +1148,7 @@ void jsi_ValueObjGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *ret, 
             io->isArrayList = 1;
             io->count = to->arrCnt;
         } else {
-            if (isof &&interp->typeCheck.strict)
+            if (isof && !interp->noCheck)
                 Jsi_LogWarn("non-array in 'for...of'");
             Jsi_IterGetKeys(interp, target, io, 0);
         }
@@ -1371,10 +1369,10 @@ Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres,
     Jsi_Value *vcall = (Jsi_Value*)Jsi_HashValueGet(hPtr);
     if (!vcall || !key)
         return Jsi_LogBug("bad getter");
-    Jsi_Value *vpargs = NULL, *vargs[2];
+    Jsi_Value *v, *vpargs = NULL, *vargs[2];
     Jsi_FuncObj *fobj = vcall->d.obj->d.fobj;
-    int i = 0;
-    if (!fobj->func->isGet) {
+    int i = 0, isCext = !fobj->func->isGet;
+    if (isCext) { // C-extension: add key name
         vargs[i++] = Jsi_ValueNewStringDup(interp, key);
         Jsi_IncrRefCount(interp, vargs[0]);
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, i, 0));
@@ -1385,6 +1383,17 @@ Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres,
     if (vpargs) {
         Jsi_DecrRefCount(interp, vargs[0]);
         Jsi_DecrRefCount(interp, vpargs);
+    }
+    v = (*vres);
+    Jsi_Obj *obj = _this->d.obj;
+    if (rc == JSI_OK && flags&JSI_ACCESSOR_TOOBJECT) {
+        if (obj->setters && v->vt != JSI_VT_OBJECT)
+            interp->hPtrGet = Jsi_HashEntryFind(obj->setters, key);
+    // NOTE following fails: trying to upgrade primatives to objects to avoid having to call setter after a ++/--.
+       /* if (v->vt != JSI_VT_NULL && v->vt != JSI_VT_UNDEF)
+            Jsi_ValueToObject(interp, v);
+        else if (obj->setters && v->vt != JSI_VT_OBJECT)
+                interp->hPtrGet = Jsi_HashEntryFind(obj->setters, key);*/
     }
     return rc;
 }
@@ -1446,7 +1455,7 @@ void Jsi_IterGetKeys(Jsi_Interp *interp, Jsi_Value *target, Jsi_IterObj *iterobj
 {
     if (!target) return;
     if (target->vt != JSI_VT_OBJECT) {
-        if (interp->typeCheck.strict)
+        if (!interp->noCheck)
             Jsi_LogWarn("operand is not a object");
         return;
     }

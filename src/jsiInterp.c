@@ -73,7 +73,7 @@ static Jsi_OptionSpec InterpSubOptions[] = {
 };
 
 static const char *jsi_SafeModeStrs[] = { "none", "read", "write", "writeRead", "lockdown", NULL };
-static const char *jsi_TypeChkStrs[] = { "none", "parse", "run", "all", "error", "strict", "noundef", "nowith", "funcsig", NULL };
+static const char *jsi_TypeChkStrs[] = { "noreturn", "noundef", "nowith", "builtins", "funcdecl", NULL };
 const char *jsi_callTraceStrs[] = { "funcs", "cmds", "new", "return", "args", "notrunc", "noparent", "full", "before", NULL};
 const char *jsi_AssertModeStrs[] = { "throw", "log", "puts", NULL};
 
@@ -108,7 +108,9 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(INT,   Jsi_Interp, memLeakCnt,  .help="Leak memory count due to object added to self", jsi_IIOF|JSI_OPT_LOCKSAFE ),
     JSI_OPT(STRKEY,Jsi_Interp, name,        .help="Optional text name for this interp"),
     JSI_OPT(BOOL,  Jsi_Interp, noAutoLoad,  .help="Disable autoload", .flags=JSI_OPT_LOCKSAFE ),
+    JSI_OPT(BOOL,  Jsi_Interp, noCheck,     .help="Disable type checking", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(BOOL,  Jsi_Interp, noConfig,    .help="Disable use of Interp.conf to change options after create", jsi_IIOF),
+    JSI_OPT(BOOL,  Jsi_Interp, noError,     .help="Type checks failures are warning", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(BOOL,  Jsi_Interp, noEval,      .help="Disable eval: just parses file to check syntax", jsi_IIOF),
     JSI_OPT(BOOL,  Jsi_Interp, noInput,     .help="Disable use of console.input()", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(BOOL,  Jsi_Interp, noLoad,      .help="Disable load of shared libs", .flags=JSI_OPT_LOCKSAFE),
@@ -1111,8 +1113,8 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->logOpts.file = 1;
     interp->logOpts.func = 1;
     interp->logOpts.before = 1;
-    interp->typeCheck.strict = 1;
     interp->log = Jsi_LogDefVal;
+
     int argc = interp->opts.argc;
     char **argv = interp->opts.argv;
     char *argv0 = (argv?argv[0]:NULL);
@@ -1408,8 +1410,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->codesTbl = (interp == jsiIntData.mainInterp ? Jsi_HashNew(interp, JSI_KEYS_ONEWORD, NULL) : jsiIntData.mainInterp->codesTbl);
 #endif
     interp->GetterValue = Jsi_ValueNew1(interp);
-    if (interp->typeCheck.all|interp->typeCheck.parse|interp->typeCheck.funcsig)
-        interp->staticFuncsTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
+    interp->staticFuncsTbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
     if (!jsiIntData.isInit) {
         jsiIntData.isInit = 1;
         jsi_InitValue(interp, 0);
@@ -1666,6 +1667,8 @@ void jsiFlagDebugValues(Jsi_Interp *interp, Jsi_Obj *obj)
         }
     }
 }
+#define Jsi_DecrRefCountIF(i,s) if (s) Jsi_DecrRefCount(i,s)
+#define Jsi_HashDeleteIF(s) if (s) Jsi_HashDelete(s)
 
 void jsi_DebugDumpValues(Jsi_Interp *interp)
 {
@@ -1773,9 +1776,9 @@ void jsi_DebugDumpValues(Jsi_Interp *interp)
                 fprintf(stderr, "unfreed opcodes: %d\n", vp->id);
             }
     }
-    Jsi_HashDelete(interp->dbPtr->valueDebugTbl);
-    Jsi_HashDelete(interp->dbPtr->objDebugTbl);
-    Jsi_HashDelete(interp->codesTbl);
+    Jsi_HashDeleteIF(interp->dbPtr->valueDebugTbl);
+    Jsi_HashDeleteIF(interp->dbPtr->objDebugTbl);
+    Jsi_HashDeleteIF(interp->codesTbl);
     bool isMainInt = (interp == jsiIntData.mainInterp);
     if (isMainInt && vdLev>3)
         _exit(1); // Avoid sanitize output.
@@ -1804,20 +1807,15 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
         Jsi_Free(interp->Stack);
         Jsi_Free(interp->Obj_this);
     }
-
-    if (interp->argv0)
-        Jsi_DecrRefCount(interp, interp->argv0);
-    if (interp->console)
-        Jsi_DecrRefCount(interp, interp->console);
-    if (interp->lastSubscriptFail)
-        Jsi_DecrRefCount(interp, interp->lastSubscriptFail);
-    if (interp->nullFuncRet)
-        Jsi_DecrRefCount(interp, interp->nullFuncRet);
-    Jsi_HashDelete(interp->codeTbl);
-    Jsi_MapDelete(interp->cmdSpecTbl);
-    Jsi_HashDelete(interp->fileTbl);
-    Jsi_HashDelete(interp->funcObjTbl);
-    Jsi_HashDelete(interp->funcsTbl);
+    Jsi_DecrRefCountIF(interp, interp->argv0);
+    Jsi_DecrRefCountIF(interp, interp->console);
+    Jsi_DecrRefCountIF(interp, interp->lastSubscriptFail);
+    Jsi_DecrRefCountIF(interp, interp->nullFuncRet);
+    Jsi_HashDeleteIF(interp->codeTbl);
+    if (interp->cmdSpecTbl) Jsi_MapDelete(interp->cmdSpecTbl);
+    Jsi_HashDeleteIF(interp->funcObjTbl);
+    Jsi_HashDeleteIF(interp->funcsTbl);
+    Jsi_HashDeleteIF(interp->fileTbl);
     if (interp->profileCnt) { // TODO: resolve some values from dbPtr, others not.
         double endTime = jsi_GetTimestamp();
         double coverage = (int)(100.0*interp->coverHit/interp->coverAll);
@@ -1831,8 +1829,8 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
         Jsi_DSFree(&dStr);
     }
     if (isMainInt)
-        Jsi_HashDelete(interp->lexkeyTbl);
-    Jsi_HashDelete(interp->protoTbl);
+        Jsi_HashDeleteIF(interp->lexkeyTbl);
+    Jsi_HashDeleteIF(interp->protoTbl);
     if (interp->subthread)
         jsiIntData.mainInterp->threadCnt--;
     if (interp->subthread && interp->strKeyTbl == jsiIntData.mainInterp->strKeyTbl)
@@ -1844,19 +1842,17 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
         jsiIntData.mainInterp->strKeyTbl->v.hash->opts.lockHashProc = NULL;
 #endif
     //Jsi_ValueMakeUndef(interp, &interp->ret);
-    Jsi_HashDelete(interp->thisTbl);
-    Jsi_HashDelete(interp->varTbl);
-    Jsi_HashDelete(interp->genValueTbl);
-    Jsi_HashDelete(interp->genObjTbl);
-    Jsi_HashDelete(interp->aliasHash);
-    Jsi_DecrRefCount(interp, interp->GetterValue);
-    if (interp->staticFuncsTbl)
-        Jsi_HashDelete(interp->staticFuncsTbl);
-    if (interp->breakpointHash)
-        Jsi_HashDelete(interp->breakpointHash);
+    Jsi_HashDeleteIF(interp->thisTbl);
+    Jsi_HashDeleteIF(interp->varTbl);
+    Jsi_HashDeleteIF(interp->genValueTbl);
+    Jsi_HashDeleteIF(interp->genObjTbl);
+    Jsi_HashDeleteIF(interp->aliasHash);
+    Jsi_DecrRefCountIF(interp, interp->GetterValue);
+    Jsi_HashDeleteIF(interp->staticFuncsTbl);
+    Jsi_HashDeleteIF(interp->breakpointHash);
     if (interp->preserveTbl->numEntries!=0)
         Jsi_LogBug("Preserves unbalanced");
-    Jsi_HashDelete(interp->preserveTbl);
+    Jsi_HashDeleteIF(interp->preserveTbl);
     if (interp->curDir)
         Jsi_Free(interp->curDir);
     if (isMainInt) {
@@ -1887,45 +1883,36 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
         Jsi_MutexDelete(interp, interp->QMutex);
         Jsi_DSFree(&interp->interpEvalQ);
     }
-    if (interp->nullFuncArg)
-        Jsi_DecrRefCount(interp, interp->nullFuncArg);
-    if (interp->NullValue)
-        Jsi_DecrRefCount(interp, interp->NullValue);
+    Jsi_DecrRefCountIF(interp, interp->nullFuncArg);
+    Jsi_DecrRefCountIF(interp, interp->NullValue);
     if (interp->Function_prototype_prototype) {
         if (interp->Function_prototype_prototype->refCnt>1)
-            Jsi_DecrRefCount(interp, interp->Function_prototype_prototype);
-        Jsi_DecrRefCount(interp, interp->Function_prototype_prototype);
+            Jsi_DecrRefCountIF(interp, interp->Function_prototype_prototype);
+        Jsi_DecrRefCountIF(interp, interp->Function_prototype_prototype);
     }
-    if (interp->Object_prototype) {
-        Jsi_DecrRefCount(interp, interp->Object_prototype);
-    }
-    Jsi_HashDelete(interp->regexpTbl);
+    Jsi_DecrRefCountIF(interp, interp->Object_prototype);
+    Jsi_HashDeleteIF(interp->regexpTbl);
     Jsi_OptionsFree(interp, InterpOptions, interp, 0);
-    Jsi_HashDelete(interp->userdataTbl);
-    Jsi_HashDelete(interp->eventTbl);
-    if (interp->inopts)
-        Jsi_DecrRefCount(interp, interp->inopts);
-    if (interp->safeWriteDirs)
-        Jsi_DecrRefCount(interp, interp->safeWriteDirs);
-    if (interp->safeReadDirs)
-        Jsi_DecrRefCount(interp, interp->safeReadDirs);
-    if (interp->pkgDirs)
-        Jsi_DecrRefCount(interp, interp->pkgDirs);
+    Jsi_HashDeleteIF(interp->userdataTbl);
+    Jsi_HashDeleteIF(interp->eventTbl);
+    Jsi_DecrRefCountIF(interp, interp->inopts);
+    Jsi_DecrRefCountIF(interp, interp->safeWriteDirs);
+    Jsi_DecrRefCountIF(interp, interp->safeReadDirs);
+    Jsi_DecrRefCountIF(interp, interp->pkgDirs);
     for (i=0; interp->cleanObjs[i]; i++) {
         interp->cleanObjs[i]->tree->opts.freeHashProc = 0;
         Jsi_ObjFree(interp, interp->cleanObjs[i]);
     }
-    Jsi_HashDelete(interp->bindTbl);
+    Jsi_HashDeleteIF(interp->bindTbl);
     for (i = 0; i <= interp->cur_scope; i++)
         jsi_ScopeStrsFree(interp, interp->scopes[i]);
 #if JSI__ZVFS==1
     Jsi_InitZvfs(interp, mainFlag);
 #endif
    // if (!interp->parent)
-        Jsi_HashDelete(interp->loadTbl);
-    if (interp->packageHash)
-        Jsi_HashDelete(interp->packageHash);
-    Jsi_HashDelete(interp->assocTbl);
+    Jsi_HashDeleteIF(interp->loadTbl);
+    Jsi_HashDeleteIF(interp->packageHash);
+    Jsi_HashDeleteIF(interp->assocTbl);
     interp->cleanup = 1;
     //jsi_AllObjOp(interp, NULL, -1);
 #ifdef JSI_MEM_DEBUG
@@ -2104,9 +2091,9 @@ static Jsi_RC InterpEvalCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     if (interp->subOpts.mutexUnlock) Jsi_MutexUnlock(interp, interp->Mutex);
     if (!isthrd) {
-        int ostrict = sinterp->typeCheck.strict;
+        int onoerror = sinterp->noCheck;
         if (interp->isSafe)
-            sinterp->typeCheck.strict = 1;
+            sinterp->noCheck = 0;
         sinterp->level++;
         if (interp->framePtr->tryDepth)
             sinterp->framePtr->tryDepth++;
@@ -2126,7 +2113,7 @@ static Jsi_RC InterpEvalCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
         else {
             rc = (jsi_evalStrFile(sinterp, NULL, cp, 0, lev) == 0 ? JSI_OK : JSI_ERROR);
         }
-        sinterp->typeCheck.strict = ostrict;
+        sinterp->noCheck = onoerror;
         if (interp->framePtr->tryDepth) {
             sinterp->framePtr->tryDepth--;
             if (rc != JSI_OK && interp != sinterp) {

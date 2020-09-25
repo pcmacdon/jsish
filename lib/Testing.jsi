@@ -167,7 +167,7 @@ function Testing(fileargs:array, conf:object=void):number {
                 res = dres.trim();
                 puts(res);
             } else if (self.silent)
-                puts(res.trim());
+                puts(res?res.trim():res);
             else
                 puts('\n'+res);
             return 0;

@@ -198,11 +198,11 @@ const char *jsiFuncInfo(Jsi_Interp *interp, Jsi_DString *dStr, Jsi_Func* func, J
 // Check argument matches type.  If func is null, this is a parse. An index of 0 is the return value.
 Jsi_RC jsi_ArgTypeCheck(Jsi_Interp *interp, int typ,  Jsi_Value *arg, const char *p1,
     const char *p2, int index, Jsi_Func *func, bool isdefault) {
+    if (interp->noCheck) return JSI_OK;
     Jsi_RC rc = JSI_OK;
-    if (interp->typeCheck.none) return JSI_OK;
     char idxBuf[JSI_MAX_NUMBER_STRING*2];
     idxBuf[0] = 0;
-    if (func && arg->vt == JSI_VT_UNDEF && !interp->typeCheck.noundef && index>0 && !isdefault && !(typ&JSI_TT_UNDEFINED)) {
+    if (func && arg->vt == JSI_VT_UNDEF && !interp->typeCheck.noundef && index>0 && !isdefault && !(typ&(JSI_TT_UNDEFINED|JSI_TT_ANY))) {
         snprintf(idxBuf, sizeof(idxBuf), " arg %d", index);
         jsi_TypeMismatch(interp);
        
@@ -215,12 +215,7 @@ Jsi_RC jsi_ArgTypeCheck(Jsi_Interp *interp, int typ,  Jsi_Value *arg, const char
         return JSI_OK;
     //if (typ&JSI_TT_VOID)
     //    return JSI_OK;
-    if (interp->typeCheck.all==0) {
-        if (func ? (interp->typeCheck.run==0) : (interp->typeCheck.parse==0))
-            return JSI_OK;
-    }
-    if (index == 0 && func && func->type == FC_BUILDIN && 
-        interp->typeCheck.all == 0) // Normally do not check return types for builtins.
+    if (index == 0 && func && func->type == FC_BUILDIN && !interp->typeCheck.builtins) // BUILTIN returns
         return JSI_OK; 
     if ((typ&JSI_TT_ANY)) return JSI_OK;
     if (index == 0 && arg->vt == JSI_VT_UNDEF) {
@@ -250,7 +245,7 @@ done:
         const char *vtyp = jsi_ValueTypeName(interp, arg);
         if (index>0)
             snprintf(idxBuf, sizeof(idxBuf), " arg %d", index);
-        if (interp->typeCheck.error)
+        if (!interp->noCheck)
             rc = JSI_ERROR;
         jsi_TypeMismatch(interp);
         Jsi_DString fStr = {};
@@ -263,10 +258,9 @@ done:
 }
 
 Jsi_RC jsi_StaticArgTypeCheck(Jsi_Interp *interp, int atyp, const char *p1, const char *p2, int index, Jsi_Func *func, jsi_Pline *line) {
+    if (interp->noCheck) return JSI_OK;
     Assert(index>0);
     Jsi_RC rc;
-    if (interp->typeCheck.parse==0 && interp->typeCheck.all==0)
-        return JSI_OK;
     int ai = index-1+func->callflags.bits.addargs;
     if (func->argnames == NULL || ai>=func->argnames->count || ai<0)
         return JSI_OK;
@@ -274,7 +268,7 @@ Jsi_RC jsi_StaticArgTypeCheck(Jsi_Interp *interp, int atyp, const char *p1, cons
     if (typ <= 0)
         return JSI_OK;
     if (index == 0 && func && func->type == FC_BUILDIN && 
-        interp->typeCheck.all==0) // Normally do not check return types for builtins.
+        interp->typeCheck.builtins==0) // Normally do not check return types for builtins.
         return JSI_OK; 
     if ((typ&JSI_TT_ANY)) return JSI_OK;
     if (index == 0 && atyp == JSI_VT_UNDEF) {
@@ -312,7 +306,7 @@ done:
             snprintf(idxBuf, sizeof(idxBuf), " arg %d", index);
         if (line)
             interp->parseLine = line;
-        if (interp->typeCheck.error)
+        if (!interp->noCheck)
             rc = JSI_ERROR;
         jsi_TypeMismatch(interp);
         Jsi_DString fStr = {};
@@ -339,13 +333,8 @@ int jsiPopArgs(Jsi_OpCodes *argCodes, int i)
 
 Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const char *name, jsi_Pline *line, Jsi_OpCodes *argCodes, bool isParse)
 {
+    if (interp->noCheck) return JSI_OK;
     Jsi_RC rc = JSI_OK;
-    if (interp->typeCheck.none) return JSI_OK;
-    if (interp->typeCheck.all==0) {
-        if (!argCodes ? (interp->typeCheck.run==0) : (interp->typeCheck.parse==0))
-            return JSI_OK;
-    }
-
     Jsi_CmdSpec *spec = func->cmdSpec;
     Jsi_ScopeStrs *ss = func->argnames;
     if (ss==NULL && spec == NULL)
@@ -361,7 +350,7 @@ Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const 
         minArgs = (ss->firstDef>0 ? ss->firstDef-1 : ss->count);
         maxArgs = ss->count;
         mis = (argc != ss->count);
-        if (func->retType == 0 && ss && ss->typeCnt == 0 && interp->typeCheck.all==0)
+        if (func->retType == 0 && ss && ss->typeCnt == 0)
             return JSI_OK;
     }
     if (varargs) {
@@ -379,14 +368,11 @@ Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const 
             snprintf(nbuf, sizeof(nbuf), "%d", maxArgs);
         if (line)
             interp->parseLine = line;
-        if (interp->typeCheck.error)
+        if (!interp->noCheck)
             rc = JSI_ERROR;
         Jsi_DString dStr = {};
         Jsi_FuncObjToString(interp, func, &dStr, 2);
-        if (isParse)
-            Jsi_LogWarn("got %d args, expected %s, calling %s", argc, nbuf, Jsi_DSValue(&dStr));
-        else
-            rc = Jsi_LogType("got %d args, expected %s, calling %s", argc, nbuf, Jsi_DSValue(&dStr));
+        rc = Jsi_LogType("got %d args, expected %s, calling %s", argc, nbuf, Jsi_DSValue(&dStr));
         jsi_TypeMismatch(interp);
         Jsi_DSFree(&dStr);
         if (line)
@@ -435,8 +421,8 @@ int jsi_BuiltinCmd(Jsi_Interp *interp, const char *name)
 void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, const char *name, const char *namePre, Jsi_OpCodes *argCodes)
 {
     Jsi_Interp *interp = p->interp;
-    if (interp->typeCheck.none) return;
-    if (name == NULL || !(interp->typeCheck.funcsig|interp->typeCheck.all|interp->typeCheck.parse))
+    if (interp->noCheck) return;
+    if (name == NULL || interp->typeCheck.funcdecl)
         return;
     if (name && isdigit(name[0]))
         return;
@@ -451,7 +437,7 @@ void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, con
     }
     if (f)
         jsi_RunFuncCallCheck(interp, f, argc, name, line, argCodes, 1);
-    else if (interp->typeCheck.funcsig && (namePre==NULL || jsi_BuiltinCmd(interp, namePre))) {
+    else if (interp->typeCheck.funcdecl && (namePre==NULL || jsi_BuiltinCmd(interp, namePre))) {
         if (line)
             interp->parseLine = line;
         Jsi_LogWarn("called function '%s' with no previous definition", name);
@@ -459,14 +445,15 @@ void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, con
         if (line)
             interp->parseLine = NULL;
     }
+   // if (rc != JSI_OK)
+   //      p->err_count++;
 }
 
 int jsi_FuncSigsMatch(jsi_Pstate *pstate, Jsi_Func *f1, Jsi_Func *f2)
 {
     // Skip where both functions have no types.
     if (f1->retType==0 && f1->argnames->typeCnt==0 && f1->argnames->varargs==0 &&
-        f2->retType==0 && f2->argnames->typeCnt==0 && f2->argnames->varargs==0 &&
-        pstate->interp->typeCheck.all==0)
+        f2->retType==0 && f2->argnames->typeCnt==0 && f2->argnames->varargs==0)
         return 1;
     if (f1->retType != f2->retType)
         return 0;
@@ -521,7 +508,7 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
         Jsi_LogWarn("invalid use of 'undefined' in a return type: %s", name?name:"");
     
     pstate->argType = 0;
-    if (localvar && args && (interp->typeCheck.strict)) {
+    if (localvar && args && (!interp->noCheck)) {
         int i, j;
         for (i=0; i<args->count; i++) {
             for (j=0; j<args->count; j++) {
@@ -557,7 +544,7 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
                 pstate->err_count++;
         }
         f->name = Jsi_KeyAdd(interp, name);
-        if ((interp->typeCheck.run|interp->typeCheck.parse|interp->typeCheck.all|interp->typeCheck.funcsig)) {
+        if (!interp->noCheck) {
             
             if (f->retType && !(f->retType&JSI_TT_VOID) && ops && ops->code_len && ops->codes[ops->code_len-1].op != OP_RET) {
                 if (line)
@@ -569,11 +556,11 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
                  //   pstate->err_count++;
             }
              
-            if (interp->staticFuncsTbl) {
+            if (interp->typeCheck.funcdecl) {
                 Jsi_Func *fo = (Jsi_Func*)Jsi_HashGet(interp->staticFuncsTbl, (void*)name, 0);
                 
                 // Forward declaration signature compare (indicated by an empty body).
-                if (interp->typeCheck.funcsig && fo && fo->opcodes && fo->opcodes->code_len == 1 && fo->opcodes->codes->op == OP_NOP) {
+                if (interp->typeCheck.funcdecl && fo && fo->opcodes && fo->opcodes->code_len == 1 && fo->opcodes->codes->op == OP_NOP) {
                     if (!jsi_FuncSigsMatch(pstate, f, fo)) {
                         if (line)
                             interp->parseLine = line;
@@ -804,6 +791,7 @@ Jsi_RC Jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *args, 
 // Do typechecking for callback using argStr from .data in builtin Jsi_Options: may not use = or ...
 bool jsi_FuncArgCheck(Jsi_Interp *interp, Jsi_Func *f, const char *argStr)
 {
+    if (interp->noCheck) return 1;
     int i, atyp, ftyp, rc = 0, acnt;
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);

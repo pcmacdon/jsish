@@ -118,8 +118,7 @@ static Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func
         func->argnames = jsi_ParseArgStr(interp, argStr);
     argnames = func->argnames;
     int argc = Jsi_ValueGetLength(interp, args);
-    if (alloc && (interp->typeCheck.all|interp->typeCheck.run) && jsi_RunFuncCallCheck(interp, func, argc, func->name, NULL, NULL, 0) != JSI_OK
-        && (interp->typeCheck.strict || interp->typeCheck.error))
+    if (alloc && jsi_RunFuncCallCheck(interp, func, argc, func->name, NULL, NULL, 0) != JSI_OK)
         nrc = JSI_ERROR;
     if (!argnames)
         return nrc;
@@ -149,8 +148,7 @@ static Jsi_RC jsi_SharedArgs(Jsi_Interp *interp, Jsi_Value *args, Jsi_Func *func
                 dv = v = argnames->args[n].defValue;
             if (v && rc == JSI_OK && i >= addargs) {
                 int typ = argnames->args[n].type;
-                if ((typ && interp->typeCheck.run) || interp->typeCheck.all)
-                    rc = jsi_ArgTypeCheck(interp, typ, v, "for argument", argkey, i+1, func, (dv!=NULL));
+                rc = jsi_ArgTypeCheck(interp, typ, v, "for argument", argkey, i+1, func, (dv!=NULL));
             }
             if (func->type == FC_BUILDIN)
                 continue;
@@ -261,7 +259,7 @@ Jsi_RC jsi_FuncCallSub(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *callee,
     
         if (rc == JSI_OK && calltrc && (tc&jsi_callTraceReturn))
             jsi_TraceFuncCall(interp, funcPtr, NULL, fthis, NULL, *ret, tc);
-        if (rc == JSI_OK && !as_cons && funcPtr->retType && (interp->typeCheck.all || interp->typeCheck.run))
+        if (rc == JSI_OK && !as_cons && funcPtr->retType && !interp->typeCheck.noreturn)
             rc = jsi_ArgTypeCheck(interp, funcPtr->retType, *ret, "returned from", funcPtr->name, 0, funcPtr, 0);
         interp->callDepth--;
     }

@@ -25,10 +25,10 @@ function other(args:array|string=void, conf:object=void) {
 provide(other, 1);
 
 if (isMain()) {
-    if (!Interp.conf('unitTest'))
+    if (!Interp.conf('testMode'))
         return runModule(other);
     
-;'  other unit-test';
+;'  other test';
 ;   other();
 ;// other('',{badArg:0});
 

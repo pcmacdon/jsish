@@ -1,6 +1,6 @@
 #!/usr/local/bin/jsish -u %s
 
-Interp.conf({typeCheck:['error'], maxDumpStack:0});
+;Interp.conf({noError:true, maxDumpStack:0});
 function foo() {
   var i = Info; // Prevents static type check detections.
   i.cmds(1,2,3,4);
@@ -13,6 +13,10 @@ try {
 
 /*
 =!EXPECTSTART!=
-foo() ==> e ==> got 4 args, expected 0-2, calling function cmds(val:string|regexp='*', options:object=void)
+Interp.conf({noError:true, maxDumpStack:0}) ==> undefined
+foo() ==> /home/pmacdona/src/jsi3/tests/syntax.jsi:6: warn: got 4 args, expected 0-2, calling function cmds(val:string|regexp='*', options:object=void)
+/home/pmacdona/src/jsi3/tests/syntax.jsi:6: warn: type mismatch for argument arg 1 'val': expected "string|regexp" but got "number", in call to 'cmds' declared at syntax.jsi:0.0 <1>.
+/home/pmacdona/src/jsi3/tests/syntax.jsi:6: warn: type mismatch for argument arg 2 'options': expected "object" but got "number", in call to 'cmds' declared at syntax.jsi:0.0 <2>.
+e ==> extra args, expected "cmds(val:string|regexp='*', options:object=void)" 
 =!EXPECTEND!=
 */

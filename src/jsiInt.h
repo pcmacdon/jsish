@@ -259,7 +259,7 @@ typedef enum {
     JSI_SIG_NAMEDATA, JSI_SIG_ACCESSOR
 } jsi_Sig;
 
-#define Jsi_LogType(fmt,...) Jsi_LogMsg(interp, NULL, (interp->typeCheck.strict || interp->typeCheck.error)?JSI_LOG_ERROR:JSI_LOG_WARN, fmt, ##__VA_ARGS__)
+#define Jsi_LogType(fmt,...) Jsi_LogMsg(interp, NULL, (interp->noError?JSI_LOG_WARN:(interp->inParse?JSI_LOG_PARSE:JSI_LOG_ERROR)), fmt, ##__VA_ARGS__)
 extern const char *jsi_LogCodes[], *jsi_LogCodesU[];
 extern uint jsi_GetLogFlag(Jsi_Interp *interp, uint mask, Jsi_PkgOpts* popts);
 
@@ -960,16 +960,12 @@ typedef union jsi_numUnion {
 } jsi_numUnion;
 
 typedef struct {
-    uint none:1;
-    uint parse:1;
-    uint run:1;
-    uint all:1;     
-    uint error:1;
-    uint strict:1;
+    uint noreturn:1;
     uint noundef:1;
     uint nowith:1;
-    uint funcsig:1;
-    uint unused:24;
+    uint builtins:1;
+    uint funcdecl:1;
+    uint unused:27;
 } Jsi_TypeCheck;
 
 typedef enum {
@@ -996,7 +992,7 @@ typedef struct {
     uint fmtString:1;   /* Format value (eg. time) as string. */
     uint fmtNumber:1;   /* Format value (eg. enum) as number. */
     uint fmtHext:1;     /* Format number in hex. */
-    uint strict:1;      /* Strict mode. */
+    uint strictOLD:1;   /* Strict mode. */
     uint fieldSetup:1;  /* Field has been setup. */
     uint coerce:1;      /* Coerce input value to required type. */
     uint noSig:1;       /* No signature. */
@@ -1141,7 +1137,6 @@ struct Jsi_Interp {
     bool isMain;
     bool subthread;
 
-   // bool strict;
     bool protoInit;
     bool hasOpenSSL;
     bool isHelp;
@@ -1154,6 +1149,8 @@ struct Jsi_Interp {
     Jsi_Value *stdinStr;
     Jsi_Value *stdoutStr;
     Jsi_TypeCheck typeCheck;
+    bool noError;
+    bool noCheck;
     jsi_LogOptions logOpts;
     uint log;
     int typeWarnMax;

@@ -82,7 +82,7 @@ var a = 12;
 ;a.a += true;
 ;a.a += 'fock';
 
-Interp.conf({typeCheck:{strict:false}});
+Interp.conf({noCheck:true});
 ;-NaN;
 ;-Infinity;
 ;NaN + NaN;

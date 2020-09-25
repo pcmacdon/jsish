@@ -112,8 +112,8 @@ Jsi_ScopeStrs *jsi_argInsert(jsi_Pstate *pstate, Jsi_ScopeStrs *a, const char *n
         if (atyp)
             jsi_ArgTypeCheck(interp, atyp, defValue, "default value", name, a->argCnt, NULL, 1);
     } else {
-        if (a->firstDef && (interp->typeCheck.run || interp->typeCheck.all) )
-            Jsi_LogWarn("expected default value in argument list: \"%s\"", name);
+        if (a->firstDef && !interp->noCheck)
+            Jsi_LogType("expected default value in argument list: \"%s\"", name);
     }
     interp->parseLine = opl;
     return a;
@@ -154,7 +154,7 @@ void jsi_PstateAddVar(jsi_Pstate *ps, jsi_Pline *line, const char *str)
     for (i = 0; i < interp->scopes[interp->cur_scope]->count; ++i) {
         if (Jsi_Strcmp(str, interp->scopes[interp->cur_scope]->args[i].name) == 0) {
             Jsi_Interp *interp = ps->interp;
-            if (interp && interp->typeCheck.strict) {
+            if (interp && !interp->noCheck) {
                 interp->parseLine = line;
                 Jsi_LogWarn("duplicate var: %s", str);
                 interp->parseLine = NULL;

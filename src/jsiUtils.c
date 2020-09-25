@@ -203,7 +203,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
     if (isHelp) mt = "help";
     assert((JSI__LOGLAST+2) == (sizeof(jsi_LogCodes)/sizeof(jsi_LogCodes[0])));
     if (!Jsi_Strchr(format,'\n')) term = "\n";
-    if (interp->typeCheck.strict && interp->lastParseOpt)
+    if (!interp->noCheck && interp->lastParseOpt)
         ss = (char*)Jsi_ValueToString(interp, interp->lastParseOpt, NULL);
     if (isExt)
         snprintf(pbuf, sizeof(pbuf), "    (c-extn [%s])", popts->cmdSpec->name);
@@ -283,7 +283,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
                 lastCnt++;
                 goto done;
             } else if (lastMsg[0] && lastCnt>1 ) {
-                fprintf(stderr, "REPEAT: Last msg repeated %d times...\"\n" ,lastCnt);
+                fprintf(stderr, "REPEAT: Last msg repeated %d times...\"\n" ,lastCnt-1);
             }
             if (buf1[0] == 0 || (buf1[0] == '.' && buf1[1] == 0))
                 goto done;
@@ -315,7 +315,7 @@ done:
     }
     if ((code & jsi_fatalexit) && !interp->opts.no_exit)
         jsi_DoExit(interp, 1);
-    return (code==JSI_LOG_ERROR?JSI_ERROR:JSI_OK);
+    return (code==JSI_LOG_ERROR||code==JSI_LOG_PARSE?JSI_ERROR:JSI_OK);
 }
 
 const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str)
@@ -1132,8 +1132,6 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
 #if JSI__SIGNAL
   signal(SIGINT, jsi_InteractiveSignal); 
 #endif
-    interp->typeCheck.parse = interp->typeCheck.run = interp->typeCheck.all = 1;
-    interp->typeCheck.strict = 1;
     interp->isInteractive = 1;
     jsi_interactiveInterp = interp;
     interp->subOpts.istty = 1;
@@ -1178,7 +1176,7 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
                  fprintf(stderr, "abandoned input");
             } else
                 Jsi_DSAppend(&dStr, buf, NULL);
-            free(buf);
+            Jsi_Free(buf);
         } else {
             done = 1;
         }
@@ -1439,7 +1437,6 @@ Jsi_List *Jsi_ListNew(Jsi_Interp *interp, Jsi_Wide flags, Jsi_HashDeleteProc *fr
     list->opts.flags = flags;
     list->opts.freeHashProc = freeProc;
     list->opts.interp = interp;
-    list->opts.refCnt = 1;
     list->opts.mapType = JSI_MAP_LIST;
     list->opts.keyType = (Jsi_Key_Type)-1;
     return list;
@@ -1458,10 +1455,8 @@ Jsi_RC Jsi_ListConf(Jsi_List *listPtr, Jsi_MapOpts *opts, bool set)
 
 int Jsi_ListDelete(Jsi_List *list) {
     SIGASSERT(list, LIST);
-    if (--list->opts.refCnt>0) // Shared hash check.
-        return list->opts.refCnt;    
     Jsi_ListClear(list);
-    free(list);
+    Jsi_Free(list);
     return 0;
 }
 
@@ -1650,7 +1645,7 @@ int Jsi_MapDelete (Jsi_Map *mapPtr) {
     return r;
 }
 Jsi_MapEntry* Jsi_MapSet(Jsi_Map *mapPtr, const void *key, const void *value){
-    SIGASSERT(mapPtr, MAP);
+    SIGASSERTRET(mapPtr, MAP,NULL);
     Jsi_MapEntry* mptr = NULL;
     switch (mapPtr->typ) {
         case JSI_MAP_HASH: mptr = (Jsi_MapEntry*)Jsi_HashSet(mapPtr->v.hash, (void*)key, (void*)value); break;
@@ -1665,7 +1660,7 @@ Jsi_MapEntry* Jsi_MapSet(Jsi_Map *mapPtr, const void *key, const void *value){
     return mptr;
 }
 void* Jsi_MapGet(Jsi_Map *mapPtr, const void *key, int flags){
-    SIGASSERT(mapPtr, MAP);
+    SIGASSERTRET(mapPtr, MAP, NULL);
     switch (mapPtr->typ) {
         case JSI_MAP_HASH: return Jsi_HashGet(mapPtr->v.hash, (void*)key, flags);
         case JSI_MAP_TREE: return Jsi_TreeGet(mapPtr->v.tree, (void*)key, flags);
@@ -2645,7 +2640,7 @@ Jsi_RC Jsi_GetLongFromValue(Jsi_Interp* interp, Jsi_Value *value, long *n)
     /* TODO: inefficient to convert to double then back. */
     if (!value)
         return JSI_ERROR;
-    if (!interp->typeCheck.strict)
+    if (interp->noCheck)
         jsi_ValueToOInt32(interp, value);
     if (!Jsi_ValueIsNumber(interp, value))
     
@@ -2658,7 +2653,7 @@ Jsi_RC Jsi_GetWideFromValue(Jsi_Interp* interp, Jsi_Value *value, Jsi_Wide *n)
 {
     if (!value)
         return JSI_ERROR;
-    if (!interp->typeCheck.strict)
+    if (interp->noCheck)
         jsi_ValueToOInt32(interp, value);
     if (!Jsi_ValueIsNumber(interp, value))
     
@@ -2672,7 +2667,7 @@ Jsi_RC Jsi_GetDoubleFromValue(Jsi_Interp* interp, Jsi_Value *value, Jsi_Number *
 {
     if (!value)
         return JSI_ERROR;
-    if (!interp->typeCheck.strict)
+    if (interp->noCheck)
         Jsi_ValueToNumber(interp, value);
     if (!Jsi_ValueIsNumber(interp, value))
     

@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   1
-#define JSI_VERSION_RELEASE 8
+#define JSI_VERSION_RELEASE 9
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -213,6 +213,7 @@ typedef enum {
     JSI_DBI_FULL_MUTEX   =0x0008, /* Use full mutex. */
     
     JSI_ACCESSOR_SUBFIELD= 0x001, /* Setup subfields in Jsi_ObjAccessor */ 
+    JSI_ACCESSOR_TOOBJECT= 0x002, /* Upgrade retuern value to object */ 
     
     JSI_MAX_NUMBER_STRING=100,
     JSI_BUFSIZ=8192
@@ -745,7 +746,6 @@ typedef struct Jsi_MapOpts {
     Jsi_Key_Type keyType; // Read-only
     Jsi_Interp *interp;
     Jsi_Wide flags;
-    int refCnt;           // Shared map.
     void *user, *user2;
     Jsi_MapFmtKeyProc *fmtKeyProc;
     Jsi_RBCompareProc *compareTreeProc;

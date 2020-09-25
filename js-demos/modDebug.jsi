@@ -3,15 +3,15 @@
 ;'\n === Enabling LogDebug in fileSize.jsi only ===';
 ;require('fileSize');
 ;fileSize('fileSize.jsi');
-;require('fileSize', 0, {Debug:true, Test:true});
+;require('fileSize', 0, {log:{Debug:true, Test:true}});
 ;fileSize('fileSize.jsi');
 ;require('module');
 ;module([1]);
-;require('module', 0, {Debug:true, Test:true});
+;require('module', 0, {log:{Debug:true, Test:true}});
 ;module([2]);
 
 ;'\n === Trace function calls in fileSize.jsi ===';
-;require('fileSize', 0, {Debug:false, traceCall:['funcs']});
+;require('fileSize', 0, {log:{Debug:false}, traceCall:['funcs']});
 ;fileSize('fileSize.jsi');
 ;module([2]);
 ;require('fileSize', 0, {traceCall:[]});
@@ -33,19 +33,19 @@ db.query('select * from foo;');
  === Enabling LogDebug in fileSize.jsi only ==='
 require('fileSize') ==> 1
 fileSize('fileSize.jsi') ==> 907
-require('fileSize', 0, {Debug:true, Test:true}) ==> 1
+require('fileSize', 0, {log:{Debug:true, Test:true}) ==> 1
 fileSize('fileSize.jsi') ==> "TEST:  Starting", fileSize.jsi:27, fileSize()
 "DEBUG: Len [ "fileSize.jsi" ]", fileSize.jsi:15, getLength()
 907
 require('module') ==> 1
 module([1]) ==> undefined
-require('module', 0, {Debug:true, Test:true}) ==> 1
+require('module', 0, {log:{Debug:true, Test:true}) ==> 1
 module([2]) ==> "TEST:  Starting [ 2 ]", module.jsi:14, main()
 "DEBUG: Done", module.jsi:23, main()
 undefined
 '
  === Trace function calls in fileSize.jsi ==='
-require('fileSize', 0, {Debug:false, traceCall:['funcs']}) ==> 1
+require('fileSize', 0, {log:{Debug:false, traceCall:['funcs']}) ==> 1
 fileSize('fileSize.jsi') ==>   #2: > fileSize() in modDebug.jsi:15
 "TEST:  Starting", fileSize.jsi:27, fileSize()
 907

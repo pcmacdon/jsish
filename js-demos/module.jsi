@@ -29,10 +29,10 @@ function module(args:array|string=void, conf:object=void) {
 provide(module, 1);
 
 if (isMain()) {
-    if (!Interp.conf('unitTest'))
+    if (!Interp.conf('testMode'))
         return runModule(module);
     
-;'  module unit-test';
+;'  module test';
 ;   module();
 ;// module('',{badArg:0});
 

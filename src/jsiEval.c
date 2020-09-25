@@ -151,12 +151,12 @@ static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Valu
 {
     Jsi_Value *v;
     if (dst->vt != JSI_VT_VARIABLE) {
-        if (interp->typeCheck.strict) 
+        if (!interp->noCheck) 
             return Jsi_LogError("operand not a left value");
     } else {
         v = dst->d.lval;
         SIGASSERT(v, VALUE);
-        int strict = interp->typeCheck.strict;
+        int strict = !interp->noCheck;
         if (strict && lop == OP_PUSHFUN && interp->curIp[-1].local)
             dst->f.bits.local = 1;
         if (strict && dst->f.bits.local==0) {
@@ -172,7 +172,7 @@ static Jsi_RC inline jsiValueAssign(Jsi_Interp *interp, Jsi_Value *dst, Jsi_Valu
             return JSI_OK;
         bool ro = v->f.bits.readonly;
         if (ro && v->vt != JSI_VT_UNDEF) {
-            if (interp->typeCheck.strict) 
+            if (!interp->noCheck) 
                 return Jsi_LogError("assign to readonly variable");
             return JSI_OK;
         }
@@ -240,7 +240,7 @@ static void jsiVarDeref(Jsi_Interp* interp, int n) {
 static Jsi_RC jsiLogicLess(Jsi_Interp* interp, int i1, int i2) {
     Jsi_Value *v, *v1 = _jsi_STACK[interp->framePtr->Sp-i1], *v2 = _jsi_STACK[interp->framePtr->Sp-i2], *res = _jsi_TOQ;
     int val = 0, l1 = 0, l2 = 0; 
-    bool strict = interp->typeCheck.strict;
+    bool strict = !interp->noCheck;
     Jsi_RC rc = JSI_OK;
     rc = _jsi_StrictUChk2(v1, v2);
     if (rc != JSI_OK)
@@ -1094,7 +1094,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
     jsi_TryList  *trylist = NULL;
     jsi_Frame *fp = interp->framePtr;
     Jsi_HashEntry *hPtrGet = NULL;
-    bool strict = interp->typeCheck.strict;
+    bool strict = !interp->noCheck;
     const char *curFile = NULL, *throwStr;
     
     if (currentScope->vt != JSI_VT_OBJECT) {
@@ -1252,7 +1252,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                         throwStr = "fcall";
                         rc = JSI_ERROR;
                 }
-                strict = interp->typeCheck.strict;
+                strict = !interp->noCheck;
                 /* TODO: new Function return a function without scopechain, add here */
                 break;
             }
@@ -1690,8 +1690,9 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     t->d.num -= inc;
                 }
                 if (hPtrGet) {
-                    // Modified getter.
-                    jsi_SetterCall(interp, hPtrGet, v, _jsi_TOQ, 0);
+                    // Re-update after modifying a primative from "get()".
+                    Jsi_Value *v2 = (fp->Sp>1?_jsi_TOQ:_jsi_TOP);
+                    jsi_SetterCall(interp, hPtrGet, v, v2, 0);
                     hPtrGet = NULL;
                 }
                 break;
@@ -2379,11 +2380,11 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                     goto bail;
                 }
             }
-            cp = Jsi_Strrchr(fname, '.');
+            /*cp = Jsi_Strrchr(fname, '.');
             if (cp && !Jsi_Strcmp(cp, ".jsi") && interp->isMain) {
                 interp->typeCheck.parse = interp->typeCheck.run = interp->typeCheck.all = 1;
-                interp->typeCheck.strict = 1;
-            }
+                interp->noCheck = 0;
+            }*/
             bool isNew;
             Jsi_HashEntry *hPtr;
             hPtr = Jsi_HashEntryNew(interp->fileTbl, fname, &isNew);

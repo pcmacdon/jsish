@@ -3819,7 +3819,7 @@ static Jsi_Value *CommandCreateWithSpec(Jsi_Interp *interp, Jsi_CmdSpec *cSpec, 
     func->d.obj->d.fobj->func->parentName = parentName;
     func->d.obj->d.fobj->func->pkg = pkg;
     func->d.obj->d.fobj->func->parentSpec = cSpec;
-    if (cmdSpec->argStr && interp->typeCheck.all)
+    if (cmdSpec->argStr && !interp->noCheck)
         jsi_CommandArgCheck(interp, cmdSpec, f, parentName);
 
     f->retType = cmdSpec->retType;
@@ -4897,7 +4897,7 @@ static Jsi_CmdSpec consoleCmds[] = {
     { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Like System.puts, but goes to stderr and includes file:line.", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "logp",   consoleLogPCmd,     1, -1, "val, ...", .help="Same as console.log, but first arg is string prefix and if second is a boolean it controls output", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "printf", consolePrintfCmd,   1, -1, "format:string, ...", .help="Same as System.printf but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "puts",   consolePutsCmd,     1, -1, "val, ...", .help="Same as System.puts, but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
+    { "puts",   consolePutsCmd,     1, -1, "val:any, ...", .help="Same as System.puts, but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "warn",   consoleLogCmd,      1, -1, "val, ...", .help="Same as log", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { NULL, 0,0,0,0,  .help="Console input and output to stderr" }
 };
@@ -5049,7 +5049,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "parseOpts",  SysParseOptsCmd, 3,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
-    { "puts",       SysPutsCmd,      1, -1, "val, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
+    { "puts",       SysPutsCmd,      1, -1, "val:any, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },
     { "runModule",  SysModuleRunCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide", .retType=(uint)JSI_TT_ANY, .flags=0},

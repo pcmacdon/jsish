@@ -19,10 +19,10 @@ all: download $(LIBNAME)
 download: $(SOURCEDIR)/sqlite3.c
 
 $(SOURCEDIR)/sqlite3.c:
-	wget $(SQLURL) || wget http://jsish.org/download/sqlite-amalgamation-$(SQLVER).zip
-	unzip sqlite-amalgamation-$(SQLVER).zip
-	ln -sf sqlite-amalgamation-$(SQLVER) src
-	rm sqlite-amalgamation-$(SQLVER).zip
+	wget $(SQLURL) || wget http://jsish.org/download/sqlite-amalgamation-$(SQLITE_VER).zip
+	unzip sqlite-amalgamation-$(SQLITE_VER).zip
+	ln -sf sqlite-amalgamation-$(SQLITE_VER) src
+	rm sqlite-amalgamation-$(SQLITE_VER).zip
 
 $(LIBNAME): $(SOURCEDIR)/sqlite3.c Makefile
 	$(CC) -c -I$(SOURCEDIR) $(SOURCEDIR)/sqlite3.c $(CFLAGS)

@@ -288,7 +288,9 @@ Commands for accessing interps.
 |memLeakCnt|*INT*|Leak memory count due to object added to self.|initOnly|
 |name|*STRKEY*|Optional text name for this interp.||
 |noAutoLoad|*BOOL*|Disable autoload.||
+|noCheck|*BOOL*|Disable type checking.||
 |noConfig|*BOOL*|Disable use of Interp.conf to change options after create.|initOnly|
+|noError|*BOOL*|Type checks failures are warning.||
 |noEval|*BOOL*|Disable eval: just parses file to check syntax.|initOnly|
 |noInput|*BOOL*|Disable use of console.input().||
 |noLoad|*BOOL*|Disable load of shared libs.||
@@ -314,7 +316,7 @@ Commands for accessing interps.
 |traceCall|*ARRAY*|Trace commands. (zero or more of: **funcs**, **cmds**, **new**, **return**, **args**, **notrunc**, **noparent**, **full**, **before**)||
 |traceOp|*INT*|Set debugging level for OPCODE execution.||
 |tracePuts|*BOOL*|Trace puts by making it use logOpts.||
-|typeCheck|*ARRAY*|Type-check control options. (zero or more of: **none**, **parse**, **run**, **all**, **error**, **strict**, **noundef**, **nowith**, **funcsig**)||
+|typeCheck|*ARRAY*|Type-check control options. (zero or more of: **noreturn**, **noundef**, **nowith**, **builtins**, **funcdecl**)||
 |typeWarnMax|*INT*|Type checking is silently disabled after this many warnings (50).||
 |udata|*OBJ*|User data.||
 |testMode|*UINT*|Unit test control bits: 1=subst, 2=Puts with file:line prefix.||
@@ -876,7 +878,7 @@ Builtin system commands. All methods are exported as global.
 |parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
 |provide|([options](#options-systemprovide):object=void):void |Provide a package for use with require.. Default is the file tail-rootname|
-|puts|(val, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
+|puts|(val:any, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
 |quote|(val:string):string |Return quoted string.|
 |require|([options](#options-systemrequire):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|
 |runModule|(cmd:string&#124;null&#124;function=void, conf:array=undefined) |Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.|
@@ -1262,7 +1264,7 @@ Console input and output to stderr.
 |log|(val, ...):void |Like System.puts, but goes to stderr and includes file:line..|
 |logp|(val, ...):void |Same as console.log, but first arg is string prefix and if second is a boolean it controls output.|
 |printf|(format:string, ...):void |Same as System.printf but goes to stderr.|
-|puts|(val, ...):void |Same as System.puts, but goes to stderr.|
+|puts|(val:any, ...):void |Same as System.puts, but goes to stderr.|
 |warn|(val, ...):void |Same as log.|
 ### Options "console.assert"
 |Option|Type|Description|Flags|

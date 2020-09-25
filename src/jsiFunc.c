@@ -421,8 +421,7 @@ int jsi_BuiltinCmd(Jsi_Interp *interp, const char *name)
 void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, const char *name, const char *namePre, Jsi_OpCodes *argCodes)
 {
     Jsi_Interp *interp = p->interp;
-    if (interp->noCheck) return;
-    if (name == NULL || interp->typeCheck.funcdecl)
+    if (interp->noCheck || name == NULL || !interp->typeCheck.funcdecl)
         return;
     if (name && isdigit(name[0]))
         return;

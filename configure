@@ -25,7 +25,7 @@ if [ -x jsimin ]; then
 fi
 
 if [ ! -x jsimin ]; then
-    ${CC} -g -o jsimin src/jsish.c -I. -Iminiz -DJSI__JSIMIN=1 -DJSI__MAIN=1 -DJSI__MINIZ -lm -lpthread ${LDL}
+    ${CC} -g -o jsimin jsish.c -I. -Iminiz -DJSI__JSIMIN=1 -DJSI__MAIN=1 -DJSI__MINIZ -lm -lpthread ${LDL}
     echo "Created jsimin"
 fi
 ./jsimin tools/configure.js $*

@@ -1630,6 +1630,9 @@ static void DeleteAllInterps() { /* Delete toplevel interps. */
     jsiIntData.isInit = 0;
 }
 
+#define Jsi_DecrRefCountIF(i,s) if (s) Jsi_DecrRefCount(i,s)
+#define Jsi_HashDeleteIF(s) if (s) Jsi_HashDelete(s)
+
 #ifdef JSI_MEM_DEBUG
 
 typedef enum { MDB_INOBJ=1, MDB_VISITED=2 } jsi_MDB;
@@ -1667,8 +1670,6 @@ void jsiFlagDebugValues(Jsi_Interp *interp, Jsi_Obj *obj)
         }
     }
 }
-#define Jsi_DecrRefCountIF(i,s) if (s) Jsi_DecrRefCount(i,s)
-#define Jsi_HashDeleteIF(s) if (s) Jsi_HashDelete(s)
 
 void jsi_DebugDumpValues(Jsi_Interp *interp)
 {

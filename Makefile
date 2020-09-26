@@ -119,7 +119,7 @@ ifeq ($(WITH_SSL),1)
 # WEBSOCKLIB += $(HOME)/usr/lib/libssl.a $(HOME)/usr/lib/libcrypto.a
 # CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -I$(HOME)/usr/openssl/include
 WEBSOCKLIB += openssl/$(TARGET)/libssl.a openssl/$(TARGET)/libcrypto.a
-CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -Iopenssl/$(TARGET)/include
+CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -I$(BLDDIR)/openssl/$(TARGET)/include
 ALLTARGETS += openssllib
 ifeq ($(TARGET),win)
 EXTRALD += -lcrypt32
@@ -207,7 +207,9 @@ endif
 
 else
 # *********** UNIX **********************
+ifneq ($(LINKSTATIC),1)
 EXTRATARGETS += shared
+endif
 
 ifneq ($(BUILDSYS),FreeBSD)
 ifneq ($(BUILDSYS),Cygwin)

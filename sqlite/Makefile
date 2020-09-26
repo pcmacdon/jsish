@@ -24,7 +24,7 @@ $(SOURCEDIR)/sqlite3.c:
 	ln -sf sqlite-amalgamation-$(SQLITE_VER) src
 	rm sqlite-amalgamation-$(SQLITE_VER).zip
 
-$(LIBNAME): $(SOURCEDIR)/sqlite3.c Makefile
+$(LIBNAME): $(SOURCEDIR)/sqlite3.c Makefile ../Makefile
 	$(CC) -c -I$(SOURCEDIR) $(SOURCEDIR)/sqlite3.c $(CFLAGS)
 	$(AR) rv $(LIBNAME) sqlite3.o
 

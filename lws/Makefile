@@ -13,7 +13,7 @@ endif
 
 all: $(SDIR)/Makefile $(SDIR)/$(LWS_LIBNAME)
 
-$(SDIR)/$(LWS_LIBNAME): Makefile
+$(SDIR)/$(LWS_LIBNAME): Makefile ../Makefile
 	rm -f $(SDIR)/$(LWS_LIBNAME)
 	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CFLAGS="$(CFLAGS)" CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME)
 

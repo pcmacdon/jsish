@@ -2,13 +2,17 @@
 PREFIX=/usr/local
 SQLITE_VER=3300100
 LWS_VER=2.0202
-LWS_SSL=0
+WITH_SSL=0
 WEBSOCKROOT = lws/src
 WEBSOCKSRC = $(WEBSOCKROOT)/src
 ACFILES	= src/parser.c
 #ACFILES	= src/jsiParser.c
 BUILDSYS = $(shell uname -o)
-ALLTARGS = 
+ALLTARGETS = 
+EXTRATARGETS =
+DESTDIR=
+# $(PWD)
+
 CFLAGS += -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
 # -pg
 #CFLAGS += -g -O3
@@ -32,9 +36,10 @@ REFILES = regex/regex.h regex/tre.h regex/regcomp.c  regex/regerror.c  regex/reg
 HFILES = src/parser.h src/jsiInt.h
 PROGRAM=jsish
 CONF_ARGS=
+CONF=default
 
 MAKECONF=make.conf
-MAKECONFDEF=Configs/make_default.conf
+MAKECONFDEF=Configs/make_$(CONF).conf
 
 -include $(MAKECONF)
 ifeq ($(DEFCONFIG_VER),)
@@ -94,7 +99,7 @@ ifeq ($(WITH_EXT_WEBSOCKET),1)
 
 ifeq ($(BUILDIN_WEBSOCKET),1)
 
-ifeq ($(LWS_SSL),1)
+ifeq ($(WITH_SSL),1)
 SSL_SFX=ssl_
 else
 SSL_SFX=
@@ -109,19 +114,19 @@ CFLAGS += -I$(WEBSOCKSRC)
 #CFLAGS += -I$(WEBSOCKSRC)/lib  -I$(WEBSOCKSRC)/build -Iwebsocket/$(TARGET) -Ilws/build/$(TARGET)
 STATICLIBS += $(WEBSOCKLIB)
 
-ifeq ($(LWS_SSL),1)
+ifeq ($(WITH_SSL),1)
 #CFLAGS += -I$(HOME)/usr/include
 # WEBSOCKLIB += $(HOME)/usr/lib/libssl.a $(HOME)/usr/lib/libcrypto.a
 # CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -I$(HOME)/usr/openssl/include
 WEBSOCKLIB += openssl/$(TARGET)/libssl.a openssl/$(TARGET)/libcrypto.a
 CFLAGS += -DLWS_OPENSSL_SUPPORT=1 -Iopenssl/$(TARGET)/include
-ALLTARGS += openssllib
+ALLTARGETS += openssllib
 ifeq ($(TARGET),win)
 EXTRALD += -lcrypt32
 endif
 endif
 
-ALLTARGS += lwslib
+ALLTARGETS += lwslib
 
 else
 WEBSOCKLIB = -llws
@@ -153,8 +158,6 @@ ifeq ($(WITH_EXT_MYSQL),1)
 PROGLDFLAGS += -lmysqlclient
 PROGFLAGS += -DJSI__MYSQL=1
 endif
-
-BUILDDIR = $(PWD)
 
 ifneq ($(EXTNAME),)
 CFILES += $(EXTNAME).c
@@ -204,6 +207,7 @@ endif
 
 else
 # *********** UNIX **********************
+EXTRATARGETS += shared
 
 ifneq ($(BUILDSYS),FreeBSD)
 ifneq ($(BUILDSYS),Cygwin)
@@ -278,9 +282,9 @@ SHLEXT=.so
 
 ZIPDIR=zipdir
 BLDDIR=$(PWD)
-PROGBINMIN = $(which ./jsimin)
-PROGBINA   = $(PROGRAM)_$(EXEEXT)
-PROGBIN	   = $(PROGRAM)$(EXEEXT)
+PROGBINMIN = $(which $(DESTDIR)/jsimin)
+PROGBINA   = $(DESTDIR)$(PROGRAM)_$(EXEEXT)
+PROGBIN	   = $(DESTDIR)$(PROGRAM)$(EXEEXT)
 
 JSI_PKG_DIRS="$(BLDDIR)/lib,$(PREFIX)/lib/jsi"
 CFLAGS += -DJSI_PKG_DIRS=\"$(JSI_PKG_DIRS)\"
@@ -288,7 +292,7 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: jsish.c $(ALLTARGS) $(STATICLIBS) $(PROGBIN) shared
+all: jsish.c $(ALLTARGETS) $(STATICLIBS) $(PROGBIN) $(EXTRATARGETS)
 # checkcfgver
 
 help:
@@ -300,27 +304,27 @@ src/main.o: .FORCE
 
 $(OBJS) : $(MAKEFILE) $(MAKECONF)
 
-libjsi.a:
-	$(AR) r libjsi.a $(OBJS)
+$(DESTDIR)libjsi.a:
+	$(AR) r $(DESTDIR)libjsi.a $(OBJS)
 
 modules: $(BUILDMODS)
 
-$(PROGBINA): src/parser.c $(OBJS) src/main.o libjsi.a
-	$(AR) r libjsi.a $(OBJS)
+$(PROGBINA): src/parser.c $(OBJS) src/main.o $(DESTDIR)libjsi.a
+	$(AR) r $(DESTDIR)libjsi.a $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(SQLITELIB) src/main.o $(LNKFLAGS) -o $(PROGBINA) $(LDFLAGS)
 	test -f jsimin || cp $(PROGBINA) jsimin
 	$(MAKE) modules
 
-libjsi$(SHLEXT): $(OBJS)
+$(DESTDIR)libjsi$(SHLEXT): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -Wl,--export-dynamic  -shared -o $@
 
-libjsish$(SHLEXT): $(OBJS) $(SQLITELIB) $(WEBSOCKLIB)
+$(DESTDIR)libjsish$(SHLEXT): $(OBJS) $(SQLITELIB) $(WEBSOCKLIB)
 	$(CC) $(CFLAGS) $(OBJS) $(SQLITELIB) $(WEBSOCKLIB) -Wl,--export-dynamic  -shared -o $@
 
-jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
+$(DESTDIR)jsishs$(EXEEXT): src/parser.c $(OBJS) src/main.o
 	$(CC) $(CFLAGS) src/main.o -o $@ -L. -Wl,-rpath=`pwd` -L. -ljsish $(LDFLAGS)
 
-shared: libjsi$(SHLEXT) libjsish$(SHLEXT) jsishs$(EXEEXT)
+shared: $(DESTDIR)libjsi$(SHLEXT) $(DESTDIR)libjsish$(SHLEXT) $(DESTDIR)jsishs$(EXEEXT)
 
 #jsimin:
 #ifeq ($(PROGBINMIN),)
@@ -358,7 +362,7 @@ sqliteui$(EXEEXT):  .FORCE
 lwslib: $(LWSLIB)
 
 $(LWSLIB): $(MAKECONF)
-	$(MAKE) -C lws CFLAGS="$(CFLAGS)" CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(LWS_SSL) LWS_LIBNAME=$(LWS_LIBNAME)
+	$(MAKE) -C lws CFLAGS="$(CFLAGS)" CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(WITH_SSL) LWS_LIBNAME=$(LWS_LIBNAME)
 
 $(SQLITELIB): sqlite/Makefile  $(MAKECONF)
 	$(MAKE) -C sqlite CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET) SQLITE_VER=$(SQLITE_VER) SQLITE_LIBNAME=$(SQLITE_LIBNAME)

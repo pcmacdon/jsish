@@ -11,6 +11,7 @@ BUILDSYS = $(shell uname -o)
 ALLTARGETS = 
 EXTRATARGETS =
 DESTDIR=
+JSICONFS=$(shell find Configs/ -type f -name '*.conf' -exec basename \{\} .conf \; |cut -d_ -f2 | sort | xargs)
 
 CFLAGS += -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
 # -pg
@@ -40,18 +41,21 @@ CONF=default
 MAKECONF=make.conf
 MAKECONFDEF=Configs/make_$(CONF).conf
 
+ifeq ($(CONF),default)
 -include $(MAKECONF)
+endif
+
 ifeq ($(DEFCONFIG_VER),)
-include $(MAKECONFDEF)
+-include $(MAKECONFDEF)
 MAKECONF=$(MAKCONFDEF)
 endif
 
 
 ifneq ($(JSI_CONFIG_DEFINED),1)
-unconfigured:
-	./configure
-	$(MAKE)
-#	@echo "ERROR!!!!!!!!!  NEED TO RUN: ./configure"
+badconfig:
+	@echo "ERROR!!! Run 'make CONF=X' where X is one of:"
+	@echo "   $(JSICONFS)"
+	@exit 1
 endif
 
 # Detect when config file changed in incompatible way.
@@ -293,7 +297,7 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 
 #.PHONY: all clean cleanall remake
 
-all: jsish.c $(ALLTARGETS) $(STATICLIBS) $(PROGBIN) $(EXTRATARGETS)
+all: jsish.c $(ALLTARGETS) $(STATICLIBS) $(PROGBIN) $(EXTRATARGETS) jsidone
 
 help:
 	@echo "targets are: mkwin mkmusl shared jsishs stubs ref test testmem release"
@@ -532,6 +536,12 @@ cleanall: clean
 JSIMINVER=$(shell test -x ./jsimin && ./jsimin -v | cut -d'.' -f1,2)
 JSICURVER=$(shell fgrep 'define JSI_VERSION_M' src/jsi.h | cut -b29- | xargs | sed 's/ /./g')
 
+jsidone:
+	@echo ""
+	@echo "MAKE IS DONE!!!"
+	@echo "To build from Configs/ try  'touch Makefile' then 'make CONF=X' where X is one of:"
+	@echo "    $(JSICONFS)."
+
 jsiminreq:
 ifeq ($(JSIMINVER),)
 ifneq ($(CONF),default)
@@ -544,8 +554,10 @@ checkjsiminver:
 ifneq ($(JSIMINVER),)
 ifneq ($(JSIMINVER),$(JSICURVER))
 	rm -f jsimin
+ifneq ($(JSICHECK),1)
 	@echo "WARNING!!!: removed jsimin due to major/minor version mismatch. run make again"
 	exit 1
+endif
 endif
 endif
 

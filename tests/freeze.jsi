@@ -1,0 +1,62 @@
+var x, j;
+;x = {a:1, b:2};
+;'\n---- Freeze object';
+;Object.freeze(x);
+
+;'\n---- Query freeze state';
+;Info.obj(x);
+;x.a = 9;
+;++x.b;
+
+;'\n---- Bad write/read';
+;//x.c = 8;
+;//j= x.c;
+
+;'\n---- Disable modify';
+;Object.freeze(x,true,false);
+;//x.a = 10;
+
+;'\n---- Disable modify and readcheck';
+;Object.freeze(x,true,false,false);
+;//x.a = 11;
+;x.e;
+
+;'\n---- Unfreeze';
+;Object.freeze(x,false);
+;x.f=13;
+
+
+/*
+=!EXPECTSTART!=
+x = {a:1, b:2} ==> { a:1, b:2 }
+'
+---- Freeze object'
+Object.freeze(x) ==> undefined
+'
+---- Query freeze state'
+Info.obj(x) ==> { freeze:true, freezeModify:true, freezeReadCheck:true, getters:[], objType:"object", setters:[], spec:undefined }
+x.a = 9 ==> 9
+++x.b ==> 3
+'
+---- Bad write/read'
+x.c = 8 ==>
+[PASS]!: err = object freeze: attempted assign "c"
+j= x.c ==>
+[PASS]!: err = object freeze: read undefined "c"
+'
+---- Disable modify'
+Object.freeze(x,true,false) ==> undefined
+x.a = 10 ==>
+[PASS]!: err = object freeze: attempted assign/modify "a"
+'
+---- Disable modify and readcheck'
+Object.freeze(x,true,false,false) ==> undefined
+x.a = 11 ==>
+[PASS]!: err = object freeze: attempted assign/modify "a"
+x.e ==> undefined
+'
+---- Unfreeze'
+Object.freeze(x,false) ==> undefined
+x.f=13 ==> 13
+=!EXPECTEND!=
+*/

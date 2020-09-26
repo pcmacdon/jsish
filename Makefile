@@ -32,8 +32,16 @@ REFILES = regex/regex.h regex/tre.h regex/regcomp.c  regex/regerror.c  regex/reg
 HFILES = src/parser.h src/jsiInt.h
 PROGRAM=jsish
 CONF_ARGS=
+
 MAKECONF=make.conf
+MAKECONFDEF=Configs/make_default.conf
+
 -include $(MAKECONF)
+ifeq ($(DEFCONFIG_VER),)
+include $(MAKECONFDEF)
+MAKECONF=$(MAKCONFDEF)
+endif
+
 
 ifneq ($(JSI_CONFIG_DEFINED),1)
 unconfigured:

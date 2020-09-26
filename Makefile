@@ -11,7 +11,6 @@ BUILDSYS = $(shell uname -o)
 ALLTARGETS = 
 EXTRATARGETS =
 DESTDIR=
-# $(PWD)
 
 CFLAGS += -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
 # -pg
@@ -295,7 +294,6 @@ CFLAGS += -DJSI_CONF_ARGS=\"$(CONF_ARGS)\"
 #.PHONY: all clean cleanall remake
 
 all: jsish.c $(ALLTARGETS) $(STATICLIBS) $(PROGBIN) $(EXTRATARGETS)
-# checkcfgver
 
 help:
 	@echo "targets are: mkwin mkmusl shared jsishs stubs ref test testmem release"
@@ -311,7 +309,7 @@ $(DESTDIR)libjsi.a:
 
 modules: $(BUILDMODS)
 
-$(PROGBINA): src/parser.c $(OBJS) src/main.o $(DESTDIR)libjsi.a
+$(PROGBINA): jsiminreq src/parser.c $(OBJS) src/main.o $(DESTDIR)libjsi.a 
 	$(AR) r $(DESTDIR)libjsi.a $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(SQLITELIB) src/main.o $(LNKFLAGS) -o $(PROGBINA) $(LDFLAGS)
 	test -f jsimin || cp $(PROGBINA) jsimin
@@ -336,7 +334,7 @@ shared: $(DESTDIR)libjsi$(SHLEXT) $(DESTDIR)libjsish$(SHLEXT) $(DESTDIR)jsishs$(
 #	exit 0
 #endif
 
-$(PROGBIN): $(PROGBINA)  .FORCE
+$(PROGBIN): $(PROGBINA)  checkjsiminver .FORCE
 ifneq ($(JSI__ZIPLIB),1)
 	cp -f $(PROGBINA) $(PROGBIN)
 else
@@ -531,21 +529,24 @@ cleanall: clean
 	$(MAKE) -C lws cleanall
 	$(MAKE) -C c-demos cleanall
 
-JSIMINVER=$(shell test -x ./jsimin && ./jsimin -v | cut -d' ' -f2)
-JSICURVER=$(shell fgrep 'define JSI_VERSION_' src/jsi.h | cut -b29- | xargs | sed 's/ /./g')
-CURCONFVER=$(shell test -f make.conf && fgrep DEFCONFIG_VER make.conf | cut -d= -f2)
+JSIMINVER=$(shell test -x ./jsimin && ./jsimin -v | cut -d'.' -f1,2)
+JSICURVER=$(shell fgrep 'define JSI_VERSION_M' src/jsi.h | cut -b29- | xargs | sed 's/ /./g')
 
-checkjsiminver:
-ifneq ($(JSIMINVER), $(JSICURVER))
-	@echo "ERROR: jsimin version mismatch"
-	rm -f jsimin
+jsiminreq:
+ifeq ($(JSIMINVER),)
+ifneq ($(CONF),default)
+	@echo "WARNING!!!: must build with default target before using CONF"
 	exit 1
 endif
-
-checkcfgver:
-ifneq ($(CURCONFVER), $(JSICURVER))
-	@echo "NOTE: version changed since last run of configure: $(CURCONFVER) != $(JSICURVER)"
 endif
 
-check:
+checkjsiminver:
+ifneq ($(JSIMINVER),)
+ifneq ($(JSIMINVER),$(JSICURVER))
+	rm -f jsimin
+	@echo "WARNING!!!: removed jsimin due to major/minor version mismatch. run make again"
+	exit 1
+endif
+endif
+
 

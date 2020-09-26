@@ -164,7 +164,7 @@ function Cextn(args:array, conf:object=void)
         if (isWS)
             s += ' -L '+wDir+'/build/unix/ -lwebsockets';
         var sDir = pDir + '/sqlite';
-        var isSQ = File.readable(sDir+'/build/unix/libsqlite3.a')
+        var isSQ = File.readable(sDir+'/build/unix/libsqlite3.a');
         if (isSQ)
             s += ' -I'+sDir+'/src -L '+sDir+'/build/unix/ -lsqlite3';
 

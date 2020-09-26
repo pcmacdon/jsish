@@ -31,7 +31,7 @@ Jsi_Auto.SqliteUI       = 'source("'+Info.scriptDir()+'/SqliteUI/SqliteUI.jsi")'
 
 Jsi_Auto.Sqlite         = 'require("Sqlite");';
 Jsi_Auto.MySql          = 'require("MySql");';
-Jsi_Auto.Websocket      = 'require("WebSocket");';
+Jsi_Auto.WebSocket      = 'require("WebSocket");';
 Jsi_Auto.Socket         = 'require("Socket");';
 Jsi_Auto.DebugUI        = 'require("DebugUI");';
 

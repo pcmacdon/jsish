@@ -134,8 +134,8 @@ function Cextn(args:array, conf:object=void)
 
         var libDir = Interp.conf('pkgDirs')[0];
         var pDir = File.dirname(libDir), srcDir = pDir + '/src';
-        if (!File.readable('jsi.c') && !File.readable(pDir+'/jsi.c'))
-            LogWarn('can not locate jsi.c');
+        if (!File.readable('jsish.c') && !File.readable(pDir+'/jsish.c'))
+            LogWarn('can not locate jsish.c');
         var wDir = pDir + '/websocket';
         s += ' -I'+srcDir+ ' -I'+srcDir+'/..';
         var isWS = File.readable(wDir+'/build/unix/libwebsockets.a');
@@ -163,14 +163,12 @@ function Cextn(args:array, conf:object=void)
             s += ' -shared -DJSI_CDATA_SHARED=1';
         if (isWS)
             s += ' -L '+wDir+'/build/unix/ -lwebsockets';
-         var sDir = pDir + '/sqlite';
-        var isSQ = File.isdir(sDir);
+        var sDir = pDir + '/sqlite';
+        var isSQ = File.readable(sDir+'/build/unix/libsqlite3.a')
         if (isSQ)
             s += ' -I'+sDir+'/src -L '+sDir+'/build/unix/ -lsqlite3';
 
         s += ' -lm -ldl -lpthread';
-        if (!isSQ)
-            s += ' -lsqlite3';
         return s;
     }
     

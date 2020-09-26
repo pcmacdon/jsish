@@ -2,7 +2,7 @@
 
 // Demonstrates parse-time warnings.
 
-Interp.conf({noError:true, logOpts:{ftail:true}});
+Interp.conf({typeCheck:'funcdecl',noError:true, logOpts:{ftail:true}});
 
 function warndemoA() {
 }

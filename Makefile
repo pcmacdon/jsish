@@ -505,8 +505,8 @@ testvg:
 tags:
 	geany -g -P geany.tags src/*.c src/*.h
 
-install: all
-	@echo "WARN: 'make install' is required only by packagers"
+install_unsupported: all
+	@echo "WARN: install is unsupported"
 	mkdir -p $(PREFIX)/bin
 	mkdir -p $(PREFIX)/lib/jsi
 	mkdir -p $(PREFIX)/include

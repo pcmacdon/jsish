@@ -18,7 +18,7 @@ endif
 
 LDFLAGS=$(LIBJSI) $(ALDFLAGS)
 SHFLAGS=-shared -fpic 
-ALLDEPS=$(JSIROOT)/jsi.c $(JSIROOT)/libjsish.so $(JSIROOT)/src/jsi.h Makefile
+ALLDEPS=$(JSIROOT)/jsish.c $(JSIROOT)/libjsish.so $(JSIROOT)/src/jsi.h Makefile
 
 SLDFLAGS=-Wl,-rpath=`pwd`/$(JSIROOT) -L$(JSIROOT) -ljsish $(ALDFLAGS) 
 

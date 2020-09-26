@@ -6,7 +6,7 @@ NOLINE=false
 #CSTRPP=$(JSISH) $(CSTRFN) 
 CSTRPP=$(JSISH) -c -noline $(NOLINE)
 CCGET=$(CSTRPP) -cflags true
-DEPS=$(CSTRFN) $(JSIROOT)/jsi.c $(JSIROOT)/src/jsi.h Makefile
+DEPS=$(CSTRFN) $(JSIROOT)/jsish.c $(JSIROOT)/src/jsi.h Makefile
 STATICS=Bee Car Baker
 
 all: shared

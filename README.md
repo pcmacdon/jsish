@@ -1,4 +1,4 @@
-A small javascript interpreter integrating Database and Web in **C**.
+A small **C** javascript interpreter integrating Database and Web.
 
     wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
     unzip jsi.zip && cd jsi && make

@@ -1,10 +1,12 @@
 #!/usr/bin/env jsish
 // Call all jsi functions with random arguments, ie. to detect crashes.
+// Run in gdb with "handle SIGALRM ignore" to handle signal.
 // Use with sanitize to detect memory leaks, etc.
 // TODO: call with varying numbers of args.
 
 function randtest(...) {
 
+    var self = moduleOpts({not:false});
     var pargs = [-1, 'a', null, false];
     
     function foo() {}
@@ -15,7 +17,7 @@ function randtest(...) {
         puts(cmd);
         try { eval(cmd); } catch(e) {}
         var maxArgs = (cinf.maxArgs<0?10:cinf.maxArgs);
-        var alst = ["undefined", "null", "1", "'x'", "false","{}", "[]", 'foo'];
+        var alst = ["undefined", NaN, "null", "1", "'x'", "false","{}", "[]", 'foo'];
         for (var j of alst) {
             for (var i=0; i<=maxArgs; i++) {
                 cmd = cinf.name+'(';
@@ -23,7 +25,8 @@ function randtest(...) {
                     cmd += (k?',':'')+j;
                 cmd += ')';
                 puts(cmd);
-                try { eval(cmd); } catch(e) {}
+                if (!self.not)
+                  try { eval(cmd); } catch(e) {}
             }
         }
     }
@@ -33,7 +36,7 @@ function randtest(...) {
         if (cmds !== undefined) {
             for (var cmd in cmds) {
                 var nam = cmds[cmd].split('.')[0];
-                if (nam === 'exit' || nam === 'kill' || nam === 'signal' || nam === 'input' || nam === '' || !nam) continue;
+                if (nam === 'exit' || nam === 'kill' || nam == 'eval' || nam === 'signal' || nam === 'input' || nam === '' || !nam) continue;
                 var nnam = cnam+'.'+nam;
                 puts(nam);
                 if (nam == cnam)
@@ -44,7 +47,8 @@ function randtest(...) {
         }
         if (tinf.constructor) {
             cmd = 'new '+cnam+'('+')';
-            try { var cc = eval(cmd); DumpCmd(cc, ci); delete cc;} catch(e) {}
+            if (!self.not)
+              try { var cc = eval(cmd); DumpCmd(cc, ci); delete cc;} catch(e) {}
                 
         }
         return rv;

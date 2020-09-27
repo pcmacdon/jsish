@@ -1198,7 +1198,7 @@ static Jsi_RC WebSocketUnaliasCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply to non-websock object");
+        return Jsi_LogError("Apply to non-websock object");
     int vlen, nlen;
     const char *kstr, *vstr, *nstr = Jsi_ValueArrayIndexToStr(interp, args, 0, &nlen);
     if (!nstr)
@@ -2513,7 +2513,7 @@ static Jsi_RC WebSocketConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
 
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply in a non-websock object");
+        return Jsi_LogError("Apply in a non-websock object");
     Jsi_Value *opts = Jsi_ValueArrayIndex(interp, args, 0);
     if (cmdPtr->noConfig && opts && !Jsi_ValueIsString(interp, opts))
         return Jsi_LogErrorExt("WebSocket conf() is disabled for set");
@@ -2528,7 +2528,7 @@ static Jsi_RC WebSocketIdCmdOp(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_RC rc = JSI_OK;
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply in a non-websock object");
+        return Jsi_LogError("Apply in a non-websock object");
     Jsi_Value *v, *valPtr = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Number vid;
     if (Jsi_ValueGetNumber(interp, valPtr, &vid) != JSI_OK || vid < 0)
@@ -2589,7 +2589,7 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply in a non-websock object");
+        return Jsi_LogError("Apply in a non-websock object");
     const char *val = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     Jsi_DString dStr = {"["};
     jsi_wsPss *pss = NULL;
@@ -2665,7 +2665,7 @@ static Jsi_RC WebSocketHandlerCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_HashEntry *hPtr;
     jsi_wsHander *hdlPtr;
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply in a non-websock object");
+        return Jsi_LogError("Apply in a non-websock object");
     WSSIGASSERT(cmdPtr, OBJ);
     int argc = Jsi_ValueGetLength(interp, args);
     if (argc == 0) {
@@ -2736,7 +2736,7 @@ static Jsi_RC WebSocketSendCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply in a non-websock object");
+        return Jsi_LogError("Apply in a non-websock object");
     WSSIGASSERT(cmdPtr, OBJ);
     jsi_wsPss *pss;
     Jsi_HashEntry *hPtr;
@@ -2929,7 +2929,7 @@ static Jsi_RC WebSocketUpdateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply to non-websock object");
+        return Jsi_LogError("Apply to non-websock object");
     if (!cmdPtr->noUpdate)
         jsi_wsService(cmdPtr);
     return JSI_OK;
@@ -3043,7 +3043,7 @@ static Jsi_RC WebSocketFileCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply to non-websock object");
+        return Jsi_LogError("Apply to non-websock object");
     Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0);
     if (val)
         return jsi_wsFileAdd(interp, cmdPtr, val);
@@ -3057,7 +3057,7 @@ static Jsi_RC WebSocketStatusCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 {
     jsi_wsCmdObj *cmdPtr = (jsi_wsCmdObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!cmdPtr)
-        return Jsi_LogErrorExt("Apply to non-websock object");
+        return Jsi_LogError("Apply to non-websock object");
 #ifndef OMIT_LWS_WITH_SERVER_STATUS
     char cbuf[JSI_BUFSIZ*2];
     lws_json_dump_context(cmdPtr->context, cbuf, sizeof(cbuf), 0);

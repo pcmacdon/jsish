@@ -1353,7 +1353,7 @@ static MySqlObj *_mysql_getDbHandle(Jsi_Interp *interp, Jsi_Value *_this, Jsi_Fu
 {
     MySqlObj *jdb = (MySqlObj*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!jdb) {
-        Jsi_LogErrorExt("MySql call to a non-mysql object");
+        Jsi_LogError("MySql call to a non-mysql object");
         return NULL;
     }
     if (!jdb->db)

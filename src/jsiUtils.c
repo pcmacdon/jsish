@@ -2193,7 +2193,7 @@ Jsi_Stack* Jsi_StackNew(void)
 
 void Jsi_StackFree(Jsi_Stack *stack)
 {
-    Jsi_Free(stack->vector);
+    if (stack->vector) Jsi_Free(stack->vector);
     Jsi_Free(stack);
 }
 

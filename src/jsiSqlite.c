@@ -1960,7 +1960,7 @@ static Jsi_Db *dbGetDbHandle(Jsi_Interp *interp, Jsi_Value *_this, Jsi_Func *fun
 {
     Jsi_Db *db = (Jsi_Db*)Jsi_UserObjGetData(interp, _this, funcPtr);
     if (!db) {
-        Jsi_LogErrorExt("Sqlite call to a non-sqlite object");
+        Jsi_LogError("Sqlite call to a non-sqlite object");
         return NULL;
     }
     if (!db->db)

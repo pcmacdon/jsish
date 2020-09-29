@@ -881,7 +881,7 @@ typedef struct {
 } GlobData;
 
 static Jsi_OptionSpec GlobOptions[] = {
-    JSI_OPT(STRING, GlobData, dir,      .help="The start directory: this path will not be prepended to results"),
+    JSI_OPT(STRING, GlobData, dir,      .help="The start directory: set in \"prefix\" to have this prepended to result"),
     JSI_OPT(INT,    GlobData, maxDepth, .help="Maximum directory depth to recurse into"),
     JSI_OPT(INT,    GlobData, maxDiscard,.help="Maximum number of items to discard before giving up"),
     JSI_OPT(FUNC,   GlobData, dirFilter,.help="Filter function for directories, returning false to discard", .flags=0, .custom=0, .data=(void*)"dir:string"),

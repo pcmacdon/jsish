@@ -11,6 +11,7 @@ function Wget(fileargs:array|string, conf:object=void) {
         sslDir      :null,          // Enable ssl and use certs in this dir
         sslFnCert   :'cert.pem',    // File name in sslDir of cert.
         sslFnKey    :'privkey.pem', // File name in sslDir of key.
+        unzip       : false,        // Unzip file after download
         wsOpts      : {},           // Websocket options.
         wsdebug     : 0,            // WebSockets debug level.
     };
@@ -136,6 +137,8 @@ function Wget(fileargs:array|string, conf:object=void) {
             update(200);
             LogTrace("UPDATE");
         }
+        if (self.unzip)
+            Zip(['unzip', self.O]);
         //delete self.ws;
         if (self.response !== '')
             return self.response;

@@ -4,7 +4,6 @@
 function mktoc(args:array, conf:object) {
 
     var options = {// Generate documentation table of contents from headers <h1> <h2>...
-        debug:true,         // Enable debugging
         numberHdrs:false,   // Add section numbers to headers
         update:false        // Update file in place.
     };
@@ -91,8 +90,7 @@ function mktoc(args:array, conf:object) {
 ';
             rc = idxtoc + rc;
             if (oldtoc === rc) {
-                //if (self.debug)
-                    console.log("nothing to do");
+                console.log("nothing to do");
                 return;
             }
             var ndat = tpre + '<div id=wikitoc>\n' + rc + '</div>\n' + tpost;

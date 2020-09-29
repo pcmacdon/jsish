@@ -10,6 +10,7 @@ function SqliteUI(files:array|string, conf:object=void)
     var options = { // Provide an sqlite user interface via a browser.
         closeTimeout:5000,              // Time til exit after close of final client websocket (ms).
         browser     :'',                // Browser program to use.
+        create      :false,             // Allow create of db file.
         dump        :false,             // Dump database.
         foreignkey  :true,              // Enable foreign key constraints.
         integrity   :true,              // Do integrity check on startup.
@@ -577,7 +578,7 @@ function SqliteUI(files:array|string, conf:object=void)
             self.dbfile = files;
         else
             self.dbfile = files[0];
-        if (!File.exists(self.dbfile))
+        if (!File.exists(self.dbfile) && !self.create)
             throw("db file not found");
         if (self.dump)
             return DumpSql(self.dbfile);

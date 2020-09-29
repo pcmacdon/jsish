@@ -1,6 +1,7 @@
 MySql
 =====
-<div id="sectmenu"></div>
+[Back to Index](Index.md "Goto Jsi Documentation Index")
+
 The MySql driver provides three basic commands for executing sql:
 
 - eval() for running simple sql requiring no input/output.
@@ -9,10 +10,12 @@ The MySql driver provides three basic commands for executing sql:
 
 A simple session might look like:
 
-    var db = new MySql({user:'root', password:'', database:'jsitest'});
-    db.eval('CREATE TABLE players(name VARCHAR(50),age INTEGER);');
-    db.query('INSERT INTO players VALUES(?,?);', {values:["Barry",44]});
-    var age = db.onecolumn('SELECT age FROM players WHERE name = "Barry";');
+``` js
+var db = new MySql({user:'root', password:'', database:'jsitest'});
+db.eval('CREATE TABLE players(name VARCHAR(50),age INTEGER);');
+db.query('INSERT INTO players VALUES(?,?);', {values:["Barry",44]});
+var age = db.onecolumn('SELECT age FROM players WHERE name = "Barry";');
+```
 
 A more complete example is [mysql.jsi](https://jsish.org/jsi/file/js-demos/mysql.jsi).
 
@@ -47,31 +50,34 @@ using the conf() method, eg.
 Refer to the [Reference](Reference.md#MySql)</li> for details.
 
 
-Eval
-----
+## Eval
+
 The eval() method is used to execute simple Sql.
 It takes no options, and returns no values.
 
 It can also be used to execute multiple semicolon-separated statements:
 
-    db.conf({enableMulti:true});
-    db.exec('CREATE TABLE foo(a,b);'+
-    'INSERT INTO foo VALUES(1,2);'+
-    'INSERT INTO foo VALUES("X","Y")');
+``` js
+db.conf({enableMulti:true});
+db.exec('CREATE TABLE foo(a,b);'+
+'INSERT INTO foo VALUES(1,2);'+
+'INSERT INTO foo VALUES("X","Y")');
+```
 
 This makes it useful for bulk loading.
 
 
-Oncolumn
-----
+## Oncolumn
+
 onecolumn() provides no inputs or outputs.  It simply returns the first column
 of the first row.  The mode and other options are ignored.
 
-    var maxid = db.oncolumn('SELECT max(id) FROM foo');
+``` js
+var maxid = db.oncolumn('SELECT max(id) FROM foo');
+```
 
+## Query
 
-Query
-----
 The  workhorse method is query() which:
 
 - compiles SQL into a compiled code, and caches it.
@@ -81,18 +87,24 @@ The  workhorse method is query() which:
 
 Here is an example:
 
-    db.query('INSERT INTO players VALUES(?,?);', {values:["Barry",44]});
+``` js
+db.query('INSERT INTO players VALUES(?,?);', {values:["Barry",44]});
+```
 
 ### Query Options
 Query options can be controlled either of two ways.  Per query, as in:
 
-    db.query('SELECT * FROM test1', {mode:'json'});
+``` js
+db.query('SELECT * FROM test1', {mode:'json'});
+```
 
 or we can change the defaults (for the connection) like so:
 
-    db.conf({queryOpts:{mode:'json'}});
-    db.query('SELECT * FROM test1');
-    db.query('SELECT * FROM test2');
+``` js
+db.conf({queryOpts:{mode:'json'}});
+db.query('SELECT * FROM test1');
+db.query('SELECT * FROM test2');
+```
 
 Here is a list of the available query() options:
 
@@ -122,7 +134,9 @@ The returned value from a query is determined by the chosen output mode.
 
 The default mode (rows) just returns an array of objects, which looks like this:
 
-    [ { a:1, b:2 }, { a:"X", b:"Y" } ]
+```
+[ { a:1, b:2 }, { a:"X", b:"Y" } ]
+```
 
 The choices for mode are a superset of those available in the sqlite3 command-line tool, namely:
 
@@ -145,38 +159,42 @@ The choices for mode are a superset of those available in the sqlite3 command-li
 
 We can change the output mode for a query() using:
 
-    db.query('SELECT * FROM foo', {mode:'list'});
-    1|2|X
-    Y|3|Z
+``` js
+db.query('SELECT * FROM foo', {mode:'list'});
+```
 
-**Note**:
-    Output for some modes is affected by the headers and separator options.
+```
+1|2|X
+Y|3|Z
+```
+
+**Note**: Output for some modes is affected by the headers and separator options.
 
 
 #### JSON
 The json modes are useful
 when data is destined to be sent to a web browser, eg. via [websockets](Builtins.md#websocket).
 
-    db.exec('DROP TABLE IF EXISTS foo; CREATE TABLE foo(a,b);');
-    var n = 0, x = 99;
-    while (n++ < 3) {
-        db.query('INSERT INTO foo VALUES(@x,@n)');
-        x -= 4;
-    }
-    x=db.query('SELECT * FROM foo',{mode:'json'});
-    [ {"a":99, "b":1}, {"a":95, "b":2}, {"a":91, "b":3} ]
+``` js
+db.exec('DROP TABLE IF EXISTS foo; CREATE TABLE foo(a,b);');
+var n = 0, x = 99;
+while (n++ < 3) {
+    db.query('INSERT INTO foo VALUES(@x,@n)');
+    x -= 4;
+}
+x=db.query('SELECT * FROM foo',{mode:'json'});
+[ {"a":99, "b":1}, {"a":95, "b":2}, {"a":91, "b":3} ]
 
-Where large amounts of data are involved, the headers option can be used to reduce size:
+// Where large amounts of data are involved, the headers option can be used to reduce size:
 
-    db.query('SELECT * FROM foo',{mode:'json', headers:true});
-    [ ["a", "b"], [99, 1], [95, 2], [91, 3] ]
+db.query('SELECT * FROM foo',{mode:'json', headers:true});
+[ ["a", "b"], [99, 1], [95, 2], [91, 3] ]
 
-The "json2" mode is used to split headers and values out
-into separate members:
+// The "json2" mode is used to split headers and values out into separate members:
 
-    db.query('SELECT * FROM foo',{mode:'json2'});
-    { "names": [ "a", "b" ], "values": [ [99, 1 ], [95, 2 ], [91, 3 ] ] }
-
+db.query('SELECT * FROM foo',{mode:'json2'});
+{ "names": [ "a", "b" ], "values": [ [99, 1 ], [95, 2 ], [91, 3 ] ] }
+```
 
 #### Callback Function
 
@@ -189,22 +207,24 @@ There are two ways to change this:
 Either way invokes the callback with
 each row result:
 
-    function myfunc(n) { puts("a=" + n.a + ", b=" + n.b); }
-    db.query('SELECT * FROM foo',myfunc);
+``` js
+function myfunc(n) { puts("a=" + n.a + ", b=" + n.b); }
+db.query('SELECT * FROM foo',myfunc);
 
-If the callback function returns false, evaluation terminates immediately.
-
-    db.query('SELECT * FROM foo', function (n) {
-        puts("a=" + n.a + ", b=" + n.b);
-        if (a>1) return false;
-      });
-
+// If the callback function returns false, evaluation terminates immediately.
+db.query('SELECT * FROM foo', function (n) {
+    puts("a=" + n.a + ", b=" + n.b);
+    if (a>1) return false;
+  });
+```
 
 ### Inputs
 Sql inputs can be easily formatted using strings:
 
-    var a=1, b='big';
-    db.query('INSERT INTO foo VALUES('+a+*','*+b+')');
+``` js
+var a=1, b='big';
+db.query('INSERT INTO foo VALUES('+a+*','*+b+')');
+```
 
 However this raises issues of security and predictability.
 Fortunately variable binding is easy.
@@ -214,10 +234,12 @@ Fortunately variable binding is easy.
 
 MySql variable binding uses "?" placeholders to refer to array elements., eg:
 
-    db.query('INSERT INTO foo VALUES(?,?)', {values:[11,12]});
-    
-    var vals = [9,10];
-    db.query('INSERT INTO foo VALUES(?,?)', {values:vals});
+``` js
+db.query('INSERT INTO foo VALUES(?,?)', {values:[11,12]});
+
+var vals = [9,10];
+db.query('INSERT INTO foo VALUES(?,?)', {values:vals});
+```
 
 This approach, for a small number of parameters, is more than adequate.
 
@@ -232,30 +254,31 @@ named variables from the query, translating them internally into standard "?" fo
 A named-bind begin with one of the characters: :,  @, and $.
 For example:
 
-    var x1=24.5, x2="Barry", x3="Box";
-    db.query('INSERT INTO test2 VALUES( :x1, @x2, $x3 );');
+``` js
+var x1=24.5, x2="Barry", x3="Box";
+db.query('INSERT INTO test2 VALUES( :x1, @x2, $x3 );');
 
-As in Sqlite, the $ bind may append round-brackets () to refer to compound variables.
+// As in Sqlite, the $ bind may append round-brackets () to refer to compound variables.
+// This example binds to objects members:
 
-This example binds to objects members:
+var y = {a:4, b:"Perry", c:"Pack"};
+db.query('INSERT INTO test2 VALUES( $y(a), $y(b), $y(c) );');
 
-    var y = {a:4, b:"Perry", c:"Pack"};
-    db.query('INSERT INTO test2 VALUES( $y(a), $y(b), $y(c) );');
+// And this one to arrays:
 
-And this one to arrays:
+var Z = 2;
+var y = [9, 'Figgy', 'Fall'];
+db.query('INSERT INTO test2 VALUES( $y(0), $y(1), $y([Z]) );');
 
-    var Z = 2;
-    var y = [9, 'Figgy', 'Fall'];
-    db.query('INSERT INTO test2 VALUES( $y(0), $y(1), $y([Z]) );');
+// Or more usefully:
 
-Or more usefully:
-
-    var y = [
-        {a:4, b:"Perry", c:"Pack"},
-        {a:9, b:'Figgy', c:'Fall'}
-    ];
-    for (var i=0; i < y.length; i++)
-        db.query('INSERT INTO test2 VALUES($y([i].a), $y([i].b), $y([i].c);');
+var y = [
+    {a:4, b:"Perry", c:"Pack"},
+    {a:9, b:'Figgy', c:'Fall'}
+];
+for (var i=0; i < y.length; i++)
+    db.query('INSERT INTO test2 VALUES($y([i].a), $y([i].b), $y([i].c);');
+```
 
 The contents of the round-brackets can contain multiple levels of dereference (but not expressions).
 
@@ -276,8 +299,10 @@ Here are a few sample bindings, and their associated variables:
 #### Types
 A  type specifier may also be included in a $X(Y) binding, as in:
 
-    var y = {a:4, b:"Purry", c:"Pax"};
-    db.query('INSERT INTO test2 VALUES( $y(a:integer), $y(b:string), $y(c:string) );');
+``` js
+var y = {a:4, b:"Purry", c:"Pax"};
+db.query('INSERT INTO test2 VALUES( $y(a:integer), $y(b:string), $y(c:string) );');
+```
 
 The type is the part after the colon ":", and just before the close round-brace.
 
@@ -285,10 +310,12 @@ By default, a type is used to convert data sent to MySql to the correct type.
 
 Type specifiers are supported for all variants of $X(Y) binding, such as:
 
-    var Z = 0;
-    var x = ['Figgy'];
-    var y = {c:'Fall'};
-    db.query('INSERT INTO test3 VALUES( $x(0:string), $y(c:string), $x([Z]:string) );');
+``` js
+var Z = 0;
+var x = ['Figgy'];
+var y = {c:'Fall'};
+db.query('INSERT INTO test3 VALUES( $x(0:string), $y(c:string), $x([Z]:string) );');
+```
 
 The supported type names are:
 
@@ -310,8 +337,10 @@ We can also change the type-checking behaviour via the typeCheck query option:
 For example, we can instead cause an error to be kicked an error with:
 
 
-    var x = [ 'bad' ];
-    db.query('UPDATE test SET n = $x(0:number) );', {typeCheck:'error'});
+``` js
+var x = [ 'bad' ];
+db.query('UPDATE test SET n = $x(0:number) );', {typeCheck:'error'});
+```
 
 The valid typeCheck modes are:
 
@@ -323,8 +352,8 @@ The valid typeCheck modes are:
 | disable | Ignore type specifiers                           |
 
 
-Miscellaneous
-----
+## Miscellaneous
+
 
 ### User Functions
 SQL functions can be defined in javascript using func():
@@ -361,7 +390,7 @@ Differences include a greater dependance on types, and requiring a user, passwor
 ### Building
 The MySql driver does not (by default) come builtin to Jsi.
 
-However, once you [download the source](Build.md) you can build it in with:
+However, once you [download the source](Builds.md) you can build it in with:
 
     make mysql
 

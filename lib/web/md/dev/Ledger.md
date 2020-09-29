@@ -1,6 +1,6 @@
 Ledger
 ======
-<div id="sectmenu"></div>
+
 [Jsi](https://jsish.org/jsi) Ledger is a simple Web-UI based accounting program.
 
 Account and transaction data is stored in an Sqlite database, which

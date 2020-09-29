@@ -1,0 +1,4 @@
+{top:["Jsish.md", "Building.md", "Coding.md", "Modules.md", "Logging.md", "Types.md", "Reference.md"], 
+    other:["Builtins.md", "Testing.md", "C-API.md", "CData.md", "DBQuery.md", "Debug.md", "Demos.md", "Deploy.md",
+    "Interp.md", "jsi.js.md", "Ledger.md", "Misc.md", "MySql.md", "Sqlite.md", "WebSocket.md"]
+}

@@ -12,6 +12,7 @@ ALLTARGETS =
 EXTRATARGETS =
 DESTDIR=
 JSICONFS=$(shell find Configs/ -type f -name '*.conf' -exec basename \{\} .conf \; |cut -d_ -f2 | sort | xargs)
+BLDDIR=$(PWD)
 
 CFLAGS += -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
 # -pg
@@ -270,7 +271,7 @@ endif
 MINIZDIR=miniz
 ifneq ($(JSI__MINIZ),0)
 CFILES += $(MINIZDIR)/miniz.c
-CFLAGS += -I$(PWD)/$(MINIZDIR)
+CFLAGS += -I$(BLDDIR)/$(MINIZDIR)
 else
 ifneq ($(WIN),1)
 PROGLDFLAGS += -lz
@@ -286,7 +287,6 @@ LDFLAGS = -lm $(PROGLDFLAGS) $(EXTRALD)
 SHLEXT=.so
 
 ZIPDIR=zipdir
-BLDDIR=$(PWD)
 PROGBINMIN = $(which $(DESTDIR)/jsimin)
 PROGBINA   = $(DESTDIR)$(PROGRAM)_$(EXEEXT)
 PROGBIN	   = $(DESTDIR)$(PROGRAM)$(EXEEXT)
@@ -475,8 +475,7 @@ stubs:
 
 ref:
 	./$(PROGBIN) tools/mkproto.jsi > tools/protos.jsi
-	$(MAKE) -C www
-	$(MAKE) -C md
+	$(MAKE) -C md BLDDIR=$(BLDDIR)
 
 release: stubs ref jsi.c jsish.c testsys test
 

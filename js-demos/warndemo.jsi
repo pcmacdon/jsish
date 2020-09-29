@@ -16,6 +16,7 @@ require('warndemo2');
 =!EXPECTSTART!=
 warndemo2.jsi:6: warn: got 0 args, expected 1-2, calling function exec(val:string, options:string|object=void)
 warndemo2.jsi:7: warn: got 4 args, expected 1-2, calling function exec(val:string, options:string|object=void)
+warndemo2.jsi:8: warn: got 3 args, expected 0, calling function warndemoA()
 warndemo2.jsi:9: warn: got 0 args, expected 1, calling function warndemoB(n:number)
 warndemo2.jsi:10: warn: got 3 args, expected 1, calling function warndemoB(n:number)
 =!EXPECTEND!=

@@ -1597,7 +1597,8 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             }
             case OP_NEXT: {
                 Jsi_Value *toq = _jsi_TOQ, *top = _jsi_TOP;
-                if (toq->vt != JSI_VT_OBJECT || toq->d.obj->ot != JSI_OT_ITER) Jsi_LogBug("next: toq not a iter\n");
+                if (toq->vt != JSI_VT_OBJECT || toq->d.obj->ot != JSI_OT_ITER)
+                    Jsi_LogBug("next: toq not a iter\n");
                 if (top->vt != JSI_VT_VARIABLE) {
                     rc = Jsi_LogError ("invalid for/in left hand-side");
                     break;
@@ -1613,12 +1614,14 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 }
                 
                 Jsi_IterObj *io = toq->d.obj->d.iobj;
-                if (io->iterCmd) {
+                if (io->iterCmd) { // TODO: not implemented yet
                     io->iterCmd(io, top, _jsi_STACKIDX(fp->Sp-3), io->iter++);
                 } else {
                     while (io->iter < io->count) {
                         if (!io->isArrayList) {
-                            if (io->isgetter || Jsi_ValueKeyPresent(interp, _jsi_STACKIDX(fp->Sp-3), io->keys[io->iter],1)) 
+                            if (io->isgetter)
+                                break;
+                            if (Jsi_ValueKeyPresent(interp, _jsi_STACKIDX(fp->Sp-3), io->keys[io->iter],1)) 
                                 break;
                         } else {
                             while (io->cur < io->obj->arrCnt) {
@@ -1626,8 +1629,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                                 io->cur++;
                             }
                             if (io->cur >= io->obj->arrCnt) {
-                                /* TODO: Is this really a bug??? */
-                                /* Jsi_LogBug("NOT FOUND LIST ARRAY");*/
+                                /* Jsi_LogBug("NOT FOUND LIST ARRAY");*/ // TODO: verify not really a bug
                                 io->iter = io->count;
                                 break;
                             } else if (io->obj->arr[io->cur]) {

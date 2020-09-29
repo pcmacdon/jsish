@@ -1,6 +1,7 @@
 # Reference
-The generated reference for Jsi builtin commands.
+[Back to Index](Index.md "Goto Jsi Documentation Index")
 
+The generated reference for Jsi builtin commands.
 
 
 ## Array
@@ -9,8 +10,6 @@ The generated reference for Jsi builtin commands.
 
 Provide access to array objects.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Array|(...):array |jsi_Array constructor.|
@@ -37,10 +36,10 @@ Provide access to array objects.
 |sizeOf|():number |Return size of array.|
 |slice|(start:number, end:number=void):array |Return sub-array.|
 |some|(callback:function, thisArg:object=void):boolean |Return true if function returns true some element.|
-|sort|([options](#options-arraysort):function&#124;object=void):array |Sort an array.|
+|sort|([options](#array-sort):function&#124;object=void):array |Sort an array.|
 |splice|(start:number, howmany:number=void, ...):array |Change the content of an array, adding new elements while removing old elements.|
 |unshift|(...):number |Add new elements to start of array and return size.|
-### Options "Array.sort"
+### Array sort
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |mode|*STRKEY*|Mode to sort by. (one of: **default**, **desc**, **dict**, **nocase**)||
@@ -54,8 +53,6 @@ Provide access to array objects.
 
 A Boolean object.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Boolean|(bool:boolean=false):boolean |Boolean constructor.|
@@ -67,8 +64,6 @@ A Boolean object.
 
 Commands for accessing Channel objects for file IO.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Channel|(file:string, mode:string='r'):userobj |A file input/output object. The mode string is r or w and an optional +.|
@@ -95,8 +90,6 @@ Commands for accessing Channel objects for file IO.
 
 Event management.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |clearInterval|(id:number):void |Delete an event (created with setInterval/setTimeout).|
@@ -104,8 +97,8 @@ Event management.
 |names|():array |Return list event ids (created with setTimeout/setInterval).|
 |setInterval|(callback:function, millisecs:number):number |Setup recurring function to run every given millisecs.|
 |setTimeout|(callback:function, millisecs:number):number |Setup function to run after given millisecs.|
-|update|([options](#options-eventupdate):number&#124;object=void):number |Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1. The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.|
-### Options "Event.update"
+|update|([options](#event-update):number&#124;object=void):number |Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1. The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.|
+### Event update
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |maxEvents|*INT*|Maximum number of events to process (or -1 for all).||
@@ -120,8 +113,6 @@ Event management.
 
 Commands for accessing the filesystem.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |atime|(file:string):number |Return file Jsi_Access time.|
@@ -132,7 +123,7 @@ Commands for accessing the filesystem.
 |executable|(file:string):boolean |Return true if file is executable.|
 |exists|(file:string):boolean |Return true if file exists.|
 |extension|(file:string):string |Return file extension.|
-|glob|([options](#options-fileglob):function&#124;object&#124;null=void):array |Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory. The first argument can be a pattern (either a glob or regexp) of the files to return. When the second argument is a function, it is called with each path, and filter on false. Otherwise second argument must be a set of options.|
+|glob|([options](#file-glob):function&#124;object&#124;null=void):array |Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory. The first argument can be a pattern (either a glob or regexp) of the files to return. When the second argument is a function, it is called with each path, and filter on false. Otherwise second argument must be a set of options.|
 |isdir|(file:string):boolean |Return true if file is a directory.|
 |isfile|(file:string):boolean |Return true if file is a normal file.|
 |isrelative|(file:string):boolean |Return true if file path is relative.|
@@ -159,10 +150,10 @@ Commands for accessing the filesystem.
 |truncate|(file:string, size:number) |Truncate file.|
 |writable|(file:string):boolean |Return true if file is writable.|
 |write|(file:string, str:string, mode:string='wb+'):number |Write a file.|
-### Options "File.glob"
+### File glob
 |Option|Type|Description|Flags|
 |---|---|---|---|
-|dir|*STRING*|The start directory: this path will not be prepended to results.||
+|dir|*STRING*|The start directory: set in "prefix" to have this prepended to result.||
 |maxDepth|*INT*|Maximum directory depth to recurse into.||
 |maxDiscard|*INT*|Maximum number of items to discard before giving up.||
 |dirFilter|*FUNC*|Filter function for directories, returning false to discard. @`function(dir:string)`||
@@ -183,8 +174,6 @@ Commands for accessing the filesystem.
 
 Commands for accessing functions.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Function|():function |Function constructor (unimplemented).|
@@ -199,12 +188,10 @@ Commands for accessing functions.
 
 Commands for inspecting internal state information in JSI.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |argv0|():string&#124;void |Return initial start script file name.|
-|cmds|([options](#options-infocmds):object=void):array&#124;object |Return details or list of matching commands.|
+|cmds|([options](#info-cmds):object=void):array&#124;object |Return details or list of matching commands.|
 |completions|(str:string, start:number=0, end:number=void):array |Return command completions on portion of string from start to end.|
 |data|(val:string&#124;regexp&#124;object=void):array&#124;object |Return list of matching data (non-functions). Like info.vars(), but does not return function values.|
 |error|():object |Return file and line number of error (used inside catch).|
@@ -229,7 +216,7 @@ Commands for inspecting internal state information in JSI.
 |scriptDir|():string&#124;void |Get directory of current script.|
 |vars|(val:string&#124;regexp&#124;object=void):array&#124;object |Return details or list of matching variables. Returns all values, data or function.|
 |version|(full:boolean=false):number&#124;object |JSI version: returns object when full=true.|
-### Options "Info.cmds"
+### Info cmds
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |full|*BOOL*|Return full path.||
@@ -242,20 +229,18 @@ Commands for inspecting internal state information in JSI.
 
 Commands for accessing interps.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|Interp|([options](#options-newinterp):object=void):userobj |Create a new interp.|
+|Interp|([options](#interp-new):object=void):userobj |Create a new interp.|
 |alias|(name:string=void, func:function&#124;null=void, args:array&#124;null=void, async=false) |Set/get global alias bindings for command in an interp. With 0 args, returns list of all aliases in interp. With 1 arg returns func for given alias name. With 2 args where arg2 == null, returns args for given alias name . With 3 args, create/update an alias for func and args.  Delete an alias by creating it with null for both func and args.|
 |call|(funcName:string, args:array, wait:boolean=false) |Call named function in subinterp. Invoke function in sub-interp with arguments. Since interps are not allowed to share objects, data is automatically cleansed by encoding/decoding to/from JSON if required. Unless an 'async' parameter is true call is acyncronous. Otherwise waits until the sub-interp is idle, to make call and return result.|
-|conf|([options](#options-interpconf):string&#124;object=void) |Configure option(s).|
+|conf|([options](#interp-new):string&#124;object=void) |Configure option(s).|
 |eval|(js:string, async:boolean=false) |Interpret script within sub-interp. When the 'async' option is used on a threaded interp, the script is queued as an Event.|
 |info|():object |Returns internal statistics about interp.|
 |source|(file:string, async:boolean=false) |Interpret file within sub-interp. When the 'async' option is used on a threaded interp, the script is queued as an Event.|
 |uplevel|(js:string, level:number=0) |Interpret code at the given stack level. The level argument is as returned by Info.level().  Not supported with threads.|
 |value|(varName:string, level:number=0) |Lookup value of variable at stack level.|
-### Options "new"
+### Interp new
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |args|*ARRAY*|The console.arguments for interp.|initOnly|
@@ -265,7 +250,7 @@ Commands for accessing interps.
 |busyInterval|*INT*|Call busyCallback command after this many op-code evals (100000).||
 |confFile|*STRKEY*|Config file of options in JSON non-strict format.|initOnly|
 |coverage|*BOOL*|On exit generate detailed code coverage for function calls (with profile).||
-|debugOpts|*[Options](#options-debugOpts)*|Options for debugging.||
+|debugOpts|*[Options](#Interp-debugOpts)*|Options for debugging.||
 |interactive|*BOOL*|Force interactive mode. ie. ignore no_interactive flag.|initOnly|
 |hasOpenSSL|*BOOL*|WebSocket compiled with SSL is available.|initOnly|
 |historyFile|*STRKEY*|For readline, file to use for history (~/.jsish_history).||
@@ -274,7 +259,7 @@ Commands for accessing interps.
 |jsppCallback|*FUNC*|Command to preprocess lines that match jsppChars. Call func(interpName:string, opCnt:number).||
 |lockTimeout|*INT*|Thread time-out for mutex lock acquires (milliseconds).||
 |lockDown|*STRKEY*|Directory to Safe-lockdown interpreter to.||
-|logOpts|*[Options](#options-logOpts)*|Options for log output to add file/line/time.||
+|logOpts|*[Options](#Interp-logOpts)*|Options for log output to add file/line/time.||
 |log|*ARRAY*|Logging flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
 |maxDepth|*INT*|Depth limit of recursive function calls (1000).||
 |maxDumpStack|*UINT*|Maximum stack dump length (100).||
@@ -311,7 +296,7 @@ Commands for accessing interps.
 |scriptFile|*STRING*|Interp init script file.||
 |stdinStr|*STRING*|String to use as stdin for console.input().||
 |stdoutStr|*STRING*|String to collect stdout for puts().||
-|subOpts|*[Options](#options-subOpts)*|Infrequently used sub-options.||
+|subOpts|*[Options](#Interp-subOpts)*|Infrequently used sub-options.||
 |subthread|*BOOL*|Create a threaded Interp.|initOnly|
 |traceCall|*ARRAY*|Trace commands. (zero or more of: **funcs**, **cmds**, **new**, **return**, **args**, **notrunc**, **noparent**, **full**, **before**)||
 |traceOp|*INT*|Set debugging level for OPCODE execution.||
@@ -320,7 +305,7 @@ Commands for accessing interps.
 |typeWarnMax|*INT*|Type checking is silently disabled after this many warnings (50).||
 |udata|*OBJ*|User data.||
 |testMode|*UINT*|Unit test control bits: 1=subst, 2=Puts with file:line prefix.||
-### Options "debugOpts"
+### Interp debugOpts
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |debugCallback|*CUSTOM*|Command in parent interp for handling debugging.||
@@ -334,7 +319,7 @@ Commands for accessing interps.
 |putsCallback|*CUSTOM*|Comand in parent interp to handle puts output.||
 |traceCallback|*CUSTOM*|Comand in parent interp to handle traceCall.||
 |testFmtCallback|*CUSTOM*|Comand in parent interp to format testing strings.||
-### Options "logOpts"
+### Interp logOpts
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |time|*BOOL*|Prefix with time.||
@@ -347,7 +332,7 @@ Commands for accessing interps.
 |isUTC|*BOOL*|Time is to be UTC.||
 |timeFmt|*STRKEY*|A format string to use with strftime.||
 |chan|*USEROBJ*|Channel to send output to.||
-### Options "subOpts"
+### Interp subOpts
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |blacklist|*STRKEY*|Comma separated modules to disable loading for.|initOnly|
@@ -374,8 +359,6 @@ Commands for accessing interps.
 
 Commands for handling JSON data.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |check|(str:string, strict:boolean=true):boolean |Return true if str is JSON.|
@@ -389,8 +372,6 @@ Commands for handling JSON data.
 
 Commands performing math operations on numbers.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |abs|(num:number):number |Returns the absolute value of x.|
@@ -420,14 +401,12 @@ Commands performing math operations on numbers.
 
 Commands for accessing mysql databases.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|MySql|([options](#options-newmysql):object=void):userobj |Create a new db connection to a MySql database:.|
+|MySql|([options](#mysql-new):object=void):userobj |Create a new db connection to a MySql database:.|
 |affectedRows|():number |Return affected rows.|
 |complete|(sql:string):boolean |Return true if sql is complete.|
-|conf|([options](#options-mysqlconf):string&#124;object=void) |Configure options.|
+|conf|([options](#mysql-new):string&#124;object=void) |Configure options.|
 |errorNo|():number |Return error code returned by most recent call to mysql3_exec().|
 |errorState|():string |Return the mysql error state str.|
 |eval|(sql:string):number |Run sql commands without input/output.|
@@ -437,10 +416,10 @@ Commands for accessing mysql databases.
 |lastRowid|():number |Return rowid of last insert.|
 |onecolumn|(sql:string) |Execute sql, and return a single value.|
 |ping|(noError:boolean=false):number |Ping connection.|
-|query|([options](#options-mysqlquery):function&#124;string&#124;array&#124;object=void) |Run sql query with input and/or outputs..|
+|query|([options](#mysql-query):function&#124;string&#124;array&#124;object=void) |Run sql query with input and/or outputs..|
 |reconnect|():void |Reconnect with current settings.|
 |reset|():number |Reset connection.|
-### Options "new"
+### MySql new
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |bindWarn|*BOOL*|Treat failed variable binds as a warning.|initOnly|
@@ -448,7 +427,7 @@ Commands for accessing mysql databases.
 |debug|*ARRAY*|Enable debug trace for various operations. (zero or more of: **eval**, **delete**, **prepare**, **step**)||
 |enableMulti|*BOOL*|Accept muiltiple semi-colon separated statements in eval().|initOnly|
 |errorCnt|*INT*|Count of errors.|readOnly|
-|queryOpts|*[Options](#options-queryOpts)*|Default options for exec.||
+|queryOpts|*[Options](#MySql-queryOpts)*|Default options for exec.||
 |forceInt|*BOOL*|Bind float as int if possible.||
 |host|*STRING*|IP address or host name for mysqld (default is 127.0.0.1).||
 |maxStmts|*INT*|Max cache size for compiled statements.||
@@ -465,7 +444,7 @@ Commands for accessing mysql databases.
 |udata|*OBJ*|User data..||
 |user|*STRKEY*|Database user name. Default is current user-name..|initOnly|
 |version|*DOUBLE*|Mysql version number.|readOnly|
-### Options "queryOpts"
+### MySql queryOpts
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function to call with each row result. @`function(values:object)`||
@@ -477,7 +456,7 @@ Commands for accessing mysql databases.
 |nocache|*BOOL*|Disable query cache.||
 |noNamedParams|*BOOL*|Disable translating sql to support named params.||
 |nullvalue|*STRKEY*|Null string output (for non-json mode).||
-|obj|*[Options](#options-obj)*|Options for object.||
+|obj|*[Options](#MySql-obj)*|Options for object.||
 |paramVar|*ARRAY*|Array var to use for parameters.||
 |prefetch|*BOOL*|Let client library cache entire results.||
 |separator|*STRKEY*|Separator string (for csv and text mode).||
@@ -485,7 +464,17 @@ Commands for accessing mysql databases.
 |typeCheck|*STRKEY*|Type check mode (error). (one of: **convert**, **error**, **warn**, **disable**)||
 |values|*ARRAY*|Values for ? bind parameters.||
 |width|*CUSTOM*|In column mode, set column widths.||
-### Options "MySql.query"
+### MySql obj
+|Option|Type|Description|Flags|
+|---|---|---|---|
+|name|*STRKEY*|Name of object var data source for %s.||
+|skip|*ARRAY*|Object members to ignore.||
+|getSql|*BOOL*|Return expanded SQL without evaluating.||
+|defaultNull|*BOOL*|Create with DEFAULT NULL.||
+|noChecks|*BOOL*|Create with no CHECK constraints.||
+|noDefaults|*BOOL*|Create with no defaults.||
+|noTypes|*BOOL*|Create with no types.||
+### MySql query
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function to call with each row result. @`function(values:object)`||
@@ -497,7 +486,7 @@ Commands for accessing mysql databases.
 |nocache|*BOOL*|Disable query cache.||
 |noNamedParams|*BOOL*|Disable translating sql to support named params.||
 |nullvalue|*STRKEY*|Null string output (for non-json mode).||
-|obj|*[Options](#options-obj)*|Options for object.||
+|obj|*[Options](#MySql query-obj)*|Options for object.||
 |paramVar|*ARRAY*|Array var to use for parameters.||
 |prefetch|*BOOL*|Let client library cache entire results.||
 |separator|*STRKEY*|Separator string (for csv and text mode).||
@@ -505,7 +494,7 @@ Commands for accessing mysql databases.
 |typeCheck|*STRKEY*|Type check mode (error). (one of: **convert**, **error**, **warn**, **disable**)||
 |values|*ARRAY*|Values for ? bind parameters.||
 |width|*CUSTOM*|In column mode, set column widths.||
-### Options "obj"
+### MySql query obj
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |name|*STRKEY*|Name of object var data source for %s.||
@@ -523,8 +512,6 @@ Commands for accessing mysql databases.
 
 Commands for accessing number objects.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Number|(num:string=0):number |Number constructor.|
@@ -544,8 +531,6 @@ Commands for accessing number objects.
 
 Commands for accessing Objects.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |Object|(val:object&#124;function&#124;null=void):object |Object constructor.|
@@ -572,8 +557,6 @@ Commands for accessing Objects.
 
 Commands for managing reqular expression objects.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |RegExp|(val:regexp&#124;string, flags:string):regexp |Create a regexp object.|
@@ -587,8 +570,6 @@ Commands for managing reqular expression objects.
 
 Commands for handling unix signals.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |alarm|(secs):number |Setup alarm in seconds.|
@@ -606,19 +587,17 @@ Commands for handling unix signals.
 
 Commands for managing Socket server/client connections.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|Socket|([options](#options-newsocket):object=void):userobj |Create socket server/client object.Create a socket server or client object.|
+|Socket|([options](#socket-new):object=void):userobj |Create socket server/client object.Create a socket server or client object.|
 |close|():void |Close socket(s).|
-|conf|([options](#options-socketconf):string&#124;object=void) |Configure options.|
-|idconf|([options](#options-socketidconf):string&#124;object=void) |Configure options for a connection id, or return list of ids.|
+|conf|([options](#socket-new):string&#124;object=void) |Configure options.|
+|idconf|([options](#socket-idconf):string&#124;object=void) |Configure options for a connection id, or return list of ids.|
 |names|():array |Return list of active ids on server.|
 |recv|(id:number=void):string |Recieve data.|
-|send|([options](#options-socketsend):object=void):void |Send a socket message to id. Send a message to a (or all if -1) connection.|
+|send|([options](#socket-send):object=void):void |Send a socket message to id. Send a message to a (or all if -1) connection.|
 |update|():void |Service events for just this socket.|
-### Options "new"
+### Socket new
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |address|*STRING*|Client destination address (127.0.0.0).|initOnly|
@@ -649,13 +628,13 @@ Commands for managing Socket server/client connections.
 |srcAddress|*STRING*|Client source address.|initOnly|
 |srcPort|*INT*|Client source port.|initOnly|
 |startTime|*TIME_T*|Time of start.|readOnly|
-|stats|*[Options](#options-stats)*|Statistical data.|readOnly|
+|stats|*[Options](#Socket-stats)*|Statistical data.|readOnly|
 |timeout|*NUMBER*|Timeout value in seconds (0.5).|initOnly|
 |tos|*INT8*|Type-Of-Service value.|initOnly|
 |ttl|*INT*|Time-To-Live value.|initOnly|
 |udata|*OBJ*|User data.||
 |udp|*BOOL*|Protocol is udp.|initOnly|
-### Options "stats"
+### Socket stats
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |echo|*BOOL*|LogInfo outputs all socket Send/Recv messages.||
@@ -669,7 +648,7 @@ Commands for managing Socket server/client connections.
 |sentErrCnt|*INT*|Number of sends.||
 |sentErrLast|*TIME_T*|Time of last sendErr.||
 |udata|*OBJ*|User data.||
-### Options "Socket.idconf"
+### Socket idconf
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |echo|*BOOL*|LogInfo outputs all socket Send/Recv messages.||
@@ -683,7 +662,7 @@ Commands for managing Socket server/client connections.
 |sentErrCnt|*INT*|Number of sends.||
 |sentErrLast|*TIME_T*|Time of last sendErr.||
 |udata|*OBJ*|User data.||
-### Options "Socket.send"
+### Socket send
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |noAsync|*BOOL*|Send is not async.||
@@ -695,26 +674,24 @@ Commands for managing Socket server/client connections.
 
 Commands for accessing sqlite databases.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|Sqlite|([options](#options-newsqlite):object=void):userobj |Create a new db connection to the named file or :memory:.|
+|Sqlite|([options](#sqlite-new):object=void):userobj |Create a new db connection to the named file or :memory:.|
 |backup|(file:string, dbname:string='main'):void |Backup db to file. Open or create a database file named FILENAME. Transfer the content of local database DATABASE (default: 'main') into the FILENAME database.|
 |collate|(name:string, callback:function):void |Create new SQL collation command.|
 |complete|(sql:string):boolean |Return true if sql is complete.|
-|conf|([options](#options-sqliteconf):string&#124;object=void) |Configure options.|
+|conf|([options](#sqlite-new):string&#124;object=void) |Configure options.|
 |eval|(sql:string):number |Run sql commands without input/output. Supports multiple semicolon seperated commands. Variable binding is NOT performed, results are discarded, and  returns sqlite3_changes()|
 |exists|(sql:string):boolean |Execute sql, and return true if there is at least one result value.|
 |filename|(name:string='main'):string |Return filename for named or all attached databases.|
 |func|(name:string, callback:function, numArgs:number=void):void |Register a new function with database.|
-|import|([options](#options-sqliteimport):object=void):number |Import data from file into table . Import data from a file into table. SqlOptions include the 'separator' to use, which defaults to commas for csv, or tabs otherwise. If a column contains a null string, or the value of 'nullvalue', a null is inserted for the column. A 'conflict' is one of the sqlite conflict algorithms:    rollback, abort, fail, ignore, replace On success, return the number of lines processed, not necessarily same as 'changeCnt' due to the conflict algorithm selected. |
+|import|([options](#sqlite-import):object=void):number |Import data from file into table . Import data from a file into table. SqlOptions include the 'separator' to use, which defaults to commas for csv, or tabs otherwise. If a column contains a null string, or the value of 'nullvalue', a null is inserted for the column. A 'conflict' is one of the sqlite conflict algorithms:    rollback, abort, fail, ignore, replace On success, return the number of lines processed, not necessarily same as 'changeCnt' due to the conflict algorithm selected. |
 |interrupt|():void |Interrupt in progress statement.|
 |onecolumn|(sql:string) |Execute sql, and return a single value.|
-|query|([options](#options-sqlitequery):function&#124;string&#124;array&#124;object=void) |Evaluate an sql query with bindings. Return values in formatted as JSON, HTML, etc. , optionally calling function with a result object|
+|query|([options](#sqlite-query):function&#124;string&#124;array&#124;object=void) |Evaluate an sql query with bindings. Return values in formatted as JSON, HTML, etc. , optionally calling function with a result object|
 |restore|(file:string, dbname:string):void |Restore db from file (default db is 'main').    db.restore(FILENAME, ?,DATABASE? )  Open a database file named FILENAME.  Transfer the content of FILENAME into the local database DATABASE (default: 'main').|
 |transaction|(callback:function, type:string=void):void |Call function inside db tranasaction. Type is: 'deferred', 'exclusive', 'immediate'. Start a new transaction (if we are not already in the midst of a transaction) and execute the JS function FUNC. After FUNC completes, either commit the transaction or roll it back if FUNC throws an exception. Or if no new transation was started, do nothing. pass the exception on up the stack.|
-### Options "new"
+### Sqlite new
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |bindWarn|*BOOL*|Treat failed variable binds as a warning.|initOnly|
@@ -744,7 +721,7 @@ Commands for accessing sqlite databases.
 |onUpdate|*FUNC*|Function to call for update. @`function(db:userobj, op:string, dbname:string, table:string, rowid:number)`||
 |onWalHook|*FUNC*|Function to call for WAL. @`function(db:userobj, dbname:string, entry:number)`||
 |progressSteps|*UINT*|Number of steps between calling onProgress: 0 is disabled.||
-|queryOpts|*[Options](#options-queryOpts)*|Default options for to use with query().||
+|queryOpts|*[Options](#Sqlite-queryOpts)*|Default options for to use with query().||
 |readonly|*BOOL*|Database opened in readonly mode.|initOnly|
 |sortCnt|*INT*|Number of sorts in most recent operation.|readOnly|
 |stepCnt|*INT*|Number of steps in most recent operation.|readOnly|
@@ -755,7 +732,7 @@ Commands for accessing sqlite databases.
 |version|*OBJ*|Sqlite version info.|readOnly|
 |timeout|*INT*|Amount of time to wait when file is locked, in ms.||
 |vfs|*STRING*|VFS to use.|initOnly|
-### Options "queryOpts"
+### Sqlite queryOpts
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function to call with each row result. @`function(values:object)`||
@@ -767,14 +744,24 @@ Commands for accessing sqlite databases.
 |mode|*STRKEY*|Set output mode of returned data. (one of: **rows**, **arrays**, **array1d**, **list**, **column**, **json**, **json2**, **html**, **csv**, **insert**, **line**, **tabs**, **none**)||
 |nocache|*BOOL*|Disable query cache.||
 |nullvalue|*STRKEY*|Null string output (for non js/json mode).||
-|obj|*[Options](#options-obj)*|Options for object.||
+|obj|*[Options](#Sqlite-obj)*|Options for object.||
 |retChanged|*BOOL*|Query returns value of sqlite3_changed().||
 |separator|*STRKEY*|Separator string (for csv and text mode).||
 |typeCheck|*STRKEY*|Type check mode (warn). (one of: **convert**, **warn**, **error**, **disable**)||
 |table|*STRKEY*|Table name for mode=insert.||
 |values|*ARRAY*|Values for ? bind parameters.||
 |width|*CUSTOM*|In column mode, set column widths.||
-### Options "Sqlite.import"
+### Sqlite obj
+|Option|Type|Description|Flags|
+|---|---|---|---|
+|name|*STRKEY*|Name of object var data source for %s.||
+|skip|*ARRAY*|Object members to ignore.||
+|getSql|*BOOL*|Return expanded SQL without evaluating.||
+|defaultNull|*BOOL*|Create with DEFAULT NULL.||
+|noChecks|*BOOL*|Create with no CHECK constraints.||
+|noDefaults|*BOOL*|Create with no defaults.||
+|noTypes|*BOOL*|Create with no types.||
+### Sqlite import
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |headers|*BOOL*|First row contains column labels.||
@@ -783,7 +770,7 @@ Commands for accessing sqlite databases.
 |limit|*INT*|Maximum number of lines to load.||
 |nullvalue|*STRKEY*|Null string.||
 |separator|*STRKEY*|Separator string; default is comma if csv, else tabs.||
-### Options "Sqlite.query"
+### Sqlite query
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function to call with each row result. @`function(values:object)`||
@@ -795,13 +782,23 @@ Commands for accessing sqlite databases.
 |mode|*STRKEY*|Set output mode of returned data. (one of: **rows**, **arrays**, **array1d**, **list**, **column**, **json**, **json2**, **html**, **csv**, **insert**, **line**, **tabs**, **none**)||
 |nocache|*BOOL*|Disable query cache.||
 |nullvalue|*STRKEY*|Null string output (for non js/json mode).||
-|obj|*[Options](#options-obj)*|Options for object.||
+|obj|*[Options](#Sqlite query-obj)*|Options for object.||
 |retChanged|*BOOL*|Query returns value of sqlite3_changed().||
 |separator|*STRKEY*|Separator string (for csv and text mode).||
 |typeCheck|*STRKEY*|Type check mode (warn). (one of: **convert**, **warn**, **error**, **disable**)||
 |table|*STRKEY*|Table name for mode=insert.||
 |values|*ARRAY*|Values for ? bind parameters.||
 |width|*CUSTOM*|In column mode, set column widths.||
+### Sqlite query obj
+|Option|Type|Description|Flags|
+|---|---|---|---|
+|name|*STRKEY*|Name of object var data source for %s.||
+|skip|*ARRAY*|Object members to ignore.||
+|getSql|*BOOL*|Return expanded SQL without evaluating.||
+|defaultNull|*BOOL*|Create with DEFAULT NULL.||
+|noChecks|*BOOL*|Create with no CHECK constraints.||
+|noDefaults|*BOOL*|Create with no defaults.||
+|noTypes|*BOOL*|Create with no types.||
 
 
 ## String
@@ -810,8 +807,6 @@ Commands for accessing sqlite databases.
 
 Commands for accessing string objects..
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |String|(str):string |String constructor.|
@@ -846,8 +841,6 @@ Commands for accessing string objects..
 
 Builtin system commands. All methods are exported as global.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |LogDebug|(str:string&#124;boolean,...):void |Debug logging command.|
@@ -856,14 +849,14 @@ Builtin system commands. All methods are exported as global.
 |LogTest|(str:string&#124;boolean,...):void |Debug logging command.|
 |LogTrace|(str:string&#124;boolean,...):void |Debug logging command.|
 |LogWarn|(str:string&#124;boolean,...):void |Debug logging command.|
-|assert|([options](#options-systemassert):object=void):void |Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.|
+|assert|([options](#system-assert):object=void):void |Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.|
 |clearInterval|(id:number):void |Delete event id returned from setInterval/setTimeout/info.events().|
 |decodeURI|(val:string):string |Decode an HTTP URL.|
 |encodeURI|(val:string):string |Encode an HTTP URL.|
-|exec|([options](#options-systemexec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
+|exec|([options](#system-exec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
 |exit|(code:number=0):void |Exit the current interpreter.|
 |format|(format:string, ...):string |Printf style formatting: adds %q and %S.|
-|import|([options](#options-systemimport):object=void) |Same as source with {import:true}.|
+|import|([options](#system-import):object=void) |Same as source with {import:true}.|
 |isFinite|(val):boolean |Return true if is a finite number.|
 |isMain|():boolean |Return true if current script was the main script invoked from command-line.|
 |isNaN|(val):boolean |Return true if not a number.|
@@ -877,26 +870,26 @@ Builtin system commands. All methods are exported as global.
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
 |parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
-|provide|([options](#options-systemprovide):object=void):void |Provide a package for use with require.. Default is the file tail-rootname|
+|provide|([options](#system-provide):object=void):void |Provide a package for use with require.. Default is the file tail-rootname|
 |puts|(val:any, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
 |quote|(val:string):string |Return quoted string.|
-|require|([options](#options-systemrequire):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|
+|require|([options](#system-require):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|
 |runModule|(cmd:string&#124;null&#124;function=void, conf:array=undefined) |Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.|
 |setInterval|(callback:function, ms:number):number |Setup recurring function to run every given millisecs.|
 |setTimeout|(callback:function, ms:number):number |Setup function to run after given millisecs.|
 |sleep|(secs:number=1.0):void |sleep for N milliseconds, minimum .001.|
-|source|([options](#options-systemsource):object=void) |Load and evaluate source files: trailing '/' appends PARENTDIR.jsi.|
-|strftime|([options](#options-systemstrftime):string&#124;object=void):string |Format numeric time (in ms) to a string. Null or no value will use current time.|
-|strptime|([options](#options-systemstrptime):string&#124;object=void):number |Parse time from string and return ms time since 1970-01-01 in UTC, or NaN.|
+|source|([options](#system-source):object=void) |Load and evaluate source files: trailing '/' appends PARENTDIR.jsi.|
+|strftime|([options](#system-strftime):string&#124;object=void):string |Format numeric time (in ms) to a string. Null or no value will use current time.|
+|strptime|([options](#system-strptime):string&#124;object=void):number |Parse time from string and return ms time since 1970-01-01 in UTC, or NaN.|
 |times|(callback:function&#124;boolean, count:number=1):number |Call function count times and return execution time in microseconds.|
 |unload|(shlib:string):void |Unload a shared executable and invoke its _Done call.|
-|update|([options](#options-systemupdate):number&#124;object=void):number |Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1. The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.|
-### Options "System.assert"
+|update|([options](#system-update):number&#124;object=void):number |Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1. The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.|
+### System assert
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
-### Options "System.exec"
+### System exec
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |bg|*BOOL*|Run command in background using system() and return OS code.||
@@ -908,7 +901,7 @@ Builtin system commands. All methods are exported as global.
 |trim|*BOOL*|Trim trailing whitespace from output.||
 |retAll|*BOOL*|Return the OS return code and data as an object.||
 |retCode|*BOOL*|Return only the OS return code.||
-### Options "System.import"
+### System import
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |autoIndex|*BOOL*|Look for and load Jsi_Auto.jsi auto-index file.||
@@ -921,7 +914,7 @@ Builtin system commands. All methods are exported as global.
 |noError|*BOOL*|Ignore errors in sourced file.||
 |once|*BOOL*|Source file only if not already sourced (Default: Interp.debugOpts.includeOnce).||
 |trace|*BOOL*|Trace include statements (Default: Interp.debugOpts.includeTrace).||
-### Options "System.provide"
+### System provide
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |log|*ARRAY*|Logging flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
@@ -932,7 +925,7 @@ Builtin system commands. All methods are exported as global.
 |profile|*BOOL*|On exit generate profile of function calls.||
 |traceCall|*ARRAY*|Trace commands. (zero or more of: **funcs**, **cmds**, **new**, **return**, **args**, **notrunc**, **noparent**, **full**, **before**)||
 |udata|*OBJ*|User data settable by require.||
-### Options "System.require"
+### System require
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |log|*ARRAY*|Logging flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
@@ -943,7 +936,7 @@ Builtin system commands. All methods are exported as global.
 |profile|*BOOL*|On exit generate profile of function calls.||
 |traceCall|*ARRAY*|Trace commands. (zero or more of: **funcs**, **cmds**, **new**, **return**, **args**, **notrunc**, **noparent**, **full**, **before**)||
 |udata|*OBJ*|User data settable by require.||
-### Options "System.source"
+### System source
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |autoIndex|*BOOL*|Look for and load Jsi_Auto.jsi auto-index file.||
@@ -956,21 +949,21 @@ Builtin system commands. All methods are exported as global.
 |noError|*BOOL*|Ignore errors in sourced file.||
 |once|*BOOL*|Source file only if not already sourced (Default: Interp.debugOpts.includeOnce).||
 |trace|*BOOL*|Trace include statements (Default: Interp.debugOpts.includeTrace).||
-### Options "System.strftime"
+### System strftime
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |secs|*BOOL*|Time is seconds (out for parse, in for format).||
 |fmt|*STRKEY*|Format string for time.||
 |iso|*BOOL*|ISO fmt plus milliseconds ie: %FT%T.%f.||
 |utc|*BOOL*|Time is utc (in for parse, out for format).||
-### Options "System.strptime"
+### System strptime
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |secs|*BOOL*|Time is seconds (out for parse, in for format).||
 |fmt|*STRKEY*|Format string for time.||
 |iso|*BOOL*|ISO fmt plus milliseconds ie: %FT%T.%f.||
 |utc|*BOOL*|Time is utc (in for parse, out for format).||
-### Options "System.update"
+### System update
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |maxEvents|*INT*|Maximum number of events to process (or -1 for all).||
@@ -985,8 +978,6 @@ Builtin system commands. All methods are exported as global.
 
 Utilities commands.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |argArray|(arg:any&#124;undefined):array&#124;null |Coerces non-null to an array, if necessary.|
@@ -1003,13 +994,13 @@ Utilities commands.
 |getenv|(name:string=void):string&#124;object&#124;void |Get one or all environment.|
 |getpid|(parent:boolean=false):number |Get process/parent id.|
 |getuser|():object |Get userid info.|
-|hash|([options](#options-utilhash):object=void):string |Return hash (default SHA256) of string/file.|
+|hash|([options](#util-hash):object=void):string |Return hash (default SHA256) of string/file.|
 |hexStr|(val:string, decode:boolean=false):string |Hex encode/decode a string.|
 |setenv|(name:string, value:string=void) |Set/get an environment var.|
 |sqlValues|(name:string, obj:object=void) |Get object values for SQL.|
 |times|(callback:function&#124;boolean, count:number=1):number |Call function count times and return execution time in microseconds.|
 |verConvert|(ver:string&#124;number, zeroTrim:number=0):number&#124;string&#124;null |Convert a version to/from a string/number, or return null if not a version. For string output zeroTrim says how many trailing .0 to trim (0-2).|
-### Options "Util.hash"
+### Util hash
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |file|*STRING*|Read data from file and append to str.||
@@ -1024,19 +1015,17 @@ Utilities commands.
 
 Commands for creating in memory readonly Virtual file-systems.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|conf|([options](#options-vfsconf):string&#124;object&#124;string=void) |Configure mount.|
+|conf|([options](#vfs-conf):string&#124;object&#124;string=void) |Configure mount.|
 |exec|(cmd:string) |Safe mode exec for VFS support cmds eg. fossil info/ls/cat.|
-|fileconf|([options](#options-vfsfileconf):string&#124;object=void) |Configure file info which is same info as in fileList.|
+|fileconf|([options](#vfs-fileconf):string&#124;object=void) |Configure file info which is same info as in fileList.|
 |list|():array |Return list of all vfs mounts.|
 |mount|(type:string, file:string, param:object=void):string |Mount fossil file as given VFS type name, returning the mount point: frontend for vmount.|
-|type|([options](#options-vfstype):object&#124;null=void) |Set/get/delete VFS type name.|
+|type|([options](#vfs-type):object&#124;null=void) |Set/get/delete VFS type name.|
 |unmount|(mount:string):void |Unmount a VFS.|
-|vmount|([options](#options-vfsvmount):object=void):string |Create and mount a VFS, returning the mount point.|
-### Options "Vfs.conf"
+|vmount|([options](#vfs-vmount):object=void):string |Create and mount a VFS, returning the mount point.|
+### Vfs conf
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function implementing VFS. @`function(op:string, mount:string, arg:string|object|null)`||
@@ -1051,7 +1040,7 @@ Commands for creating in memory readonly Virtual file-systems.
 |type|*STRKEY*|Type for predefined VFS.||
 |user|*OBJ*|User data.||
 |version|*STRKEY*|Version to mount.||
-### Options "Vfs.exec"
+### Vfs exec
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |data|*STRING*|Data for file.||
@@ -1059,7 +1048,7 @@ Commands for creating in memory readonly Virtual file-systems.
 |perms|*UINT32*|Permissions for file.||
 |size|*SSIZE_T*|Size of file.||
 |timestamp|*TIME_T*|Timestamp of file.||
-### Options "Vfs.fileconf"
+### Vfs fileconf
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |data|*STRING*|Data for file.||
@@ -1067,13 +1056,13 @@ Commands for creating in memory readonly Virtual file-systems.
 |perms|*UINT32*|Permissions for file.||
 |size|*SSIZE_T*|Size of file.||
 |timestamp|*TIME_T*|Timestamp of file.||
-### Options "Vfs.type"
+### Vfs type
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function implementing VFS. @`function(op:string, mount:string, arg:string|object|null)`|required|
 |extra|*OBJ*|Extra info, typically used by predefined VFS type.||
 |noAddDirs|*BOOL*|Disable auto-adding of directories; needed by File.glob.||
-### Options "Vfs.vmount"
+### Vfs vmount
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |callback|*FUNC*|Function implementing VFS. @`function(op:string, mount:string, arg:string|object|null)`||
@@ -1096,16 +1085,14 @@ Commands for creating in memory readonly Virtual file-systems.
 
 Commands for managing WebSocket server/client connections.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|WebSocket|([options](#options-newwebsocket):object=void):userobj |Create websocket server/client object.Create a websocket server/client object.  The server serves out pages to a web browser, which can use javascript to upgrade connection to a bidirectional websocket.|
-|conf|([options](#options-websocketconf):string&#124;object=void) |Configure options.|
+|WebSocket|([options](#websocket-new):object=void):userobj |Create websocket server/client object.Create a websocket server/client object.  The server serves out pages to a web browser, which can use javascript to upgrade connection to a bidirectional websocket.|
+|conf|([options](#websocket-new):string&#124;object=void) |Configure options.|
 |file|(name:string=void):array&#124;void |Add file to hash, or with no args return file hash.|
 |handler|(extension:string=void, cmd:string&#124;function=void, flags:number=0):string&#124;array&#124;function&#124;void |Get/Set handler command for an extension. With no args, returns list of handlers.  With one arg, returns value for that handler. Otherwise, sets the handler. When cmd is a string, the call is via moduleRun([cmd], arg). If a cmd is a function, it is called with a single arg: the file name.|
 |header|(id:number, name:string=void):string&#124;array&#124;void |Get one or all input headers for connect id.|
-|idconf|([options](#options-websocketidconf):string&#124;object=void) |Configure options for connect id.|
+|idconf|([options](#websocket-idconf):string&#124;object=void) |Configure options for connect id.|
 |ids|(name:string=void):array |Return list of ids, or lookup one id.|
 |query|(id:number, name:string=void):string&#124;object&#124;void |Get one or all query values for connect id.|
 |send|(id:number, data:any):void |Send a websocket message to id. Send a message to one (or all connections if -1). If not already a string, msg is formatted as JSON prior to the send.|
@@ -1113,7 +1100,7 @@ Commands for managing WebSocket server/client connections.
 |unalias|(path:string):string&#124;void |Return alias reverse lookup.|
 |update|():void |Service events for just this websocket.|
 |version|():string |Runtime library version string.|
-### Options "new"
+### WebSocket new
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |address|*STRING*|In client-mode the address to connect to (127.0.0.1).||
@@ -1168,7 +1155,7 @@ Commands for managing WebSocket server/client connections.
 |ssl|*BOOL*|Use https.|initOnly|
 |sslCert|*STRKEY*|SSL certificate file.||
 |sslKey|*STRKEY*|SSL key file.||
-|stats|*[Options](#options-stats)*|Statistical data.|readOnly|
+|stats|*[Options](#WebSocket-stats)*|Statistical data.|readOnly|
 |startTime|*TIME_T*|Time of websocket start.|readOnly|
 |includeFile|*STRKEY*|Default file when no extension given (include.shtml).||
 |udata|*OBJ*|User data.||
@@ -1177,7 +1164,32 @@ Commands for managing WebSocket server/client connections.
 |urlUnknown|*STRKEY*|Redirect for unknown page or 404..||
 |useridPass|*STRKEY*|The USERID:PASSWORD to use for basic authentication.||
 |version|*OBJ*|WebSocket version info.|readOnly|
-### Options "WebSocket.idconf"
+### WebSocket stats
+|Option|Type|Description|Flags|
+|---|---|---|---|
+|connectCnt|*INT*|Number of active connections.|readOnly|
+|createTime|*TIME_T*|Time created.||
+|eventCnt|*INT*|Number of events of any type.||
+|eventLast|*TIME_T*|Time of last event of any type.||
+|httpCnt|*INT*|Number of http reqs.||
+|httpLast|*TIME_T*|Time of last http reqs.||
+|isBinary|*BOOL*|Connection recv data is binary.|readOnly|
+|isFinal|*BOOL*|Final data for current message was recieved.|readOnly|
+|msgQLen|*INT*|Number of messages in input queue.|readOnly|
+|recvCnt|*INT*|Number of recieves.|readOnly|
+|recvLast|*TIME_T*|Time of last recv.|readOnly|
+|redirLast|*TIME_T*|Time of last redirect.|readOnly|
+|redirCnt|*INT*|Count of redirects.|readOnly|
+|sentCnt|*INT*|Number of sends.|readOnly|
+|sentLast|*TIME_T*|Time of last send.|readOnly|
+|sentErrCnt|*INT*|Number of sends.|readOnly|
+|sentErrLast|*TIME_T*|Time of last sendErr.|readOnly|
+|sentErrLast|*TIME_T*|Time of last sendErr.|readOnly|
+|uploadCnt|*INT*|Number of uploads.|readOnly|
+|uploadEnd|*TIME_T*|Time of upload end.|readOnly|
+|uploadLast|*TIME_T*|Time of last upload input.|readOnly|
+|uploadStart|*TIME_T*|Time of upload start.|readOnly|
+### WebSocket idconf
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |clientIP|*STRKEY*|Client IP Address.|readOnly|
@@ -1192,13 +1204,13 @@ Commands for managing WebSocket server/client connections.
 |onRecv|*FUNC*|Function to call when websock data recieved. @`function(ws:userobj, id:number, data:string)`||
 |onUpload|*FUNC*|Function to call handle http-post. @`function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)`||
 |rootdir|*STRING*|Directory to serve html from (".").||
-|stats|*[Options](#options-stats)*|Statistics for connection.|readOnly|
+|stats|*[Options](#WebSocket idconf-stats)*|Statistics for connection.|readOnly|
 |query|*ARRAY*|Uri arg values for connection.||
 |queryObj|*OBJ*|Uri arg values for connection as an object.||
 |udata|*OBJ*|User data.||
 |url|*DSTRING*|Url for connection.||
 |username|*STRING*|The login userid for this connection.||
-### Options "stats"
+### WebSocket idconf stats
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |connectCnt|*INT*|Number of active connections.|readOnly|
@@ -1231,8 +1243,6 @@ Commands for managing WebSocket server/client connections.
 
 Commands for mounting and accessing .zip files as a filesystem.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
 |append|(archive:string, filelist:array, path:string&#124;null=void, filelist2:array=void, path2:string&#124;null=void, ...):void |Like 'create()', but appends to an existing archive (with no dup checking).|
@@ -1254,11 +1264,9 @@ Commands for mounting and accessing .zip files as a filesystem.
 
 Console input and output to stderr.
 
-
-### Methods
 |Method|Function Argument Types|Description|
 |---|---|---|
-|assert|([options](#options-consoleassert):object=void):void |Same as System.assert().|
+|assert|([options](#console-assert):object=void):void |Same as System.assert().|
 |error|(val, ...):void |Same as log but adding prefix ERROR:.|
 |input|(prompt:null&#124;string=''):string&#124;void |Read input from the console: if prompt uses linenoise line editing.|
 |log|(val, ...):void |Like System.puts, but goes to stderr and includes file:line..|
@@ -1266,9 +1274,8 @@ Console input and output to stderr.
 |printf|(format:string, ...):void |Same as System.printf but goes to stderr.|
 |puts|(val:any, ...):void |Same as System.puts, but goes to stderr.|
 |warn|(val, ...):void |Same as log.|
-### Options "console.assert"
+### console assert
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
-

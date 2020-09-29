@@ -796,7 +796,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
     }
     if (!Jsi_Strcmp(ai1, "-version"))
         ai1 = "-v";
-    if (ai1[0] == '-') {
+    if (ai1[0] == '-' && ai1[1] && !ai1[2]) {
         switch (ai1[1]) {
             case 'a':
                 rc = Jsi_EvalString(interp, "moduleRun('Archive');", JSI_EVAL_ISMAIN);
@@ -1270,6 +1270,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
                             Jsi_ValueMakeStringKey(interp, &argValue, argVal);
                         }
                         if (JSI_OK != Jsi_OptionsSet(interp, InterpOptions, interp, argNam, argValue, 0)) {
+                            Jsi_ValueReset(interp, &argValue);
                             Jsi_InterpDelete(interp);
                             return NULL;
                         }

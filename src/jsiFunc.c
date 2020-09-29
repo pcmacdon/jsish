@@ -349,9 +349,9 @@ Jsi_RC jsi_RunFuncCallCheck(Jsi_Interp *interp, Jsi_Func *func, int argc, const 
         varargs = ss->varargs;
         minArgs = (ss->firstDef>0 ? ss->firstDef-1 : ss->count);
         maxArgs = ss->count;
-        mis = (argc != ss->count);
+        /*mis = (argc != ss->count);
         if (func->retType == 0 && ss && ss->typeCnt == 0)
-            return JSI_OK;
+            return JSI_OK;*/
     }
     if (varargs) {
         if (argc >= minArgs)
@@ -421,7 +421,7 @@ int jsi_BuiltinCmd(Jsi_Interp *interp, const char *name)
 void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, const char *name, const char *namePre, Jsi_OpCodes *argCodes)
 {
     Jsi_Interp *interp = p->interp;
-    if (interp->noCheck || name == NULL || !interp->typeCheck.funcdecl)
+    if (interp->noCheck || name == NULL || (!interp->typeCheck.funcdecl && interp->inParse))
         return;
     if (name && isdigit(name[0]))
         return;
@@ -555,23 +555,21 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
                  //   pstate->err_count++;
             }
              
-            if (interp->typeCheck.funcdecl) {
-                Jsi_Func *fo = (Jsi_Func*)Jsi_HashGet(interp->staticFuncsTbl, (void*)name, 0);
-                
-                // Forward declaration signature compare (indicated by an empty body).
-                if (interp->typeCheck.funcdecl && fo && fo->opcodes && fo->opcodes->code_len == 1 && fo->opcodes->codes->op == OP_NOP) {
-                    if (!jsi_FuncSigsMatch(pstate, f, fo)) {
-                        if (line)
-                            interp->parseLine = line;
-                        Jsi_LogWarn("possible signature mismatch for function '%s' at %.120s:%d", name, fo->filePtr->fileName, fo->bodyline.first_line);
-                        if (line)
-                            interp->parseLine = NULL;
-                        jsi_TypeMismatch(interp);
-                    }
-                    //printf("OLD: %s\n", name);
+            Jsi_Func *fo = (Jsi_Func*)Jsi_HashGet(interp->staticFuncsTbl, (void*)name, 0);
+            
+            // Forward declaration signature compare (indicated by an empty body).
+            if (interp->typeCheck.funcdecl && fo && fo->opcodes && fo->opcodes->code_len == 1 && fo->opcodes->codes->op == OP_NOP) {
+                if (!jsi_FuncSigsMatch(pstate, f, fo)) {
+                    if (line)
+                        interp->parseLine = line;
+                    Jsi_LogWarn("possible signature mismatch for function '%s' at %.120s:%d", name, fo->filePtr->fileName, fo->bodyline.first_line);
+                    if (line)
+                        interp->parseLine = NULL;
+                    jsi_TypeMismatch(interp);
                 }
-                Jsi_HashSet(interp->staticFuncsTbl, name, f);
+                //printf("OLD: %s\n", name);
             }
+            Jsi_HashSet(interp->staticFuncsTbl, name, f);
         }
     }
     return f;

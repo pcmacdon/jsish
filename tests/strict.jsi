@@ -208,9 +208,9 @@ foo() ==> e ==> function created global: "x"
 bar2() ==> e ==> function created global: "j"
 bar3() ==> e ==> function created global: "k"
 bar4() ==> e ==> function created global: "l"
-foo1(1) ==> undefined
-foo2() ==> undefined
-foo2(1,2) ==> undefined
+foo1(1) ==> e ==> got 1 args, expected 0, calling function foo1()
+foo2() ==> e ==> got 0 args, expected 1, calling function foo2(n)
+foo2(1,2) ==> e ==> got 2 args, expected 1, calling function foo2(n)
 foo3() ==> e ==> got 0 args, expected 1, calling function foo3(n:string)
 foo3(1) ==> e ==> type mismatch for argument arg 1 'n': expected "string" but got "number", in call to 'foo3' declared at strict.jsi:78.2 <1>.
 foo4(1) ==> e ==> type mismatch for argument arg 1 'n': expected "string" but got "number", in call to 'foo4' declared at strict.jsi:91.2 <1>.

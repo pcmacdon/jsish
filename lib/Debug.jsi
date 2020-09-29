@@ -78,7 +78,7 @@ function Debug(fileargs:array, conf:object=void):number {
                 rc = 'null';
             puts("RESULT= " + rc.toString());
         } catch(e) {
-            eputs("ERROR: "+e);
+            eputs("ERROR:", e);
         }
     }
     
@@ -251,7 +251,7 @@ function Debug(fileargs:array, conf:object=void):number {
             var b = self.interp.eval('Util.dbgAdd("'+bp+'", '+(temp?"true":"false")+')');
             puts((temp?"temporary ":"") +"breakpoint #"+b+" set: "+bp);
         } catch(e) {
-            puts("add failed: "+e);
+            puts("add failed:", e);
         }
     }
     
@@ -265,13 +265,13 @@ function Debug(fileargs:array, conf:object=void):number {
             return;
         }
         if (val === undefined || (num=parseIntN(val))<=0) {
-            eputs("bad index: "+val);
+            eputs("bad index:",val);
             return;
         }
         try {
             self.interp.eval('Util.dbgRemove('+num+')');
         } catch(e) {
-            eputs("remove failed: "+e);
+            eputs("remove failed:", e);
         }
     }
     
@@ -285,11 +285,11 @@ function Debug(fileargs:array, conf:object=void):number {
             return;
         }
         if (val === undefined || (num=parseIntN(val))<=0)
-            return eputs("bad index: "+val);
+            return eputs("bad index:", val);
         try {
             self.interp.eval('Util.dbgEnable('+num+','+on+')');
         } catch(e) {
-            eputs("enable failed: "+e);
+            eputs("enable failed:",e);
         }
     }
 
@@ -390,7 +390,7 @@ function Debug(fileargs:array, conf:object=void):number {
         else if (opstr.substr(0,3) === 'SIG')
             puts("Stopped by signal: "+opstr);
         else if (emsg && emsg !== '')
-            puts("MSG: "+emsg);
+            puts("MSG:",emsg);
         addFile(file);
         if (self.minLevel>0)
             self.interp.conf({debugOpts:{minLevel:0}});

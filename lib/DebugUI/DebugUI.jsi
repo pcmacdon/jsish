@@ -245,7 +245,7 @@ function DebugUI(fileargs:array, conf:object=void)
                 rc = 'null';
             wputs(val + " = " + JSON.stringify(rc));
         } catch(e) {
-            eputs("ERROR: "+e);
+            eputs("ERROR:",e);
         }
     }
     
@@ -265,7 +265,7 @@ function DebugUI(fileargs:array, conf:object=void)
             try {
                 rc = self.interp.uplevel(val, self.curlev);
             } catch(e) {
-                eputs("ERROR: "+e);
+                eputs("ERROR:", e);
                 err=true;
             }
         }
@@ -445,7 +445,7 @@ function DebugUI(fileargs:array, conf:object=void)
             wputs((temp?"temporary ":"") +"breakpoint #"+b+" set: "+bp);
             done = true;
         } catch(e) {
-            eputs("add failed: "+e);
+            eputs("add failed:",e);
         }
         if (done) {
             LogDebug("DONE BP");
@@ -463,13 +463,13 @@ function DebugUI(fileargs:array, conf:object=void)
             }
         } else {
             if (val === undefined || (num=parseIntN(val))<=0) {
-                eputs("bad index: "+val);
+                eputs("bad index: ", val);
                 return;
             }
             try {
                 self.interp.eval('Util.dbgRemove('+num+')');
             } catch(e) {
-                eputs("remove failed: "+e);
+                eputs("remove failed:",e);
             }
         }
         webBPUpdate();
@@ -488,7 +488,7 @@ function DebugUI(fileargs:array, conf:object=void)
             try {
                 self.interp.eval('Util.dbgEnable('+num+','+on+')');
             } catch(e) {
-                return eputs("enable failed: "+e);
+                return eputs("enable failed:", e);
             }
         }
         webBPUpdate();

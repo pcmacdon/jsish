@@ -245,13 +245,13 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
     if (specPtr->custom  && specPtr->id == JSI_OPTION_CUSTOM) {
         cust = Jsi_OptionCustomBuiltin(specPtr->custom);
         if (cust && cust->parseProc) {
-            int lastErrCnt = interp->logErrorCnt;
+            //int lastErrCnt = interp->logErrorCnt;
             Jsi_OptionSpec *oep = interp->parseMsgSpec;
             interp->parseMsgSpec = specPtr;
             Jsi_RC rc = (*cust->parseProc)(interp, specPtr, argValue, NULL, record, flags);
             if (rc != JSI_OK) {
-                if (!interp->csc || lastErrCnt == interp->logErrorCnt)
-                    Jsi_LogError("invalid value");
+                /*if (!interp->csc || lastErrCnt == interp->logErrorCnt)
+                    Jsi_LogError("invalid value");*/
                 interp->parseMsgSpec = oep;
                 return JSI_ERROR;
             }

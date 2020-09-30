@@ -6,6 +6,8 @@ Jsi is a **C**-extensible JS *-ish* interpreter
 providing compact and self contained server-side web scripting
 *(To get Jsi see [Readme](https://jsish.org/jsi))*.
 
+You might say, Jsi is self-serving software 8-)
+
 ## Basics
 
 Jsi implements most of *Ecma-script 5.1* (see [Compatibility](#compatibility) and [Reference](Reference.md))

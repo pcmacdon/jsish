@@ -68,7 +68,17 @@ function parseOptions(opts, dopt) {
 
 function makeMenu() {
     var mid = document.getElementById('sectmenu');
-    if (!mid) return;
+    if (!mid) {
+        var lpp = location.pathname, lee = lpp.substr(lpp.length-3);
+        if (lee != '.md')
+            return;
+        var mdid =  document.querySelector('.markdown');
+        if (!mdid) return;
+        var nid = document.createElement('div');
+        nid.id = 'sectmenu';
+        mdid.insertBefore(nid, mdid.childNodes[0]);
+        mid = nid;
+    }
     var ln = 'ol', err;
     var opts = {ul:false, closed:false},
         dopt = mid.getAttribute('data-opts');

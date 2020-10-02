@@ -354,7 +354,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUnknown,  .help="Function to call to server out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUpload,   .help="Function to call handle http-post", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onRecv,     .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
-    JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Path alias object: /jsi builtin", jsi_IIOF),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Alias document root  ({jsi:'/zvfs/lib/'}) ", jsi_IIOF),
     JSI_OPT(INT,    jsi_wsCmdObj, port,       .help="Port for server to listen on (8080)", jsi_IIOF),
     JSI_OPT(STRING, jsi_wsCmdObj, post,       .help="Post string to serve", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, protocol,   .help="Name of protocol (ws/wss)"),
@@ -577,10 +577,10 @@ static int jsi_wsServeDir(jsi_wsPss *pss, struct lws *wsi, Jsi_Value *fname, con
     Jsi_Interp *interp = cmdPtr->interp;
     bool jsauto = cmdPtr->dirIndex==ws_IndexAuto;
     const char *callback = NULL;
-    int n, i, cnt = 0;
+    int n, i, cnt = 0, nmax = 1;
     Jsi_RC rc = JSI_OK;
     struct dirent **namelist = NULL;
-    if (cmdPtr->dirIndex == ws_IndexDisabled || (n=Jsi_Scandir(interp, fname, &namelist, 0, 0)) < 0) {
+    if (cmdPtr->dirIndex == ws_IndexDisabled || (n=Jsi_Scandir(interp, fname, &namelist, 0, alphasort)) < 0) {
         if (cmdPtr->noWarn==0)
             fprintf(stderr, "can not serve directory: %s\n", fn);
         return jsi_wsServeString(pss, wsi, "<b style='color:red'>ERROR: can not serve directory!</b>", 404, NULL, NULL);
@@ -614,7 +614,11 @@ static int jsi_wsServeDir(jsi_wsPss *pss, struct lws *wsi, Jsi_Value *fname, con
             "<h1>Index of %s%s</h1><hr><pre>%s", fn, fns, fn, fns,
                 (isroot?"":"<a href=\"../\">../</a>\n"));
     }
-
+    
+    for (i=0; i<n; i++){
+        int nlen = Jsi_Strlen(namelist[i]->d_name);
+        if (nlen>nmax) nmax = nlen;
+    }
     for (i=0; i<n && rc == JSI_OK; i++)
     {
         int ftyp;
@@ -641,16 +645,20 @@ static int jsi_wsServeDir(jsi_wsPss *pss, struct lws *wsi, Jsi_Value *fname, con
         Jsi_DecrRefCount(interp, vpath);
         if (!sc) sz = stat.st_size;
         Jsi_DSSetLength(&tStr, 0);
-        Jsi_DatetimeFormat(interp, stat.st_mtime, "%a, %d %b %Y %T GMT", 1, &tStr);
+        Jsi_DatetimeFormat(interp, 1000LL*(Jsi_Number)stat.st_mtime, "%Y-%m-%d %H:%M:%S GMT", 1, &tStr);
         const char *t = (ftyp == DT_DIR ? "/" : "");
-        int lz = Jsi_Strlen(z), ln = 50-lz-(t[0]?1:0), ln2 = 30 ;
-//{ "name":"vids2.html", "type":"file", "mtime":"Fri, 12 Jun 2020 22:22:37 GMT", "size":206 }
+        int ln = nmax+5, ln1=21, ln2 = 12 ;
         if (json)
             Jsi_DSPrintf(&dStr, "%s\n{ \"name\":\"%s\", \"type\":\"%s\", \"mtime\":\"%s\", \"size\":%d }",
                 (cnt?",":""), z, (t[0]?"directory":"file"), Jsi_DSValue(&tStr), (uint)sz);
-        else
-            Jsi_DSPrintf(&dStr, "<a href=\"%s/%s%s\">%s%s</a>%*s %*u\n",
-                (isroot?"":fn), z, t, z, t, ln, Jsi_DSValue(&tStr), ln2, (uint)sz);
+        else {
+            Jsi_DString vStr;
+            Jsi_DSInit(&vStr);
+            Jsi_DSPrintf(&vStr, "%s%s</a>", z, t);
+            Jsi_DSPrintf(&dStr, "<a href=\"%s/%s%s\">%-*s%*s %*u\n",
+                (isroot?"":fn), z, t, ln,Jsi_DSValue(&vStr), ln1, Jsi_DSValue(&tStr), ln2, (uint)sz);
+            Jsi_DSFree(&vStr);
+        }
         cnt++;
     }
     if (jsonp)
@@ -1291,7 +1299,7 @@ static void jsi_wsPathAlias(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const char
         }
     }
     if (!Jsi_Strncmp(*inPtr, "/jsi/", 5)) {
-        // Get/cache path for system load file, eg /zvfs/lib/Jsish.jsi.
+        // Get/cache path for system load file, eg "/zvfs/lib"
         cp = jsi_wsGetJsiPath(interp, cmdPtr);
         if (cp) {
             Jsi_DSSetLength(dStr, 0);
@@ -1337,25 +1345,64 @@ static Jsi_RC WebSocketUnaliasCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         }
         Jsi_IterObjFree(io);
     }
-    const char *cp;
-    if (i>=cnt && !Jsi_Strcmp("zvfs", nstr) && ((cp = jsi_wsGetJsiPath(interp, cmdPtr))))
-        Jsi_ValueMakeStringDup(interp, ret, cp);
+    const char *cp, *lcp;
+    if (i>=cnt && !Jsi_Strcmp("zvfs", nstr) && ((cp = jsi_wsGetJsiPath(interp, cmdPtr)))) {
+        Jsi_DString dStr = {};
+        cp = Jsi_DSAppend(&dStr, cp, NULL);;
+        if ((lcp = Jsi_Strrchr(cp, '/'))) {
+            Jsi_DSSetLength(&dStr, lcp-cp);
+            Jsi_ValueFromDS(interp, &dStr, ret);
+        } else
+            Jsi_DSFree(&dStr);
+    }
     return JSI_OK;
 }
 
 static const char* jsi_ws_mtypes[] = {
-    "html", "text/html", "js", "application/x-javascript",
-    "css", "text/css", "png", "image/png", "ico", "image/icon",
-    "gif", "image/gif", "jpeg", "image/jpeg",
-    "jpg", "image/jpeg", "svg", "image/svg+xml",
-    "mpv", "video/x-matroska", "mkv", "video/x-matroska",
-    "mp4", "video/mp4", "mpeg", "video/mpeg", "webm", "video/webm",
-    "ogv", "video/ogg", "avi", "video/x-msvideo",
-    "json", "application/json", "txt", "text/plain",
-    "jsi", "application/x-javascript", "cssi", "text/css",
-    "shtml", "text/html",  "scss", "text/css", "vtt", "text/vtt",
-    "sjs", "application/x-javascript",
-    "vue", "application/x-javascript",
+    "html", "text/html",
+    "js",   "application/x-javascript",
+    "css",  "text/css",
+    
+    "aac",  "audio/aac",
+    "avi",  "video/x-msvideo",
+    "bz",   "application/x-bzip",
+    "bz2",  "application/x-bzip2",
+    "cssi", "text/css",
+    "csv",  "text/csv",
+    "doc",  "application/msword",
+    "gif",  "image/gif",
+    "gz",   "application/x-gzip",
+    "ico",  "image/vnd.microsoft.icon",
+    "jpeg", "image/jpeg",
+    "jpg",  "image/jpeg",
+    "jsi",  "application/x-javascript",
+    "json", "application/json",
+    "mid",  "audio/midi",
+    "mkv",  "video/x-matroska",
+    "mp3",  "audio/mpeg",
+    "mp4",  "video/mp4",
+    "mpeg", "video/mpeg",
+    "mpv",  "video/x-matroska",
+    "odp",  "application/vnd.oasis.opendocument.presentation",
+    "ods",  "application/vnd.oasis.opendocument.spreadsheet",
+    "oga",  "audio/ogg",
+    "ogv",  "video/ogg",
+    "pdf",  "application/pdf",
+    "png",  "image/png",
+    "ppt",  "application/vnd.ms-powerpoint",
+    "scss", "text/css",
+    "shtml","text/html",
+    "sjs",  "application/x-javascript",
+    "svg",  "image/svg+xml",
+    "txt",  "text/plain",
+    "vtt",  "text/vtt",
+    "vue",  "application/x-javascript",
+    "wav",  "audio/wav",
+    "weba", "audio/webm",
+    "webm", "video/webm",
+    "xls",  "application/vnd.ms-excel",
+    "xml",  "text/xml",
+    "zip",  "application/zip",
     0, 0
 };
 
@@ -1555,9 +1602,9 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
         Jsi_HashEntry *hPtr;
 
         if (!cmdPtr->mimeTypes) {
-            int i;
+            int i; char lee = tolower(*eext);
             for (i=0; jsi_ws_mtypes[i]; i+=2)
-                if (tolower(*eext) == jsi_ws_mtypes[i][0] && !Jsi_Strncasecmp(eext, jsi_ws_mtypes[i], -1)) {
+                if (lee == jsi_ws_mtypes[i][0] && !Jsi_Strncasecmp(eext, jsi_ws_mtypes[i], -1)) {
                     mime = jsi_ws_mtypes[i+1];
                     break;
                 }

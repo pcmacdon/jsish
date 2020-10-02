@@ -17,6 +17,7 @@ function Websrv(args:string|array, conf:object=void)
     };
     var options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
+        app         :'',        // An application directory, archive or zip.
         browser     :'',        // The browser to exec, eg. "chrome-browser"
         closeTimeout:0,         // Time til exit after close of final client websocket (ms).
         confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
@@ -384,7 +385,7 @@ function Websrv(args:string|array, conf:object=void)
     }
     
     function main() {
-        var urlarg, urlOrig = self.url;
+        var pal=null, urlarg, urlOrig = self.url;
         if (typeof args === 'string')
             args = [args];
         if (self.vueConvert) {
@@ -411,11 +412,17 @@ function Websrv(args:string|array, conf:object=void)
             }
             self.url = urlarg;
         }
-        if (self.docs) {
-            if (self.rootdir || self.zip)
-                throw('can not use both rootdir/zip with docs');
+        if (self.app) {
+            pal = {app:self.app};
+            self.url = self.app+'/index.html';
             self.rootdir = '/zvfs/lib/web';
-            self.url = 'Docs/Docs.html';
+            if (self.timeout != options.timeout)
+                self.timeout = 0;
+        } if (self.docs) {
+            if (self.rootdir || self.zip)
+                throw('can not use rootdir/zip with docs');
+            self.rootdir = '/zvfs/lib/web';
+            self.url = 'docs/index.html';
             if (self.timeout != options.timeout)
                 self.timeout = 0;
                 
@@ -447,6 +454,7 @@ function Websrv(args:string|array, conf:object=void)
             self.rootdir = '.';
         // Provide default values for websocket.
         var wo = self.wsopts = {
+            pathAlias:pal,
             local:self.local,
             debug:self.wsdebug,
             extHandlers:true,
@@ -479,7 +487,7 @@ function Websrv(args:string|array, conf:object=void)
         }
         if (urlOrig!=='' && self.timeout === 60000)
             self.timeout = 0;
-        if (!self.server && !self.pageStr && self.mode === '' && urlOrig=='' && (!self.url || !File.isfile(self.rootdir+'/'+self.url)))
+        if (!self.docs && !self.server && !self.pageStr && self.mode === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
             throw("url file empty or not found: "+self.url);
         if (self.urlPrefix.length && self.urlPrefix[0] != '/')
             throw('urlPrefix must start with a slash');
@@ -512,8 +520,8 @@ function Websrv(args:string|array, conf:object=void)
             wo[i] = self.wsOpts[i];
 
         OpenWebsock();
-        if (!self.ws.conf('extHandlers'))
-            self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
+       // if (!self.ws.conf('extHandlers'))
+        //    self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
         LogTrace("Listening on port:",self.port);
         
         if (!self.noGui && self.url && self.url.length) {

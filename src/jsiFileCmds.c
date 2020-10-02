@@ -959,7 +959,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
     if (dcp) {
         Jsi_ValueMakeString(interp, &rpPath, dcp);
     }*/
-    if ((n=Jsi_Scandir(interp, rpPath, &namelist, 0, 0)) < 0) {
+    if ((n=Jsi_Scandir(interp, rpPath, &namelist, 0, alphasort)) < 0) {
         if (opts->recurse && deep) return JSI_OK;
         Jsi_LogError("bad directory");
         Jsi_DecrRefCount(interp, rpPath);

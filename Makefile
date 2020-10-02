@@ -369,7 +369,7 @@ $(LWSLIB): $(MAKECONF)
 	$(MAKE) -C lws CFLAGS="$(CFLAGS)" CC=$(CC) AR=$(AR) WIN=$(WIN) TARGET=$(TARGET) LWS_MINIZ=$(JSI__MINIZ) LWS_VER=$(LWS_VER) LWS_SSL=$(WITH_SSL) LWS_LIBNAME=$(LWS_LIBNAME)
 
 $(SQLITELIB): sqlite/Makefile  $(MAKECONF)
-	$(MAKE) -C sqlite CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET) SQLITE_VER=$(SQLITE_VER) SQLITE_LIBNAME=$(SQLITE_LIBNAME)
+	$(MAKE) -C sqlite CFLAGS="$(CFLAGS)" CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET) SQLITE_VER=$(SQLITE_VER) SQLITE_LIBNAME=$(SQLITE_LIBNAME)
 
 openssllib: openssl/$(TARGET)/libcypto.a
 
@@ -521,10 +521,10 @@ install_unsupported: all
 remake: clean all
 
 clean:
-	rm -rf src/*.o *.a jsish $(MINIZDIR)/*.o win/*.o regex/*.o
-	$(MAKE) -C sqlite clean
-	$(MAKE) -C lws clean
+	$(MAKE) -C sqlite clean SQLITE_LIBNAME=$(SQLITE_LIBNAME)
+	$(MAKE) -C lws clean LWS_LIBNAME=$(LWS_LIBNAME)
 	$(MAKE) -C c-demos clean
+	rm -rf src/*.o *.a jsish $(MINIZDIR)/*.o win/*.o regex/*.o
 
 cleanall: clean
 	rm -f $(ACFILES) $(PROGBINA) core src/parser.c src/parser.h src/parser.tab.c jsimin jsish *.so $(PROGBINMIN)
@@ -538,7 +538,7 @@ JSICURVER=$(shell fgrep 'define JSI_VERSION_M' src/jsi.h | cut -b29- | xargs | s
 jsidone:
 	@echo ""
 	@echo "MAKE IS DONE!!!"
-	@echo "To build from Configs/ try  'touch Makefile' then 'make CONF=X' where X is one of:"
+	@echo "To build from Configs/ try 'make clean all CONF=X' where X is one of:"
 	@echo "    $(JSICONFS)."
 
 jsiminreq:

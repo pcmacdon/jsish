@@ -202,6 +202,8 @@ Jsi_RC jsi_ArgTypeCheck(Jsi_Interp *interp, int typ,  Jsi_Value *arg, const char
     Jsi_RC rc = JSI_OK;
     char idxBuf[JSI_MAX_NUMBER_STRING*2];
     idxBuf[0] = 0;
+    if (func && func->cmdSpec && func->cmdSpec->maxArgs==-1 && index>=func->cmdSpec->minArgs)
+        return JSI_OK;
     if (func && arg->vt == JSI_VT_UNDEF && !interp->typeCheck.noundef && index>0 && !isdefault && !(typ&(JSI_TT_UNDEFINED|JSI_TT_ANY))) {
         snprintf(idxBuf, sizeof(idxBuf), " arg %d", index);
         jsi_TypeMismatch(interp);

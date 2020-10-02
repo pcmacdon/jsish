@@ -1097,7 +1097,7 @@ Commands for managing WebSocket server/client connections.
 |query|(id:number, name:string=void):string&#124;object&#124;void |Get one or all query values for connect id.|
 |send|(id:number, data:any):void |Send a websocket message to id. Send a message to one (or all connections if -1). If not already a string, msg is formatted as JSON prior to the send.|
 |status|():object&#124;void |Return liblws server status.|
-|unalias|(path:string):string&#124;void |Return alias reverse lookup.|
+|unalias|(path:string):string&#124;void |Lookup name-key with the given path in pathAlias object.|
 |update|():void |Service events for just this websocket.|
 |version|():string |Runtime library version string.|
 ### WebSocket new
@@ -1109,6 +1109,7 @@ Commands for managing WebSocket server/client connections.
 |clientHost|*STRKEY*|Override host name for client.||
 |clientOrigin|*STRKEY*|Override client origin (origin).||
 |debug|*INT*|Set debug level. Setting this to 512 will turn on max liblws log levels.||
+|dirIndex|*STRKEY*|Enable listing directories. (one of: **auto**, **html**, **json**, **jsonp**, **disabled**)||
 |echo|*BOOL*|LogInfo outputs all websock Send/Recv messages.||
 |formParams|*STRKEY*|Comma seperated list of upload form param names ('text,send,file,upload').|readOnly|
 |extHandlers|*BOOL*|Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi.|initOnly|
@@ -1141,7 +1142,7 @@ Commands for managing WebSocket server/client connections.
 |onUnknown|*FUNC*|Function to call to server out content when no file exists. @`function(ws:userobj, id:number, url:string, query:array)`||
 |onUpload|*FUNC*|Function to call handle http-post. @`function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)`||
 |onRecv|*FUNC*|Function to call when websock data recieved. @`function(ws:userobj, id:number, data:string)`||
-|pathAliases|*OBJ*|Path alias lookups.|initOnly|
+|pathAliases|*OBJ*|Path alias object: /jsi builtin.|initOnly|
 |port|*INT*|Port for server to listen on (8080).|initOnly|
 |post|*STRING*|Post string to serve.|initOnly|
 |protocol|*STRKEY*|Name of protocol (ws/wss).||

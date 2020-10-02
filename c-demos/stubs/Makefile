@@ -12,5 +12,5 @@ demo:
 test:
 	$(TOP)/jsish teststubs.jsi
 clean:
-	rm *.so *.o
+	rm -f *.so *.o
 

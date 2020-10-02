@@ -747,7 +747,7 @@ Building SSL
 
 How do you build-in SSL support to jsish?
 
-Answer: yes.  make WITH_SSL=1
+Answer: yes.  make WITH_SSL=1 clean all
 
 Note: Jsi now uses [lws](https://jsish.org/lws), a fork of LibWebsockets. 
 

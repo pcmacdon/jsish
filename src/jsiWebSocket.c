@@ -117,6 +117,11 @@ typedef struct {
     bool isBinary, isFinal;
 } jsi_wsStatData;
 
+
+static const char *wsIndexTypeStrs[] = { "auto", "html", "json", "jsonp", "disabled", NULL };
+typedef enum { ws_IndexAuto, ws_IndexHtml, ws_IndexJson, ws_IndexJsonp, ws_IndexDisabled } ws_IndexTypeE;
+
+
 typedef struct { /* Per server data (or client if client-mode). */
     uint sig;
     Jsi_Interp *interp;
@@ -128,6 +133,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     bool client, noUpdate, noWebsock, noWarn, ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
     Jsi_Value* version;
     int idx;
+    ws_IndexTypeE dirIndex;
     int port;
     uint modifySecs;
     int maxUpload;
@@ -314,6 +320,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(STRKEY, jsi_wsCmdObj, clientHost, .help="Override host name for client"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, clientOrigin,.help="Override client origin (origin)"),
     JSI_OPT(INT,    jsi_wsCmdObj, debug,      .help="Set debug level. Setting this to 512 will turn on max liblws log levels"),
+    JSI_OPT(CUSTOM, jsi_wsCmdObj, dirIndex,   .help="Enable listing directories", .flags=0, .custom=Jsi_Opt_SwitchEnum, .data=(void*)wsIndexTypeStrs),
     JSI_OPT(BOOL,   jsi_wsCmdObj, echo,       .help="LogInfo outputs all websock Send/Recv messages"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, formParams, .help="Comma seperated list of upload form param names ('text,send,file,upload')", jsi_IIRO),
     JSI_OPT(BOOL,   jsi_wsCmdObj, extHandlers,.help="Setup builtin extension-handlers, ie: .htmli, .cssi, .jsi, .mdi", jsi_IIOF),
@@ -347,7 +354,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUnknown,  .help="Function to call to server out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUpload,   .help="Function to call handle http-post", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onRecv,     .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
-    JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Path alias lookups", jsi_IIOF),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Path alias object: /jsi builtin", jsi_IIOF),
     JSI_OPT(INT,    jsi_wsCmdObj, port,       .help="Port for server to listen on (8080)", jsi_IIOF),
     JSI_OPT(STRING, jsi_wsCmdObj, post,       .help="Post string to serve", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, protocol,   .help="Name of protocol (ws/wss)"),
@@ -561,6 +568,108 @@ static int jsi_wsServeString(jsi_wsPss *pss, struct lws *wsi,
     }
     Jsi_DSFree(&jStr);
     return (rc>=0?1:0);
+}
+
+
+static int jsi_wsServeDir(jsi_wsPss *pss, struct lws *wsi, Jsi_Value *fname, const char* fn, const char *mime)
+{
+    jsi_wsCmdObj *cmdPtr = pss->cmdPtr;
+    Jsi_Interp *interp = cmdPtr->interp;
+    bool jsauto = cmdPtr->dirIndex==ws_IndexAuto;
+    const char *callback = NULL;
+    int n, i, cnt = 0;
+    Jsi_RC rc = JSI_OK;
+    struct dirent **namelist = NULL;
+    if (cmdPtr->dirIndex == ws_IndexDisabled || (n=Jsi_Scandir(interp, fname, &namelist, 0, 0)) < 0) {
+        if (cmdPtr->noWarn==0)
+            fprintf(stderr, "can not serve directory: %s\n", fn);
+        return jsi_wsServeString(pss, wsi, "<b style='color:red'>ERROR: can not serve directory!</b>", 404, NULL, NULL);
+    }
+    bool jsonp = cmdPtr->dirIndex==ws_IndexJsonp, json=(jsonp||cmdPtr->dirIndex==ws_IndexJson);
+    if (jsonp || jsauto) {
+        Jsi_Value *val;
+        if (pss->queryObj && ((val = Jsi_ValueObjLookup(interp, pss->queryObj, "callback", 0))))
+            callback = Jsi_ValueToString(interp, val, NULL);
+        if (!callback)
+            jsonp = 0;
+        else if (!Jsi_Strcmp(callback,"null")) {
+            if (jsauto)
+                json = 1;
+            else
+                json = jsonp = 0;
+        } else if (jsauto)
+            json = jsonp = 1;
+    }
+    const char *fnb = Jsi_ValueToString(interp, fname, NULL);
+    Jsi_DString dStr = {}, tStr = {};
+    int fnlen = Jsi_Strlen(fn);
+    bool isroot = (fn[0]=='/'&&!fn[1]);
+    const char fne = (fnlen>=1?fn[fnlen-1]:0), *fns = (fne=='/' || isroot?"":"/");
+    if (jsonp)
+        Jsi_DSAppend(&dStr, "/* callback */\n", callback, "([", NULL);
+    else if (json)
+        Jsi_DSAppend(&dStr, "[", NULL);
+    else {
+        Jsi_DSPrintf(&dStr, "<html>\n<head><title>Index of %s%s</title></head>\n<body bgcolor=\"white\">"
+            "<h1>Index of %s%s</h1><hr><pre>%s", fn, fns, fn, fns,
+                (isroot?"":"<a href=\"../\">../</a>\n"));
+    }
+
+    for (i=0; i<n && rc == JSI_OK; i++)
+    {
+        int ftyp;
+        const char *z = namelist[i]->d_name;
+        if (*z == '.') {
+            if (!(cmdPtr->flags&JSI_FILE_TYPE_HIDDEN)) // TODO: own flag
+                continue;
+            else if ((z[1] == 0 || (z[1] == '.' && z[2] == 0)))
+                continue;
+        }
+#ifdef __WIN32
+        /* HACK in scandir(): if is directory then inode set to 1. */
+        ftyp = (namelist[i]->d_ino? DT_DIR : DT_REG);
+#else
+        ftyp = namelist[i]->d_type;
+#endif
+        uint sz = 0;
+        char pbuf[PATH_MAX];
+        snprintf(pbuf, sizeof(pbuf), "%s%s%s", fnb, (fne!='/' && fnb[0]?"/":""),  z);
+        Jsi_StatBuf stat = {};
+        Jsi_Value *vpath = Jsi_ValueNewStringConst(interp, pbuf, -1);
+        Jsi_IncrRefCount(interp, vpath);
+        int sc = Jsi_Stat(interp, vpath, &stat);
+        Jsi_DecrRefCount(interp, vpath);
+        if (!sc) sz = stat.st_size;
+        Jsi_DSSetLength(&tStr, 0);
+        Jsi_DatetimeFormat(interp, stat.st_mtime, "%a, %d %b %Y %T GMT", 1, &tStr);
+        const char *t = (ftyp == DT_DIR ? "/" : "");
+        int lz = Jsi_Strlen(z), ln = 50-lz-(t[0]?1:0), ln2 = 30 ;
+//{ "name":"vids2.html", "type":"file", "mtime":"Fri, 12 Jun 2020 22:22:37 GMT", "size":206 }
+        if (json)
+            Jsi_DSPrintf(&dStr, "%s\n{ \"name\":\"%s\", \"type\":\"%s\", \"mtime\":\"%s\", \"size\":%d }",
+                (cnt?",":""), z, (t[0]?"directory":"file"), Jsi_DSValue(&tStr), (uint)sz);
+        else
+            Jsi_DSPrintf(&dStr, "<a href=\"%s/%s%s\">%s%s</a>%*s %*u\n",
+                (isroot?"":fn), z, t, z, t, ln, Jsi_DSValue(&tStr), ln2, (uint)sz);
+        cnt++;
+    }
+    if (jsonp)
+        Jsi_DSAppend(&dStr, "\n]);\n", NULL);
+    else if (json)
+        Jsi_DSAppend(&dStr, "\n]\n", NULL);
+    else
+        Jsi_DSAppend(&dStr, "</pre><hr></body></html>", NULL);
+    if (json)
+        mime = "application/json";
+    int nrc = jsi_wsServeString(pss, wsi, Jsi_DSValue(&dStr), 200, NULL, mime);
+    Jsi_DSFree(&dStr);
+    Jsi_DSFree(&tStr);
+    if (namelist) {
+        while (--n >= 0)
+            free(namelist[n]);
+        free(namelist);
+    }
+    return nrc;
 }
 
 static const char*
@@ -1153,6 +1262,14 @@ static Jsi_RC jsi_wsEvalSSI(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
 
 }
 
+static const char* jsi_wsGetJsiPath(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr) {
+    if (!cmdPtr->jsishPathCache) {
+        Jsi_PkgRequire(interp, "Jsish", 0);
+        Jsi_PkgVersion(interp, "Jsish", &cmdPtr->jsishPathCache);
+    }
+    return cmdPtr->jsishPathCache; 
+}
+
 static void jsi_wsPathAlias(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const char **inPtr, Jsi_DString *dStr) {
     const char *ce, *cp = NULL;
     char *lcp;
@@ -1175,11 +1292,7 @@ static void jsi_wsPathAlias(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const char
     }
     if (!Jsi_Strncmp(*inPtr, "/jsi/", 5)) {
         // Get/cache path for system load file, eg /zvfs/lib/Jsish.jsi.
-        if (!(cp = cmdPtr->jsishPathCache)) {
-            Jsi_PkgRequire(interp, "Jsish", 0);
-            if (Jsi_PkgVersion(interp, "Jsish", &cp)>=0)
-                cmdPtr->jsishPathCache = cp;
-        }
+        cp = jsi_wsGetJsiPath(interp, cmdPtr);
         if (cp) {
             Jsi_DSSetLength(dStr, 0);
             Jsi_DSAppend(dStr, cp, NULL);
@@ -1204,24 +1317,29 @@ static Jsi_RC WebSocketUnaliasCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     if (!nstr)
         return Jsi_LogErrorExt("arg 1: expected string");
     Jsi_Value *v, *a = cmdPtr->pathAliases;
-    if (!a|| !Jsi_ValueIsObjType(interp, a, JSI_OT_OBJECT)) return JSI_OK;
-    Jsi_IterObj *io = Jsi_IterObjNew(interp, NULL);
-    Jsi_IterGetKeys(interp, cmdPtr->pathAliases, io, 0);
-    uint i;
-    for (i=0; i<io->count; i++) {
-        kstr = io->keys[i];
-        v = Jsi_ValueObjLookup(interp, a, kstr, 1);
-        if (!v) continue;
-        vstr = Jsi_ValueToString(interp, v, &vlen);
-        if (!vstr) continue;
-        if (nlen<=vlen) continue;
-        if (Jsi_Strncmp(vstr, nstr, vlen)) continue;
-        Jsi_DString dStr = {};
-        Jsi_DSAppend(&dStr, "/", kstr, nstr+vlen, NULL);
-        Jsi_ValueFromDS(interp, &dStr, ret);
-        break;
+    uint i=0, cnt=0;
+    if (a && Jsi_ValueIsObjType(interp, a, JSI_OT_OBJECT)) {
+        Jsi_IterObj *io = Jsi_IterObjNew(interp, NULL);
+        Jsi_IterGetKeys(interp, cmdPtr->pathAliases, io, 0);
+        uint i, cnt = io->count;
+        for (i=0; i<cnt; i++) {
+            kstr = io->keys[i];
+            v = Jsi_ValueObjLookup(interp, a, kstr, 1);
+            if (!v) continue;
+            vstr = Jsi_ValueToString(interp, v, &vlen);
+            if (!vstr) continue;
+            if (nlen<=vlen) continue;
+            if (Jsi_Strncmp(vstr, nstr, vlen)) continue;
+            Jsi_DString dStr = {};
+            Jsi_DSAppend(&dStr, "/", kstr, nstr+vlen, NULL);
+            Jsi_ValueFromDS(interp, &dStr, ret);
+            break;
+        }
+        Jsi_IterObjFree(io);
     }
-    Jsi_IterObjFree(io);
+    const char *cp;
+    if (i>=cnt && !Jsi_Strcmp("zvfs", nstr) && ((cp = jsi_wsGetJsiPath(interp, cmdPtr))))
+        Jsi_ValueMakeStringDup(interp, ret, cp);
     return JSI_OK;
 }
 
@@ -1652,17 +1770,15 @@ nofile:
         Jsi_DecrRefCount(interp, fname);
         goto done;
     }
-    if (!ext || isSSI)
-        goto serve;
+   // if (!ext || isSSI)
+   //     goto serve;
+serve:
     if (S_ISDIR(jsb.st_mode)) {
-        if (cmdPtr->noWarn==0)
-            fprintf(stderr, "can not serve directory: %s\n", buf);
-        rc = jsi_wsServeString(pss, wsi, "<b style='color:red'>ERROR: can not serve directory!</b>", 404, NULL, NULL);
+        rc = jsi_wsServeDir(pss, wsi, fname, inPtr, mime);
         Jsi_DecrRefCount(interp, fname);
         goto done;
     }
 
-serve:
     n = 0;
     // TODO: add automatic cookie mgmt?
 /*
@@ -2023,6 +2139,12 @@ static int jsi_wscallback_http(struct lws *wsi,
             fprintf(stderr, "FILTER CONNECTION: %s\n", inPtr);
         pss = jsi_wsgetPss(cmdPtr, wsi, user, 1, 1);
         Jsi_DSSet(&pss->url, inPtr);
+        if (pss->query)
+            Jsi_DecrRefCount(interp, pss->query);
+        pss->query = NULL;
+        if (pss->queryObj)
+            Jsi_DecrRefCount(interp, pss->queryObj);
+        pss->queryObj = NULL;
         jsi_wsgetUriArgValue(interp, wsi, &pss->query, &pss->queryObj);
 
         if (cmdPtr->instCtx == context && (cmdPtr->clientName[0] || cmdPtr->clientIP[0])) {
@@ -3086,7 +3208,7 @@ static Jsi_CmdSpec websockCmds[] = {
     { "query",      WebSocketQueryCmd,    1,  2, "id:number, name:string=void",.help="Get one or all query values for connect id", .retType=(uint)JSI_TT_STRING|JSI_TT_OBJECT|JSI_TT_VOID },
     { "send",       WebSocketSendCmd,     2,  2, "id:number, data:any", .help="Send a websocket message to id", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_wssend },
     { "status",     WebSocketStatusCmd,   0,  0, "", .help="Return liblws server status", .retType=(uint)JSI_TT_OBJECT|JSI_TT_VOID},
-    { "unalias",    WebSocketUnaliasCmd,  1,  1, "path:string", .help="Return alias reverse lookup", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID},
+    { "unalias",    WebSocketUnaliasCmd,  1,  1, "path:string", .help="Lookup name-key with the given path in pathAlias object", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID},
     { "update",     WebSocketUpdateCmd,   0,  0, "", .help="Service events for just this websocket", .retType=(uint)JSI_TT_VOID },
     { "version",    WebSocketVersionCmd,  0,  0, "", .help="Runtime library version string", .retType=(uint)JSI_TT_STRING },
     { NULL, 0,0,0,0, .help="Commands for managing WebSocket server/client connections"  }
@@ -3274,8 +3396,7 @@ fail:
         if (NULL == lws_client_connect_via_info(&lci))
         {
             Jsi_LogErrorExt("websock connect failed");
-            jsi_wswebsocketObjFree(interp, cmdPtr);
-            return JSI_ERROR;
+            goto fail;
         }
     } else if (cmdPtr->port == 0) {
         // Extract actually used port.

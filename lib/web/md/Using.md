@@ -2,7 +2,7 @@ Using Jsi
 ====
 [Back to Index](Index.md "Goto Jsi Documentation Index")
 
-Jsi is a **C**-extensible JS *-ish* interpreter
+JSish is a **C**-extensible interpreter
 providing compact and self contained server-side web scripting
 *(To get Jsi see [Readme](https://jsish.org/jsi))*.
 
@@ -444,4 +444,4 @@ version 5.1 with numerous deviations and extensions:
 - Prototype-related features are intentionally incomplete/wrong.
 
 
-*[JS]:Javascript Like
+*[JSish]:JS-ish or Javascript Like

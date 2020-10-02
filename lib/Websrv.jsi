@@ -17,14 +17,14 @@ function Websrv(args:string|array, conf:object=void)
     };
     var options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
+        browser     :'',        // The browser to exec, eg. "chrome-browser"
         closeTimeout:0,         // Time til exit after close of final client websocket (ms).
         confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
-        browser     :'',        // The browser to exec, eg. "chrome-browser"
+        docs        :'',        // Display markdown docs from this directory.
         ignoreExit  :false,     // Ignore exit request.
         initArg     :[],        // List of app modules to run.
         isFile      :false,     // Url is a file, so throw if not exists.
         local       :true,      // Accept only local connections.
-        maxPort     :1000,      // Max to add to above port.
         mode        :'',        // Mode string: menu, admin
         noCheck     :false,     // Disable function type-checking for .jsi files in browser.
         noGui       :false,     // Disable starting local browser.
@@ -33,6 +33,7 @@ function Websrv(args:string|array, conf:object=void)
         onRecv      :null,      // Callback command to handle websocket msgs.
         pageStr     :'',        // String to serve out as url.
         port        :0,         // Start search for port.
+        portMax     :1000,      // Max times to increment-retry port if busy.
         query       :'',        // Query to append to url.
         rootdir     :null,      // Base directory.
         server      :false,     // Server mode: same as noGui=true and closeTimout=0
@@ -217,7 +218,7 @@ function Websrv(args:string|array, conf:object=void)
         }
         /* Try opening websocket on first available port. */
         var i;
-        for (i=0; i<self.maxPort; i++) {
+        for (i=0; i<self.portMax; i++) {
             var err = null;
             try {
                 self.ws = new WebSocket(self.wsopts);
@@ -232,7 +233,7 @@ function Websrv(args:string|array, conf:object=void)
             self.wsopts.port++;
             LogTrace("ee:", err);
         }
-        if (i>=self.maxPort) {
+        if (i>=self.portMax) {
             console.log("Failed to get port");
             return false;
         }
@@ -410,8 +411,16 @@ function Websrv(args:string|array, conf:object=void)
             }
             self.url = urlarg;
         }
-        
-        if (self.zip) {
+        if (self.docs) {
+            if (self.rootdir || self.zip)
+                throw('can not use both rootdir/zip with docs');
+            self.rootdir = '/zvfs/lib/web';
+            self.url = 'Docs/Docs.html';
+            if (self.timeout != options.timeout)
+                self.timeout = 0;
+                
+            
+        } else if (self.zip) {
             self.mnt = Jsi_Archive([self.zip], {noRun:true, version:self.zipVer});
             if (!self.rootdir)
                 self.rootdir = self.mnt;
@@ -419,8 +428,8 @@ function Websrv(args:string|array, conf:object=void)
                 self.rootdir = self.mnt + '/' + self.rootdir;
             if (!self.url)
                 self.url = getUrlInDir(self.mnt);
-        }
-        else if (!self.rootdir) {
+
+        } else if (!self.rootdir) {
             if (!self.url.length)
                 self.rootdir = Info.scriptDir();
             else

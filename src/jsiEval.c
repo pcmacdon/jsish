@@ -1912,6 +1912,7 @@ undef_eval:
                 break;
             }
             case OP_SCATCH: {
+                interp->curIpLastError = NULL;
                 if (trylist == NULL || trylist->type != jsi_TL_TRY) 
                     Jsi_LogBug("Unexpected SCATCH opcode??");
 
@@ -1933,7 +1934,7 @@ undef_eval:
                         Jsi_Value *ple = ps->last_exception;
                         Jsi_ValueCopy(interp, excpt, ple);
                         Jsi_ValueReset(interp, &ps->last_exception);
-                    } else if (interp->errMsgBuf[0]) {
+                    } else {
                         Jsi_ValueMakeStringDup(interp, &excpt, interp->errMsgBuf);
                         interp->errMsgBuf[0] = 0;
                     }

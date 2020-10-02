@@ -42,8 +42,7 @@ During the build it will download:
 
 After the initial build predefined configurations in **Configs/** can be made using:
 ```
-touch Makefile
-make CONF=static
+make clean all CONF=static
 ```
 
 Available values for `CONF` are: **default devel memdebug minimal musl muslssl noext release static win winssl**
@@ -286,8 +285,7 @@ Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
 
 ``` bash
 sudo apt-get install gcc-mingw-w64
-touch Makefile
-make CONF=win
+make clean all CONF=win
 ```
 
 **Warning**: Features such as signals are disabled in the Windows build.
@@ -300,9 +298,19 @@ This is useful when you need an executable with no external dependancies.
 
 ``` bash
 sudo apt-get install musl-tools
-touch Makefile
-make CONF=musl
+make clean all CONF=musl
 ```
+
+### SSL
+
+Here is how to build with SSL support:
+
+``` bash
+make WITH_SSL=1 clean all
+```
+
+Possibly in combination with `CONF=musl`, etc.
+
 ### Debian Package
 If you are on a Debian system, you can build then install as a package:
 

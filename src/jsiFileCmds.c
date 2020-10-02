@@ -1157,8 +1157,8 @@ done:
         Jsi_DecrRefCount(interp, rpPath);
     if (namelist) {
         while (--n >= 0)
-            Jsi_Free(namelist[n]);
-        Jsi_Free(namelist);
+            free(namelist[n]);
+        free(namelist);
     }
     return rc;     
 }

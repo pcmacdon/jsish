@@ -1302,15 +1302,17 @@ static int Jaz_FSStatProc(Jsi_Interp *interp, Jsi_Value *path, Jsi_StatBuf *buf)
         return -1;
     }
     memset(buf, 0, sizeof(*buf));
-    if (pFile->isdir)
-        buf->st_mode = 040555;
-    else
-        buf->st_mode = (0100000|pFile->permissions);
     buf->st_ino = 0;
     buf->st_size = pFile->nByte;
     buf->st_mtime = pFile->timestamp;
     buf->st_ctime = pFile->timestamp;
     buf->st_atime = pFile->timestamp;
+    if (pFile->isdir) {
+        buf->st_mode = 040555;
+        if (!buf->st_size)
+            buf->st_size = 1;
+    } else
+        buf->st_mode = (0100000|pFile->permissions);
     return 0;
 }
 

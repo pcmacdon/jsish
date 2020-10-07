@@ -52,6 +52,7 @@ function Websrv(args:string|array, conf:object=void)
         useridPass  :'',        // USER:PASS for web GUI.
         vueConvert  :false,     // Util to convert file .vue files to .js, output in -rootdir
         wsdebug     :0,         // Debug option for websockets.
+        wsinc       :'',        // Name of file to include.
         wsOpts      :{},        // Websocket options.
         zip         :'',        // A .zip, .sqlar, or .fossil file to mount and use as rootdir.
         zipVer      :'',        // Version to mount in fossil.
@@ -383,166 +384,179 @@ function Websrv(args:string|array, conf:object=void)
             File.write(to, out);
         }
     }
-    
-    function main() {
-        var pal=null, urlarg, urlOrig = self.url;
-        if (typeof args === 'string')
-            args = [args];
-        if (self.vueConvert) {
-            return vueConvAll(args);
-        }
-        urlarg = args[0];
-        args.shift();
-        if (urlarg) {
-            var fext = File.extension(urlarg);
-            var zexts = ['.zip', '.sqlar', '.fossil'];
-            if (zexts.indexOf(fext)>=0) {
-                self.zip = urlarg;
-                urlarg = args[0];
-                args.shift();
-            }
-        }
-        if (urlarg) {
-            if (self.url)
-                throw('can not have args and specify -url');
-            var iiq;
-            if (self.query === '' && (iiq=urlarg.indexOf('?'))>0) {
-                self.query = urlarg.substr(iiq+1);
-                urlarg = urlarg.substr(0, iiq);
-            }
-            self.url = urlarg;
-        }
-        if (self.app) {
-            pal = {app:self.app};
-            self.url = self.app+'/index.html';
-            self.rootdir = '/zvfs/lib/web';
-            if (self.timeout != options.timeout)
-                self.timeout = 0;
-        } if (self.docs) {
-            if (self.rootdir || self.zip)
-                throw('can not use rootdir/zip with docs');
-            self.rootdir = '/zvfs/lib/web';
-            self.url = 'docs/index.html';
-            if (self.timeout != options.timeout)
-                self.timeout = 0;
-                
-            
-        } else if (self.zip) {
-            self.mnt = Jsi_Archive([self.zip], {noRun:true, version:self.zipVer});
-            if (!self.rootdir)
-                self.rootdir = self.mnt;
-            else
-                self.rootdir = self.mnt + '/' + self.rootdir;
-            if (!self.url)
-                self.url = getUrlInDir(self.mnt);
-
-        } else if (!self.rootdir) {
-            if (!self.url.length)
-                self.rootdir = Info.scriptDir();
-            else
-                self.rootdir = File.dirname(self.url);
-            var rlen = self.rootdir.length;
-            if (self.url.substr(0, rlen) === self.rootdir)
-                self.url = self.url.substr(rlen);
-        }
-        if (self.sslDir) {
-            if (self.sslFnKey != '') self.sslkey = File.join(self.sslDir, self.sslFnKey);
-            if (self.sslFnCert != '') self.sslcert = File.join(self.sslDir, self.sslFnCert);
-            self.ssl = true;
-        }
-        if (!self.rootdir)
-            self.rootdir = '.';
-        // Provide default values for websocket.
-        var wo = self.wsopts = {
-            pathAlias:pal,
-            local:self.local,
-            debug:self.wsdebug,
-            extHandlers:true,
-            onOpen:WsOpen,
-            onClose:WsClose,
-            onCloseLast:WsCloseLast,
-            onRecv:WsRecv,
-            onUpload:WsUpload,
-            onFilter:WsFilter,
-            port:self.port,
-            rootdir:self.rootdir,
-            urlPrefix:self.urlPrefix,
-            urlUnknown:self.urlUnknown,
-            sslCert:self.sslcert,
-            sslKey:self.sslkey,
-            ssl:self.ssl,
-            mimeLookupFunc:mimeLookup,
-        };
-        switch (self.mode) {
-            case 'admin':
-                self.url = '/admin';
-                wo.getRegexp=/^\/admin/;
-                wo.onGet=WebAdmin;
-                break;
-            case 'menu':
-                self.url = '/jsi/web/Websrv.htmli';
-                break;
-            case '': break;
-            default: throw('mode "'+self.mode+'" not one of: admin, menu');
-        }
-        if (urlOrig!=='' && self.timeout === 60000)
-            self.timeout = 0;
-        if (!self.docs && !self.server && !self.pageStr && self.mode === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
-            throw("url file empty or not found: "+self.url);
-        if (self.urlPrefix.length && self.urlPrefix[0] != '/')
-            throw('urlPrefix must start with a slash');
         
-        if (self.local)
-            wo.noCompress = true;
-        if (self.server) {
-            self.noGui = true;
-            if (self.timeout !== options.timeout)
-                self.timeout = 0;
-        } else if (!self.noReload)
-            wo.onModify = onModify;
-        if (self.pageStr !== '') {
-            wo.getRegexp=/^\/page/;
-            self.url = '/page';
-            wo.onGet=WebGetString;
-        }
-        if (self.useridPass != '') {
-            wo.useridPass = self.useridPass;
-            if (self.useridPass === ':') // Exercise onAuth callback.
-                wo.onAuth = WsAuth;
-        }
-        if (typeof self.wsOpts === 'string')
-            self.wsOpts = JSON.parse(self.wsOpts, false);
-        if (typeof self.udata === 'string')
-            self.udata = JSON.parse(self.udata, false);
-        if (self.udata && self.udata.length)
-            self.wsOpts.udata = self.udata;
-        for (var i in self.wsOpts)
-            wo[i] = self.wsOpts[i];
-
-        OpenWebsock();
-       // if (!self.ws.conf('extHandlers'))
-        //    self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
-        LogTrace("Listening on port:",self.port);
-        
-        if (!self.noGui && self.url && self.url.length) {
-            OpenBrowser(self.url, self.anchor, self.query);
-        }
-
-        if (self.noWait) {
-            self.openWebsock = OpenWebsock;
-            return self;
-        }
-
-        if (self.timeout)
-            setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
-        while (self.done == 0 && Event.update(100) ) ;
-        //delete self.ws;
-    }
-    
     if (self.srcFile !== '')
         source(self.srcFile);
+
+    var pal=null, urlarg, urlOrig = self.url;
+    if (typeof args === 'string')
+        args = [args];
+    if (self.vueConvert) {
+        return vueConvAll(args);
+    }
+    urlarg = args[0];
+    args.shift();
+    if (urlarg) {
+        var fext = File.extension(urlarg);
+        var zexts = ['.zip', '.sqlar', '.fossil'];
+        if (zexts.indexOf(fext)>=0) {
+            self.zip = urlarg;
+            urlarg = args[0];
+            args.shift();
+        }
+    }
+    if (urlarg) {
+        if (self.url)
+            throw('can not have args and specify -url');
+        var iiq;
+        if (self.query === '' && (iiq=urlarg.indexOf('?'))>0) {
+            self.query = urlarg.substr(iiq+1);
+            urlarg = urlarg.substr(0, iiq);
+        }
+        self.url = urlarg;
+    }
+    if (self.app) {
+        pal = {app:self.app};
+        self.url = self.app+'/index.html';
+        self.rootdir = '/zvfs/lib/web';
+        if (!self.wsinc) {
+            self.wsinc = self.app+'/wsinc.jsi';
+            if (!File.exists(self.wsinc))
+                self.wsinc = '';
+        }
+        if (self.timeout != options.timeout)
+            self.timeout = 0;
+    } if (self.docs) {
+        if (self.rootdir || self.zip)
+            throw('can not use rootdir/zip with docs');
+        var surl = self.url = 'docs/index.html', sd = self.docs;
+        if (sd == '/')
+            self.rootdir = '/zvfs/lib/web';
+        else if (File.isdir(sd) && File.exists(sd+'/'+surl))
+            self.rootdir = self.docs;
+        else
+            throw('-docs must be a docs dir or "/"'+self.docs);
+        if (!self.wsinc) {
+            self.wsinc = self.rootdir+'/docs/wsinc.jsi';
+            if (!File.exists(self.wsinc))
+                self.wsinc = '';
+        }
+        if (self.timeout != options.timeout)
+            self.timeout = 0;
+            
+        
+    } else if (self.zip) {
+        self.mnt = Jsi_Archive([self.zip], {noRun:true, version:self.zipVer});
+        if (!self.rootdir)
+            self.rootdir = self.mnt;
+        else
+            self.rootdir = self.mnt + '/' + self.rootdir;
+        if (!self.url)
+            self.url = getUrlInDir(self.mnt);
+
+    } else if (!self.rootdir) {
+        if (!self.url.length)
+            self.rootdir = Info.scriptDir();
+        else
+            self.rootdir = File.dirname(self.url);
+        var rlen = self.rootdir.length;
+        if (self.url.substr(0, rlen) === self.rootdir)
+            self.url = self.url.substr(rlen);
+    }
+    if (self.sslDir) {
+        if (self.sslFnKey != '') self.sslkey = File.join(self.sslDir, self.sslFnKey);
+        if (self.sslFnCert != '') self.sslcert = File.join(self.sslDir, self.sslFnCert);
+        self.ssl = true;
+    }
+    if (!self.rootdir)
+        self.rootdir = '.';
+
+    // Provide default values for websocket.
+    var wo = self.wsopts = {
+        pathAlias:pal,
+        local:self.local,
+        debug:self.wsdebug,
+        extHandlers:true,
+        onOpen:WsOpen,
+        onClose:WsClose,
+        onCloseLast:WsCloseLast,
+        onRecv:WsRecv,
+        onUpload:WsUpload,
+        onFilter:WsFilter,
+        port:self.port,
+        rootdir:self.rootdir,
+        urlPrefix:self.urlPrefix,
+        urlUnknown:self.urlUnknown,
+        sslCert:self.sslcert,
+        sslKey:self.sslkey,
+        ssl:self.ssl,
+        mimeLookupFunc:mimeLookup,
+    };
+    if (self.wsinc)
+        source(self.wsinc);
+    switch (self.mode) {
+        case 'admin':
+            self.url = '/admin';
+            wo.getRegexp=/^\/admin/;
+            wo.onGet=WebAdmin;
+            break;
+        case 'menu':
+            self.url = '/jsi/web/Websrv.htmli';
+            break;
+        case '': break;
+        default: throw('mode "'+self.mode+'" not one of: admin, menu');
+    }
+    if (urlOrig!=='' && self.timeout === 60000)
+        self.timeout = 0;
+    if (!self.docs && !self.server && !self.pageStr && self.mode === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
+        throw("url file empty or not found: "+self.url);
+    if (self.urlPrefix.length && self.urlPrefix[0] != '/')
+        throw('urlPrefix must start with a slash');
     
-    main();
+    if (self.local)
+        wo.noCompress = true;
+    if (self.server) {
+        self.noGui = true;
+        if (self.timeout !== options.timeout)
+            self.timeout = 0;
+    } else if (!self.noReload)
+        wo.onModify = onModify;
+    if (self.pageStr !== '') {
+        wo.getRegexp=/^\/page/;
+        self.url = '/page';
+        wo.onGet=WebGetString;
+    }
+    if (self.useridPass != '') {
+        wo.useridPass = self.useridPass;
+        if (self.useridPass === ':') // Exercise onAuth callback.
+            wo.onAuth = WsAuth;
+    }
+    if (typeof self.wsOpts === 'string')
+        self.wsOpts = JSON.parse(self.wsOpts, false);
+    if (typeof self.udata === 'string')
+        self.udata = JSON.parse(self.udata, false);
+    if (self.udata && self.udata.length)
+        self.wsOpts.udata = self.udata;
+    for (var i in self.wsOpts)
+        wo[i] = self.wsOpts[i];
+
+    OpenWebsock();
+   // if (!self.ws.conf('extHandlers'))
+    //    self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
+    LogTrace("Listening on port:",self.port);
+    
+    if (!self.noGui && self.url && self.url.length) {
+        OpenBrowser(self.url, self.anchor, self.query);
+    }
+
+    if (self.noWait) {
+        self.openWebsock = OpenWebsock;
+        return self;
+    }
+
+    if (self.timeout)
+        setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
+    while (self.done == 0 && Event.update(100) ) ;
     
 }
 

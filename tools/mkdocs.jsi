@@ -1,0 +1,141 @@
+#!/usr/bin/env jsish
+
+function mkdocs(args, opts) {
+
+    var options = { // Analyse markdown
+        O   :'stdout',  // Output index file
+    };
+    var self = {
+        fall:{},
+        fdata:{},
+        flabels:{},
+        flinks:{},
+        fblocks:{},
+        aflist:[],
+        result:{},
+    };
+    moduleOpts(options, self);
+
+    //function LogDebug(...) {}
+    
+    function slugify(s) {
+        s = s.toLowerCase().trim();
+        s = s.replace(/`~!@#$%^&*()_\-+=\[\]\{\};:'"\\|\/,.<>?\s]/g, ' ');
+        s = s.map(['\"', '', '    ', ' ', '   ', ' ', '  ', ' ', ' ', '-']);
+        //if (s.indexOf('opt')>=0) puts('S',s);
+        return s;
+    }
+    
+    var fdir, fn = (typeof(args) === 'array'? args[0]: args);
+    var tr, j, r, t, d, f, i, th, tt;
+    var lst;
+    if (File.isdir(fn)) {
+        fdir = fn;
+        if (fn[fn.length-1]!='/') fn+='/';
+        lst = File.glob('*.md', {dir:fn, prefix:fn, tails:true});
+        fdir = fn;
+    } else {
+        lst = [fn];
+        fdir = File.dirname(fn);
+    }
+    var re = /^#+ [^#]+$/gm,
+        rel = /\[[^]]+\]\([^)]+\)/gm, 
+        reb = /```.*```/g;
+    var aflist = [];
+    for (i of lst) {
+        f = File.tail(i);
+        aflist.push(f);
+    }
+    for (i of lst) {
+        f = File.tail(i);
+        LogDebug("DO HEADERS", i);
+        d = self.fdata[f] = File.read(i);
+        r = d.match(re);
+        t = [], tt = [];
+        if (r) {
+            for (j of r) {
+                tr = j.match(/ [^#]+/);
+                if (tr) {
+                    var strl = slugify(tr[0].trim());
+                    t.push(strl);
+                    tt.push(strl, j);
+                }
+            }
+        }
+        LogDebug('R', t);
+        self.flabels[f] = t;
+        self.fall[f] = tt;
+        //if (f == 'Reference.md') continue;
+        r = d.match(rel);
+        LogDebug('DO LINKS', r);
+        t = [];
+        if (r) {
+            for (j of r) {
+                tr = j.match(/\(.*\)+/);
+                if (tr) {
+                    var ta;
+                    tr = tr[0];
+                    tr = tr.substr(1,tr.length-2).split('"')[0];
+                    if (tr[0] == '#') {
+                        var tr0a = slugify(tr.substr(1));
+                        if (self.flabels[f].indexOf(tr0a)<0)
+                            puts("IN", f, "LOCAL-LINK TO UNKNOWN SECTION:", tr);
+                        continue;
+                        //ta = f+tr;
+                    } else {
+                        if (tr.indexOf('://')>0) continue;
+                        th = tr.trim().split('#');
+                        var t0 = th[0].trim();
+                        if (aflist.indexOf(t0)<0) {
+                            puts('IN',f,'FILE NOT FOUND:"'+t0+'" FROM "'+tr+'"');
+                            continue;
+                        }
+                        if (th.length!=2)
+                            //ta = th[0];
+                            continue;
+                        else
+                            ta = th[0] + '#' + th[1];
+                    }
+                    t.push(ta.trim());
+                }
+            }
+        }
+        self.flinks[f] = t;
+        LogDebug('L', t);
+        r = d.match(reb);
+        LogDebug('DO BLOCKS', r);
+        self.fblocks[f] = r;
+    }
+    for (f in self.flinks) {
+        var fl = self.flinks[f];
+        if (!fl) {log('no links',f); continue; }
+        LogDebug(f,'fl',fl);
+        for (tr of fl) {
+            th = tr.trim().split('#');
+            if (th.length!=2) {
+                //ta = th[0];
+                continue;
+            } else {
+                var x0 = th[0].trim();
+                ta = x0 + '#' + th[1];
+                var xx = self.flabels[x0];
+                if (!xx || xx.indexOf(th[1].toLowerCase())<0)
+                    puts("IN", f, "NONLOCAL-LINK TO UNKNOWN SECTION:", tr);
+            }
+        }
+    }
+    self.result = {
+        sections: self.fall,
+        files:Object.keys(self.fall).sort(),
+    };
+    var fdirt = fdir+'/index.txt';
+    if (File.exists(fdirt))
+        self.result.files = File.read(fdirt).trim().split(' ');
+    if (self.O)
+        File.write(self.O, JSON.stringify(self.result));
+    else
+        return self.result;
+}
+
+moduleRun(mkdocs);
+

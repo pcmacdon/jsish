@@ -4,7 +4,7 @@ Building
 
 ## Source
 
-Get source from [site](https://jsish.org/fossil/jsi3/vinfo?name=tip) or use:
+To get the source browse to [site](https://jsish.org/fossil/jsi3/vinfo?name=tip) or use command-line:
  
 ```
 wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
@@ -12,7 +12,7 @@ unzip jsi.zip
 cd jsi
 ```
 
-Optionally clone [fossil](https://www.fossil-scm.org/index.html/uv/download.html) repository:
+Better still [fossil](https://www.fossil-scm.org/index.html/uv/download.html) clone the repository:
 
 ```
 sudo apt install fossil
@@ -40,13 +40,100 @@ During the build it will download:
 - WebSocket: http://jsish.org/fossil/lws/zip/lws?r=lws-2.0202
 - SSL (optional): http://jsish.org/download/openssl-OpenSSL_1_1_1-stable.zip
 
-After the initial build predefined configurations in **Configs/** can be made using:
+## Configs
+
+Predefined configurations from **Configs/** can be made using:
 ```
 make clean all CONF=static
 ```
 
 Available values for `CONF` are: **default devel memdebug minimal musl muslssl noext release static win winssl**
 
+### Windows
+Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
+
+``` bash
+sudo apt-get install gcc-mingw-w64
+make clean all CONF=win
+```
+
+**Warning**: Features such as signals are disabled in the Windows build.
+As you would expect, there are also obvious differences in the file-system.
+
+
+### Static
+The [musl](https://www.musl-libc.org/) build produces a static linux binary
+containing no external library references.
+This is useful when you need an executable with no external dependancies.
+
+``` bash
+sudo apt-get install musl-tools
+make clean all CONF=musl
+```
+
+
+### FreeBSD
+On FreeBSD you will need to use **gmake** instead of **make**:
+
+``` bash
+pkg install fetch gmake bison
+gmake
+```
+
+### SSL
+
+To build with SSL support use the provided configs **muslssl** / **winssl**, or:
+
+``` bash
+make WITH_SSL=1 clean all
+```
+
+
+### Debian Package
+If you are on a Debian system, you can build then install as a package:
+
+``` bash
+cd tools
+./makedep.sh
+sudo dpkg -i jsish-*
+```
+
+
+### Embedding
+Amalgamated source with [jsi.c](https://jsish.org/jsi/file/src/jsi.c) is 
+the easiest way to incorporate Jsi into an existing application.
+
++++ Example
+
+``` clike
+    #include "jsi.c"
+    
+    int main(int argc, char *argv[])
+    {
+        Jsi_Interp *interp = Jsi_InterpNew(NULL);
+        Jsi_EvalString(interp, "for (var i=1; i<=3; i++)  puts('TEST:',i);", 0);
+        if (argc>1)
+            Jsi_EvalFile(interp, Jsi_ValueNewStringDup(interp, argv[1]), 0);
+    }
+```
+
+Then compile with **gcc  myfile.c -o myfile -lm -lz -ldl -lpthread**.
+
+
+More extensive examples are in [c-demos](https://jsish.org/jsi/file/c-demos).
+
+[minimal.c](https://jsish.org/jsi/file/c-demos/minimal.c), used to create **minimalsh** that
+handles Jsi arguments then returns control to application.
+
++++
+
++++ Example 2
+
+    # make -C c-demos minimalsh
+    # c-demos/minimalsh -v
+    2.8.12 2.081 6b18cee9a7a458d892df9f9b05b7558e23539948 2019-03-31 20:50:48 UTC
+
++++
 
 
 
@@ -59,28 +146,26 @@ Interactive mode is the easiest way to try out code snippets, eg:
 
 +++ `jsish`
 
-``` bash
-Jsish interactive: see 'help [cmd]'.  \ cancels > input.  ctrl-c aborts running script.
-# var a = [1,2,3];
-# for (var i in a) { puts(a[i]); }
-1
-2
-3
-# help require
-require(name:string=void, version:number|string=1):number|array|object
-Load/query packages.
-With no arguments, returns the list of all loaded packages.
-With one argument, loads the package (if necessary) and returns its version.
-With two arguments, returns object containing: version, loadFile, func.
-An error is thrown if requested version is greater than actual version.
-#
-# for (i=
-> \
-abandoned input# 
-# 9+12;
-21
-# ^C
-```
+    Jsish interactive: see 'help [cmd]'.  \ cancels > input.  ctrl-c aborts running script.
+    # var a = [1,2,3];
+    # for (var i in a) { puts(a[i]); }
+    1
+    2
+    3
+    # help require
+    require(name:string=void, version:number|string=1):number|array|object
+    Load/query packages.
+    With no arguments, returns the list of all loaded packages.
+    With one argument, loads the package (if necessary) and returns its version.
+    With two arguments, returns object containing: version, loadFile, func.
+    An error is thrown if requested version is greater than actual version.
+    #
+    # for (i=
+    > \
+    abandoned input# 
+    # 9+12;
+    21
+    # ^C
 
 +++
 
@@ -269,93 +354,3 @@ And much of what was said about navigation in Geany also applies to Vim.
 
 To enable syntax highlighting, run **"sudo vi $(locate filetype.vim)"**,
 search for **javascript**, and add **,*.jsi**. 
-
-## Alt-Builds
-
-### FreeBSD
-On FreeBSD you will need to use **gmake** instead of **make**:
-
-``` bash
-pkg install fetch gmake bison
-gmake
-```
-
-### Windows
-Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
-
-``` bash
-sudo apt-get install gcc-mingw-w64
-make clean all CONF=win
-```
-
-**Warning**: Features such as signals are disabled in the Windows build.
-As you would expect, there are also obvious differences in the file-system.
-
-
-### Standalone
-The **standalone** build produces a static binary that contains no external library references.
-This is useful when you need an executable with no external dependancies.
-
-``` bash
-sudo apt-get install musl-tools
-make clean all CONF=musl
-```
-
-### SSL
-
-Here is how to build with SSL support:
-
-``` bash
-make WITH_SSL=1 clean all
-```
-
-Possibly in combination with `CONF=musl`, etc.
-
-### Debian Package
-If you are on a Debian system, you can build then install as a package:
-
-``` bash
-cd tools
-./makedep.sh
-sudo dpkg -i jsish-*
-```
-
-
-### Embedding
-Amalgamated source with [jsi.c](https://jsish.org/jsi/file/src/jsi.c) is 
-the easiest way to incorporate Jsi into an existing application.
-
-+++ Example
-
-``` clike
-#include "jsi.c"
-
-int main(int argc, char *argv[])
-{
-    Jsi_Interp *interp = Jsi_InterpNew(NULL);
-    Jsi_EvalString(interp, "for (var i=1; i<=3; i++)  puts('TEST:',i);", 0);
-    if (argc>1)
-        Jsi_EvalFile(interp, Jsi_ValueNewStringDup(interp, argv[1]), 0);
-}
-```
-
-Then compile with **gcc  myfile.c -o myfile -lm -lz -ldl -lpthread**.
-
-
-More extensive examples are in [c-demos](https://jsish.org/jsi/file/c-demos).
-
-[minimal.c](https://jsish.org/jsi/file/c-demos/minimal.c), used to create **minimalsh** that
-handles Jsi arguments then returns control to application.
-
-+++
-
-+++ Example 2
-
-``` bash
-# make -C c-demos minimalsh
-# c-demos/minimalsh -v
-2.8.12 2.081 6b18cee9a7a458d892df9f9b05b7558e23539948 2019-03-31 20:50:48 UTC
-```
-
-+++
-

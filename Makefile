@@ -473,8 +473,10 @@ jsish.c: src/jsi.h $(REFILES) $(HFILES) $(CFILES) $(MAKEFILE) $(MAKECONF)
 stubs:
 	(cd src && ../$(PROGBIN) ../tools/mkstubs.jsi)
 
-ref:
+ref: docs
 	./$(PROGBIN) tools/mkproto.jsi > tools/protos.jsi
+
+docs:
 	$(MAKE) -C md BLDDIR=$(BLDDIR)
 
 release: stubs ref jsi.c jsish.c testsys test

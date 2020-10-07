@@ -106,7 +106,7 @@ buggy.jsi:5:   "TRACE: Returning buggy: a, b", buggy()
 
 Importantly, when not enabled arguments are elided and do not evaluate.
 
-🚩 More on [Logging](Logging.md).
+🚩 See [Logging](Logging.md).
     
 
 ## Directives

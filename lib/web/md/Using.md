@@ -4,39 +4,21 @@ Using Jsi
 
 JSish is a **C**-extensible interpreter
 providing compact and self contained server-side web scripting
-*(To get Jsi see [Readme](https://jsish.org/jsi))*.
+*(See [Readme](https://jsish.org/jsi) for downloads)*.
 
 You might say, Jsi is self-serving software 8-)
 
 ## Basics
 
-Jsi implements most of *Ecma-script 5.1* (see [Compatibility](#compatibility) and [Reference](Reference.md))
-with some notable differences.
-
-Unlike ecmascript, Jsi expressions and var statements require semicolons, ie:
-
-``` js
-function foo() {
-    var x = 1
-    return ++x
-}
-```
-must be written as:
-``` js
-function foo() {
-    var x = 1;
-    return ++x;
-}
-```
-in order to compile.
+Jsi is mostly an implementation of *Ecma-script 5.1* with extensions (see [Compatibility](#compatibility) and [Reference](Reference.md)).
 
 ### Functions
-Function arguments are either standard or **typed**:
+Function arguments optionally can use **types** and/or **defaults**:
 ``` js
 function foo(a,b) {}
 function bar(a:number, b:string='') {}
 ```
-&#x1f6a9; More on [Typed-arguments](Types.md).
+&#x1f6a9; See [Types](Types.md).
 
 Arrow functions are also supported.
 ```
@@ -45,12 +27,12 @@ var g = (x,y) => x*y;
 ```
 +++ Arrow Limitations
 
-**Note**: Jsi's simple parser requires single args to be written without braces, eg:
+**Note**: A limitation of Jsi's simple parser is that single args can not be braced, eg:
 ```
 var f = x => { return x*2; };
 var g = (x) => { return x*2; }; // ERROR!
 ```
-Also, arrow function may not use types.
+Also types are not supported in arrow functions.
 
 ++++
 
@@ -62,7 +44,7 @@ var x = 0;
 const z = 0;
 let y = 0;
 ```
-However `let` in Jsi is just an alias for `var` *(not scoped)*.
+**Limitation**: `let` does the same thing as `var`, is not scoped.
 
 ### Objects
 
@@ -123,7 +105,7 @@ puts(ch.read());
 
 See [Output Details](#output-details) below.
 
-## Inclusion
+## Includes
 
 Include other code using: `source`, `import`, `load`, `require`:
 
@@ -223,7 +205,7 @@ Accepted by all .jsi modules: -Debug, -Trace, -Test.
 ```
 Note that `moduleRun` invokes the function only if **"hello.jsi"** is first arg to **jsish**.
   
-🚩 More on [Modules](Modules.md).
+🚩 See [Modules](Modules.md).
 
 ## Help
 Jsi has command-line help:
@@ -317,7 +299,7 @@ Websrv.jsi:276:  "TRACE: URL:  http://127.0.0.1:37667/Websrv/wspage.html", OpenB
 Websrv.jsi:80:  "TRACE: FILTER: /Websrv/wspage.html true", WsFilter()
 ...
 ```
-🚩 More on [Logging](Logging.md).
+🚩 See [Logging](Logging.md).
 
 ### Backtrace
 
@@ -431,17 +413,32 @@ fp.puts('hello');
 
 Jsi implements most of 
 [Ecma-script 262 standard](http://www.ecma-international.org/ecma-262/5.1/ECMA-262.pdf)
-version 5.1 with numerous deviations and extensions:
+version 5.1 with numerous additions, ommissions and deviations:
 
-- Semicolons terminations are required for vars and expressions.
-- Feature additions such as `for(x of y)`, `=>`, `let` (but unscoped like `var`), and `const`.
-- `typeof[]` == **"array"**, not **"object"**.
-- Template-strings *(backticks)* work like normal strongs (ie. no `${}`).
-- Omits **Error** object: the argument to **catch()** is just a string.
-- Omits **Date** object: use **strftime/strptime**.
-- **delete** also works on a normal **var**.
-- UTF supported in strings only, not code.
-- Prototype-related features are intentionally incomplete/wrong.
+- Additions: `for(x of y)`, `=>`, `let` (but unscoped like `var`), and `const`.
+- Omissions: objects **Error** *(`catch` arg a string)* and **Date** *(use `strftime`/`strptime`)*.
+- Deviations:
+    - `typeof[]` == **"array"** and typeof null` ==  **"null"**, 
+    - Backticks strings work like normal strongs (ie. ignores `${}`).
+    - UTF supported in strings but not code.
+    - Prototypes are incomplete.
+
+Expressions and var statements require semicolons, ie:
+
+``` js
+function foo() {
+    var x = 1;
+    return ++x;
+}
+```
+not
+``` js
+function foo() {
+    var x = 1
+    return ++x
+}
+```
+
 
 
 *[JSish]:JS-ish or Javascript Like

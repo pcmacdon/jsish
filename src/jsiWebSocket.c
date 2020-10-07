@@ -251,6 +251,7 @@ typedef struct {
     const char *fname;
     Jsi_Value *fileVal;
     time_t loadLast, loadFirst;
+    bool native;
     int flags;
 } jsi_wsFile;
 
@@ -602,9 +603,10 @@ static int jsi_wsServeDir(jsi_wsPss *pss, struct lws *wsi, Jsi_Value *fname, con
     }
     const char *fnb = Jsi_ValueToString(interp, fname, NULL);
     Jsi_DString dStr = {}, tStr = {};
-    int fnlen = Jsi_Strlen(fn);
+    int fnlen = Jsi_Strlen(fn), fblen = Jsi_Strlen(fnb);
     bool isroot = (fn[0]=='/'&&!fn[1]);
-    const char fne = (fnlen>=1?fn[fnlen-1]:0), *fns = (fne=='/' || isroot?"":"/");
+    const char fne = (fnlen>=1?fn[fnlen-1]:0), *fns = (fne=='/' || isroot?"":"/"),
+        fbe = (fblen>=1?fnb[fblen-1]:0);
     if (jsonp)
         Jsi_DSAppend(&dStr, "/* callback */\n", callback, "([", NULL);
     else if (json)
@@ -637,7 +639,7 @@ static int jsi_wsServeDir(jsi_wsPss *pss, struct lws *wsi, Jsi_Value *fname, con
 #endif
         uint sz = 0;
         char pbuf[PATH_MAX];
-        snprintf(pbuf, sizeof(pbuf), "%s%s%s", fnb, (fne!='/' && fnb[0]?"/":""),  z);
+        snprintf(pbuf, sizeof(pbuf), "%s%s%s", fnb, (fbe!='/' && fnb[0]?"/":""),  z);
         Jsi_StatBuf stat = {};
         Jsi_Value *vpath = Jsi_ValueNewStringConst(interp, pbuf, -1);
         Jsi_IncrRefCount(interp, vpath);
@@ -982,7 +984,7 @@ static bool jsi_wsAddStdHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct 
     return true;
 }
 
-static Jsi_RC jsi_wsFileAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value *name) {
+static Jsi_RC jsi_wsFileAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value *name, int native) {
     const char *sname = Jsi_ValueString(interp, name, NULL);
     if (cmdPtr->onModify && sname) {
         bool isNew = 0;
@@ -992,10 +994,13 @@ static Jsi_RC jsi_wsFileAdd(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, Jsi_Value 
             if (!isNew)
                 fPtr = (typeof(fPtr))Jsi_HashValueGet(hPtr);
             else {
+                if (native<0)
+                    native = Jsi_FSNative(interp, name);
                 fPtr = (jsi_wsFile *)Jsi_Calloc(1, sizeof(*fPtr));
                 fPtr->fileVal = name;
                 fPtr->fname = sname;
                 fPtr->loadFirst = time(NULL);
+                fPtr->native = native;
                 Jsi_IncrRefCount(interp, name);
                 fPtr->flags = 0;
                 Jsi_HashValueSet(hPtr, fPtr);
@@ -1014,11 +1019,12 @@ static Jsi_RC jsi_wsFileRead(Jsi_Interp *interp, Jsi_Value *name, Jsi_DString *d
     if (!n && sb.st_size>0) {
         char fdir[PATH_MAX];
         const char* cr = cmdPtr->curRoot, *fpath=NULL;
-        if (!Jsi_FSNative(interp, name) || ((fpath= Jsi_Realpath(interp, name, fdir))
+        bool native = Jsi_FSNative(interp, name);
+        if (!native || ((fpath= Jsi_Realpath(interp, name, fdir))
             && cr && !Jsi_Strncmp(fpath, cr, Jsi_Strlen(cr)))) {
             rc = Jsi_FileRead(interp, name, dStr);
             if (rc == JSI_OK && cmdPtr->onModify && Jsi_FSNative(interp, name))
-                jsi_wsFileAdd(interp, cmdPtr, name);
+                jsi_wsFileAdd(interp, cmdPtr, name, native);
         } else
             fprintf(stderr, "Skip read file %s in %s\n", Jsi_ValueString(interp, name, NULL), (cr?cr:""));
     }
@@ -1278,7 +1284,7 @@ static const char* jsi_wsGetJsiPath(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr) {
     return cmdPtr->jsishPathCache; 
 }
 
-static void jsi_wsPathAlias(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, const char **inPtr, Jsi_DString *dStr) {
+static void jsi_wsPathAlias(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, char **inPtr, Jsi_DString *dStr) {
     const char *ce, *cp = NULL;
     char *lcp;
     Jsi_Value *val;
@@ -1445,13 +1451,13 @@ jsi_ws_http_redirect(struct lws *wsi, int code, Jsi_DString *tStr,
 
 // Handle http GET/POST
 static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi, void *user,
-    struct lws_context *context, const char* inPtr, Jsi_DString *tStr, jsi_wsPss *pss)
+    struct lws_context *context, char* inPtr, Jsi_DString *iStr, Jsi_DString *tStr, jsi_wsPss *pss)
 {
     const char *ext = NULL;
     unsigned char buffer[JSI_BUFSIZ];
     const char *mime = NULL;
     time_t now = time(NULL);
-    char buf[JSI_BUFSIZ];
+    char buf[JSI_BUFSIZ], *bufp;
     int rc = 0;
     buf[0] = 0;
     uchar *p = buffer, *end = &buffer[sizeof(buffer)-1];
@@ -1460,6 +1466,8 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     bool isJsiWeb = 0, isSSI = 0;
     cmdPtr->stats.httpLast = now;
     
+    if (inPtr[0] != '~')
+        inPtr = Jsi_NormalPath(interp, inPtr, iStr);
     /* if a legal POST URL, let it continue and accept data */
     if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
         return 0;
@@ -1479,7 +1487,8 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     }
 
     if ((cmdPtr->urlRedirect && (inPtr == 0 || *inPtr == 0 || !Jsi_Strcmp(inPtr, "/")) && !cmdPtr->redirDisable)
-        && (inPtr = cmdPtr->urlRedirect) && inPtr[0]) {
+        && (inPtr = (char*)cmdPtr->urlRedirect) && inPtr[0])
+    {
         cmdPtr->stats.redirCnt++;
         // TODO: system time change can disrupt the following.
         if (cmdPtr->redirMax>0 && !cmdPtr->redirDisable && cmdPtr->redirMax>0 && cmdPtr->stats.redirLast
@@ -1489,9 +1498,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
         rc = lws_http_redirect(wsi, 301, (uchar*)inPtr, Jsi_Strlen(inPtr), &p, end);
         return (rc == 100 ? 0 : 1);
     }
-    if (!inPtr || !*inPtr)
-        inPtr = "/";
-
+    
     if (cmdPtr->useridPass || cmdPtr->onAuth) {
         int ok = 0;
         int alen;
@@ -1577,8 +1584,10 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     Jsi_DString sStr;
     Jsi_DSInit(&sStr);
     jsi_wsPathAlias(interp, cmdPtr, &inPtr, &sStr);
-
     snprintf(buf, sizeof(buf), "%s/%s", cmdPtr->curRoot, inPtr);
+    Jsi_DSSetLength(&sStr, 0);
+    bufp = Jsi_NormalPath(interp, buf, &sStr);
+    Jsi_Strcpy(buf, bufp);
     Jsi_DSFree(&sStr);
     if (cmdPtr->debug>1)
         fprintf(stderr, "FILE: %s in %s | %s\n", buf, cmdPtr->curRoot, Jsi_ValueString(interp, cmdPtr->rootdir, NULL));
@@ -1669,7 +1678,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
                     hrc = -1;
                 else {
                     hrc = jsi_wsServeString(pss, wsi, Jsi_DSValue(&tStr), 0, NULL, mime);
-                    jsi_wsFileAdd(interp, cmdPtr, fname);
+                    jsi_wsFileAdd(interp, cmdPtr, fname, -1);
                 }
                 Jsi_DecrRefCount(interp, fname);
                 return hrc;
@@ -1762,7 +1771,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
             if (cmdPtr->onModify) {
                 fname = Jsi_ValueNewStringDup(interp, buf);
                 Jsi_IncrRefCount(interp, fname);
-                jsi_wsFileAdd(interp, cmdPtr, fname);
+                jsi_wsFileAdd(interp, cmdPtr, fname, -1);
                 Jsi_DecrRefCount(interp, fname);
             }
             return 1;
@@ -1780,7 +1789,7 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     Jsi_StatBuf jsb;
     bool native = Jsi_FSNative(interp, fname);
     if ((native && Jsi_InterpSafe(interp) && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_READ) != JSI_OK) ||
-        (Jsi_Stat(interp, fname, &jsb) || jsb.st_size<=0)) {
+        (Jsi_Stat(interp, fname, &jsb) || (jsb.st_size<=0 && !S_ISDIR(jsb.st_mode)))) {
 nofile:
         if (cmdPtr->urlUnknown && cmdPtr->urlUnknown[0]) {
             rc = lws_http_redirect(wsi, 301, (uchar*)cmdPtr->urlUnknown, Jsi_Strlen(cmdPtr->urlUnknown), &p, end);
@@ -1817,8 +1826,6 @@ nofile:
         Jsi_DecrRefCount(interp, fname);
         goto done;
     }
-   // if (!ext || isSSI)
-   //     goto serve;
 serve:
     if (S_ISDIR(jsb.st_mode)) {
         rc = jsi_wsServeDir(pss, wsi, fname, inPtr, mime);
@@ -1881,7 +1888,7 @@ serve:
         }
         int hrc = lws_serve_http_file(wsi, buf, mime, Jsi_DSValue(&hStr), Jsi_DSLength(&hStr));
         if (hrc >= 0 && cmdPtr->onModify)
-            jsi_wsFileAdd(interp, cmdPtr, fname);
+            jsi_wsFileAdd(interp, cmdPtr, fname, native);
         Jsi_DecrRefCount(interp, fname);
         if (hrc<0) {
             if (cmdPtr->noWarn==0)
@@ -2268,12 +2275,17 @@ static int jsi_wscallback_http(struct lws *wsi,
 
     case LWS_CALLBACK_HTTP:
     {
-        Jsi_DString dStr;
+        Jsi_DString dStr, iStr, pStr;
         Jsi_DSInit(&dStr);
+        Jsi_DSInit(&iStr);
+        Jsi_DSInit(&pStr);
         if (cmdPtr->debug)
             fprintf(stderr, "HTTP GET: %s\n", inPtr);
-        rc = jsi_wsHttp(interp, cmdPtr, wsi, user, context, inPtr, &dStr, pss);
+        Jsi_DSAppend(&pStr, !inPtr||!inPtr[0]?"/":inPtr, NULL);
+        rc = jsi_wsHttp(interp, cmdPtr, wsi, user, context, Jsi_DSValue(&pStr), &iStr, &dStr, pss);
         Jsi_DSFree(&dStr);
+        Jsi_DSFree(&iStr);
+        Jsi_DSFree(&pStr);
         if (rc<0)
             return -1;
         if (rc==1) {
@@ -2987,7 +2999,7 @@ static void jsi_wsOnModify(jsi_wsCmdObj *cmdPtr) {
     for (hPtr = Jsi_HashSearchFirst(cmdPtr->fileHash, &cursor);
         hPtr != NULL; hPtr = Jsi_HashSearchNext(&cursor)) {
         jsi_wsFile* fPtr = (jsi_wsFile*)Jsi_HashValueGet(hPtr);
-        if (fPtr && fPtr->fileVal) {
+        if (fPtr && fPtr->fileVal) {  //TODO: only native files need to be checked.
             Jsi_StatBuf sb;
             int n = Jsi_Stat(interp, fPtr->fileVal, &sb);
             if (!n && sb.st_mtime > ll) {
@@ -3215,7 +3227,7 @@ static Jsi_RC WebSocketFileCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         return Jsi_LogError("Apply to non-websock object");
     Jsi_Value *val = Jsi_ValueArrayIndex(interp, args, 0);
     if (val)
-        return jsi_wsFileAdd(interp, cmdPtr, val);
+        return jsi_wsFileAdd(interp, cmdPtr, val, -1);
     if (cmdPtr->fileHash)
         return Jsi_HashKeysDump(interp, cmdPtr->fileHash, ret, 0);
     return JSI_OK;

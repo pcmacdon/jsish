@@ -1,8 +1,8 @@
-Jsi: a self-serving, **C**-extensible javascript interpreter with integrated Web-server and Database.
+Jsi is a **C**-extensible javascript interpreter with integrated Web-server and Database.
 
 ### Links
 
- - Documentation: [Using](./md/Using.md) | [Index](./md/Index.md).
+ - Documentation: [Start](./lib/web/md/Start.md) | [Index](./lib/web/md/Index.md).
  - Jsi repository: [https://jsish.org](https://jsish.org). 
  - Github for issues: [https://github.com/pcmacdon/jsish](https://github.com/pcmacdon/jsish).
 

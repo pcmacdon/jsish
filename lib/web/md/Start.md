@@ -1,4 +1,4 @@
-Using Jsi
+Start
 ====
 [Back to Index](Index.md "Goto Jsi Documentation Index")
 
@@ -6,7 +6,6 @@ JSish is a **C**-extensible interpreter
 providing compact and self contained server-side web scripting
 *(See [Readme](https://jsish.org/jsi) for downloads)*.
 
-You might say, Jsi is self-serving software 8-)
 
 ## Basics
 

@@ -279,7 +279,7 @@ Following are principle goals  Jsi:
 - Come with a [Debugger](Debug.md).
 - Support Web applications, particularly with database and websockets.
 - Support [standalone applications](Builtins.md#zvfs) via self-mounting .zip.
-- [Package](Using.md) and extension support.
+- [Package](Start.md) and extension support.
 
 Compiling as C++ is supported, mostly for integrity checks.
 
@@ -311,14 +311,14 @@ Following is a partial list of things that are either incomplete or unimplemente
 ## Index By Topic
 
 
-- **Start**: [Download](Builds.md), [Building](Builds.md), [Using](Using.md), [Embedding](Builds.md#Embedding)
-- **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Index.md), [License](Misc.md#License), [Language](Misc.md#Syntax), [Compatibility](Using.md#Compatibility)
+- **Begin**: [Start](Start.md), [Download](Builds.md), [Build](Builds.md)
+- **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Index.md), [License](Misc.md#License), [Language](Misc.md#Syntax), [Compatibility](Start.md#Compatibility)
 - **Development**: [Types](Types.md), [Debugging](Debug.md), [Logging](Logging.md)
 - **Core**: [System](Builtins.md#System), [Info](Builtins.md#Info), [Interp](Interp.md), [Format](Builtins.md#format), [File-System](Builtins.md#File), [Events](Builtins.md#Event)
-- **Integration**: [Modules](Using.md#Modules), [Require](Using.md#require), [Auto-Load](#auto-load)
+- **Integration**: [Modules](Start.md#Modules), [Require](Start.md#require), [Auto-Load](#auto-load)
 - **Web**: [Server](WebSocket.md), [Preprocessing](WebSocket.md), [WebSocket](Builtins.md#WebSocket), [Markup](Reference.md#Util), [JSON](Builtins.md#JSON)
 - **Miscellaneous**: [Extensions](Extensions.md), [Threads](Interp.md#Threads), [Signal](Builtins.md#Signal), [Sqlite](Sqlite.md), [MySQL](MySql.md), [Zvfs](Builtins.md#Zvfs), [Socket](Builtins.md#Socket), [WebSocket](Builtins.md#WebSocket)
-- **Tools**: [Testing](Testing.md), [Tracing](Using.md#Tracing), [Profiling](Testing.md#Code-Profile), [Code-Coverage](Testing.md#Code-Coverage)
+- **Tools**: [Testing](Testing.md), [Tracing](Start.md#Tracing), [Profiling](Testing.md#Code-Profile), [Code-Coverage](Testing.md#Code-Coverage)
 - **C/C++**: [Jsi-Lite](#jsi-lite), [C Extension](Extensions.md), [DString](Misc.md#DString), [CData](Extensions.md), [Options](Extensions.md#Options), [Sqlite-C](DBQuery.md), [JSON-C](Builtins.md#JSON)
 - **Applications**: [SqliteUI](Builds.md#Apps)
 

@@ -51,7 +51,7 @@ This encourages *leaving-in debug statements*.
 
 
 ## Modules
-[Modules](Using.md#modules) have their own logging environment:
+[Modules](Start.md#modules) have their own logging environment:
 
 ``` js{.line-numbers}
 // FILE: mymod.jsi

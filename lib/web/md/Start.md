@@ -34,14 +34,15 @@ var g = (x,y) => x*y;
 ```
 +++ Arrow Limitations
 
-Arrow function parameters may not have types.
-
-Also Jsi's simple parser requires that single-args have no braces:
+Jsi's simple parser requires that single-args have no braces:
 ```
 var e =  (x,y)  => { return x*y; }; // CORRECT
 var f =  x  => { return x*2; };     // CORRECT
 var g = (x) => { return x*2; };     // ERROR!
 ```
+
+Also, arrow function parameters can not have types.
+
 
 ++++
 

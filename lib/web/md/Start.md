@@ -48,7 +48,7 @@ Also, arrow function parameters can not have types.
 
 ### Variables
 
-Variables declarations:
+Variables can be declared with any of:
 ```
 var x = 0;
 const z = 0;

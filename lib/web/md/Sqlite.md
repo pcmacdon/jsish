@@ -1,6 +1,6 @@
 Sqlite
 ====
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 The simplest [Sqlite](Reference.md#sqlite) uses the Jsi **%v** format with an [object](#objects) var:
 

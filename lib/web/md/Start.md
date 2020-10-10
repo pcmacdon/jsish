@@ -1,23 +1,31 @@
 Start
 ====
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-JSish is a **C**-extensible interpreter
-providing compact and self contained server-side web scripting
-*(See [Readme](https://jsish.org/jsi) for downloads)*.
+JSish is a **javascript**-interpreter / web-server with sqlite, websockets and **C**-extensibility. 
+
+## Download
+
+To begin, either download or [build](Builds.md) the binary:
+
+    wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
+    
+    wget http://jsish.org/zip -O jsi.zip  && unzip jsi.zip && cd jsi && make
 
 
 ## Basics
 
-Jsi is mostly an implementation of *Ecma-script 5.1* with extensions (see [Compatibility](#compatibility) and [Reference](Reference.md)).
+Jsi is mostly an implementation of [Ecma-script 5.1](#compatibility),
+with deviations.
+For example, expressions and vars require semicolons: See [Compatibility](#compatibility).
 
 ### Functions
-Function arguments optionally can use **types** and/or **defaults**:
+Function arguments *may* use **types** / **defaults**:
 ``` js
-function foo(a,b) {}
-function bar(a:number, b:string='') {}
+function foo(a:number, b:string='') {}
+function bar(a,b) {}
 ```
-&#x1f6a9; See [Types](Types.md).
+&#x1f6a9; See [Functions](Functions.md).
 
 Arrow functions are also supported.
 ```
@@ -26,35 +34,37 @@ var g = (x,y) => x*y;
 ```
 +++ Arrow Limitations
 
-**Note**: A limitation of Jsi's simple parser is that single args can not be braced, eg:
+Arrow function parameters may not have types.
+
+Also Jsi's simple parser requires that single-args have no braces:
 ```
-var f = x => { return x*2; };
-var g = (x) => { return x*2; }; // ERROR!
+var e =  (x,y)  => { return x*y; }; // CORRECT
+var f =  x  => { return x*2; };     // CORRECT
+var g = (x) => { return x*2; };     // ERROR!
 ```
-Also types are not supported in arrow functions.
 
 ++++
 
 ### Variables
 
-Variables may be declared with:
+Variables declarations:
 ```
 var x = 0;
 const z = 0;
 let y = 0;
 ```
-**Limitation**: `let` does the same thing as `var`, is not scoped.
+Note however that `let` does the same thing as `var`: it is not scoped.
 
 ### Objects
 
-Object initializer must include a colon in the first element,
-after which shorthand is accepted:
+Shorthand object initializers are accepted, but the first element
+must use a colon:
 ```
 var b = 1, c = 2;
-var o = {a:1, b, c, func() { return 1;} };
+var o = {a:1, b, c, myfunc() { return 1;} };
 ```
 
-Object also support [freeze](Builtins.md#freeze).
+Also, an extended Object.[freeze](Builtins.md#freeze) is supported. 
 
 ### Input/Output
 
@@ -414,13 +424,13 @@ Jsi implements most of
 [Ecma-script 262 standard](http://www.ecma-international.org/ecma-262/5.1/ECMA-262.pdf)
 version 5.1 with numerous additions, ommissions and deviations:
 
-- Additions: `for(x of y)`, `=>`, `let` (but unscoped like `var`), and `const`.
-- Omissions: objects **Error** *(`catch` arg a string)* and **Date** *(use `strftime`/`strptime`)*.
-- Deviations:
-    - `typeof[]` == **"array"** and typeof null` ==  **"null"**, 
-    - Backticks strings work like normal strongs (ie. ignores `${}`).
-    - UTF supported in strings but not code.
-    - Prototypes are incomplete.
+- **Additions**: `for(x of y)`, `=>`, `const`, and `let` (but unscoped like `var`).
+- **Omissions**: no **Date** *(`strftime`/`strptime`)* or **Error** *(arg to `catch` is a string)*.
+- **Deviations**:
+    - `typeof[]` == **"array"** and `typeof null` ==  **"null"**, 
+    - Backticks work like normal strings (ie. ignores `${}`).
+    - UTF supports only strings, not code.
+    - Prototype implementation is incomplete.
 
 Expressions and var statements require semicolons, ie:
 
@@ -440,4 +450,4 @@ function foo() {
 
 
 
-*[JSish]:JS-ish or Javascript Like
+*[JSish]:JS-ish, or Jsi for short, is a Javascript-Like Interpreter

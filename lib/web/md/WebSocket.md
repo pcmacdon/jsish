@@ -1,6 +1,6 @@
 WebSocket
 ========
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 
 Jsi provides server-side web services built upon the [WebSockets](Builtins.md#WebSocket) extension.
@@ -90,7 +90,7 @@ Note  after **$define** expansion, <b>&lt;?</b> and <b>?&gt;</b> evaluation is a
 
 The type pre-processor is triggered by the **.jsi** extension.
 
-It converts [Typed](Types.md) functions into standard web browser javascript, ie.
+It converts [Typed](Functions.md) functions into standard web browser javascript, ie.
 
 ``` js
 function notifyUser(m:string, n:number=1) {

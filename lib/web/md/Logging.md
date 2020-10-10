@@ -1,6 +1,6 @@
 Logging
 ====
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 Debugging output is provided by: `assert LogDebug LogTrace LogTest LogInfo LogWarn LogError`
 
@@ -79,8 +79,16 @@ mymod.jsi:4:  "DEBUG: MYLOC 1: A,B,C", mymod()
 mymod.jsi:5:  "TRACE: MYLOC 2: A,B,C", mymod()
 ```
 
-## Require
-An additional way to enable logging is via `require`:
+## Mask/Enable
+
+When a package is released into production, we typically
+mask out global logging: 
+
+``` js
+provide(Websrv, '1.2.3', {logmask:'debug,trace'});
+```
+
+Likewise, we can enable logging using `require`:
 
 ```
 jsish --E 'require("mymod", 1, {log:"debug"});' mymod.jsi A B C
@@ -106,13 +114,6 @@ dbapp.jsi:5: trace: SQL-QUERY: SELECT * FROM foo    (c-extn [Sqlite])
 [ { a:1, b:2 } ]
 ```
 
-## Provide
-When a package is released into production, it typically
-masks out global logging: 
-
-``` js
-provide(Websrv, '1.2.3', {logmask:'debug,trace'});
-```
 
 ## Tracing
 The interp option [logOpts](Reference.md#interp-logopts) is used to control when *Log*

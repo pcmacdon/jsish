@@ -1,6 +1,6 @@
 Deploy
 ======
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 Jsi code can be deployed as an archive (<b>zip, sqlar</b>) or <b>fossil</b> repo which:
 

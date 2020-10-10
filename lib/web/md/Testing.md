@@ -1,8 +1,8 @@
 Testing
 ====
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-Jsi's builtin test facility (`-t` and `--T`) provides a simplistic approach to code verification.
+Jsi's builtin test facility (`-t` / `--T`) simplifies code validation.
 
 ## Scripts
 A Jsi *test script* simply marks *testable lines* with leading/trailing semicolons:
@@ -31,15 +31,15 @@ jsish -t test.jsi
 
 In a simple test like this, we get a `[PASS]` simply because there were no errors.
 
-### [PASS]
+### Passing
 
-To make the test more useful run:
+Output can be captured in the script with:
 
 ```
 jsish -t -update 1 test.jsi
 ```
 
-which appends an `EXPECT` comment:
+This is appended as an `EXPECT` comment:
 
 ``` js
 /*
@@ -50,16 +50,14 @@ test('this to') ==> TEST: this to
 */
 ```
 
-Now the output is still the same `[PASS]`, but now the output must be a match.
+Now output must match for a `[PASS]`.
 
 
-### [FAIL]
-To cause a mismatch *(and failure)* change line **3** to:
+### Failing
+To induce a `[FAIL]` thus causing a mismatch, change line **3** to:
 ``` js
 ;test('this is a BAD test');
 ```
-
-to induce a `[FAIL]`:
 
 ```
 jsish -t  test.jsi 
@@ -82,7 +80,7 @@ test('this is a BAD test') ==> /tmp/test.jsi:3:   "TEST: this is a BAD test",
 ```
 
 ### Exceptions
-Tests containing exceptions are somewhat verbose:
+Tests containing exceptions might look like:
 
 ``` js
 try {
@@ -92,9 +90,9 @@ try {
 };
 ```
 
-In Jsi, exceptions can be more succinctly expressed using test-prefix `;//`:
+This is somewhat verbose, so in Jsi exceptions can be expressed with the test-prefix `;//`:
 
-``` js
+``` js{.line-numbers}
 // FILE: trys.jsi
 function bar(n) {}
 ;//  foo();
@@ -102,7 +100,7 @@ function bar(n) {}
 ;//  bar(1);
 ```
 
-which will rewrite to `try`/`catch`. Note that this test is a `[FAIL]` as the last line is not an exception as claimed. 
+Test mode will rewrite this to `try`/`catch`:
 
 ```
 jsish --T trys.jsi
@@ -113,28 +111,28 @@ bar() ==>
 bar(1) ==>
 [FAIL]!: expected a throw
 ```
+Note that this test is a `[FAIL]` because line 4 was not an exception as claimed. 
+To properly fail, change it to:
 
-To properly fail, change the last line to:
-```
+``` js
 ;//  bar(1,1);
 ```
 
-Now the result throws as expected.  Unfortunately it is not yet testable:
+Now the result throws as expected.  But unfortunately this is not testable with `-t`:
 
 ```
 jsish -t trys.jsi
 [FAIL]:! trys.jsi: Exceptions require an EXPECT comment; use -update
 ```
 
-As indicated, we need to run update:
+until run update:
 
 ```
 jsish -t -update 1 trys.jsi
 jsish -t trys.jsi
 [PASS]
 ```
-The reason for this limitation is simple: unless in test mode, exceptions are just comments
-which do nothing.
+This requirement avoids false positives, as exceptions are just comments when not in test mode.
 
 ### Comments
 Comments that need to appear in the output are further delimited single-quotes: `;'  ';`.

@@ -5,7 +5,7 @@ Index
 | DOC                        | DESCRIPTION           | DOC                       | DESCRIPTION                    |
 |----------------------------|-----------------------|---------------------------|--------------------------------|
 | [Start](Start.md)          | Download/Build/Use    | [Demos](Demos.md)          | Examples and demos             |
-| [Types](Types.md)          | Typed function params | [Modules](Modules.md)     | Modules purpose & use          |
+| [Functions](Functions.md)  | Typed function params | [Modules](Modules.md)     | Modules purpose & use          |
 | [Testing](Testing.md)      | Builtin test support  | [Logging](Logging.md)     | Logging support                |
 | [Reference](Reference.md)  | Command reference     | [Debug](Debug.md)         | Debugging in Jsi               |
 

@@ -8,15 +8,20 @@ Jsi is a **C**-extensible javascript interpreter with integrated Web-server and 
 
 ### Quick-Start
 
-    wget http://jsish.org/jsi/zip/jsi -O jsi.zip  && unzip jsi.zip && cd jsi && make
+Either download binary or [build it](Builds.md):
+
+    wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
     
-Once built, try it out:
+    wget http://jsish.org/zip -O jsi.zip  && unzip jsi.zip && cd jsi && make
 
-    ./jsish -W js-demos/wspage.html   # Serve minimal websocket page.
-    ./jsish -S mysqlite.db            # Web GUI for Sqlite.
-    ./jsish -t tests                  # Run tests
+    
+### Use
 
-    # A simple C-extension.
+    ./jsish -W -docs /          # Jsi web-docs.
+    ./jsish -S mysqlite.db      # Sqlite web-gui.
+    
+Compile and run a simple C-extension.
+
     ./jsish -c -jsc "function add(n1:number, n2:number=1):number { n1+=n2; \nRETURN(n1);\n }" Sum 
     ./jsish -e 'require("Sum",0); return Sum.add(9,3);'
 

@@ -1,6 +1,6 @@
-Types
+Functions
 =====
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 Functions in Jsi can optionally use types to provide *checking* of arguments.
 

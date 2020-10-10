@@ -8,16 +8,17 @@
     <link rel="stylesheet" href="css/bootstrap-vue.css">
     <link rel="stylesheet" href="css/animate.css">
     <link rel="stylesheet" href="css/prism.css">
-    <script src="js/vue.min.js"></script>
- <!--   <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js" async></script> -->
-    <script> Vue.config.productionTip=false; </script>
-    <script src="js/vue-router.min.js"></script>
-    <script src="js/bootstrap-vue.min.js"></script>
-    <script src="js/vue-markdown-pdq.min.js"></script>
-    <script src="js/prism.js"></script>
-    <script src="jsi.js"></script>
-    <script type="module" src="app/app.js"></script>
     <link rel="stylesheet" href="app/app.css">
+    <script type="module">
+        import "./js/vue.min.js";
+        Vue.config.productionTip=false;
+        import "./js/vue-router.min.js";
+        import "./js/bootstrap-vue.min.js";
+        import "./js/vue-markdown-pdq.min.js";
+        import "./js/prism.js";
+        import "./jsi.js";
+        import "./app/app.js";
+    </script>
 </head>
 
 <body>

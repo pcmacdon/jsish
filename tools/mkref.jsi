@@ -182,7 +182,7 @@ function mkref(args:array|string, opts:object) {
     var vv = Info.version(true);
     var ver = vv.major+'.'+vv.minor+'.'+vv.release;
 
-    var rv = "# Reference\n[Back to Index](Index.md \"Goto Jsi Documentation Index\")\n\nThe generated reference for Jsi builtin commands.\n";
+    var rv = "# Reference\n[Index](Index.md \"Jsi Documentation Index\")\n\nThe generated reference for Jsi builtin commands.\n";
  
     for (i in lst) {
         tinf = Info.cmds(lst[i]);

@@ -4,26 +4,26 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- <link rel="icon" href="data:;base64,iVBORw0KGgo="> 
-    <link rel="stylesheet" href="font-awesome/css/all.css">-->
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="../css/bootstrap-vue.css">
     <link rel="stylesheet" href="../css/animate.css">
     <link rel="stylesheet" href="../css/prism.css">
-    <script src="../js/vue.min.js"></script>
- <!--   <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js" async></script> -->
-    <script> Vue.config.productionTip=false; </script>
-    <script src="../js/vue-router.min.js"></script>
-    <script src="../js/bootstrap-vue.min.js"></script>
-    <script src="../js/vue-markdown-pdq.min.js"></script>
-    <script src="../js/prism.js"></script>
-    <script src="../jsi.js"></script>
-    <script type="module" src="./app.js"></script>
     <link rel="stylesheet" href="app.css">
+    <script type="module">
+        import "../js/vue.min.js";
+        Vue.config.productionTip=false;
+        import "../js/vue-router.min.js";
+        import "../js/bootstrap-vue.min.js";
+        import "../js/vue-markdown-pdq.min.js";
+        import "../js/prism.js";
+        import "../jsi.js";
+        import "./app.js";
+    </script>
 </head>
 
 <body>
-    <noscript>For non-javasript docs <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md">click here</a></noscript>
+    <noscript> <img src="https://jsish.org/fossil/jsi/doc/tip/www/site/logojsi.png">
+        For Jsi Docs without javascript <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md">click here!</a></noscript>
     <div id="app" style="height:100%; width:100%">
         <router-view />        
     </div>

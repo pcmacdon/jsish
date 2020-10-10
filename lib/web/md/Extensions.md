@@ -1,12 +1,12 @@
 Extensions
 ===
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 While the best way to write an extension is modifying an existing one by hand,
 that is non-trivial.
 
 Alternatively you can use the simplified generation of C-extensions from **.jsc** files.
-It leverages [typed](Types.md) function providing
+It leverages [typed](Functions.md) function providing
 argument checking and conversion.
 
 ## Example
@@ -192,8 +192,8 @@ Here is a test script: [ext_test.jsi](https://jsish.org/jsi/file/c-demos/cextn/e
 ### Parameters
 
 - Parameters are unloaded into function-local vars based on their type (singular).
-- [Type Unions](Types.md#unions) are currently unsupported and simply ignored.
-- A difference from JS signatures is [implicit types](Types.md#implicit-types) are not supported.
+- [Type Unions](Functions.md#unions) are currently unsupported and simply ignored.
+- A difference from JS signatures is [implicit types](Functions.md#implicit-types) are not supported.
 
 
 

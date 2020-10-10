@@ -13,7 +13,7 @@ function Websrv(args:string|array, conf:object=void)
         ws      :null,
         wsopts  :null,
         css     :'',
-        done    :0,
+        done    :false,
     };
     var options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
@@ -26,7 +26,7 @@ function Websrv(args:string|array, conf:object=void)
         initArg     :[],        // List of app modules to run.
         isFile      :false,     // Url is a file, so throw if not exists.
         local       :true,      // Accept only local connections.
-        mode        :'',        // Mode string: menu, admin
+        mod         :'',        // Module string: menu, admin
         noCheck     :false,     // Disable function type-checking for .jsi files in browser.
         noGui       :false,     // Disable starting local browser.
         noReload    :false,     // Disable requesting hot-reload when files change.
@@ -66,7 +66,7 @@ function Websrv(args:string|array, conf:object=void)
     {
         if (self.ignoreExit) return;
         WsSend(-1, 'exit', {});
-        setTimeout(function () {self.done = 1; }, 1000); 
+        setTimeout(function () {self.done = true; }, 1000); 
     }
 
     function CloseNow(ws:userobj)
@@ -76,7 +76,7 @@ function Websrv(args:string|array, conf:object=void)
             return;
         LogTrace("Last client has closed");
         ws.conf({noUpdate:true});
-        self.done = 1;
+        self.done = true;
     }
     
     function WsFilter(ws:userobj, id:number, url:string, ishttp:boolean)
@@ -127,11 +127,11 @@ function Websrv(args:string|array, conf:object=void)
     
     function WsSend (id:number, cmd:string, obj:object, opts:object=void)
     {
-        wsSend(self.mode, id, cmd, obj);
+        wsSend(self.mod, id, cmd, obj);
     }
     
     function InitData(id:number) {
-        if (self.mode === 'menu') {
+        if (self.mod === 'menu') {
             return self.initArg;
         }
         var rv='', rids = self.ws.ids();
@@ -154,10 +154,13 @@ function Websrv(args:string|array, conf:object=void)
             dat = JSON.parse(data);
             var ret = self.onRecv(ws, id, dat);
             if (ret) {
-                if (typeof(ret) !== 'array' )
-                    return WsSend(id, dat.cmd, {data:ret});
-                if (ret.length !== 2) throw('array size != 2: '+ret.toString());
-                WsSend(id, ret[0], {data:ret[1]});
+                if (typeof(ret) !== 'object' )
+                    throw('expected object');
+                if (!ret.cmd)
+                    ret.cmd = dat.cmd;
+                var mod = (dat.mod?dat.mod:self.mod);
+                var opts = (dat.opts?dat.opts:{});
+                return wsSend(mod, id, dat.cmd, ret, opts);
             }
             return;
         }
@@ -166,6 +169,8 @@ function Websrv(args:string|array, conf:object=void)
             dat = JSON.parse(data);
             puts('DC',dat.cmd);
             switch (dat.cmd) {
+                case 'start': // For apps, ignore it.
+                    break;
                 case 'init':
                     msg = InitData(id);
                     LogTrace("MSG:", msg);
@@ -353,7 +358,7 @@ function Websrv(args:string|array, conf:object=void)
                 return;
             }
         }
-        self.done = 1;
+        self.done = true;
     }
     
     function ConvertVue(fn:string) { // Now builtin.
@@ -416,11 +421,12 @@ function Websrv(args:string|array, conf:object=void)
         self.url = urlarg;
     }
     if (self.app) {
-        pal = {app:self.app};
-        self.url = self.app+'/index.html';
-        self.rootdir = '/zvfs/lib/web';
+        if (!self.rootdir)
+            self.rootdir = '/zvfs/lib/web';
+        pal = {app:self.rootdir+'/'+self.app};
+        self.url = 'index.html';
         if (!self.wsinc) {
-            self.wsinc = self.app+'/wsinc.jsi';
+            self.wsinc = pal.app+'/wsinc.jsi';
             if (!File.exists(self.wsinc))
                 self.wsinc = '';
         }
@@ -472,7 +478,7 @@ function Websrv(args:string|array, conf:object=void)
         self.rootdir = '.';
 
     // Provide default values for websocket.
-    var wo = self.wsopts = {
+    var wopts = self.wsopts = {
         pathAlias:pal,
         local:self.local,
         debug:self.wsdebug,
@@ -492,44 +498,44 @@ function Websrv(args:string|array, conf:object=void)
         ssl:self.ssl,
         mimeLookupFunc:mimeLookup,
     };
-    if (self.wsinc)
-        source(self.wsinc);
-    switch (self.mode) {
+    switch (self.mod) {
         case 'admin':
             self.url = '/admin';
-            wo.getRegexp=/^\/admin/;
-            wo.onGet=WebAdmin;
+            wopts.getRegexp=/^\/admin/;
+            wopts.onGet=WebAdmin;
             break;
         case 'menu':
             self.url = '/jsi/web/Websrv.htmli';
             break;
         case '': break;
-        default: throw('mode "'+self.mode+'" not one of: admin, menu');
+        default:
+            if (!self.app && !self.docs)
+                throw('mod "'+self.mod+'" not one of: admin, menu');
     }
     if (urlOrig!=='' && self.timeout === 60000)
         self.timeout = 0;
-    if (!self.docs && !self.server && !self.pageStr && self.mode === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
+    if (!self.app && !self.docs && !self.server && !self.pageStr && self.mod === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
         throw("url file empty or not found: "+self.url);
     if (self.urlPrefix.length && self.urlPrefix[0] != '/')
         throw('urlPrefix must start with a slash');
     
     if (self.local)
-        wo.noCompress = true;
+        wopts.noCompress = true;
     if (self.server) {
         self.noGui = true;
         if (self.timeout !== options.timeout)
             self.timeout = 0;
     } else if (!self.noReload)
-        wo.onModify = onModify;
+        wopts.onModify = onModify;
     if (self.pageStr !== '') {
-        wo.getRegexp=/^\/page/;
+        wopts.getRegexp=/^\/page/;
         self.url = '/page';
-        wo.onGet=WebGetString;
+        wopts.onGet=WebGetString;
     }
     if (self.useridPass != '') {
-        wo.useridPass = self.useridPass;
+        wopts.useridPass = self.useridPass;
         if (self.useridPass === ':') // Exercise onAuth callback.
-            wo.onAuth = WsAuth;
+            wopts.onAuth = WsAuth;
     }
     if (typeof self.wsOpts === 'string')
         self.wsOpts = JSON.parse(self.wsOpts, false);
@@ -538,8 +544,10 @@ function Websrv(args:string|array, conf:object=void)
     if (self.udata && self.udata.length)
         self.wsOpts.udata = self.udata;
     for (var i in self.wsOpts)
-        wo[i] = self.wsOpts[i];
+        wopts[i] = self.wsOpts[i];
 
+    if (self.wsinc)
+        source(self.wsinc);
     OpenWebsock();
    // if (!self.ws.conf('extHandlers'))
     //    self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
@@ -556,7 +564,7 @@ function Websrv(args:string|array, conf:object=void)
 
     if (self.timeout)
         setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
-    while (self.done == 0 && Event.update(100) ) ;
+    while (!self.done && Event.update(100) ) ;
     
 }
 

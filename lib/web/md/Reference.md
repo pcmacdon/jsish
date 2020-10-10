@@ -1,5 +1,5 @@
 # Reference
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index")
 
 The generated reference for Jsi builtin commands.
 

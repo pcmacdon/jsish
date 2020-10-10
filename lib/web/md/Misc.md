@@ -1,6 +1,6 @@
 Miscellaneous
 =============
-[Back to Index](Index.md "Goto Jsi Documentation Index")
+[Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 ## Options
 
@@ -122,7 +122,7 @@ where OP is one of the binary operators +, -, *, /, etc.
 | EXPR      | An expression (see below)                                                         |
 | FUNC      | A function value                                                                  |
 | IDENT     | Is an valid identifier                                                            |
-| PRIMITIVE | A primitive value acceptable as an [argument type](Types.md).           |
+| PRIMITIVE | A primitive value acceptable as an [argument type](Functions.md).           |
 | STMTS     | Is zero or more statements                                                        |
 | TYPE      | A type value acceptable as defaults                                               |
 
@@ -260,7 +260,7 @@ it is now internally modelled after [Tcl](https://www.tcl.tk/doc/scripting.html)
 
 Extensions include:
 
-- Functions parameters may have [types and defaults](Types.md).
+- Functions parameters may have [types and defaults](Functions.md).
 - [Testing](Testing.md) support that leverages type-checking.
 - Select features from newer versions of the standard (eg. Array **of** and **forEach**).
 - Limited basic arrow functions: no default values, and single parameters may not be braced.
@@ -313,7 +313,7 @@ Following is a partial list of things that are either incomplete or unimplemente
 
 - **Begin**: [Start](Start.md), [Download](Builds.md), [Build](Builds.md)
 - **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Index.md), [License](Misc.md#License), [Language](Misc.md#Syntax), [Compatibility](Start.md#Compatibility)
-- **Development**: [Types](Types.md), [Debugging](Debug.md), [Logging](Logging.md)
+- **Development**: [Types](Functions.md), [Debugging](Debug.md), [Logging](Logging.md)
 - **Core**: [System](Builtins.md#System), [Info](Builtins.md#Info), [Interp](Interp.md), [Format](Builtins.md#format), [File-System](Builtins.md#File), [Events](Builtins.md#Event)
 - **Integration**: [Modules](Start.md#Modules), [Require](Start.md#require), [Auto-Load](#auto-load)
 - **Web**: [Server](WebSocket.md), [Preprocessing](WebSocket.md), [WebSocket](Builtins.md#WebSocket), [Markup](Reference.md#Util), [JSON](Builtins.md#JSON)

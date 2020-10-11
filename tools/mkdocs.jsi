@@ -127,6 +127,8 @@ function mkdocs(args, opts) {
     self.result = {
         sections: self.fall,
         files:Object.keys(self.fall).sort(),
+        navFns:['Start', 'Reference', 'Index'],
+        navBut:{ label:'JSI', title:"jsish.org home page", href:"https://jsish.org" },
     };
     var fdirt = fdir+'/index.txt';
     if (File.exists(fdirt))

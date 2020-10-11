@@ -190,3 +190,12 @@ a.toc-anchor {
 }
 
 .markdown div.alert p { margin-block-end:0; }
+
+.smalldev {display:none;}
+
+@media only screen and (max-width: 767px) {
+    .bd-sidebar, .bd-toc, .bd-submenus { display:none; }
+    .smalldev { display:inline-block; }
+}
+
+smalldev

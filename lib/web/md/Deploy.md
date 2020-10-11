@@ -2,7 +2,7 @@ Deploy
 ======
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-Jsi code can be deployed as an archive (<b>zip, sqlar</b>) or <b>fossil</b> repo which:
+Jsi code can be deployed as an archive (**zip**/**sqlar**) or **fossil** repo which:
 
 - contains one or several applications.
 - provides all support files required by application: **.jsi**, **.html**, etc.

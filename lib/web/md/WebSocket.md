@@ -19,9 +19,9 @@ Extension | Type       | Description
 These work as described below.
 
 ### HTML Preprocessing
-The HTML preprocessor is triggered by the extension <b>.htmli</b>.
+The HTML preprocessor is triggered by the extension **htmli**.
 
-It evaluates javascript contained in <b>&lt;?</b> and <b>?&gt;</b> tags.
+It evaluates javascript contained in `<?` and `?> ` tags.
 
 This code is run in a private subinterp to which two new commands have been added:
 
@@ -44,11 +44,11 @@ Here is an example:
 </html>
 ```
 
-All <b>include</b>-ed files are also similarly processed recursively, regardless of extension.
-The only exception are <b>.js .jsi</b> and <b>.css</b>,
+All **include**-ed files are also similarly processed recursively, regardless of extension.
+The only exception are `.js`, `.jsi` and `.css`,
 whose handling is described below.
 
-Files with the .css/.cssi extensions are wrapped in <b>&lt;style></b> tags
+Files with the .css/.cssi extensions are wrapped in `<style>` tags
 and *.js/.jsi* are wrapped in **script** tags.
 
 When the include **debug** flag is *true*, non-html files are not included inline but rather
@@ -61,7 +61,8 @@ via link/script tags.  This is used to simplify debugging in the browser, eg.
 ```
 
 ### CSS Preprocessing
-The CSS preprocessor is triggered by the <b>.cssi</b> extension, and provides symbolic substitution via defines prefixed with <b>$</b>:
+The CSS preprocessor is triggered by the `.cssi` extension, and provides 
+symbolic substitution via defines prefixed with **$**:
 
 ``` js
 $mycolor = { blue }    /* File: styles.cssi */
@@ -84,7 +85,7 @@ used like so:
 ?>
 ```
 
-Note  after **$define** expansion, <b>&lt;?</b> and <b>?&gt;</b> evaluation is also applied.
+Note  after **$define** expansion, `<?` and `?>` evaluation is also applied.
 
 ### JS Preprocessing
 
@@ -111,7 +112,7 @@ This provides runtime type-checking of function calls.
 To debug, we set a breakpoint on warnings which are output
 to the console.
 
-The Jsi support functions are included from: <b>/jsi/lib/jsi.js</b>
+The Jsi support functions are included from: **/jsi/lib/jsi.js**
 
 ## Enabling Preprocessors
 

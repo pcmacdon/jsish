@@ -1,12 +1,13 @@
 Start
 ====
+<!-- ABC -->
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 JSish is a **javascript**-interpreter / web-server with sqlite, websockets and **C**-extensibility. 
 
 ## Download
 
-To begin, either download or [build](Builds.md) the binary:
+Two ways to get a binary, download or [build](Builds.md):
 
     wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
     
@@ -15,9 +16,7 @@ To begin, either download or [build](Builds.md) the binary:
 
 ## Basics
 
-Jsi is mostly an implementation of [Ecma-script 5.1](#compatibility),
-with deviations.
-For example, expressions and vars require semicolons: See [Compatibility](#compatibility).
+Jsi mostly implements **Ecma-script 5.1**, with deviations: See [Compatibility](#compatibility).
 
 ### Functions
 Function arguments *may* use **types** / **defaults**:
@@ -335,7 +334,7 @@ hello.jsi:2:   "#1: < hello()
  <-- [ [], { a:1, b:2 } ][ [], { a:1, b:2 } ]
 ```
 
-## Output Details
+## Output
 
 The following are used for output and input:
 
@@ -425,15 +424,21 @@ Jsi implements most of
 [Ecma-script 262 standard](http://www.ecma-international.org/ecma-262/5.1/ECMA-262.pdf)
 version 5.1 with numerous additions, ommissions and deviations:
 
-- **Additions**: `for(x of y)`, `=>`, `const`, and `let` (but unscoped like `var`).
-- **Omissions**: no **Date** *(`strftime`/`strptime`)* or **Error** *(arg to `catch` is a string)*.
+- **Additions**:
+    - Typed function parameters.
+    - ES6 features: `=>`, `for(x of y)`, `const`, and `let` (but unscoped like `var`).
+    - `Info`, `Interp`, and other system builtins.
+- **Omissions**: 
+    - no *Automatic Semicolon Insertion*.
+    - no **Error** *(arg to `catch` is a string)*.
+    - no **Date** *(supplanted by `strftime`/`strptime`)*.
 - **Deviations**:
     - `typeof[]` == **"array"** and `typeof null` ==  **"null"**, 
     - Backticks work like normal strings (ie. ignores `${}`).
-    - UTF supports only strings, not code.
+    - UTF supported in strings, not code.
     - Prototype implementation is incomplete.
 
-Expressions and var statements require semicolons, ie:
+Syntactic difference is mostly that semicolons are required, ie:
 
 ``` js
 function foo() {

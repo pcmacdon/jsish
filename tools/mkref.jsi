@@ -198,6 +198,8 @@ function mkref(args:array|string, opts:object) {
             continue;
         }
     }
+    rv += '\n<!-- meta:{"file":{"index":3, "navindex":3}} -->\n';
+
     if (self.O != '')
         File.write(self.O, rv);
     else

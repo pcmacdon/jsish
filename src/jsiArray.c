@@ -250,7 +250,7 @@ static Jsi_RC jsi_ArrayFlatSub(Jsi_Interp *interp, Jsi_Obj* nobj, Jsi_Value *arr
         Jsi_Value *t = Jsi_ValueArrayIndex(interp, arr, i);
         if (t && depth>0 && Jsi_ValueIsArray(interp, t))
             rc = jsi_ArrayFlatSub(interp, nobj, t , depth-1);
-        else if (!Jsi_ValueIsUndef(interp, t))
+        else if (t && t->vt != JSI_VT_UNDEF)
             Jsi_ObjArrayAdd(interp, nobj, t);
         if ((uint)(++n + clen)>interp->maxArrayList)
             rc = Jsi_LogError("array size exceeded");

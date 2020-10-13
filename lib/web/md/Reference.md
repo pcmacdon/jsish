@@ -1282,3 +1282,5 @@ Console input and output to stderr.
 |---|---|---|---|
 |mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
+
+<!-- meta:{"file":{"index":3, "navindex":3}} -->

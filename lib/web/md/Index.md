@@ -1,5 +1,5 @@
-Index
-====
+# Index
+
 [Back to jsish.org](https://jsish.org/)
 
 | DOC                        | DESCRIPTION           | DOC                       | DESCRIPTION                    |
@@ -9,7 +9,8 @@ Index
 | [Testing](Testing.md)      | Builtin test support  | [Logging](Logging.md)     | Logging support                |
 | [Reference](Reference.md)  | Command reference     | [Debug](Debug.md)         | Debugging in Jsi               |
 
-|----------------------------|-----------------------|---------------------------|--------------------------------|
+## Advanced
+
 | DOC                        | DESCRIPTION           | DOC                       | DESCRIPTION                    |
 |----------------------------|-----------------------|---------------------------|--------------------------------|
 | [Extensions](Extensions.md)| Rolling C extensions  | [Builds](Builds.md)       | Advanced build topics          |
@@ -18,3 +19,4 @@ Index
 | [Deploy](Deploy.md)        | Deploying in Jsi      | [Builtins](Builtins.md)   | Command descriptions & examples| 
 | [DBQuery](DBQuery.md)      | Sqlite/C interface    | [Misc](Misc.md)           | Other, unfinished documentation|
 
+<!-- meta:{"file":{"index":2, "navindex":2}} -->

@@ -1,6 +1,6 @@
 #!/usr/bin/env jsish
 
-function mkdocs(args, opts) {
+function Docs(args, opts) {
 
     var options = { // Analyse markdown
         O   :'stdout',  // Output index file
@@ -13,6 +13,10 @@ function mkdocs(args, opts) {
         fblocks:{},
         aflist:[],
         result:{},
+        indexN:[],
+        navN:[],
+        projectN:{label:"JSI", title:"jsish.org home page", href:"https://jsish.org"},
+        filesN:[],
     };
     moduleOpts(options, self);
 
@@ -32,7 +36,7 @@ function mkdocs(args, opts) {
     if (File.isdir(fn)) {
         fdir = fn;
         if (fn[fn.length-1]!='/') fn+='/';
-        lst = File.glob('*.md', {dir:fn, prefix:fn, tails:true});
+        lst = File.glob('*.md', {dir:fn, prefix:fn, tails:true}).sort();
         fdir = fn;
     } else {
         lst = [fn];
@@ -48,6 +52,7 @@ function mkdocs(args, opts) {
     }
     for (i of lst) {
         f = File.tail(i);
+        var frn = File.rootname(f);
         LogDebug("DO HEADERS", i);
         d = self.fdata[f] = File.read(i);
         r = d.match(re);
@@ -105,6 +110,32 @@ function mkdocs(args, opts) {
         r = d.match(reb);
         LogDebug('DO BLOCKS', r);
         self.fblocks[f] = r;
+        r = d.match(/^<!-- meta:.* -->$/m);
+        var fidxI = -1;
+        if (r) {
+            var mets = r[0].substr(10, r[0].length-13);
+            var meta = JSON.parse(mets), file = (meta?meta.file:null),
+                nav = (meta?meta.navindex:null), sys = (meta?meta.project:null);
+            if (file) {
+                if ((i=file.index)) {
+                    if (self.indexN[i])
+                        self.indexN[i].push(f);
+                    else
+                        self.indexN[i] = [f];
+                }
+                if ((i=file.navindex)) {
+                    fidxI = i;
+                    if (self.navN[i])
+                        self.navN[i].push(frn);
+                    else
+                        self.navN[i] = [frn];
+                }
+            }
+            if (sys)
+                self.projectN = Object.assign(sys);
+        }
+        if (fidxI<0)
+            self.filesN.push(f);
     }
     for (f in self.flinks) {
         var fl = self.flinks[f];
@@ -126,18 +157,18 @@ function mkdocs(args, opts) {
     }
     self.result = {
         sections: self.fall,
-        files:Object.keys(self.fall).sort(),
-        navFns:['Start', 'Reference', 'Index'],
-        navBut:{ label:'JSI', title:"jsish.org home page", href:"https://jsish.org" },
+        files:self.indexN.flat().concat(self.filesN),
+        navFns:self.navN.flat(),
+        project:self.projectN,
     };
-    var fdirt = fdir+'/index.txt';
+   /* var fdirt = fdir+'/index.txt';
     if (File.exists(fdirt))
-        self.result.files = File.read(fdirt).trim().split(' ');
+        self.result.files = File.read(fdirt).trim().split(' ');*/
     if (self.O)
         File.write(self.O, JSON.stringify(self.result));
     else
         return self.result;
 }
 
-moduleRun(mkdocs);
+moduleRun(Docs);
 

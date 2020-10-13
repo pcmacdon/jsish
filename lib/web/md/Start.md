@@ -468,4 +468,4 @@ Solving this would require python style garbage collection: http://www.arctrix.c
 
 *[JSish]:JS-ish, or Jsi for short, is a Javascript-Like Interpreter
 
-<!-- {fileconf:{order:1, nav:1}, project:{label:"JSI", title:"jsish.org home page", href:"https://jsish.org" }} -->
+<!-- meta:{"file":{"index":1, "navindex":1}, "project":{"label":"JSI", "title":"jsish.org home page", "href":"https://jsish.org" }} -->

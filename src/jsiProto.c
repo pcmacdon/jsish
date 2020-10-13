@@ -497,8 +497,8 @@ static Jsi_RC ObjectMergeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
-    if (!v || v->vt != JSI_VT_OBJECT || v->d.obj->ot != JSI_OT_OBJECT ||
-        _this->vt != JSI_VT_OBJECT || _this->d.obj->ot != JSI_OT_OBJECT)
+    if (!v || !Jsi_ValueIsObjType(interp, v, JSI_OT_OBJECT) ||
+        !Jsi_ValueIsObjType(interp, _this, JSI_OT_OBJECT))
         return Jsi_LogError("expected object");
     Jsi_Obj *obj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);
     Jsi_ValueMakeObject(interp, ret, obj);
@@ -531,7 +531,7 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         return Jsi_LogError("must call via Object.assign");
 
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
-    if (!v || v->vt != JSI_VT_OBJECT || v->d.obj->ot != JSI_OT_OBJECT)
+    if (!v || Jsi_ValueIsObjType(interp, v, JSI_VT_OBJECT))
         return Jsi_LogError("arg1: expected object");
     Jsi_Obj *obj = v->d.obj;
     Jsi_RC rc = JSI_OK;
@@ -541,7 +541,7 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         Jsi_TreeEntry *tPtr;
         Jsi_TreeSearch search;
         Jsi_Value *vs = Jsi_ValueArrayIndex(interp, args, i);
-        if (!vs || vs->vt != JSI_VT_OBJECT || vs->d.obj->ot != JSI_OT_OBJECT)
+        if (!vs || !Jsi_ValueIsObjType(interp, vs, JSI_VT_OBJECT))
             return Jsi_LogError("arg%d: expected object", i+1);
         for (tPtr = Jsi_TreeSearchFirst(vs->d.obj->tree, &search, 0, NULL);
             tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
@@ -637,7 +637,7 @@ static Jsi_RC ObjectCreateCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     
     if (proto->vt != JSI_VT_NULL && proto->vt != JSI_VT_OBJECT) 
         return Jsi_LogError("arg 1 is not a proto object or null");
-    if (props && (props->vt != JSI_VT_OBJECT || props->d.obj->ot != JSI_OT_OBJECT)) 
+    if (props && !Jsi_ValueIsObjType(interp, props, JSI_OT_OBJECT))
         return Jsi_LogError("arg 2 is not a properties object");
         
     Jsi_ValueMakeObject(interp, ret, obj=Jsi_ObjNew(interp));

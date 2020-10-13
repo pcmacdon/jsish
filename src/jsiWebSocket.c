@@ -142,7 +142,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     int flags;
     jsi_wsStatData stats;
     char *iface;
-    const char* urlPrefix, *urlRedirect, *urlUnknown;
+    const char* urlPrefix, *urlRedirect, *urlUnknown, *urlFallback;
     const char *localhostName;
     const char *clientName;
     const char *clientIP;
@@ -164,6 +164,7 @@ typedef struct { /* Per server data (or client if client-mode). */
     int recvBufMax;
     int recvBufCnt;
     int recvBufTimeout;
+    int sessFlag;
     int lastRevCnt; // For update
     time_t createLast;
     time_t startTime;
@@ -365,6 +366,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(BOOL,   jsi_wsCmdObj, redirMax,   .help="Temporarily disable redirects when see more than this in 10 minutes"),
     JSI_OPT(STRING, jsi_wsCmdObj, rootdir,    .help="Directory to serve html from (\".\")"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, server,     .help="String to send out int the header SERVER (jsiWebSocket)"),
+    JSI_OPT(INT,    jsi_wsCmdObj, sessFlag,   .help="Flag to send in sessionJsi cookie", jsi_IIOF),
     JSI_OPT(OBJ,    jsi_wsCmdObj, ssiExts,    .help="Object map of file extensions to apply SSI.  eg. {myext:true, shtml:false} ", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, ssl,        .help="Use https", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, sslCert,    .help="SSL certificate file"),
@@ -373,9 +375,10 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(TIME_T, jsi_wsCmdObj, startTime,  .help="Time of websocket start", jsi_IIRO),
     JSI_OPT(STRKEY, jsi_wsCmdObj, includeFile,.help="Default file when no extension given (include.shtml)"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, udata,      .help="User data"),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, urlFallback,.help="Fallback to serve when file not found."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlPrefix,  .help="Prefix in url to strip from path; for reverse proxy."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlRedirect,.help="Redirect when no url or /, and adds cookie sessionJsi."),
-    JSI_OPT(STRKEY, jsi_wsCmdObj, urlUnknown, .help="Redirect for unknown page or 404."),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, urlUnknown, .help="Redirect for 404 unknown page."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, useridPass, .help="The USERID:PASSWORD to use for basic authentication"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, version,    .help="WebSocket version info", jsi_IIRO),
     JSI_OPT_END(jsi_wsCmdObj, .help="Websocket options")
@@ -402,7 +405,9 @@ static bool jsi_wsAddHeader(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws
     Jsi_DString *hStr);
 
 static void wss_MakeSessionKey( jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss) {
-    snprintf(pss->key, sizeof(pss->key), "sessionJsi=%d%p%d", pss->wid, pss, (int)cmdPtr->startTime);
+    int flag = (cmdPtr->urlFallback && cmdPtr->urlFallback[0]);
+    snprintf(pss->key, sizeof(pss->key), "sessionJsi=%d%p%d.%d.%d",
+        pss->wid, pss, (int)cmdPtr->startTime, flag, cmdPtr->sessFlag);
 }
     
 // Allocate per-connection data using file descriptor.
@@ -1463,9 +1468,10 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     uchar *p = buffer, *end = &buffer[sizeof(buffer)-1];
     int n;
     Jsi_Value* fname = NULL;
-    bool isJsiWeb = 0, isSSI = 0;
+    bool isJsiWeb = 0, isSSI = 0, fallbackTry = 0;
     cmdPtr->stats.httpLast = now;
-    
+
+falltry:
     if (inPtr[0] != '~')
         inPtr = Jsi_NormalPath(interp, inPtr, iStr);
     /* if a legal POST URL, let it continue and accept data */
@@ -1485,17 +1491,20 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
         else
             cmdPtr->redirDisable--;
     }
-
-    if ((cmdPtr->urlRedirect && (inPtr == 0 || *inPtr == 0 || !Jsi_Strcmp(inPtr, "/")) && !cmdPtr->redirDisable)
-        && (inPtr = (char*)cmdPtr->urlRedirect) && inPtr[0])
+    int redirCode = 301;
+    
+    bool doRedir = (inPtr == 0 || *inPtr == 0 || (inPtr[0] =='/' && !inPtr[1]));
+    if (doRedir && !cmdPtr->redirDisable && cmdPtr->urlRedirect && cmdPtr->urlRedirect[0])
     {
+        inPtr = (char*)cmdPtr->urlRedirect;
+doredir:
         cmdPtr->stats.redirCnt++;
         // TODO: system time change can disrupt the following.
         if (cmdPtr->redirMax>0 && !cmdPtr->redirDisable && cmdPtr->redirMax>0 && cmdPtr->stats.redirLast
             && difftime(now, cmdPtr->stats.redirLast)<600 && ++cmdPtr->redirAllCnt>cmdPtr->redirMax)
             cmdPtr->redirDisable = 100;
         cmdPtr->stats.redirLast = now;
-        rc = lws_http_redirect(wsi, 301, (uchar*)inPtr, Jsi_Strlen(inPtr), &p, end);
+        rc = lws_http_redirect(wsi, redirCode, (uchar*)inPtr, Jsi_Strlen(inPtr), &p, end);
         return (rc == 100 ? 0 : 1);
     }
     
@@ -1791,9 +1800,19 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     if ((native && Jsi_InterpSafe(interp) && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_READ) != JSI_OK) ||
         (Jsi_Stat(interp, fname, &jsb) || (jsb.st_size<=0 && !S_ISDIR(jsb.st_mode)))) {
 nofile:
-        if (cmdPtr->urlUnknown && cmdPtr->urlUnknown[0]) {
-            rc = lws_http_redirect(wsi, 301, (uchar*)cmdPtr->urlUnknown, Jsi_Strlen(cmdPtr->urlUnknown), &p, end);
-            goto done;
+        if (cmdPtr->urlFallback && cmdPtr->urlFallback[0] && !fallbackTry) {
+            inPtr = (char*)cmdPtr->urlFallback;
+            fallbackTry=1;
+            goto falltry;
+        }
+        if (!cmdPtr->redirDisable && cmdPtr->urlUnknown && cmdPtr->urlUnknown[0]) {
+            redirCode = 404;
+            inPtr = (char*)cmdPtr->urlUnknown;
+            goto doredir;
+        }
+        if (!cmdPtr->redirDisable && cmdPtr->urlRedirect && cmdPtr->urlRedirect[0]) {
+            inPtr = (char*)cmdPtr->urlRedirect;
+            goto doredir;
         }
         if (cmdPtr->onUnknown || pss->onUnknown) {
             Jsi_Value *uk = (pss->onUnknown?pss->onUnknown:cmdPtr->onUnknown);

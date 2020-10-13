@@ -971,7 +971,9 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
 
     if (bsc == 0 && interp->lastSubscriptFail && interp->lastSubscriptFail->vt != JSI_VT_UNDEF)
         Jsi_ValueReset(interp, &interp->lastSubscriptFail);
-        Jsi_ValueToObject(interp, src);
+    rc = Jsi_ValueToObject(interp, src);
+    if (rc != JSI_OK)
+        return rc;
     Jsi_Value res = VALINIT, 
         *resPtr = &res,
         *vp = jsi_ValueSubscript(interp, src, idx, &resPtr, right_val);
@@ -1265,7 +1267,6 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             }
             case OP_ASSIGN: {
                 Jsi_Value *sval = _jsi_TOP, *dval = _jsi_TOQ;
-                bool globThis = (sval->vt == JSI_VT_OBJECT && sval->d.obj == interp->csc->d.obj);
                 if ((uintptr_t)ip->data & 1) {
                     jsiVarDeref(interp,1);
                     rc = jsiValueAssign(interp, dval, sval, lop);                    
@@ -1285,13 +1286,9 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     jsiClearStack(interp,3);
                     Jsi_ValueCopy(interp,v3, sval);
                     dval = v3;
-                    jsiPop(interp, 2);
+                    jsiPop(interp, 2);\
                 }
-                if (fp->level<=1 && globThis && rc == JSI_OK && dval && dval->vt == JSI_VT_VARIABLE) {
-                    dval = dval->d.lval;
-                    //printf("GLOBAL THIS: %p\n", dval);
-                    Jsi_HashSet(interp->genValueTbl, dval, dval);
-                }
+    
                 break;
             }
             case OP_PUSHREG: {
@@ -1352,7 +1349,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     if (v->vt == JSI_VT_VARIABLE) {
                         Jsi_ValueCopy(interp, v, v->d.lval);
                     }
-                    Jsi_ValueToObject(interp, v);
+                    rc = Jsi_ValueToObject(interp, v);
                 }
                 break;
             }
@@ -1587,7 +1584,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     break;
                 }
                 if (_jsi_TOP->vt != JSI_VT_UNDEF && _jsi_TOP->vt != JSI_VT_NULL)
-                    Jsi_ValueToObject(interp, _jsi_TOP);
+                    rc = Jsi_ValueToObject(interp, _jsi_TOP);
                 Jsi_Value *spret = Jsi_ValueNew1(interp);
                 jsi_ValueObjGetKeys(interp, _jsi_TOP, spret, ip->isof);
                 Jsi_ValueReplace(interp, _jsi_STACK+fp->Sp, spret);  
@@ -2024,7 +2021,7 @@ undef_eval:
                     break;
                 }
                 jsiVarDeref(interp,1);
-                Jsi_ValueToObject(interp, _jsi_TOP);
+                rc = Jsi_ValueToObject(interp, _jsi_TOP);
                 
                 jsi_TryList *n = jsiTrylistNew(jsi_TL_WITH, scope, currentScope);
                 

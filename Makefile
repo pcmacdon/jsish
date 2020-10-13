@@ -539,8 +539,8 @@ JSICURVER=$(shell fgrep 'define JSI_VERSION_M' src/jsi.h | cut -b29- | xargs | s
 
 jsidone:
 	@echo ""
-	@echo "MAKE IS DONE!!!"
-	@echo "To build from Configs/ try 'make clean all CONF=X' where X is one of:"
+	@echo "MAKE COMPLETE!!!"
+	@echo "To build from Configs/ try 'make remake CONF=X' where X is one of:"
 	@echo "    $(JSICONFS)."
 
 jsiminreq:

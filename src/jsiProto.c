@@ -801,10 +801,6 @@ Jsi_RC jsi_InitProto(Jsi_Interp *interp, int release)
     Jsi_ValueInsert(interp, global, "Object", _Object, JSI_OM_DONTENUM);
     Jsi_ValueInsert(interp, global, "Function", _Function, JSI_OM_DONTENUM);
 
-    //Jsi_HashSet(interp->genValueTbl, _Object, _Object);
-    //Jsi_HashSet(interp->genValueTbl, _Function, _Function);
-    //Jsi_HashSet(interp->genValueTbl, interp->Object_prototype , interp->Object_prototype);
-    //Jsi_HashSet(interp->genValueTbl, interp->Function_prototype, interp->Function_prototype);
     Jsi_HashSet(interp->genObjTbl, interp->Function_prototype->d.obj, interp->Function_prototype->d.obj);
 
     interp->cleanObjs[0] = _Function->d.obj;

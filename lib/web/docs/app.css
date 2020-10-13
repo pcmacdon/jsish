@@ -51,17 +51,14 @@ body {
     color:#222;
 }
 
-#jsi-sidebar a.active, #jsi-toc a.active, jsi-left-menu a.active,  {
+#jsi-sidebar a.active, #jsi-toc a.active, jsi-left-menu a.active,
+.nav-link.active, .nav-item span.active {
     color:#000;
     font-weight:bold;
 }
 .nav-link {
     cursor:pointer;
     color:#222;
-}
-.nav-link.active {
-    color:#000;
-    font-weight:bold;
 }
 
 .bd-sidebar {

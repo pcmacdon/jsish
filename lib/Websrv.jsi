@@ -22,6 +22,7 @@ function Websrv(args:string|array, conf:object=void)
         closeTimeout:0,         // Time til exit after close of final client websocket (ms).
         confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
         docs        :'',        // Display markdown docs from this directory.
+        hist        :false,     // Let Vue employ history mode, short for urlFallback=url: useful for -docs/-app.
         ignoreExit  :false,     // Ignore exit request.
         initArg     :[],        // List of app modules to run.
         isFile      :false,     // Url is a file, so throw if not exists.
@@ -34,7 +35,7 @@ function Websrv(args:string|array, conf:object=void)
         onRecv      :null,      // Callback command to handle websocket msgs.
         pageStr     :'',        // String to serve out as url.
         port        :0,         // Start search for port.
-        portMax     :1000,      // Max times to increment-retry port if busy.
+        portMax     :999,       // Max times to increment-retry port if busy.
         query       :'',        // Query to append to url.
         rootdir     :null,      // Base directory.
         server      :false,     // Server mode: same as noGui=true and closeTimout=0
@@ -42,13 +43,14 @@ function Websrv(args:string|array, conf:object=void)
         sslFnCert   :'cert.pem',// File name in sslDir of cert.
         sslFnKey    :'privkey.pem',// File name in sslDir of key.
         srcFile     :'',        // File of code to source inside the Websrv function.
-        uploadDir   :'/tmp',    // Upload files go here
-        timeout     :60000,     // Set timeout (in ms) to shutdown. This is idle time, unless negative.
+        timeout     :59999,     // Set timeout (in ms) to shutdown. This is idle time, unless negative.
         trace       :false,     // Tracing output.
         udata       :{},        // Shortcut add of udata to wsOpts.
+        uploadDir   :'/tmp',    // Upload files go here
         url         :"",        // The file/url to serve out and clears timeout.
         urlPrefix   :'',        // Prefix for urls
         urlUnknown  :'',        // Url to redirect 404 to.
+        urlFallback :'',        // File-url to serve out if page not found.
         useridPass  :'',        // USER:PASS for web GUI.
         vueConvert  :false,     // Util to convert file .vue files to .js, output in -rootdir
         wsdebug     :0,         // Debug option for websockets.
@@ -430,7 +432,7 @@ function Websrv(args:string|array, conf:object=void)
             if (!File.exists(self.wsinc))
                 self.wsinc = '';
         }
-        if (self.timeout != options.timeout)
+        if (self.timeout == options.timeout)
             self.timeout = 0;
     } if (self.docs) {
         if (self.rootdir || self.zip)
@@ -441,13 +443,13 @@ function Websrv(args:string|array, conf:object=void)
         else if (File.isdir(sd) && File.exists(sd+'/'+surl))
             self.rootdir = self.docs;
         else
-            throw('-docs must be a docs dir or "/"'+self.docs);
+            throw('expected docs dir or "/" in -docs '+self.docs);
         if (!self.wsinc) {
             self.wsinc = self.rootdir+'/docs/wsinc.jsi';
             if (!File.exists(self.wsinc))
                 self.wsinc = '';
         }
-        if (self.timeout != options.timeout)
+        if (self.timeout == options.timeout)
             self.timeout = 0;
             
         
@@ -476,6 +478,8 @@ function Websrv(args:string|array, conf:object=void)
     }
     if (!self.rootdir)
         self.rootdir = '.';
+    if (self.hist && !self.urlFallback)
+        self.urlFallback = self.url;
 
     // Provide default values for websocket.
     var wopts = self.wsopts = {
@@ -491,8 +495,9 @@ function Websrv(args:string|array, conf:object=void)
         onFilter:WsFilter,
         port:self.port,
         rootdir:self.rootdir,
-        urlPrefix:self.urlPrefix,
-        urlUnknown:self.urlUnknown,
+        urlPrefix:(self.urlPrefix?self.urlPrefix:null),
+        urlUnknown:(self.urlUnknown?self.urlUnknown:null),
+        urlFallback:(self.urlFallback?self.urlFallback:null),
         sslCert:self.sslcert,
         sslKey:self.sslkey,
         ssl:self.ssl,
@@ -512,7 +517,7 @@ function Websrv(args:string|array, conf:object=void)
             if (!self.app && !self.docs)
                 throw('mod "'+self.mod+'" not one of: admin, menu');
     }
-    if (urlOrig!=='' && self.timeout === 60000)
+    if (urlOrig!=='' && self.timeout === options.timeout)
         self.timeout = 0;
     if (!self.app && !self.docs && !self.server && !self.pageStr && self.mod === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
         throw("url file empty or not found: "+self.url);
@@ -523,7 +528,7 @@ function Websrv(args:string|array, conf:object=void)
         wopts.noCompress = true;
     if (self.server) {
         self.noGui = true;
-        if (self.timeout !== options.timeout)
+        if (self.timeout == options.timeout)
             self.timeout = 0;
     } else if (!self.noReload)
         wopts.onModify = onModify;
@@ -551,7 +556,7 @@ function Websrv(args:string|array, conf:object=void)
     OpenWebsock();
    // if (!self.ws.conf('extHandlers'))
     //    self.ws.handler('vue', ConvertVue); // VUE BUILTIN NOW
-    LogTrace("Listening on port:",self.port);
+    LogTrace("Listening on port:",wsopts.port);
     
     if (!self.noGui && self.url && self.url.length) {
         OpenBrowser(self.url, self.anchor, self.query);

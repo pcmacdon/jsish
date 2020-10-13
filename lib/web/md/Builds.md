@@ -44,7 +44,7 @@ During the build it will download:
 
 Predefined configurations from **Configs/** can be made using:
 ```
-make clean all CONF=static
+make remake CONF=static
 ```
 
 Available values for `CONF` are: **default devel memdebug minimal musl muslssl noext release static win winssl**
@@ -54,7 +54,7 @@ Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
 
 ``` bash
 sudo apt-get install gcc-mingw-w64
-make clean all CONF=win
+make remake CONF=win
 ```
 
 **Warning**: Features such as signals are disabled in the Windows build.
@@ -68,7 +68,7 @@ This is useful when you need an executable with no external dependancies.
 
 ``` bash
 sudo apt-get install musl-tools
-make clean all CONF=musl
+make remake CONF=musl
 ```
 
 
@@ -85,7 +85,7 @@ gmake
 To build with SSL support use the provided configs **muslssl** / **winssl**, or:
 
 ``` bash
-make WITH_SSL=1 clean all
+make remake WITH_SSL=1
 ```
 
 

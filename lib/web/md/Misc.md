@@ -286,16 +286,6 @@ Compiling as C++ is supported, mostly for integrity checks.
 **Note**:
     C-integration is the main priority in Jsi, not speed of script execution.
 
-## Shortcomings
-
-Following is a partial list of things that are either incomplete or unimplemented:
-
-- Creation of a complete test suite for code-coverage.
-- Run applications directly from fossil.
-- A PostgreSql extension.
-- Extension for libmicrohttpd for use in post.
-- Support for libevent/libev.
-
 
 ## Rational
 
@@ -747,7 +737,7 @@ Building SSL
 
 How do you build-in SSL support to jsish?
 
-Answer: yes.  make WITH_SSL=1 clean all
+Answer: yes.  make remake WITH_SSL=1
 
 Note: Jsi now uses [lws](https://jsish.org/lws), a fork of LibWebsockets. 
 

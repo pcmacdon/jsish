@@ -9,9 +9,7 @@ Index
 | [Testing](Testing.md)      | Builtin test support  | [Logging](Logging.md)     | Logging support                |
 | [Reference](Reference.md)  | Command reference     | [Debug](Debug.md)         | Debugging in Jsi               |
 
-
-### Advanced
-
+|----------------------------|-----------------------|---------------------------|--------------------------------|
 | DOC                        | DESCRIPTION           | DOC                       | DESCRIPTION                    |
 |----------------------------|-----------------------|---------------------------|--------------------------------|
 | [Extensions](Extensions.md)| Rolling C extensions  | [Builds](Builds.md)       | Advanced build topics          |

@@ -3801,8 +3801,6 @@ static Jsi_Value *CommandCreateWithSpec(Jsi_Interp *interp, Jsi_CmdSpec *cSpec, 
         func->VD.label = "CMDspec";
         func->VD.label2 = cmdSpec->name;
     #endif
-        //Jsi_IncrRefCount(interp, func);
-        //Jsi_HashSet(interp->genValueTbl, func, func);
         Jsi_ValueInsertFixed(interp, (iscons||!proto?interp->csc:proto), cmdSpec->name, func);
         f = func->d.obj->d.fobj->func;
     

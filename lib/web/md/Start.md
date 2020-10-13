@@ -1,6 +1,6 @@
 Start
 ====
-<!-- ABC -->
+
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 JSish is a **javascript**-interpreter / web-server with sqlite, websockets and **C**-extensibility. 
@@ -66,7 +66,7 @@ var o = {a:1, b, c, myfunc() { return 1;} };
 
 Also, an extended Object.[freeze](Builtins.md#freeze) is supported. 
 
-### Input/Output
+### Output
 
 Following are examples of input and output in Jsi.
 
@@ -96,11 +96,11 @@ console.puts('console versions go to stderr');
 ```
 
 ```
+jsish output.jsi
 puts outputs a string
 printf omits newline
 output.jsi:4:   "log adds line info", 
 console versions go to stderr
-
 ```
 
 **File I/O**:
@@ -112,7 +112,7 @@ var ch = new Channel('myfile.txt');
 puts(ch.read());
 ```
 
-See [Output Details](#output-details) below.
+See [Input/Output](#input/output) below.
 
 ## Includes
 
@@ -334,7 +334,7 @@ hello.jsi:2:   "#1: < hello()
  <-- [ [], { a:1, b:2 } ][ [], { a:1, b:2 } ]
 ```
 
-## Output
+## Input/Output
 
 The following are used for output and input:
 
@@ -438,7 +438,7 @@ version 5.1 with numerous additions, ommissions and deviations:
     - UTF supported in strings, not code.
     - Prototype implementation is incomplete.
 
-Syntactic difference is mostly that semicolons are required, ie:
+The main syntactic difference is semicolons are required:
 
 ``` js
 function foo() {
@@ -446,7 +446,7 @@ function foo() {
     return ++x;
 }
 ```
-not
+**not**
 ``` js
 function foo() {
     var x = 1
@@ -454,6 +454,18 @@ function foo() {
 }
 ```
 
+## Shortcomings
+
+The following is a known memory leak:
+
+``` js
+var x = {};
+x.x=x;
+```
+
+Solving this would require python style garbage collection: http://www.arctrix.com/nas/python/gc/.
 
 
 *[JSish]:JS-ish, or Jsi for short, is a Javascript-Like Interpreter
+
+<!-- {fileconf:{order:1, nav:1}, project:{label:"JSI", title:"jsish.org home page", href:"https://jsish.org" }} -->

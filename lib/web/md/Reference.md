@@ -1152,6 +1152,7 @@ Commands for managing WebSocket server/client connections.
 |redirMax|*BOOL*|Temporarily disable redirects when see more than this in 10 minutes.||
 |rootdir|*STRING*|Directory to serve html from (".").||
 |server|*STRKEY*|String to send out int the header SERVER (jsiWebSocket).||
+|sessFlag|*INT*|Flag to send in sessionJsi cookie.|initOnly|
 |ssiExts|*OBJ*|Object map of file extensions to apply SSI.  eg. {myext:true, shtml:false} .|initOnly|
 |ssl|*BOOL*|Use https.|initOnly|
 |sslCert|*STRKEY*|SSL certificate file.||
@@ -1160,9 +1161,10 @@ Commands for managing WebSocket server/client connections.
 |startTime|*TIME_T*|Time of websocket start.|readOnly|
 |includeFile|*STRKEY*|Default file when no extension given (include.shtml).||
 |udata|*OBJ*|User data.||
+|urlFallback|*STRKEY*|Fallback to serve when file not found..||
 |urlPrefix|*STRKEY*|Prefix in url to strip from path; for reverse proxy..||
 |urlRedirect|*STRKEY*|Redirect when no url or /, and adds cookie sessionJsi..||
-|urlUnknown|*STRKEY*|Redirect for unknown page or 404..||
+|urlUnknown|*STRKEY*|Redirect for 404 unknown page..||
 |useridPass|*STRKEY*|The USERID:PASSWORD to use for basic authentication.||
 |version|*OBJ*|WebSocket version info.|readOnly|
 ### WebSocket stats

@@ -531,7 +531,7 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         return Jsi_LogError("must call via Object.assign");
 
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
-    if (!v || Jsi_ValueIsObjType(interp, v, JSI_VT_OBJECT))
+    if (!v || !Jsi_ValueIsObjType(interp, v, JSI_VT_OBJECT))
         return Jsi_LogError("arg1: expected object");
     Jsi_Obj *obj = v->d.obj;
     Jsi_RC rc = JSI_OK;

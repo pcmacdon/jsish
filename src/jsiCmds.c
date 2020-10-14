@@ -1477,7 +1477,7 @@ Jsi_RC jsi_SysExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     edata.retval = 1;
     
     if (opt != NULL) {
-        if (opt->vt == JSI_VT_OBJECT && opt->d.obj->ot == JSI_OT_OBJECT) {
+        if (Jsi_ValueIsObjType(interp, opt, JSI_OT_OBJECT)) {
             hasopts = 1;
             if (Jsi_OptionsProcess(interp, ExecOptions, &edata, opt, 0) < 0) {
                 return JSI_ERROR;
@@ -4391,7 +4391,7 @@ static Jsi_RC SysHashCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_DSAppendLen(&dStr, cp, n);
     Jsi_Value *opt = Jsi_ValueArrayIndex(interp, args, 1);
     if (opt) {
-        if (opt->vt != JSI_VT_OBJECT || opt->d.obj->ot != JSI_OT_OBJECT)
+        if (!Jsi_ValueIsObjType(interp, opt, JSI_OT_OBJECT))
             return Jsi_LogError("arg1: expected object 'options'");
         if (Jsi_OptionsProcess(interp, HashOptions, &edata, opt, 0) < 0)
             return JSI_ERROR;

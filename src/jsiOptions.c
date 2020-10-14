@@ -953,7 +953,7 @@ Jsi_OptionsProcess(Jsi_Interp *interp, Jsi_OptionSpec *specs,  void *rec, Jsi_Va
         assert(specPtr->id == JSI_OPTION_END);
         return 0;
     }
-    if (args->vt != JSI_VT_OBJECT || args->d.obj->ot != JSI_OT_OBJECT || args->d.obj->arr) {
+    if (!Jsi_ValueIsObjType(interp, args, JSI_OT_OBJECT)) {
         Jsi_LogError("expected object");
         return -1;
     }

@@ -5,7 +5,7 @@ require('WebSocket', '2');
 function wsdemo2(args:array|string=void, conf:object=void) {
 
     var self = { ws:null };
-    var options = { // Demo for exercising Websrv. Called with arg 1-6
+    const options = { // Demo for exercising Websrv. Called with arg 1-6
         noexit:false,    // Ignore exit request in websocket demo.
         timeout:30000    // Shutdown for non-WebSocket demos.
     };
@@ -63,14 +63,11 @@ function wsdemo2(args:array|string=void, conf:object=void) {
             Websrv(page, {wsOpts:{onAuth:onAuth}, timeout:self.timeout});
             break;
         default:
-            throw("call with arg: 1-6");
+            throw "call with arg: 1-6";
     }
 }
 
-provide(wsdemo2);
-
-if (isMain())
-    runModule(wsdemo2);
+module(wsdemo2);
 
     
     

@@ -285,3 +285,5 @@ In the Jsi code-base, these apply to:
 - C-Command declarations via Jsi_CmdSpec.
 - C-Option declarations via Jsi_OptionSpec.
 - Sqlite and MySql parameter bindings.
+
+<!-- meta:{"file":{"index":4}} -->

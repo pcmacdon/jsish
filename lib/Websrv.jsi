@@ -15,7 +15,7 @@ function Websrv(args:string|array, conf:object=void)
         css     :'',
         done    :false,
     };
-    var options = { // Run a standalone web server, opening browser to serve out url.
+    const options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
         app         :'',        // An application directory, archive or zip.
         browser     :'',        // The browser to exec, eg. "chrome-browser"
@@ -157,7 +157,7 @@ function Websrv(args:string|array, conf:object=void)
             var ret = self.onRecv(ws, id, dat);
             if (ret) {
                 if (typeof(ret) !== 'object' )
-                    throw('expected object');
+                    throw 'expected object';
                 if (!ret.cmd)
                     ret.cmd = dat.cmd;
                 var mod = (dat.mod?dat.mod:self.mod);
@@ -238,7 +238,7 @@ function Websrv(args:string|array, conf:object=void)
                     err=e;
             }
             if (err)
-                throw('wsfail: '+err);
+                throw 'wsfail: '+err;
             self.wsopts.port++;
             LogTrace("ee:", err);
         }
@@ -383,7 +383,7 @@ function Websrv(args:string|array, conf:object=void)
         for (var f of args) {
             var fb = File.rootname(f);
             if (File.extension(f) !== '.vue')
-                throw('file extension must be .vue'+f);
+                throw 'file extension must be .vue'+f;
             var to = fb+'.js';
             if (self.rootdir)
                 to = File.join(self.rootdir, File.tail(to));
@@ -414,7 +414,7 @@ function Websrv(args:string|array, conf:object=void)
     }
     if (urlarg) {
         if (self.url)
-            throw('can not have args and specify -url');
+            throw 'can not have args and specify -url';
         var iiq;
         if (self.query === '' && (iiq=urlarg.indexOf('?'))>0) {
             self.query = urlarg.substr(iiq+1);
@@ -436,14 +436,23 @@ function Websrv(args:string|array, conf:object=void)
             self.timeout = 0;
     } if (self.docs) {
         if (self.rootdir || self.zip)
-            throw('can not use rootdir/zip with docs');
+            throw 'can not use rootdir/zip with docs';
         var surl = self.url = 'docs/index.html', sd = self.docs;
-        if (sd == '/')
-            self.rootdir = '/zvfs/lib/web';
-        else if (File.isdir(sd) && File.exists(sd+'/'+surl))
-            self.rootdir = self.docs;
-        else
-            throw('expected docs dir or "/" in -docs '+self.docs);
+        self.rootdir = '/zvfs/lib/web';
+        if (sd != '/') {
+            if (File.exists(sd+'/'+surl))
+                self.rootdir = sd;
+            else if (File.exists(sd+'/../'+surl))
+                self.rootdir = sd+'/../';
+            else if (!File.isdir(sd))
+                throw 'docs directory does not exists:'+ sd;
+            else
+                pal = {md:sd};
+            if (File.glob('*.md', {retCount:true, dir:sd})<=0)
+                throw 'docs directory does not contain .md files:'+ sd;            
+            if (!File.exists(sd+'/index.json'))
+                LogWarn(sd+'/index.json not found');
+        }
         if (!self.wsinc) {
             self.wsinc = self.rootdir+'/docs/wsinc.jsi';
             if (!File.exists(self.wsinc))
@@ -515,14 +524,14 @@ function Websrv(args:string|array, conf:object=void)
         case '': break;
         default:
             if (!self.app && !self.docs)
-                throw('mod "'+self.mod+'" not one of: admin, menu');
+                throw 'mod "'+self.mod+'" not one of: admin, menu';
     }
     if (urlOrig!=='' && self.timeout === options.timeout)
         self.timeout = 0;
     if (!self.app && !self.docs && !self.server && !self.pageStr && self.mod === '' && urlOrig=='' && (!self.url || !File.exists(self.rootdir+'/'+self.url)))
-        throw("url file empty or not found: "+self.url);
+        throw "url file empty or not found: "+self.url;
     if (self.urlPrefix.length && self.urlPrefix[0] != '/')
-        throw('urlPrefix must start with a slash');
+        throw 'urlPrefix must start with a slash';
     
     if (self.local)
         wopts.noCompress = true;
@@ -573,5 +582,4 @@ function Websrv(args:string|array, conf:object=void)
     
 }
 
-provide(Websrv, '1.2.3', {nofreeze:false, logmask:'debug,trace'});
-moduleRun(Websrv);
+module(Websrv, '1.2.3', {nofreeze:false, logmask:'debug,trace'});

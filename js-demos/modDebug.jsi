@@ -5,15 +5,15 @@
 ;fileSize('fileSize.jsi');
 ;require('fileSize', 0, {log:{Debug:true, Test:true}});
 ;fileSize('fileSize.jsi');
-;require('module');
-;module([1]);
-;require('module', 0, {log:{Debug:true, Test:true}});
-;module([2]);
+;require('mod');
+;mod([1]);
+;require('mod', 0, {log:{Debug:true, Test:true}});
+;mod([2]);
 
 ;'\n === Trace function calls in fileSize.jsi ===';
 ;require('fileSize', 0, {log:{Debug:false}, traceCall:['funcs']});
 ;fileSize('fileSize.jsi');
-;module([2]);
+;mod([2]);
 ;require('fileSize', 0, {traceCall:[]});
 
 ;'\n === Trace calls in Sqlite  ===';
@@ -37,11 +37,11 @@ require('fileSize', 0, {log:{Debug:true, Test:true}) ==> 1
 fileSize('fileSize.jsi') ==> "TEST:  Starting", fileSize.jsi:27, fileSize()
 "DEBUG: Len [ "fileSize.jsi" ]", fileSize.jsi:15, getLength()
 907
-require('module') ==> 1
-module([1]) ==> undefined
-require('module', 0, {log:{Debug:true, Test:true}) ==> 1
-module([2]) ==> "TEST:  Starting [ 2 ]", module.jsi:14, main()
-"DEBUG: Done", module.jsi:23, main()
+require('mod') ==> 1
+mod([1]) ==> undefined
+require('mod', 0, {log:{Debug:true, Test:true}) ==> 1
+mod([2]) ==> "TEST:  Starting [ 2 ]", mod.jsi:14, main()
+"DEBUG: Done", mod.jsi:23, main()
 undefined
 '
  === Trace function calls in fileSize.jsi ==='
@@ -49,8 +49,8 @@ require('fileSize', 0, {log:{Debug:false, traceCall:['funcs']}) ==> 1
 fileSize('fileSize.jsi') ==>   #2: > fileSize() in modDebug.jsi:15
 "TEST:  Starting", fileSize.jsi:27, fileSize()
 907
-module([2]) ==> "TEST:  Starting [ 2 ]", module.jsi:14, main()
-"DEBUG: Done", module.jsi:23, main()
+mod([2]) ==> "TEST:  Starting [ 2 ]", mod.jsi:14, main()
+"DEBUG: Done", mod.jsi:23, main()
 undefined
 require('fileSize', 0, {traceCall:[]}) ==> 1
 '

@@ -14,16 +14,16 @@ for (var i = 0; i < 10; ++i) {
         with(a.b) {
             c = i;
             try {
-                if (i == 5) throw("shite");
+                if (i == 5) throw "shite";
             } catch (e) {
                 puts(e);
                 with (a) {
                     x = 'shite';
-                    throw("sadf");
+                    throw "sadf";
                 }
             } finally {
                 puts("finally2");
-                throw("fock");
+                throw "fock";
             }
         }
     } catch(e) {

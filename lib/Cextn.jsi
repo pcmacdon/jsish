@@ -7,7 +7,7 @@ require('Jsish');
 function Cextn(args:array, conf:object=void)
 {
     
-    var options = {         // The C-API preprocessor for structs and enums.
+    const options = {         // The C-API preprocessor for structs and enums.
         cc          :'gcc', // Compiler to use with -compile.
         compile       :false,// Compile shared lib directly from .jsc arg: uses -cflags
         confSuffix  :'',    // Suffix to add to struct used for object config.
@@ -97,9 +97,9 @@ function Cextn(args:array, conf:object=void)
         var fne = File.extension(fn), fnr=File.rootname(fn), name=fnr, fnc = fnr;
         var out = fnr+'.so';
         if (fne != '.c')
-            throw('expected a .c file: '+fn);
+            throw 'expected a .c file: '+fn;
         if (fn.indexOf('/')>=0)
-            throw('file may not have path: '+fn);
+            throw 'file may not have path: '+fn;
         puts('Compile generated file', fn, 'to', out);
         var flags = GetCflags([out]);
         var cmd = self.cc + ' ' + flags + ' '+self.addflags;
@@ -115,12 +115,12 @@ function Cextn(args:array, conf:object=void)
     function GetCflags(args:array) {
         var fn = args[0], fne = File.extension(fn), fnr=File.rootname(fn), name=fnr, fnc = fnr;
         if (fn.indexOf('/')>=0)
-            throw('file may not have path: '+fn);
+            throw 'file may not have path: '+fn;
         switch (fne) {
             case '.so': fnr += '.so';
             case '.c':
             case '': fnc += '.c'; break;
-            default: throw('extension not one of: .so .c ""');
+            default: throw 'extension not one of: .so .c ""';
         }
         if (!File.readable(fnc) && File.readable(name+'.c'))
             fnc = name+'.c';
@@ -156,7 +156,7 @@ function Cextn(args:array, conf:object=void)
             }
             s += ' '+arst.join(' ');
             if (aalst.length && fne == '.so')
-                throw("can not add .c files to a .so build");
+                throw "can not add .c files to a .so build";
         }
         s += ' -lm';
         if (fne === '.so')
@@ -392,7 +392,7 @@ function Cextn(args:array, conf:object=void)
                     fflags += '|JSI_OPT_ENUM_SPEC';
                 } else {
                     if (f.asize)
-                        throw("array of unspecified unsupported: "+name+'.'+fname);
+                        throw "array of unspecified unsupported: "+name+'.'+fname;
                     rest = ', .custom=Jsi_Opt_SwitchNull, .data=0';
                     if (self.unkType && !f.nowarn && type !== "Jsi_Interp*" && type !== "void*") {
                         var tvlen = type.length;
@@ -405,9 +405,9 @@ function Cextn(args:array, conf:object=void)
             } else if (f.asize) {
                 evIt.size = f.asize;
                 if (f.bit)
-                    throw("array of bits unsupported: "+name+'.'+fname);
+                    throw "array of bits unsupported: "+name+'.'+fname;
                 if (isenum)
-                    throw("array of enums unsupported: "+name+'.'+fname);
+                    throw "array of enums unsupported: "+name+'.'+fname;
                 if (self.structmap[type]) {
                     csinit = "(uchar*)&jsi_csini_data_"+type;
                     var fasize = parseIntN(f.asize);
@@ -419,7 +419,7 @@ function Cextn(args:array, conf:object=void)
                     }
                 }
                 //if (issubopt)
-                    //throw("array of structs unsupported: "+name+'.'+fname);
+                    //throw "array of structs unsupported: "+name+'.'+fname;
                 var arnam = name+'_'+fname+'_Specs';
                 aspre += '\n  static Jsi_OptionSpec '+arnam+'[] = {\n'
                     + '    JSI_OPT_CARRAY_ITEM_(JSI_SIG_OPTS_FIELD,'+otype+', '+name+', '+fname+', .help="'+fdescr+'", .flags='+fflags+rest+'),\n'
@@ -552,7 +552,7 @@ function Cextn(args:array, conf:object=void)
                         evItems.keyType = 'num';
                     } else if (anum.length) {
                         if (!self.structmap[anum])
-                            throw("map index struct unknown: "+anum);
+                            throw "map index struct unknown: "+anum;
                     }
                 }
             } else {
@@ -561,7 +561,7 @@ function Cextn(args:array, conf:object=void)
                         if (typeof(anum) === 'string' && self.enumvals[anum] !== undefined) {
                             f.asize = self.enumvals[anum];
                         } else if (isNaN(f.asize = new Number(anum)))
-                            throw("not a number: "+anum+' ' +typeof(anum));
+                            throw "not a number: "+anum+' ' +typeof(anum);
                     }
                 }
                 if (f.asize)
@@ -679,14 +679,14 @@ function Cextn(args:array, conf:object=void)
             if (isinitdel) {
                 if (fname === '~')
                     hastilde = 1;
-                if (fre[3] || fre[2])  throw('function '+fname+' may not have args or return type');
+                if (fre[3] || fre[2])  throw 'function '+fname+' may not have args or return type';
                 //var fff = (fname==='_'?'INIT_DONE':'OBJ_FREE');
                 //self.out += '\n#define CDATA_CODE_'+fff+'_'+name+' {\\\n'+fbody.trim().map(['\n', '\\\n'])+'\n\n';
                 self.icode[name+fname] = '{\n'+flnhash+fbody+'\n';
                 continue;
             }
             if (keys.indexOf(fname)>=0)
-                throw("function name can not be a keyword: "+fname);
+                throw "function name can not be a keyword: "+fname;
             if (!fre[3] || fre[3] == ':')
                 throw "must specify a return type for function: "+fname;
             var ifpost = '', ifpostarg = '', ifprecc2;
@@ -743,9 +743,9 @@ function Cextn(args:array, conf:object=void)
  
                 var afnam = avals[1];
                 if (!avals[2])
-                    throw("argument '"+aval+"' must have a type in function: "+fname);
+                    throw "argument '"+aval+"' must have a type in function: "+fname;
                 if (keys.indexOf(afnam)>=0)
-                    throw("argument name can not be a keyword: "+fname);
+                    throw "argument name can not be a keyword: "+fname;
                 var atyp = avals[2].substr(1);
                 var tvlst = typeValidate('argument', atyp);
                 var iasfx = '', iat = '', tlen = tvlst.length, vget='', ttnam='';
@@ -820,7 +820,7 @@ function Cextn(args:array, conf:object=void)
                         iopnam += '_'+fname;
                     iopnam +=  self.confSuffix;
                     if (!self.structmap[iopnam])
-                        throw('Can not find struct "'+iopnam+'" for cmd '+fname);
+                        throw 'Can not find struct "'+iopnam+'" for cmd '+fname;
                     var iopnamS = iopnam+'_Specs';
                     var iodnam, iott = self.structmap[iopnam];
                     LogTrace('NAM:', iopnamS);
@@ -842,7 +842,7 @@ function Cextn(args:array, conf:object=void)
                         //   ifpre += '  *options = cmdPtr->'+self.structfieldmap[name+'.'+iopnam]+';\n';
                     }
                     if (fname === 'conf') {
-                        if (i>0) throw("Conf command takes only a single argument");
+                        if (i>0) throw "Conf command takes only a single argument";
                         ifpre += '  return Jsi_OptionsConf(interp, (Jsi_OptionSpec*)'+iopnamS+', '+iodnam+', '+voao+', ret, 0);\n';
                     } else if (isconfcmd) {
                         ifpre += '  if (!options || Jsi_OptionsConf(interp, (Jsi_OptionSpec*)'+iopnamS+', '+iodnam+', '+voao+', ret, 0) < 0) return JSI_ERROR;\n';
@@ -863,12 +863,12 @@ function Cextn(args:array, conf:object=void)
                 if (ipre.substr(0,6) === 'RETURN') {
                     var retre = ipre.match(/^RETURN\s*\(([a-zA-Z0-9_]*)\);/);
                     if (!retre)
-                        throw('return format must be "RETURN(x);" : '+ipre);
+                        throw 'return format must be "RETURN(x);" : '+ipre;
                     var coffs = ipre.indexOf('//:');
                     var ctyp;
                     if (coffs<0) {
                         if (rettyp.length!=1)
-                            throw("return missing type comment '//:TYPE': "+i);
+                            throw "return missing type comment '//:TYPE': "+i;
                         ctyp = rettyp[0];
                     } else {
                         ctyp = ipre.substr(coffs+3).trim();
@@ -876,7 +876,7 @@ function Cextn(args:array, conf:object=void)
                     var rnam = retre[1];
                     var rtyp = typeValidate('return', ctyp);
                     if (rtyp.length!==1)
-                        throw("expected single return type");
+                        throw "expected single return type";
                     switch (ctyp) {
                         case 'number': i = '{ Jsi_ValueMakeNumber(interp, ret, '+rnam+'); return JSI_OK; }'; break;
                         case 'string': i = '{ Jsi_ValueMakeStringDup(interp, ret, '+rnam+'); return JSI_OK; }'; break;
@@ -889,7 +889,7 @@ function Cextn(args:array, conf:object=void)
                             //    i = 'Jsi_OptionsConf(interp, VimyOpts, cmdPtr, Jsi_ValueArrayIndex(interp, args, 0), ret, 0);';
                             i = ''; 
                             break;
-                        default: throw("unsupported return type '"+ctyp+"' not one of: number string boolean null undefined"); break;
+                        default: throw "unsupported return type '"+ctyp+"' not one of: number string boolean null undefined"; break;
                     }
                     i = '        '+i;
                 }
@@ -903,7 +903,7 @@ function Cextn(args:array, conf:object=void)
             ifpre += ifpost;
         }
         if (hastilde && !hasconstr)
-            throw('defined "function ~" without constructor');
+            throw 'defined "function ~" without constructor';
         ffpre += ind+'{ NULL, .help="'+def.label+'" }\n  };\n';
         self.cmddef += '\n' + ifpre + ffpre;
         self.pre += '#define JSI_EXT_OPTS cmdPtr->popts \n';
@@ -935,7 +935,7 @@ function Cextn(args:array, conf:object=void)
             GenVars(i);
         }
         if (items.cmds.length>1)
-            throw("Only one extension can be defined");
+            throw "Only one extension can be defined";
         for (i of items.cmds) {
             LogTrace("cmd:", i);
             GenCmd(i);
@@ -1015,7 +1015,7 @@ function Cextn(args:array, conf:object=void)
                 var ofpre = File.read(self.outFile),
                     ofpp1 = self.preface;
                 if (ofpre && ofpre.substr(0, ofpp1.length) != ofpp1)
-                    throw('can not overwrite non-generated file: '+self.outFile);
+                    throw 'can not overwrite non-generated file: '+self.outFile;
             }
             File.write(self.outFile, self.out);
         } else
@@ -1028,7 +1028,7 @@ function Cextn(args:array, conf:object=void)
         var flds = [];
         var ina = str.match(/^([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*=\s*\{/);
         if (!ina)
-            throw("bad def: " + str);
+            throw "bad def: " + str;
         var name = ina[2];
         var def = {name:name, type:ina[1], lnum:lnum};
         var vli;
@@ -1052,7 +1052,7 @@ function Cextn(args:array, conf:object=void)
             if (v === '') continue;
             var vv = v.split(',');
             if (vv.length>1 && vli>0 && vv[1].trim() !== '')
-                throw("commented item must be on single line: "+v);
+                throw "commented item must be on single line: "+v;
             var vcnt = 0;
             for (var j in vv) {
                 vcnt++;
@@ -1069,7 +1069,7 @@ function Cextn(args:array, conf:object=void)
                     s = vt.match(/^\s*([a-zA-Z0-9_]+)\s*=\s*([^\s]+)\s*$/);
                     LogTrace('s:',s);
                     if (s === null || s.length != 3)
-                        throw("invalid: "+vt);
+                        throw "invalid: "+vt;
                     flds[top].name = s[1];
                     lastv = nval = parseIntN(s[2]);
                 }
@@ -1101,7 +1101,7 @@ function Cextn(args:array, conf:object=void)
             return;
         var ext = null, ree = rest.indexOf('>');
         if (ree<0)
-            throw("expected end bracket: "+rest);
+            throw "expected end bracket: "+rest;
         debugger;
         var parms = rest.substr(1, ree-1);
         rest = rest.substr(ree+1).trim();
@@ -1116,7 +1116,7 @@ function Cextn(args:array, conf:object=void)
                     ext = o.substr(5, o.length-6);
                     continue;
                 } else
-                    throw("unknown flag '"+o+"' expected on of: FUNC() ,"+pf.join(', '));
+                    throw "unknown flag '"+o+"' expected on of: FUNC() ,"+pf.join(', ');
             }
             f |= (1<<oi);
         }
@@ -1128,7 +1128,7 @@ function Cextn(args:array, conf:object=void)
         var flds = [], fcnt = 0;
         var ina = str.match(/^([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*=\s*\{/);
         if (!ina)
-            throw("bad def: " + str);
+            throw "bad def: " + str;
         var label, def = {name:ina[2], type:ina[1], opts:null, label:null, init:true, lnum:lnum};
         var li, l = str.trim().split('\n');
         if ((li=l[0].indexOf('//'))>0) {
@@ -1138,14 +1138,14 @@ function Cextn(args:array, conf:object=void)
         l = l.splice(1, l.length-2);
         var dfn = def.name+'_Specs';
         if (self.structmap[dfn])
-            throw("duplicate struct name");
+            throw "duplicate struct name";
         self.structmap[def.name] = dfn;
         for (var i in l) {
             var res = {label:'', bit:0, bitset:0, asize:0, flags:0, isstr:false, nowarn:false, data:null};
             var v = l[i].trim();
             LogTrace("v:". v);
             if (v.match(/^<.*>$/)) {
-                if (def.opts) throw("multiple opts");
+                if (def.opts) throw "multiple opts";
                 LogTrace("OPTS:", v);
                 def.opts = v.substr(1,v.length-2);
                 continue;
@@ -1161,20 +1161,20 @@ function Cextn(args:array, conf:object=void)
                 if (!def.label)
                     def.label = label;
                 else
-                    throw("multiline label not allowed: "+v);
+                    throw "multiline label not allowed: "+v;
                 continue;
             }
             var s = v.match(/^\s*(\S+)\s+([^;]+)\s*;\s*(.*)$/);
             LogTrace('SS:', v);
             if (s === null || s.length < 2)
-                throw('invalid field: "'+v+'"');
+                throw 'invalid field: "'+v+'"';
             res.id = spref + s[1];
             var namval = s[2].trim();
             var rest = s[3].trim();
             label = rest;
             if (label !== "") {
                 if (label.substr(0,2) !== '//')
-                    throw('expected // after definition: '+label);
+                    throw 'expected // after definition: '+label;
                 label = label.substr(2).trim();
                 if (label.substr(0, 7) === 'NOWARN:') {
                     res.nowarn = true;
@@ -1193,7 +1193,7 @@ function Cextn(args:array, conf:object=void)
             {
                 nn = nam.split('=');
                 if (nn.length != 2)
-                    throw('expected nam=val: '+nam);
+                    throw 'expected nam=val: '+nam;
                 nam = nn[0];
                 val = nn[1].trim();
                 if (val === '')
@@ -1224,7 +1224,7 @@ function Cextn(args:array, conf:object=void)
                 nam = nam.substr(0,n);
             }
             if (!nam.match(/^[a-zA-Z0-9_]+$/))
-                throw("field name chars must be in [a-zA-Z0-9_] for '"+nam+"' in "+def.name);
+                throw "field name chars must be in [a-zA-Z0-9_] for '"+nam+"' in "+def.name;
             res.name = nam;
             if (val!==null)
                 res.init = val;
@@ -1240,7 +1240,7 @@ function Cextn(args:array, conf:object=void)
         var flds = [];
         var ina = str.match(/^([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*=\s*\{/);
         if (!ina)
-            throw("bad vars def: " + str);
+            throw "bad vars def: " + str;
         var label, def = {name:ina[2], type:ina[1]};
         var l = str.trim().split('\n');
         l = l.splice(1, l.length-2);
@@ -1254,19 +1254,19 @@ function Cextn(args:array, conf:object=void)
                 if (!def.label)
                     def.label = label;
                 else
-                    throw("multiline label not allowed: "+v);
+                    throw "multiline label not allowed: "+v;
                 continue;
             }
             var s = v.match(/^\s*(\S+)\s+([^;]+)\s*;\s*(.*)$/);
             LogTrace('SS:', v);
             if (s === null || s.length < 2)
-                throw('invalid var: "'+v+'"');
+                throw 'invalid var: "'+v+'"';
             var typ = res.type = s[1];
             var namval = s[2].trim();
             label = s[3];
             if (label !== "") {
                 if (label.substr(0,2) !== '//')
-                    throw('expected // after definition: '+label);
+                    throw 'expected // after definition: '+label;
                 label = label.substr(2).trim();
                 if ((s=label.match(/^(\{[^\}]+\})\s*(.*)$/))) {
                     label = s[2];
@@ -1297,7 +1297,7 @@ function Cextn(args:array, conf:object=void)
 
             res.name = nam;
             if (self.varnames.indexOf(nam)>=0)
-                throw("duplicate var name: "+nam);
+                throw "duplicate var name: "+nam;
             self.varnames.push(nam);
             if (val!==null)
                 res.init = val.trim();
@@ -1312,7 +1312,7 @@ function Cextn(args:array, conf:object=void)
         LogTrace("DO:", str);
         var ina = str.match(/^([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*=\s*\{/);
         if (!ina)
-            throw("bad cmds def: " + str);
+            throw "bad cmds def: " + str;
         var preface = '';;
         var label, sdefs=[], def = {name:ina[2], type:ina[1], fnames:[], lnum:lnum};
         var curdef = '', fcnt = 0;
@@ -1332,7 +1332,7 @@ function Cextn(args:array, conf:object=void)
                 if (!def.label)
                     def.label = label;
                 else
-                    throw("multiline label not allowed: "+ipre);
+                    throw "multiline label not allowed: "+ipre;
                 continue;
             }*/
             var reg;
@@ -1348,7 +1348,7 @@ function Cextn(args:array, conf:object=void)
                     preface += i + '\n';
                     continue;
                 }
-                throw("expected function: "+i);
+                throw "expected function: "+i;
             }
             curdef += i + '\n';
         }
@@ -1383,7 +1383,7 @@ function Cextn(args:array, conf:object=void)
             var ipre = i.trim().substr(0,2);
             //if (ipre === '//' || ipre == '') { continue; }
             if (i.trimRight() === '};') {
-                //if (curdef === '') throw("extraextra end found at line "+cnt);
+                //if (curdef === '') throw "extraextra end found at line "+cnt;
                 curdef += i;
                 gdefs.push([curdef.trim(), lcnt+self.lnstart+1]);
                 lcnt = cnt;
@@ -1391,10 +1391,10 @@ function Cextn(args:array, conf:object=void)
                 continue;
             }
             if (curdef.trim() === ''  && i.indexOf('//')<0 && i.indexOf(';')>=0)
-                throw("defn can not be all on one line: "+i);
+                throw "defn can not be all on one line: "+i;
             curdef += i + '\n';
         }
-        if (curdef.trim() !== '') throw("extra input found at end");
+        if (curdef.trim() !== '') throw "extra input found at end";
         return gdefs;
     }
     
@@ -1404,7 +1404,7 @@ function Cextn(args:array, conf:object=void)
                     
         if (self.cflags) {
             if (self.compile)
-                throw('use either compile or cflags, not both');
+                throw 'use either compile or cflags, not both';
             return GetCflags(args);
         }
     
@@ -1429,7 +1429,7 @@ function Cextn(args:array, conf:object=void)
         if (self.compile)
             self.addflags = args.slice(1).join(' ');
         else if (args.length != 1)
-            throw('expected a single file arg');
+            throw 'expected a single file arg';
         var fname = args[0];
         self.infile = fname;
         if (!self.indata.length)
@@ -1456,7 +1456,7 @@ function Cextn(args:array, conf:object=void)
             LogTrace("i:", i);
             var in1 = i.match(/^([a-zA-Z0-9_]+)\s+[a-zA-Z0-9_]+\s*=\s*\{/);
             if (!in1)
-                throw("unknown input: "+i);
+                throw "unknown input: "+i;
             var nam = in1[1];
             switch (nam) {
                 case 'code':    StrGetCode(i, ln); break;
@@ -1465,7 +1465,7 @@ function Cextn(args:array, conf:object=void)
                 //case 'types':    defs.types.push(StrGetTypes(i)); break;
                 case 'vars':    defs.vars.push(StrGetVars(i, ln)); break;
                 case 'ext': case 'extension':  defs.cmds.push(StrGetCmd(i, ln)); break;
-                default: throw("unknown defn ' "+nam+"' expected: output, struct, enum, vars, extension/ext");
+                default: throw "unknown defn ' "+nam+"' expected: output, struct, enum, vars, extension/ext";
             }
         }
         if (self.json)
@@ -1714,7 +1714,6 @@ int main(int argc, char *argv[])
     return retval;
 }
 
-provide(Cextn, "2", {logmask:'debug,trace'});
-if (isMain())
-    puts(moduleRun(Cextn));
+module(Cextn, "2", {logmask:'debug,trace'});
+
 

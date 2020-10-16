@@ -13,7 +13,7 @@ function Proxy(args:array, conf:object=void):void
         wsOpts:{},
         Trace       :false,
     };
-    var options = { // Run a proxy web server.
+    const options = { // Run a proxy web server.
         closeTimeout:0,         // Milliseconds til we exit after close of final client websocket.
         browser     :'',        // The browser to exec, eg. "chrome-browser"
         fossil      :'',        // Fossil repo to mount.
@@ -220,7 +220,7 @@ function Proxy(args:array, conf:object=void):void
         
         if (self.url && self.url.length)
             if ((self.isFile || self.url.substr(0,2) === './') && !File.isfile(self.url))
-                throw("file not found: "+ufn);
+                throw "file not found: "+ufn;
                 
         // Provide default values for websocket.
         self.wsopts = {
@@ -273,6 +273,5 @@ function Proxy(args:array, conf:object=void):void
     
 }
 
-provide(Proxy);
-moduleRun(Proxy);
+module(Proxy);
 

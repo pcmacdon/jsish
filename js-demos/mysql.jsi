@@ -14,7 +14,7 @@ var opts = { user:'jsish', password:'abc', database:'jsitest' };
 for (var i=0; i<console.args.length; i+=2) {
     var nam = console.args[i].substr(1);
     if (opts[nam] === undefined)
-        throw(nam + " not one of: -"+Object.keys(opts).join(' -'));
+        throw nam + " not one of: -"+Object.keys(opts).join(' -');
     opts[nam] = console.args[i+1];
 }
 

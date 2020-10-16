@@ -2,7 +2,7 @@
 // Create the Master index file for .md.
 function mkindex(args:array|string, opts:object) {
 
-    var options = { // Generate master index.
+    const options = { // Generate master index.
         html       :false         // Generate for html
     };
     var self = moduleOpts(options);

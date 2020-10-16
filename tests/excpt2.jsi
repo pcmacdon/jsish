@@ -2,9 +2,9 @@
 
 try {
 	try {
-	        throw({a:1});
+	        throw {a:1};
 	} catch (b) {
-		throw({b:2});
+		throw {b:2};
 	} finally {
 	}
 } catch (b) {

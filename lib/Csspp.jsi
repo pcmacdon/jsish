@@ -25,7 +25,7 @@ require('Jsish');
 
 function Csspp(files:array|string=null, conf:object=undefined):string|object
 {
-    var options = { // A CSS preprocessor providing $var substitution
+    const options = { // A CSS preprocessor providing $var substitution
         debug       :false,      // Enable debug.
         fatal       :false,      // Throw error on redefine/undefined.
         trimDef     :true,       // Trim whitespace from definitions.
@@ -122,6 +122,5 @@ function Csspp(files:array|string=null, conf:object=undefined):string|object
     return self;
 }
 
-provide(Csspp);
-moduleRun(Csspp);
+module(Csspp);
 

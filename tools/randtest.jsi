@@ -68,7 +68,7 @@ function randtest(...) {
             DumpCmd(tinf.name, tinf);
             break;
         default:
-            throw("bad id");
+            throw "bad id";
             continue;
         }
     }

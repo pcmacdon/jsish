@@ -3,7 +3,7 @@ Interp.conf({asserts:true});
 
 assert.sameValue = function(x, y, ...) { assert(x==y); };
 assert.notSameValue = function(x, y, ...) { assert(x!=y); };
-assert.throws = function(x, y, ...) { throw('throws: '+y); };
+assert.throws = function(x, y, ...) { throw 'throws: '+y; };
 assert.compareArray = function(x, y, ...) { };
 function $ERROR(str) { puts('ERROR: >>'+str); }
 

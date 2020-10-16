@@ -802,7 +802,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Archive');", JSI_EVAL_ISMAIN);
                 break;
             case 'c':
-                rc = Jsi_EvalString(interp, "puts(moduleRun('Cextn'));", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Cextn');", JSI_EVAL_ISMAIN);
                 break;
             case 'd':
                 interp->debugOpts.isDebugger = 1;
@@ -839,8 +839,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                         Jsi_DSPrintf(&dStr, "source(\"%s\");", argv[2]);
                     else
                         Jsi_DSPrintf(&dStr, "require(\"%s\");", argv[2]);
-                    Jsi_DSPrintf(&dStr, "puts(moduleRun(\"%.*s\",console.args.slice(1)));", len, cps);
-                    rc = Jsi_EvalString(interp, Jsi_DSValue(&dStr), JSI_EVAL_NOSKIPBANG);
+                    Jsi_DSPrintf(&dStr, "moduleRun(\"%.*s\",console.args.slice(1));", len, cps);
+                    rc = Jsi_EvalString(interp, Jsi_DSValue(&dStr), JSI_EVAL_ISMAIN);
                     Jsi_DSFree(&dStr);
                     Jsi_DSFree(&eStr);
                 }
@@ -853,7 +853,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 break;
             case 't':
             case 'u':
-                rc = Jsi_EvalString(interp, "exit(moduleRun('Testing'));", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Testing');", JSI_EVAL_ISMAIN);
                 break;
             case 'v': {
                 char str[200] = "\n";
@@ -929,8 +929,10 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             Jsi_DSFree(&dStr);
             fputs("\n", stdout);
         }
+    } else if (!interp->parent && rc == JSI_EXIT) {
+        return jsi_DoExit(interp, interp->exitCode);
     } else {
-        if (!interp->parent && !interp->isHelp)
+        if (!interp->parent && !interp->isHelp && rc != JSI_EXIT)
             fprintf(stderr, "ERROR: %s\n", interp->errMsgBuf);
         return jsi_DoExit(interp, 1);
     }

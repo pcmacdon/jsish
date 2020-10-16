@@ -183,7 +183,6 @@ jsish -W -udata "{NOPLUGIN:true}" index.shtml
 
 The following resources are available to include from **/jsi/lib/web/**:
 
-|[jsi.js](Misc.md#jsi-js)| Support code for type-checking.
 |[vue.min.js](https://vuejs.org/)| Web framework library.
 |[vue-router.min.js](https://router.vuejs.org/)| Router for Vue.
 

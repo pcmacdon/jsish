@@ -685,3 +685,4 @@ stmt = sqlite3_prepare(db, "INSERT INTO descriptions VALUES(?1,?2,?3,?4,?5,?6,?7
 
 Handling bindings reliably for such queries becomes increasingly tedious.
 
+<!-- meta:{"file":{"index":1002 }} -->

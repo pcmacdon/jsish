@@ -5,12 +5,12 @@ i++;
 try {
     try {
         b++;
-        throw({a:1});
+        throw {a:1};
     } catch (b) {
         puts("catch: b:" + b);
     } finally {
         puts("finally: b:" + b);
-        throw({b:2});
+        throw {b:2};
     }
 } catch (b) {
     puts(b);

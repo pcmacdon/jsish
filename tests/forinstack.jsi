@@ -11,14 +11,14 @@ for (var n in a) {
                 continue;
             case "b":
                 puts("B");
-                throw("ex");
+                throw "ex";
         }
     } catch(e) {
         puts(e);
-        throw(e);
+        throw e;
     } finally {
         puts("fin");
-        throw("fock");
+        throw "fock";
     }
 }
 

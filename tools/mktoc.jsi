@@ -3,7 +3,7 @@
 
 function mktoc(args:array, conf:object) {
 
-    var options = {// Generate documentation table of contents from headers <h1> <h2>...
+    const options = {// Generate documentation table of contents from headers <h1> <h2>...
         numberHdrs:false,   // Add section numbers to headers
         update:false        // Update file in place.
     };
@@ -18,7 +18,7 @@ function mktoc(args:array, conf:object) {
             line++;
             if (!intoc) {
                 if (s === '<div id=wikitoc>') {
-                    if (sawtoc) throw('multiple wikitoc');
+                    if (sawtoc) throw 'multiple wikitoc';
                     sawtoc = true;
                     intoc = line;
                     continue;
@@ -118,5 +118,5 @@ function mktoc(args:array, conf:object) {
 
 }
 
-runModule(mktoc);
+module(mktoc);
 

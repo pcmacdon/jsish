@@ -11,7 +11,7 @@ var JsiHtmlpp_callback = null;
 
 function Htmlpp(files:array|string=null, conf:object=undefined):string|object
 {    
-    var options = { // Preprocess html evaluating Jsi code between  <? ?> tags (like php).
+    const options = { // Preprocess html evaluating Jsi code between  <? ?> tags (like php).
         delInterp   :false,     // Delete interp when done.
         incsMax     :1000,      // Maximum number of includes
         interpOptStr:'',        // Options for subinterp as JSON string.
@@ -223,7 +223,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
             case 'curdir': return File.dirname(self.files[self.files.length-1]);
             case 'curfile': return self.files[self.files.length-1];
             case 'files': return self.files;
-            default: throw('expect name: '+lst.join(','));
+            default: throw 'expect name: '+lst.join(',');
         }
     }
     
@@ -273,6 +273,5 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
 };
 
 
-provide(Htmlpp);
-moduleRun(Htmlpp);
+module(Htmlpp);
 

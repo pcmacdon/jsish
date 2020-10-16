@@ -1,7 +1,7 @@
 #!/usr/bin/env jsish
-function fileSize(fargs, conf) {
+function fileSize(fargs, conf=void) {
 
-    var options = { // Count bytes in files
+    const options = { // Count bytes in files
         Debug       :false, // LogDebug output
         max         :10     // Max number of files
     };
@@ -33,4 +33,4 @@ function fileSize(fargs, conf) {
     return self;
 }
 
-runModule(fileSize);
+module(fileSize);

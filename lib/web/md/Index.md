@@ -19,4 +19,18 @@
 | [Deploy](Deploy.md)        | Deploying in Jsi      | [Builtins](Builtins.md)   | Command descriptions & examples| 
 | [DBQuery](DBQuery.md)      | Sqlite/C interface    | [Misc](Misc.md)           | Other, unfinished documentation|
 
+
+## By Topic
+
+- **Begin**: [Start](Start.md), [Download](Builds.md), [Build](Builds.md)
+- **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Index.md), [License](Misc.md#License), [Language](Misc.md#Syntax), [Compatibility](Start.md#Compatibility)
+- **Development**: [Types](Functions.md), [Debugging](Debug.md), [Logging](Logging.md)
+- **Core**: [System](Builtins.md#System), [Info](Builtins.md#Info), [Interp](Interp.md), [Format](Builtins.md#format), [File-System](Builtins.md#File), [Events](Builtins.md#Event)
+- **Integration**: [Modules](Start.md#Modules), [Require](Start.md#require), [Auto-Load](Misc.md#auto-load)
+- **Web**: [Server](WebSocket.md), [Preprocessing](WebSocket.md), [WebSocket](Builtins.md#WebSocket), [Markup](Reference.md#Util), [JSON](Builtins.md#JSON)
+- **Miscellaneous**: [Extensions](Extensions.md), [Threads](Interp.md#Threads), [Signal](Builtins.md#Signal), [Sqlite](Sqlite.md), [MySQL](MySql.md), [Zvfs](Builtins.md#Zvfs), [Socket](Builtins.md#Socket), [WebSocket](Builtins.md#WebSocket)
+- **Tools**: [Testing](Testing.md), [Tracing](Start.md#Tracing), [Profiling](Testing.md#Code-Profile), [Code-Coverage](Testing.md#Code-Coverage)
+- **C/C++**: [Jsi-Lite](Misc.md#jsi-lite), [C Extension](Extensions.md), [DString](Misc.md#DString), [CData](Extensions.md), [Options](Extensions.md#Options), [Sqlite-C](DBQuery.md), [JSON-C](Builtins.md#JSON)
+- **Applications**: [SqliteUI](Builds.md#Apps)
+
 <!-- meta:{"file":{"index":2, "navindex":2}} -->

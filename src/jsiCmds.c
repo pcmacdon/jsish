@@ -877,6 +877,7 @@ Jsi_Number jsi_VersionNormalize(Jsi_Number ver, char *obuf, size_t osiz)
 }
    
 static Jsi_OptionSpec jsiModuleOptions[] = {
+    JSI_OPT(BOOL,  Jsi_ModuleConf, exit,    .help="Call exit with return code after module run if isMain" ),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, log,     .help="Logging flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(CUSTOM,Jsi_ModuleConf, logmask, .help="Logging mask flags", .flags=JSI_OPT_CUST_NOCASE,  .custom=Jsi_Opt_SwitchBitset,  .data=jsi_LogCodes),
     JSI_OPT(BOOL,  Jsi_ModuleConf, coverage,.help="On exit generate detailed code coverage for function calls (with profile)" ),
@@ -1129,7 +1130,6 @@ pkg:
     return rc;
 }
 
-#define FN_provide "Default is the file tail-rootname"
 static Jsi_RC SysProvideCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr) {
     return SysProvideCmdInt(interp, args, _this, ret, funcPtr, 0);
@@ -4510,18 +4510,22 @@ static Jsi_vtype jsi_getValType(Jsi_Value* val) {
     return JSI_VT_UNDEF;
 }
 
-static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr)
+static Jsi_RC SysModuleCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr, int isrun)
 {
     Jsi_Value *v1 = Jsi_ValueArrayIndex(interp, args, 0),
-        *v2 = Jsi_ValueArrayIndex(interp, args, 1);
-    int argc = Jsi_ValueGetLength(interp, args);
-    if (!argc) {
+        *v2 = NULL;
+    if (isrun)
+        v2 = Jsi_ValueArrayIndex(interp, args, 1);
+    //int argc = Jsi_ValueGetLength(interp, args);
+    int dorun = isrun;
+   /* if (!argc && !isrun) {
         if (0 && interp->framePtr->Sp)
             return Jsi_LogError("arg 1: expected string|function|undefined when not at stack level 0");
-        else if (SysProvideCmdInt(interp, args, _this, ret, funcPtr, 1) != JSI_OK)
+        else
+        if (SysProvideCmdInt(interp, args, _this, ret, funcPtr, 1) != JSI_OK)
             return JSI_ERROR;
-    }
+    }*/
     const char *cp, *mod = NULL, *ofunc;
     Jsi_RC rc = JSI_OK;
     Jsi_DString dStr = {}, nStr = {};
@@ -4532,28 +4536,28 @@ static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Obj *obj;
     const char *anam;
     bool oisMain = interp->isMain, isMain = jsi_isMain(interp);
-    if (interp->isMain)
+    if (interp->isMain) {
+        dorun = 1;
         interp->isMain = 0;
+    }
     
-    if (v2 && !Jsi_ValueIsObjType(interp, v2, JSI_OT_ARRAY))
+    if (isrun && v2 && !Jsi_ValueIsObjType(interp, v2, JSI_OT_ARRAY))
         return Jsi_LogError("arg 2: expected array|undefined");
-    if (!v1 || Jsi_ValueIsNull(interp, v1)) {
-        if (!isMain) goto done;
+    if (!v1) {
+        if (dorun) return JSI_ERROR;
         mod = interp->framePtr->filePtr->fileName;
-        if (*mod) mod = Jsi_Strrchr(mod, '/');
-        if (!*mod) return JSI_ERROR;
+        if (mod) mod = Jsi_Strrchr(mod, '/');
+        if (!mod || *mod || !*mod || !mod[1]) return Jsi_LogError("unknown module");
         mod++;
         cp = Jsi_Strrchr(mod, '.');
         int len = (cp?(cp-mod):(int)Jsi_Strlen(mod));
         mod = Jsi_DSAppendLen(&dStr, mod, len);
     } else {
-        mod = Jsi_ValueString(interp, v1, NULL);
-        if (!mod) {
-            if (Jsi_ValueIsObjType(interp, v1, JSI_OT_FUNCTION)) {
-                if (/*!interp->framePtr->Sp &&*/ SysProvideCmdInt(interp, args, _this, ret, funcPtr, 2) != JSI_OK)
-                    return JSI_ERROR;
-                cmd = v1;
-            }
+       mod = Jsi_ValueString(interp, v1, NULL);
+       if (!isrun || Jsi_ValueIsObjType(interp, v1, JSI_OT_FUNCTION)) {
+            if (/*!interp->framePtr->Sp &&*/ SysProvideCmdInt(interp, args, _this, ret, funcPtr, (isrun?1:0)) != JSI_OK)
+                return JSI_ERROR;
+            cmd = v1;
         }
     }
     if (!v2 && isMain)
@@ -4568,7 +4572,8 @@ static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         rc = Jsi_LogError("unknown command: %s", (mod?mod:""));
         goto done;
     }
-    if (!isMain && cmd->d.obj->d.fobj->func->filePtr->fileName == interp->framePtr->filePtr->fileName) {
+    Jsi_Func *func = cmd->d.obj->d.fobj->func;
+    if (!isMain && func->filePtr->fileName == interp->framePtr->filePtr->fileName) {
         interp->framePtr->filePtr->pkg->loadLine = interp->curIp->Line; // for backtrace.
         goto done;
     }
@@ -4640,7 +4645,12 @@ static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     for (i=0; i<n; i++)
         Jsi_DecrRefCount(interp, vargs[i]);
     Jsi_DecrRefCount(interp, vpargs);
-    if (rc == JSI_OK && !Jsi_ValueIsUndef(interp, *ret) && isMain && funcPtr && funcPtr->callflags.bits.isdiscard) {
+    if (rc == JSI_OK && func->pkg && func->pkg->popts.conf.exit && Jsi_ValueIsNumber(interp, *ret)
+        && !interp->parent) {
+        interp->exitCode = (*ret)->d.num;
+        rc = JSI_EXIT;
+    }
+    else if (rc == JSI_OK && !Jsi_ValueIsUndef(interp, *ret) && isMain && funcPtr && funcPtr->callflags.bits.isdiscard) {
         Jsi_DSSetLength(&dStr, 0);
         cp = Jsi_ValueGetDString(interp, *ret, &dStr, JSI_OUTPUT_QUOTE|JSI_OUTPUT_NEWLINES);
         if (cp && (!(cp=Jsi_Strrchr(cp, '\n')) || cp[1]))
@@ -4653,6 +4663,16 @@ done:
     Jsi_DSFree(&dStr);
     Jsi_DSFree(&nStr);
     return rc;
+}
+
+static Jsi_RC SysModuleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr) {
+    return SysModuleCmd_(interp, args, _this, ret, funcPtr, 0);
+}
+
+static Jsi_RC SysModuleRunCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr) {
+    return SysModuleCmd_(interp, args, _this, ret, funcPtr, 1);
 }
 
 static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DString *dPtr) {
@@ -4756,8 +4776,11 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                 if (!fstr)
                     fstr = fp->ps->lexer->d.str;
                 Jsi_DString dStr = {}, hStr = {}, vStr = {};
-                if (fstr) fstr = Jsi_Strstr(fstr, "var options = ");
-                if (fstr) fstr = Jsi_Strchr(fstr, '{');
+                if (fstr) {
+                    const char optpfx[] = " options = {";
+                    fstr = Jsi_Strstr(fstr, optpfx);
+                    if (fstr) fstr += (sizeof(optpfx)-1);
+                }
                 if (fstr) es = Jsi_Strchr(fstr, '\n');
                 if (es) {
                     help = Jsi_DSAppendLen(&hStr, fstr+1, es-fstr-1);
@@ -4770,7 +4793,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                 while (help && help[0] == '/') help++;
                 while (help && isspace(help[0])) help++;
                 if (isLong)
-                    Jsi_DSPrintf(&dStr, "\n%s.  Options are:\n", help);
+                    Jsi_DSPrintf(&dStr, "\n%s\nOptions are:\n", help);
                 else
                     Jsi_DSPrintf(&dStr, "\n%s.  Options are:\n    ", help);
                 for (tPtr = (v2?Jsi_TreeSearchFirst(v2->d.obj->tree, &search, 0, NULL):NULL);
@@ -4892,7 +4915,7 @@ static Jsi_CmdSpec consoleCmds[] = {
     { "assert", jsi_AssertCmd,      1,  3, "expr:boolean|number|function, msg:string=void, options:object=void",  .help="Same as System.assert()", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=AssertOptions},
     { "error",  consoleErrorCmd,    1, -1, "val, ...", .help="Same as log but adding prefix ERROR:", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "input",  consoleInputCmd,    0,  1, "prompt:null|string=''", .help="Read input from the console: if prompt uses linenoise line editing", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
-    { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Like System.puts, but goes to stderr and includes file:line.", .retType=(uint)JSI_TT_VOID, .flags=0 },
+    { "log",    consoleLogCmd,      1, -1, "val, ...", .help="Like System.puts, but goes to stderr and includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "logp",   consoleLogPCmd,     1, -1, "val, ...", .help="Same as console.log, but first arg is string prefix and if second is a boolean it controls output", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "printf", consolePrintfCmd,   1, -1, "format:string, ...", .help="Same as System.printf but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "puts",   consolePutsCmd,     1, -1, "val:any, ...", .help="Same as System.puts, but goes to stderr", .retType=(uint)JSI_TT_VOID, .flags=0 },
@@ -5039,26 +5062,26 @@ static Jsi_CmdSpec sysCmds[] = {
 #endif
     { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Validate that object matches given name:type string. With single arg returns generated string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
-    { "moduleOpts", SysModuleOptsCmd,0,  3, "options:object=void, self:object|userobj=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
-    { "moduleRun",  SysModuleRunCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide", .retType=(uint)JSI_TT_ANY, .flags=0},
+    { "module",     SysModuleCmd,    1,  3, "cmd:string|function, version:number|string=1, options:object=void", .help="Same as provide, but also invokes the function/name if isMain is true", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions },
+    { "moduleOpts", SysModuleOptsCmd,1,  3, "options:object, self:object|userobj=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "moduleRun",  SysModuleRunCmd, 1,  2, "cmd:string|function, args:array=undefined", .help="Invoke named module with given args or command-line args", .retType=(uint)JSI_TT_ANY},
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
     { "parseOpts",  SysParseOptsCmd, 3,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "provide",    SysProvideCmd,   0,  3, "name:string|null|function=void, version:number|string=void, options:object=void", .help="Provide a package for use with require.", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_provide, .opts=jsiModuleOptions  },
+    { "provide",    SysProvideCmd,   0,  3, "name:string|function=void, version:number|string=1, options:object=void", .help="Provide a package for use with require", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val:any, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },
-    { "runModule",  SysModuleRunCmd, 0,  2, "cmd:string|null|function=void, conf:array=undefined", .help="Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide", .retType=(uint)JSI_TT_ANY, .flags=0},
     { "sleep",      SysSleepCmd,     0,  1, "secs:number=1.0",  .help="sleep for N milliseconds, minimum .001", .retType=(uint)JSI_TT_VOID },
 #ifndef JSI_OMIT_EVENT
     { "setInterval",setIntervalCmd,  2,  2, "callback:function, ms:number", .help="Setup recurring function to run every given millisecs", .retType=(uint)JSI_TT_NUMBER },
     { "setTimeout", setTimeoutCmd,   2,  2, "callback:function, ms:number", .help="Setup function to run after given millisecs", .retType=(uint)JSI_TT_NUMBER },
 #endif
-    { "source",     SysSourceCmd,    1,  2, "val:string|array, options:object=void",  .help="Load and evaluate source files: trailing '/' appends PARENTDIR.jsi", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
-    { "strftime",   DateStrftimeCmd, 0,  2, "num:number=null, options:string|object=void",  .help="Format numeric time (in ms) to a string", .retType=(uint)JSI_TT_STRING, .flags=0, .info=FN_strftime, .opts=DateOptions },
-    { "strptime",   DateStrptimeCmd, 0,  2, "val:string=void, options:string|object=void",  .help="Parse time from string and return ms time since 1970-01-01 in UTC, or NaN", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=0, .opts=DateOptions },
+    { "source",     SysSourceCmd,    1,  2, "val:string|array, options:object=void",  .help="Load and evaluate source files", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
+    { "strftime",   DateStrftimeCmd, 0,  2, "num:number=null, options:string|object=void",  .help="Format numeric time (in ms) to string", .retType=(uint)JSI_TT_STRING, .flags=0, .info=FN_strftime, .opts=DateOptions },
+    { "strptime",   DateStrptimeCmd, 0,  2, "val:string=void, options:string|object=void",  .help="Parse time from string and return ms time since 1970-01-01 in UTC, or NaN on error", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=0, .opts=DateOptions },
     { "times",      SysTimesCmd,     1,  2, "callback:function|boolean, count:number=1", .help="Call function count times and return execution time in microseconds", .retType=(uint)JSI_TT_NUMBER },
 #ifndef JSI_OMIT_LOAD
     { "unload",     jsi_LoadUnloadCmd,1, 1,  "shlib:string", .help="Unload a shared executable and invoke its _Done call", .retType=(uint)JSI_TT_VOID },

@@ -2,8 +2,9 @@
 
 function Docs(args, opts) {
 
-    var options = { // Analyse markdown
-        O   :'stdout',  // Output index file
+    const options = { // Scan markdown files in dir looking for dead internal links, extract meta and build index.json.
+        outfile :'index.json',  // Output file 
+        dirname  :'',           // Defaults to same as input dir
     };
     var self = {
         fall:{},
@@ -30,7 +31,12 @@ function Docs(args, opts) {
         return s;
     }
     
-    var fdir, fn = (typeof(args) === 'array'? args[0]: args);
+    var fdir, fn = args;
+    if (typeof(args) === 'array') {
+        if (args.length!=1)
+            throw 'single arg is required';
+        fn = args[0];
+    }
     var tr, j, r, t, d, f, i, th, tt;
     var lst;
     if (File.isdir(fn)) {
@@ -38,10 +44,10 @@ function Docs(args, opts) {
         if (fn[fn.length-1]!='/') fn+='/';
         lst = File.glob('*.md', {dir:fn, prefix:fn, tails:true}).sort();
         fdir = fn;
-    } else {
-        lst = [fn];
-        fdir = File.dirname(fn);
-    }
+    } else
+        throw 'arg must be a dir';
+    if (!self.dirname)
+        self.dirname = fdir;
     var re = /^#+ [^#]+$/gm,
         rel = /\[[^]]+\]\([^)]+\)/gm, 
         reb = /```.*```/g;
@@ -111,20 +117,22 @@ function Docs(args, opts) {
         LogDebug('DO BLOCKS', r);
         self.fblocks[f] = r;
         r = d.match(/^<!-- meta:.* -->$/m);
-        var fidxI = -1;
+        var fidxI = 1001;
         if (r) {
             var mets = r[0].substr(10, r[0].length-13);
-            var meta = JSON.parse(mets), file = (meta?meta.file:null),
+            var meta;
+            try {
+                 meta = JSON.parse(mets);
+            } catch(e) {
+                puts("IN "+f+' ignored bad meta: ', e);
+                //throw "meta parse error in "+f, e;
+            }
+            var file = (meta?meta.file:null),
                 nav = (meta?meta.navindex:null), sys = (meta?meta.project:null);
             if (file) {
-                if ((i=file.index)) {
-                    if (self.indexN[i])
-                        self.indexN[i].push(f);
-                    else
-                        self.indexN[i] = [f];
-                }
-                if ((i=file.navindex)) {
+                if ((i=file.index))
                     fidxI = i;
+                if ((i=file.navindex)) {
                     if (self.navN[i])
                         self.navN[i].push(frn);
                     else
@@ -134,8 +142,10 @@ function Docs(args, opts) {
             if (sys)
                 self.projectN = Object.assign(sys);
         }
-        if (fidxI<0)
-            self.filesN.push(f);
+        if (self.indexN[fidxI])
+            self.indexN[fidxI].push(f);
+        else
+            self.indexN[fidxI] = [f];
     }
     for (f in self.flinks) {
         var fl = self.flinks[f];
@@ -161,14 +171,11 @@ function Docs(args, opts) {
         navFns:self.navN.flat(),
         project:self.projectN,
     };
-   /* var fdirt = fdir+'/index.txt';
-    if (File.exists(fdirt))
-        self.result.files = File.read(fdirt).trim().split(' ');*/
-    if (self.O)
-        File.write(self.O, JSON.stringify(self.result));
-    else
+
+    if (!self.outfile)
         return self.result;
+    File.write(File.join(self.dirname,self.outfile), JSON.stringify(self.result));
 }
 
-moduleRun(Docs);
+module(Docs);
 

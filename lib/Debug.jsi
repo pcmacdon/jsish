@@ -6,7 +6,7 @@ require('Jsish');
 
 function Debug(fileargs:array, conf:object=void):number {
 
-    var options = { // A command-line Debugger for Jsi scripts.
+    const options = { // A command-line Debugger for Jsi scripts.
         echoCmd     :true,      // Echo user cmds.
         safe        :false,     // Debug program in a safe interp (untested)
     };
@@ -468,7 +468,7 @@ function Debug(fileargs:array, conf:object=void):number {
         self.args = fileargs.splice(1);
 
         if (!File.exists(self.dbfile)) {
-            throw("script file required: "+(self.dbfile?self.dbfile:''));
+            throw "script file required: "+(self.dbfile?self.dbfile:'');
             return(1);
         }
         if (Signal) {
@@ -499,7 +499,5 @@ function Debug(fileargs:array, conf:object=void):number {
     return main();
 }
 
-provide(Debug, 1.0, {logmask:'debug,trace'});
+module(Debug, 1.0, {logmask:'debug,trace', exit:true});
 
-if (isMain())
-    exit( moduleRun(Debug) );

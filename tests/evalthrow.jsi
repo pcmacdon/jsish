@@ -2,7 +2,7 @@
 
 Interp.conf({maxDumpStack:0});
 try {
-    eval("throw('abc');");
+    eval("throw 'abc';");
 } catch(e) {
     puts(e);
 } finally {

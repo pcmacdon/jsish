@@ -2,7 +2,7 @@
 // DebugUI: A jsi debugger with a web user interface.
 // This module combines code from Debug and Websrv.
 
-Interp.conf({typeCheck:'!error'});
+Interp.conf({noError:true});
 require('Jsish');
 require('Sqlite');
 require('WebSocket', '2');
@@ -10,7 +10,7 @@ require('WebSocket', '2');
 function DebugUI(fileargs:array, conf:object=void)
 {
 
-    var options = { // A web-based debugger for Jsi scripts
+    const options = { // A web-based debugger for Jsi scripts
         browser     :null,      // Browser program to use.
         closeTimeout:10000,     // When last client exits, grace time after before exiting (in ms).
         debug       :false,     // Debugging output
@@ -715,7 +715,7 @@ function DebugUI(fileargs:array, conf:object=void)
             self.args = fileargs.splice(1);
         }
         if (!File.exists(self.dbfile)) {
-            throw("script file required: "+self.dbfile);
+            throw "script file required: "+self.dbfile;
             return(1);
         }
        
@@ -775,20 +775,12 @@ function DebugUI(fileargs:array, conf:object=void)
         Event.update(3000);
 
         LogDebug("Done!");
-        //if (self.optdbfile)
-            //delete self.optdb;
-        //delete self.db;
-        //delete self.ws;
-        //self.interp.conf({debugOpts:{putsCallback:null}});
-        //delete self.interp;
         return 0;
     }
     
     return main();
 }
 
-provide(DebugUI, 1.0);
+module(DebugUI, 1.0, {exit:true});
 
-if (isMain())
-    exit(runModule(DebugUI));
 

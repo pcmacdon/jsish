@@ -1,6 +1,6 @@
 #!/usr/local/bin/jsish -u %s
 
-if (!Signal) throw('signal unsupported');
+if (!Signal) throw 'signal unsupported';
 ;Signal.names().sort();
 function mysig() {
   puts("MYSIG");

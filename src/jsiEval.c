@@ -353,9 +353,11 @@ static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, j
     if (Jsi_InterpGone(interp))
         return JSI_ERROR;
     jsi_TryList *trylist = *tlp;
+    Jsi_RC rc = JSI_OK;
+    const char *str;
     while (1) {
         if (trylist == NULL) {
-            const char *str = (top?Jsi_ValueString(interp, top, NULL):"");
+            str = (top?Jsi_ValueString(interp, top, NULL):"");
             if (str) {
                 if (!Jsi_Strcmp(nam, "help"))
                     Jsi_LogInfo("...%s", str);
@@ -368,14 +370,20 @@ static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, j
             int n = interp->framePtr->Sp - trylist->d.td.tsp;
             jsiPop(interp, n);
             if (*ipp >= trylist->d.td.tstart && *ipp < trylist->d.td.tend) {
-                *ipp = trylist->d.td.cstart - 1;
+                *ipp = trylist->d.td.cstart - 1; // in "try"
                 break;
             } else if (*ipp >= trylist->d.td.cstart && *ipp < trylist->d.td.cend) {
-                trylist->d.td.last_op = jsi_LOP_THROW;
+                trylist->d.td.last_op = jsi_LOP_THROW; // in "catch"
+                if ((*ipp)->op == OP_THROW && interp->framePtr->tryDepth==1) {
+                    rc = JSI_ERROR; // TODO: fix nested exception error msg propagation
+                    if (ps->last_exception &&
+                        ((str = Jsi_ValueString(interp, ps->last_exception, NULL))))
+                        Jsi_LogError("%s near \"%s\"", nam, str);
+                }
                 *ipp = trylist->d.td.fstart - 1;
                 break;
             } else if (*ipp >= trylist->d.td.fstart && *ipp < trylist->d.td.fend) {
-                jsiPopTry(interp, tlp);
+                jsiPopTry(interp, tlp); // in "finally"
                 trylist = *tlp;
             } else Jsi_LogBug("Throw within a try, but not in its scope?");
         } else {
@@ -384,7 +392,7 @@ static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, j
             trylist = *tlp;
         }
     }
-    return JSI_OK;
+    return rc;
 }
 
 static jsi_TryList *jsiTrylistNew(jsi_try_op_type t, jsi_ScopeChain *scope_save, Jsi_Value *curscope_save)
@@ -1244,6 +1252,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 int discard = ((ip+1)<end && ip[1].op == OP_POP);
                 switch (jsiEvalFunction(ps, ip, discard)) {        /* throw an execption */
                     case JSI_OK: break;
+                    case JSI_EXIT: rc = JSI_EXIT; break;
                     case JSI_BREAK:
                         if (fp->tryDepth<=0)
                             interp->isHelp = 1;
@@ -1926,7 +1935,7 @@ undef_eval:
                     Jsi_IncrRefCount(interp, currentScope);
                     Jsi_Value *excpt = Jsi_ValueNew1(interp);
                     if (ps->last_exception && ps->last_exception->vt != JSI_VT_UNDEF) {
-                        //TODO: fix test262 crash in freeValueTbl@jsiInterp.c:565 for last_exception which is
+                        //TODO: DONE??? fix test262 crash in freeValueTbl@jsiInterp.c:565 for last_exception which is
                         // freed in jsi_PstateFree@jsiPstate.c:251. Is this code the problem?
                         Jsi_Value *ple = ps->last_exception;
                         Jsi_ValueCopy(interp, excpt, ple);
@@ -2310,7 +2319,7 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
 
     if (str == NULL) {
         if (fname != NULL) {
-            if (fnLen>2 && fname[fnLen-1]=='/') {
+            /*if (fnLen>2 && fname[fnLen-1]=='/') {
                 Jsi_DSAppendLen(&fStr, fname, fnLen-1);
                 const char *fcp = Jsi_DSValue(&fStr), *fce = strrchr(fcp,'/');
                 if (fce) {
@@ -2318,7 +2327,7 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
                     npath = Jsi_ValueNewStringDup(interp, fname);
                     Jsi_IncrRefCount(interp, npath);
                 }
-            }
+            }*/
             if (!Jsi_Strcmp(fname,"-"))
                 input = Jsi_GetStdChannel(interp, 0);
             else {
@@ -2456,9 +2465,9 @@ cont:
             str = Jsi_DSValue(&dStr);
 
         }
-        if (interp->curDir && (flags&JSI_EVAL_AUTOINDEX))
-            Jsi_AddAutoFiles(interp, interp->curDir);
     }
+    if (interp->curDir && (flags&(JSI_EVAL_AUTOINDEX)))
+        Jsi_AddAutoFiles(interp, interp->curDir);
     /* TODO: cleanup interp->framePtr->Sp stuff. */
     oldSp = interp->framePtr->Sp;
     // Evaluate code.
@@ -2485,8 +2494,8 @@ cont:
                 rc = jsi_evalcode(ps, NULL, ps->opcodes, fptr->ingsc, fptr->incsc, fptr->inthis, &retValue, fi);
         }
         //interp->curFile = curFile;
-        if (rc != JSI_OK)
-            rc = (ignore?JSI_OK:JSI_ERROR);
+        if (rc == JSI_ERROR && ignore)
+            rc = JSI_OK;
         else if (ps->last_exception || oldps->last_exception)
             Jsi_ValueDup2(interp, &oldps->last_exception, ps->last_exception); //TODO: dup even if null?
         interp->ps = oldps;

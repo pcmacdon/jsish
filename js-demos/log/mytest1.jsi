@@ -4,7 +4,7 @@ function mytest1(args:array=void, conf:object=void) {
     var self = {
         count: 0
     };
-    var options = { // Here is my test.
+    const options = { // Here is my test.
         Debug       :false,     // LogDebug output.
         label       :''         // Some other argument.
     };
@@ -18,8 +18,4 @@ function mytest1(args:array=void, conf:object=void) {
     return self;
 }
 
-provide(mytest1);
-LogDebug("Starting");
-
-if (isMain())
-    runModules(mytest1);
+module(mytest1);

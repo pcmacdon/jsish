@@ -7,7 +7,7 @@ require('WebSocket', '2');
 
 function SqliteUI(files:array|string, conf:object=void)
 {
-    var options = { // Provide an sqlite user interface via a browser.
+    const options = { // Provide an sqlite user interface via a browser.
         closeTimeout:5000,              // Time til exit after close of final client websocket (ms).
         browser     :'',                // Browser program to use.
         create      :false,             // Allow create of db file.
@@ -573,13 +573,13 @@ function SqliteUI(files:array|string, conf:object=void)
         if (!self.rootdir)
             self.rootdir=File.dirname(req.loadFile);
         if (files === undefined)
-            throw("expected a db file argument");
+            throw "expected a db file argument";
         if (typeof(files) === 'string')
             self.dbfile = files;
         else
             self.dbfile = files[0];
         if (!File.exists(self.dbfile) && !self.create)
-            throw("db file not found");
+            throw "db file not found";
         if (self.dump)
             return DumpSql(self.dbfile);
         self.db = new Sqlite(self.dbfile, {queryOpts: {nullvalue:'NULL'}, readonly:self.readonly});
@@ -662,8 +662,5 @@ function SqliteUI(files:array|string, conf:object=void)
     return main();
 }
 
-provide(SqliteUI, 1.1);
-
-if (isMain())
-    exit(runModule(SqliteUI));
+module(SqliteUI, 1.1, {exit:true});
 

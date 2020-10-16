@@ -12,7 +12,7 @@ function Archive(args:array, conf:object=void)
         app         :'',
         cnt         :0,
     };
-    var options = { // Run application from a zip, sqlar or fossil repository.
+    const options = { // Run application from a zip, sqlar or fossil repository.
         mainFile    :'main.jsi',// File to execute, if no module given.
         noRun       :false,     // Just mount, add mount dir to pkg path, and return mount.
         noPatches   :false,     // Ignore patchlevel updates: accepts only X.Y releases.
@@ -26,14 +26,14 @@ function Archive(args:array, conf:object=void)
     
     function main() {
         if (args.length<1)
-            throw("expected 1 or 2 args: file ?MODULE?: "+args.toString());
+            throw "expected 1 or 2 args: file ?MODULE?: "+args.toString();
         var fn = args[0];
         if (self.updateAll) {
             if (!File.isdir(fn))
-                throw('expected directory for updateAll');
+                throw 'expected directory for updateAll';
             var flst = File.glob('*.fossil', {dir:fn, prefix:fn+'/'});
             if (!flst.length)
-                throw('no files to update');
+                throw 'no files to update';
             for (var i of flst) {
                 puts('fossil pull -R '+i);
                 puts(exec('fossil pull -R '+i));
@@ -42,7 +42,7 @@ function Archive(args:array, conf:object=void)
         }
         var app = self.app = args[1];
         if (!File.exists(fn))
-            throw("file not found: "+fn);
+            throw "file not found: "+fn;
         var mnt, pkgDirs = Interp.conf('pkgDirs');;
         var ext = File.extension(fn);
         var sbn, bn = File.rootname(File.tail(fn));
@@ -95,7 +95,7 @@ function Archive(args:array, conf:object=void)
             if (File.exists(msrc)) break;
         }
         if (!File.exists(msrc))
-            throw('no '+self.mainFile+' found in . or lib/ within archive');
+            throw 'no '+self.mainFile+' found in . or lib/ within archive';
         //var cargs = console.args;
         console.args.shift(); // = console.args.slice(1);
         LogTrace('Source:', msrc, console.args);
@@ -104,6 +104,5 @@ function Archive(args:array, conf:object=void)
     return main();
 }
 
-provide(Archive, 1,  {logmask:'debug,trace'});
-moduleRun(Archive);
+module(Archive, 1,  {logmask:'debug,trace'});
 

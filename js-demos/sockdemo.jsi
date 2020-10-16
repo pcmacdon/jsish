@@ -10,7 +10,7 @@ function sockdemo(args:array|string=void, conf:object=void) {
         s:null,
         exitEv:null
     };
-    var options = { // Demo of Jsi sockets.
+    const options = { // Demo of Jsi sockets.
         client  :false,         // Run in client mode.  Default is server mode.
         count   :10,            // Number of times client sends a string.
         debug   :0,             // Debug mode for Socket.
@@ -83,7 +83,5 @@ function sockdemo(args:array|string=void, conf:object=void) {
     main();
 }
 
-provide(sockdemo);
+module(sockdemo);
 
-if (isMain())
-    runModule(sockdemo);

@@ -1,5 +1,5 @@
-Miscellaneous
-=============
+# Misc
+
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 ## Options
@@ -172,75 +172,6 @@ These comparisons are of software out-of-the-box.
     As of version 5.3.4, Lua also supports native C++.
 
 
-## License
-
-Jsi source is covered by the following MIT license:
-
-    The MIT License (MIT)
-    
-    Copyright (c) 2013 Peter MacDonald
-    
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-    
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-    
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-
-
-### Libwebsockets
-Jsi links agains Libwebockets, which is covered by LGPL
-with an extra clause allowing static linking.
-
-    Libwebsockets and included programs are provided under the terms of the GNU
-    Library General Public License (LGPL) 2.1, with the following exceptions:
-    
-    1) Static linking of programs with the libwebsockets library does not
-    constitute a derivative work and does not require the author to provide
-    source code for the program, use the shared libwebsockets libraries, or
-    link their program against a user-supplied version of libwebsockets.
-    
-    If you link the program to a modified version of libwebsockets, then the
-    changes to libwebsockets must be provided under the terms of the LGPL in
-    sections 1, 2, and 4.
-    
-    2) You do not have to provide a copy of the libwebsockets license with
-    programs that are linked to the libwebsockets library, nor do you have to
-    identify the libwebsockets license in your program or documentation as
-    required by section 6 of the LGPL.
-    
-    However, programs must still identify their use of libwebsockets. The
-    following example statement can be included in user documentation to
-    satisfy this requirement:
-    
-    "[program] is based in part on the work of the libwebsockets  project
-    (http://libwebsockets.org)"
-    
-                      GNU LESSER GENERAL PUBLIC LICENSE
-                           Version 2.1, February 1999
-    ...
-
-**Note**:
-    This seems to to say that as long as libwebsockets is not modified,
-    all that is required is an acknowledgement in your user documentation.
-
-
-### Others
-Other software including sqlite, miniz, jsmn, regex from musl,
-etc are either public domain, BSD or MIT compatible.
-
-
 ## Design and Origin
 
 Jsi is a Javascript interpreter written in C.
@@ -298,27 +229,9 @@ Compiling as C++ is supported, mostly for integrity checks.
 - JSON provides seamless data interchange, thus avoiding data structure compatibility issues.
 
 
-## Index By Topic
-
-
-- **Begin**: [Start](Start.md), [Download](Builds.md), [Build](Builds.md)
-- **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Index.md), [License](Misc.md#License), [Language](Misc.md#Syntax), [Compatibility](Start.md#Compatibility)
-- **Development**: [Types](Functions.md), [Debugging](Debug.md), [Logging](Logging.md)
-- **Core**: [System](Builtins.md#System), [Info](Builtins.md#Info), [Interp](Interp.md), [Format](Builtins.md#format), [File-System](Builtins.md#File), [Events](Builtins.md#Event)
-- **Integration**: [Modules](Start.md#Modules), [Require](Start.md#require), [Auto-Load](#auto-load)
-- **Web**: [Server](WebSocket.md), [Preprocessing](WebSocket.md), [WebSocket](Builtins.md#WebSocket), [Markup](Reference.md#Util), [JSON](Builtins.md#JSON)
-- **Miscellaneous**: [Extensions](Extensions.md), [Threads](Interp.md#Threads), [Signal](Builtins.md#Signal), [Sqlite](Sqlite.md), [MySQL](MySql.md), [Zvfs](Builtins.md#Zvfs), [Socket](Builtins.md#Socket), [WebSocket](Builtins.md#WebSocket)
-- **Tools**: [Testing](Testing.md), [Tracing](Start.md#Tracing), [Profiling](Testing.md#Code-Profile), [Code-Coverage](Testing.md#Code-Coverage)
-- **C/C++**: [Jsi-Lite](#jsi-lite), [C Extension](Extensions.md), [DString](Misc.md#DString), [CData](Extensions.md), [Options](Extensions.md#Options), [Sqlite-C](DBQuery.md), [JSON-C](Builtins.md#JSON)
-- **Applications**: [SqliteUI](Builds.md#Apps)
-
-
 ## Packaging
 
-<table class="mytbl"><tr>
-
-<td>
-A <a href="Deploy.md">Deploy</a> is a zip/sqlar archive or fossil
+A [deploy](Deploy.md) is a zip/sqlar archive or fossil
 repository containing one or more applications, which Jsi can mount and execute.
 
 For example, this <a href="https://jsish.org/App10/Ledger">Ledger</a> demo is
@@ -333,64 +246,6 @@ If an application restart is set to automatically update the repository,
 it ensures the latest supported release always gets run.
 New code may be committed by developers at any time,
 but only tagged releases will be used.
-
-</td>
-<td>
-<!--
-        *************************************
-        *  .-----------------------------.  *
-        *  |     Server running Nginx    |  *
-        *  | .---------.      .-----.    |  *
-        *  | |  Jsish  |<----+ Fossil|   |  *
-        *  | '----+----'      '--+--'    |  *
-        *  |      ^              ^       |  *
-        *  '------+--------------+-------'  *
-        *         |              |          *
-        *         v       :      |          *
-        *    .---------.  :   .--+--.       *
-        *    | Browser |  :  | Fossil|      *
-        *    '----+----'  :   '--+--'       *
-        *       User      :  Developer      *
-        *                 :                 *
-        ************************************* -->
-
-<svg class="diagram" xmlns="http://www.w3.org/2000/svg" version="1.1" height="240" width="288" style="margin:0 auto 0 auto;"><g transform="translate(8,16 )">
-<path d="M 16,0 L 16,96 " style="fill:none;"/>
-<path d="M 32,32 L 32,64 " style="fill:none;"/>
-<path d="M 32,144 L 32,176 " style="fill:none;"/>
-<path d="M 72,72 L 72,136 " style="fill:none;"/>
-<path d="M 112,32 L 112,64 " style="fill:none;"/>
-<path d="M 112,144 L 112,176 " style="fill:none;"/>
-<path d="M 192,72 L 192,144 " style="fill:none;"/>
-<path d="M 256,0 L 256,96 " style="fill:none;"/>
-<path d="M 16,0 L 256,0 " style="fill:none;"/>
-<path d="M 32,32 L 112,32 " style="fill:none;"/>
-<path d="M 176,32 L 208,32 " style="fill:none;"/>
-<path d="M 120,48 L 160,48 " style="fill:none;"/>
-<path d="M 32,64 L 112,64 " style="fill:none;"/>
-<path d="M 176,64 L 208,64 " style="fill:none;"/>
-<path d="M 16,96 L 256,96 " style="fill:none;"/>
-<path d="M 32,144 L 112,144 " style="fill:none;"/>
-<path d="M 176,144 L 208,144 " style="fill:none;"/>
-<path d="M 32,176 L 112,176 " style="fill:none;"/>
-<path d="M 176,176 L 208,176 " style="fill:none;"/>
-<path d="M 176,32 C 159.2,32 160,48 160,48 " style="fill:none;"/>
-<path d="M 208,32 C 224.8,32 224,48 224,48 " style="fill:none;"/>
-<path d="M 176,64 C 159.2,64 160,48 160,48 " style="fill:none;"/>
-<path d="M 208,64 C 224.8,64 224,48 224,48 " style="fill:none;"/>
-<path d="M 176,144 C 159.2,144 160,160 160,160 " style="fill:none;"/>
-<path d="M 208,144 C 224.8,144 224,160 224,160 " style="fill:none;"/>
-<path d="M 176,176 C 159.2,176 160,160 160,160 " style="fill:none;"/>
-<path d="M 208,176 C 224.8,176 224,160 224,160 " style="fill:none;"/>
-<polygon points="200,72 188,66.4 188,77.6 "  style="stroke:none" transform="rotate(270,192,72 )"/>
-<polygon points="128,48 116,42.4 116,53.6 "  style="stroke:none" transform="rotate(180,120,48 )"/>
-<polygon points="80,136 68,130.4 68,141.6 "  style="stroke:none" transform="rotate(90,72,136 )"/>
-<polygon points="80,72 68,66.4 68,77.6 "  style="stroke:none" transform="rotate(270,72,72 )"/>
-<g transform="translate(0,0)"><text text-anchor="middle" x="64" y="20">S</text><text text-anchor="middle" x="72" y="20">e</text><text text-anchor="middle" x="80" y="20">r</text><text text-anchor="middle" x="88" y="20">v</text><text text-anchor="middle" x="96" y="20">e</text><text text-anchor="middle" x="104" y="20">r</text><text text-anchor="middle" x="120" y="20">r</text><text text-anchor="middle" x="128" y="20">u</text><text text-anchor="middle" x="136" y="20">n</text><text text-anchor="middle" x="144" y="20">n</text><text text-anchor="middle" x="152" y="20">i</text><text text-anchor="middle" x="160" y="20">n</text><text text-anchor="middle" x="168" y="20">g</text><text text-anchor="middle" x="184" y="20">N</text><text text-anchor="middle" x="192" y="20">g</text><text text-anchor="middle" x="200" y="20">i</text><text text-anchor="middle" x="208" y="20">n</text><text text-anchor="middle" x="216" y="20">x</text><text text-anchor="middle" x="56" y="52">J</text><text text-anchor="middle" x="64" y="52">s</text><text text-anchor="middle" x="72" y="52">i</text><text text-anchor="middle" x="80" y="52">s</text><text text-anchor="middle" x="88" y="52">h</text><text text-anchor="middle" x="176" y="52">F</text><text text-anchor="middle" x="184" y="52">o</text><text text-anchor="middle" x="192" y="52">s</text><text text-anchor="middle" x="200" y="52">s</text><text text-anchor="middle" x="208" y="52">i</text><text text-anchor="middle" x="216" y="52">l</text><text text-anchor="middle" x="136" y="132">:</text><text text-anchor="middle" x="136" y="148">:</text><text text-anchor="middle" x="48" y="164">B</text><text text-anchor="middle" x="56" y="164">r</text><text text-anchor="middle" x="64" y="164">o</text><text text-anchor="middle" x="72" y="164">w</text><text text-anchor="middle" x="80" y="164">s</text><text text-anchor="middle" x="88" y="164">e</text><text text-anchor="middle" x="96" y="164">r</text><text text-anchor="middle" x="136" y="164">:</text><text text-anchor="middle" x="176" y="164">F</text><text text-anchor="middle" x="184" y="164">o</text><text text-anchor="middle" x="192" y="164">s</text><text text-anchor="middle" x="200" y="164">s</text><text text-anchor="middle" x="208" y="164">i</text><text text-anchor="middle" x="216" y="164">l</text><text text-anchor="middle" x="136" y="180">:</text><text text-anchor="middle" x="56" y="196">U</text><text text-anchor="middle" x="64" y="196">s</text><text text-anchor="middle" x="72" y="196">e</text><text text-anchor="middle" x="80" y="196">r</text><text text-anchor="middle" x="136" y="196">:</text><text text-anchor="middle" x="160" y="196">D</text><text text-anchor="middle" x="168" y="196">e</text><text text-anchor="middle" x="176" y="196">v</text><text text-anchor="middle" x="184" y="196">e</text><text text-anchor="middle" x="192" y="196">l</text><text text-anchor="middle" x="200" y="196">o</text><text text-anchor="middle" x="208" y="196">p</text><text text-anchor="middle" x="216" y="196">e</text><text text-anchor="middle" x="224" y="196">r</text><text text-anchor="middle" x="136" y="212">:</text></g></g></svg>
-
-</td>
-</tr>
-</table>
 
 ## Security
 
@@ -411,29 +266,9 @@ But more important is the
 reduction in [Attack Surface](https://en.wikipedia.org/wiki/Attack_surface).
 There is far less code involved and far less complexity.
 
+## Web-Serve
 
-## Extensions
-
-Jsi is written in C. For embedded developers this provides an [Extensions](Extensions.md) interface to simplify
-connecting low level (**C**) with high level (**GUI**) code.
-The use of C-Structs is intrinsically integrated into Jsi at all levels,
-and is the main mechanism used for module state, option parsing and
-C extensions.
-This direct
-interfacing with C-structs can potential be used to process very
-large amounts of data with little overhead.
-This includes the Sqlite interface which also supports mass data transfers to/from structs,
-which is of particular importance for embedded applications.
-
-The C coding aspect of Jsi however is purely optional. 
-
-
-
-Wiki Dump
-====
-
-Nginx
-====
+### Nginx
 
 Although Jsi can serve web content directly, on the Internet
 it is more common to reverse proxy to a web-server via localhost:
@@ -448,119 +283,8 @@ And jsish might be invoked as:
 
 Or run via chroot/su.
 
-Wget
-====
-Jsi_Wget used for in memory download.
 
-Keys
-====
-
-Jsi provides limited support for iterators,
-in the form of **for** loops and the method **keys()**:
-
-``` js
-cat > keys.jsi<EOF
-var x = {a:1, b:2};
-;Object.keys(x);
-var y = [1,2];
-;Ojbect.keys(y);
-EOF
-jsish --I unitTest:1 keys.jsi
-
-==>
-
-Object.keys(x) ==> [ "a", "b" ]
-Object.keys(y) ==> [ 0, 1 ]
-```
-
-However this doesn't really buy you much.
-
-``` js
-var y = [1, 2];
-for (var i in y) { puts(i); }
-for (var i of Object.keys(y)) { puts(i); } // Same as above
-```
-
-Moreover in ECMA **keys())** works very differently, eg:
-
-    var k = Object.keys(x);
-
-And this works only for Objects: Array does not support **keys()**.
-
-In summary, iterators, other than **for**, are not really supported.
-
-See [Iterators on Stackoverflow.com](https://stackoverflow.com/questions/14379274/how-to-iterate-over-a-javascript-object)
- 
-
-Undefined
-====
-
-Bugs due to **undefined** vars are one of the most annoying things about JS:
-code thought to be working suddenly starts throwing errors.
-
-Below are some of the things you can do to minimise this in Jsi.
-
-## Expressions
-
-Expression checking should be as simple as possible, eg:
-
-    if (x) ...
-
-is often preferred to:
-
-``` js
-if (x != '') ...
-if (x != 0) ...
-```
-
-because it handles the case where x may be undefined.
-
-## Conditionals
-
-Jsi will check for undefined vars used on the left-hand side (LHS) of conditional expressions.  To such avoid errors, put the var on the RHS. 
-
-``` js
-var x;
-if ('' === x) puts('x empty'); //OK.
-if (x === '') puts('x empty');
-/tmp/us.jsi:4: error: lhs value undefined in ===/!==
-ERROR
-```
-
-For Loop
-====
-For loops are not always as simple as they seem.
-
-## for...of
-
-Use **for of** only for Arrays, not Objects, eg:
-
-``` js
-var x = [1,2];
-for (var i of x) {}; // OK
-var y = {a:1};
-for (var i of y) puts(i);
-error: operand not an array    (at or near "a")
-```
-
-However, if web-portability of code is desired, using it can break older browsers.
-
-## for...in
-
-For web-portability one might think that it is safe to use **for...in** instead of **for of** for Arrays, but there are some gotchas in some browsers:
-
-- Indexes are not guaranteed to be in numerical order.
-- Sometimes it will iterate over properties like **length**. 
-
-Thus the safest way is using **for (;;)**.
-
-
-## for (;;)
-
-Use **for (;;)** for Arrays if you care about portability.
-
-Chroot Setup
-====
+### Chroot Setup
 
 Given it's small size, jsish is well suited for chroot deployments.
 
@@ -613,324 +337,17 @@ deployment that is simple but secure.
 **NOTE:** The slight bump in "jsiusr10" is due to the addition of "sh", to allow execing fossil in a chroot.
 
 
-## Function Callbacks
 
-When writing code in Jsi be aware that function callbacks are slower than **for** loops. For example, in:
+### Wget
 
-``` js
-x = [1,2,3], sum=0;
-x.forEach(function(n) {sum+=n;});
-for (var n of x) sum+=n;
-```
-
-the **forEach** function call is slower.
-
-## Speed Comparison
-
-The following shows just how much slower:
-
-``` js
-var x = new Array(10000).fill(1);
-
-function loop() {
-   var sum=0;
-   for (var n of x) sum+=n;
-   return sum;
-}
-
-function func() {
-   var sum=0;
-   x.forEach(function(n) {sum+=n;});
-   return sum;
-}
-
-function noop() {
-   var sum=0;
-   x.forEach(noOp);
-   return sum;
-}
-
-;Util.times(loop);
-;Util.times(func);
-;Util.times(noop);
-
-==>
-
-Util.times(loop) ==> 49892
-Util.times(func) ==> 206804
-Util.times(noop) ==> 144220
-```
-
-As can be seen, even **noOp** call is slower due to overhead from function call setup.
-
-## Case Study
-
-Here is an example that considers the best way to implement a **range** function like:
-
-    function range(size, start, step) {
-        var foo = [];
-        for (var i = start; i <= size; i+=step)
-           foo.push(i);
-        return foo;
-    }
-    range(10,1,1);
-
-
-### Conventional JS
-A quick look on Stackoverflow.com shows results for
-[range](https://stackoverflow.com/questions/3895478/does-javascript-have-a-method-like-range-to-generate-a-range-within-the-supp)
-and [sequence](https://stackoverflow.com/questions/3746725/create-a-javascript-array-containing-1-n).
-Note the mind-bending ways of trying to accomplish this seemingly simple task.
-
-A popular answer was:
-
-    var N = 10; 
-    Array.apply(null, {length: N}).map(Number.call, Number)
-
-### Jsi Solution
-Unfortunately the above doesn't work in Jsi and:
-
-- It needs a large **EXPLANATION** section, even though it is only 1 line!
-- Most other answers require ES6, which Jsi does not have.
-- Many correctly observed you are probably better off using a for loop.
-
-Here are 2 implementations that work in both Jsi and ECMA:
-
-``` js
-cat > /tmp/range.jsi <<EOF
-function range(n=20, start=0, step=1) {
-    return Array(n).fill(0).map(function(v,i,o) { return start+i*step; });
-}
-function range1(n=20, start=0, step=1) {
-   var a = Array(n).fill(0);
-   for (var i in a)
-      a[i] = start+i*step;
-   return a;
-}
-
-;range();
-;Util.times(range);
-
-;range1();
-;Util.times(range1);
-EOF
-
-jsish --I unitTest:1 /tmp/range.jsi
-
-==>
-
-range() ==> [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
-Util.times(range) ==> 1136
-range1() ==> [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
-Util.times(range1) ==> 358
-```
-
-Both work, but the for loop is easier to read and 3-times faster.
-
-### Conclusion
-Callbacks may seem more elegant, but they are just not very efficient in Jsi.
-And code ends up being harder to read.
-
-
-Building SSL
-====
-
-How do you build-in SSL support to jsish?
-
-Answer: yes.  make remake WITH_SSL=1
-
-Note: Jsi now uses [lws](https://jsish.org/lws), a fork of LibWebsockets. 
-
-## Notes
-
-*bwtiffin*  First up, it was mostly flailing and failing.
-
-Trying to get the first build, from the initial instructions above, and a make clean in jsi and jsi/websocket dirs.
-
-src/jsiWebSocket.c:2763 missing a semi-colon
- 
-Then tried `make Websocket.so` in jsi/  that seemed to work, but symbols are probably not in place.
-
-Added -lssl, -lcrypto to PROGLDFLAGS in jsi/Makefile, got further but `lws_dump_json_context` needed to be commented out in src/jsiWebSocket.c:2523 and line 2714, the libwebsockets I have in /usr/lib64 does not have the lws_dump_json_context symbols (or this is a sign that I've blended the make/build).
-
-In case there is a hint here; last compile line completed with:
-
-    gcc -I. -Isrc -Wall -Wsign-compare -Wtype-limits -Wuninitialized -DJSI__MAIN=1
-    -g -Og -O0 -Iwebsocket/src/lib  -Iwebsocket/src/build -Iwebsocket/unix
-    -Iwebsocket/build/unix -Isqlite/src -frecord-gcc-switches -fpic
-    -DJSI__BASE64=1 -DJSI__CDATA=1 -DJSI__DEBUG=1 -DJSI__ENCRYPT=1 -DJSI__EVENT=1
-    -DJSI__FILESYS=1 -DJSI__INFO=1 -DJSI__LOAD=1 -DJSI__MARKDOWN=1 -DJSI__MATH=1
-    -DJSI__MD5=1 -DJSI__READLINE=1 -DJSI__SHA1=1 -DJSI__SHA256=1 -DJSI__SIGNAL=1
-    -DJSI__STUBS=1 -DJSI__THREADS=1 -DJSI__ZVFS=1 -DJSI__MEMDEBUG=0 -DJSI__MINIZ=0
-    -DJSI__REGEX=0 -DJSI__SANITIZE=0 -DJSI__SOCKET=1 -DJSI__SQLITE=1
-    -DJSI__WEBSOCKET=1 -DJSI__WEBSOCKET=1 -DJSI__SQLITE=1
-    -DJSI_PKG_DIRS=\""/home/btiffin/inst/langs/jsi/jsi/lib,/usr/local/lib/jsi"\"
-    -DJSI_CONF_ARGS=\"\" src/jsiLexer.o src/jsiFunc.o src/jsiValue.o
-    src/jsiRegexp.o src/jsiPstate.o src/jsiInterp.o src/jsiUtils.o src/jsiProto.o
-    src/jsiFilesys.o src/jsiChar.o src/jsiString.o src/jsiBool.o src/jsiNumber.o
-    src/jsiArray.o src/jsiLoad.o src/jsiHash.o src/jsiOptions.o src/jsiStubs.o
-    src/jsiFormat.o src/jsiJSON.o src/jsiCmds.o src/jsiFileCmds.o src/jsiObj.o
-    src/jsiSignal.o src/jsiTree.o src/jsiCrypto.o src/jsiDString.o src/jsiMath.o
-    src/jsmn.o src/jsiZvfs.o src/jsiUtf8.o src/jsiUserObj.o src/jsiSocket.o
-    src/jsiSqlite.o src/jsiWebSocket.o src/jsiMySql.o src/jsiCData.o
-    src/jsiMarkdown.o src/jsiVfs.o src/parser.o src/linenoise.o src/jsiEval.o
-    sqlite/build/unix/libsqlite3.a src/main.o -rdynamic -o jsish_ -lm -lssl
-    -lcrypto websocket/build/unix/libwebsockets.a -ldl -lpthread -lz
-
-(all one line, edited in Vim with word wrap and code block indent)
-
-Completed, but jsish `Interp.conf('hasOpenSSL')` is still false.  Fairly lost in the forest.  Build passes all tests, but still not right somewhere.
-
-Was unsure if this build is supposed to be EXT_WEBSOCKET or MOD_WEBSOCKET and kinda gave up for now.  Will require more reading through the build system first, as flailing can only get you so far.  I'm pretty sure I have a blendo set of make rules now.  Unsure if the goal is LWS in jsish or LWS from a loadable module.
-
-*Feel free to remove this part of the wiki page after reading.  I'll try and make a better report after a read through with proper notes on steps taken, starting fresh.*
-
-## Todo
-
-Find a way to build-in SSL support statically with lib musl.
-
-*bwtiffin*, might I suggest looking at mbedTLS?  It's our fave here for embedded work, and seems well supported in libwebsockets.
-
-## Alternatives
-
-Use an SSL web server that supports [Reverse Proxy](https://jsish.org/fossil/jsi2/wiki?name=Web+Reverse-Proxy).
-
-
-Building Jsi on Linux
-====
-
-Jsi is written in C, but can be compiled as either native C, or native C++ (does not use **extern C**).
-
-On Debian a few packages are required:
-
-    sudo apt-get install build-essential bison libreadline-dev libsqlite3-dev libwebsockets-dev libncurses-dev cmake libmysqlclient-dev
-
-**Note:** Some packages (eg. **cmake**) are required only for specific configurations.
-
-To build the Linux target there are are two steps:
-
-    ./configure
-
-Do not be surprised to see comiler output from configure:
-
-it compiles the stripped down shell "jsimin".
-
-Next, run "make" to build the actual "jsish" executable.
-
-    make
-
-If you want, you can see other available options using:
-
-    ./configure --help
-
-**Note:** The directory **Configs/**, which contains a number of predefined configurations which can be copied to **make.conf**
-
-The last step is to run the test suite (optional):
-
-    make test
-
-
-## Debian
-
-If you are on a debian system, you can build then install as a package:
-
-    cd tools
-    ./makedep.sh
-    sudo dpkg -i jsish-*
-
-
-FreeBSD
-
-On FreeBSD use "gmake" instead of "make" and:
-
-    pkg install fetch gmake bison
-
-
-
-## Windows
-
-Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
-
-    sudo apt-get install gcc-mingw-w64
-
-The [sqlite](https://sqlite.org/download.html) and
-[libwebsockets](https://libwebsockets.org/) source needs to be downloaded and unpacked in "../sqlite"
-and "../websockets".  This now happens automatically.
-
-Then configure using:
-
-    ./configure --config=win
-
-**WARNING:** Certain features (eg. signals) are disabled in the 
-Windows build. There are also differences in some of the file-system 
-access functions.
-
-
-## Standalone
-
-The **standalone** build produces a static binary that contains no external library references.
-This is useful when you need a standalone executable with no external dependancies.
-
-To create a static image, Jsi uses the Musl library.
-
-The first step is to download [Musl](http://www.musl-libc.org) and unpack it.
-Then change to the **musl** dir and run configure/make, eg:
-
-     ./configure --prefix=$HOME/usr && make install
-
-Ensure that *~/usr/bin* is in your path with export PATH=$PATH:$HOME/usr/bin.
-Then back in the **jsi** dir do the following:
-
-    echo '#define __P(x) x' > ~/usr/include/sys/cdefs.h
-    echo '#include <miniz/zlib.h>' >  ~/usr/include/zlib.h
-    cp -pr miniz ~/usr/include/
-
-The sqlite and libwebsockets source needs to be downloaded and unpacked in **../sqlite**
-and **../websockets**.
-
-The static jsish can then be built with:
-
-    ./configure --config=musl
-    make
-
-
-## Amalgamation
-
-Amalgamated source is the easiest way to incorporate Jsi into an existing application:
-Here is a simple example:
-
-``` clike
-#include "jsi.c"
-
-int main(int argc, char *argv[])
-{
-    Jsi_Interp *interp = Jsi_InterpNew(NULL);
-    Jsi_EvalString(interp, "for (var i=1; i<=3; i++)  puts('TEST:',i);", 0);
-    if (argc>1)
-        Jsi_EvalFile(interp, Jsi_ValueNewStringKey(interp, argv[1]), 0);
-}
-```
-
-which we compile with:
-
-    gcc  myfile.c -lm -lz -ldl -lpthread
-
-
-Another alternative that simplifies debugging Jsi is
-using [jsiOne.c](https://jsish.org/jsi/doc/tip/src/jsiOne.c)
-
-
-## Web
-
-
-### Client
 To download a file from the web we can use:
 
 ``` bash
 jsish -w -O jsi-app.zip http://jsish.org/jsi-app/zip
 ```
 
-### Server
+### Websrv
+
 The builtin web server can open it in a
 local browser and serve out html to it, from the command-line:
 
@@ -945,47 +362,8 @@ and programmatically:
     update(-1);
 ```
 
-## Sqlite
 
-
-### Usage
-
-Basic Sqlite usage:
-
-``` js
-var db = new Sqlite('mydata.db');
-db.query('SELECT * FROM tbl');
-Output
-[ { a:99, b:1 }, { a:95, b:2 }, { a:91, b:3 } ]
-```
-
-## GUI
-
-The database GUI is invoked using:
-
-``` bash
-jsish -S mydata.db
-```
-
-### Database Dump
-To dump a database use:
-
-``` bash
-jsish -S -dump true mydata.db
-```
-
-which produces output like the sqlite .dump command.
-
-
-## Applications
-
-
-### Ledger
-
-``` bash
-fossil clone http://jsish.org/jsi-app jsi-app.fossil
-jsish -a jsi-app.fossil Ledger
-```
+## Packages
 
 ### pkgDirs
 
@@ -1079,13 +457,9 @@ var JSON = {
 };
 ```
 
-## C-API
+## CAPI
 
-Jsi has a sizeable C-API, best documented by the header file [jsi.h](https://jsish.org/jsi/file/src/jsi.h).
-
-A portion of which can be used without the interpreter code by C programmers (Jsi-Lite).
-
-## DString
+### DString
 
 DString provides dynamic string functionality via a struct
 which uses the stack when strings are short:
@@ -1148,65 +522,6 @@ You can also use Jsi_DSInit():
     char*   Jsi_DSValue(Jsi_DString *dsPtr);
     #define JSI_DSTRING_VAR(varPtr,size) //...
 ```
-
-### Jsi_DSAppend
-Calls Jsi_DSAppendLen for each string value argument, passing in -1 for the length.
-  Each string is assumed to be null terminated and the final argument must be a NULL.
-
-  RETURNS: The string starting at the first appended character.
-
-### Jsi_DSAppendLen
-Append length bytes to the DString. If length is &lt; 0,
-the value of strlen is used.  If required, the DString is realloced to
-be large enough to contain bytes, plus an extra null byte that is added to the end.
-
-RETURNS: The string starting at the first appended character.
-
-### Jsi_DSFree
-Frees any allocated space and sets the DString back to empty such that it is safe to exit the scope.
-Or the DString may be reused (also see Jsi_DSSetLength).
-
-### Jsi_DSFreeDup
-Returns the malloced string value and resets the DString in the same way as Jsi_DSFree.
-This just avoids the user having to do an extra malloc/free if the DString was already malloced.
-It is then the responsibility of the caller to free the returned value.
-
-RETURNS: The string that was contained in the DString.
-
-### Jsi_DSPrintf
-Perform printf style string formatting as directed by the fmt string.
-Under the covers, this utilizes vsnprintf.
-
-RETURNS: The string starting at the first appended character.
-
-### Jsi_DSSet
-Same as calling Jsi_DSSetLength(dsPtr,0) followed by Jsi_DSAppendLen(dsPtr,str).
-Sets the DString to str without freeing any allocated space.
-
-**Warning**: It is not safe to exit the scope without first calling Jsi_DSFree.
-
-
-### Jsi_DSSetLength
-Depending on dsPtr->len, truncates a string or sets the minimum allocated space.
-
-- If length is &lt; 0, does nothing and just returns the current size allocation.
-- if length is &lt; current length, the string is truncated.
-- Otherwise, enforces the allocated space is at least length.
-
-**Note**:
-    This will not set dsPtr->len unless truncating.
-    Also an extra byte is always added to the allocation,
-    but this is not reported in the allocated length.
-
-  RETURNS: The currently allocated size. ie. the size of the maximum string that
-  will fit without a call to realloc.
-
-### Jsi_DSValue
-: Gets the current string value.
-
-  RETURNS: The string dsPtr->str.
-
-### `JSI_DSTRING_VAR`
 
 
 ### Large String Buffers
@@ -1343,66 +658,14 @@ array of tokens for output so that for limited size JSON strings,
 no memory gets allocated during the parse.
 When memory does get allocated, it is only to resize the token array.
 
-
-### Sub-Interps
 Any data sent between sub-[interps](Interp.md) will first be converted to/from JSON.
 This because all data objects are private to an interp.
 
 ## Jsi-Lite
 
 
-Jsi-Lite is a subset of the Jsi C source code which can be used without the script engine.
+Jsi-Lite, which is a subset of the Jsi C source code which can be used without the script engine:
 
-
-### Jsi_DString
-[Jsi_DString](#dstring) is available in Jsi-Lite.
-
-
-### Jsi_Hash
-This pages describes how to use Jsi_Hash.
-Search for Jsi_Hash in [jsi.h](https://jsish.org/jsi/file/jsi.h#Jsi_Hash) for details.
-
-Hash provides simple hash table functionality.
-
-``` clike
-    int isNew;
-    Jsi_Hash *tbl = Jsi_HashNew(interp, JSI_KEYS_STRING, NULL);
-    hPtr = Jsi_HashEntryNew(tbl, "foo", &isNew);
-    Jsi_HashEntrySet(hPtr, 99);
-    Jsi_HashSet(tbl, "bar", 100);
-    Jsi_HashSearch search;
-    for (hPtr = Jsi_HashEntryFirst(tbl, &search);
-        hPtr != NULL; hPtr = Jsi_HashEntryNext(&search)) {
-        key = Jsi_HashKeyGet(hPtr);
-        int n = Jsi_HashValueGet(hPtr);
-    }
-```
-
-There are plenty of examples using Hash in the Jsi source code.
-
-
-### Jsi_Tree
-The underlying data structure for objects in JSI is a tree Red-Black trees with invariant node
-pointers: nodes are allocated using a single malloc, including space for the key.
-This introduces a problem in that varying string keys can not be copied between nodes,
-which is required when re-balancing the tree. Although tree supports swapping node positions
-instead of keys, objects instead use a key of type STRINGPTR, a combination Hash table and and Tree,
-which is fairly efficient because objects often share keys.
-
-
-
-### Jsi_List
-Jsi_List implements a double linked list.
-Not heavily used. Included mainly for completeness.
-
-
-### Jsi_Map
-Jsi_Map encapsulates Hash/Tree/List.  Allows switching
-underlying implementation by changing a single declaration.
-
-
-### Example Code
-We use Jsi-Lite as follows:
 
 ``` clike
     #define JSI_LITE_ONLY
@@ -1410,11 +673,14 @@ We use Jsi-Lite as follows:
     //Your code goes here.
 ```
 
-Following is some demo code:
+It include [DString](#dstring), Hash, List, Map, and Tree.
 
-- a minimal demo of Jsi-Lite: [litedemo.c](https://jsish.org/jsi/file/c-demos/litedemo.c).
-- a demo of Jsi_List: [litedemo.c](https://jsish.org/jsi/file/c-demos/listdemo.c).
-- a more comprehensive database demo: [dbdemo.c](https://jsish.org/jsi/file/c-demos/dbdemo.c).
+Tree is the underlying data structure for objects in JSI using Red-Black trees with invariant node
+pointers: nodes are allocated using a single malloc, including space for the key.
+This introduces a problem in that varying string keys can not be copied between nodes,
+which is required when re-balancing the tree. Although tree supports swapping node positions
+instead of keys, objects instead use a key of type STRINGPTR, a combination Hash table and and Tree,
+which is fairly efficient because objects often share keys.
 
 
 ## Options
@@ -1607,6 +873,8 @@ Call Jsi_OptionChanged to determine if an option was specified.
 **Warning**:
     There are known concurrency issues with this feature.
 
-## jsi-js
+## License
 
-TODO
+Jsi source is generally is covered by an MIT.
+
+<!-- meta:{"file":{"index":1002}} -->

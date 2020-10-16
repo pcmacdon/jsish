@@ -2,7 +2,7 @@
 
 function Wget(fileargs:array|string, conf:object=void) {
     
-    var options = { // Web client for downloading files from url
+    const options = { // Web client for downloading files from url
         force       : false,        // Overwrite output file, if exists.
         headers     : [],           // Header fields to send.
         nowait      : false,        // Just return object: caller will call update.
@@ -67,11 +67,11 @@ function Wget(fileargs:array|string, conf:object=void) {
         if (typeof(fileargs) === 'string')
             fileargs = [fileargs];
         if (!fileargs || fileargs.length !== 1)
-            throw("expected a url arg");
+            throw "expected a url arg";
         self.url = fileargs[0];
         var m = self.url.match(/^([a-zA-Z]+):\/\/([^\/]*+)(.*)$/);
         if (!m)
-            throw('invalid url: '+self.url);
+            throw 'invalid url: '+self.url;
         self.scheme = m[1];
         self.address = m[2];
         self.path = m[3];
@@ -80,7 +80,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             self.port = parseInt(as[1]);
             self.address = as[0];
         } else  if (as.length != 1)
-            throw('bad port in address: '+self.address);
+            throw 'bad port in address: '+self.address;
         
         if (self.O == '')
             self.O = File.tail(self.path);
@@ -88,7 +88,7 @@ function Wget(fileargs:array|string, conf:object=void) {
             self.O = '.';
         if (self.O !== '-' && self.O !== '.' && File.exists(self.O)) {
             if (!self.force)
-                throw('output file already exists: '+self.O);
+                throw 'output file already exists: '+self.O;
             File.remove(self.O);
         }
         if (self.post.length)
@@ -147,8 +147,6 @@ function Wget(fileargs:array|string, conf:object=void) {
     return main();
 }
 
-provide(Wget, "1.2", {logmask:'trace'});
-
-moduleRun(Wget);
+module(Wget, "1.2", {logmask:'trace'});
 
 

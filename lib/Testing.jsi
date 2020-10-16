@@ -4,7 +4,7 @@ require('Jsish');
 
 function Testing(fileargs:array, conf:object=void):number {
 
-    var options = { // Run script(s) as unit tests; return code is the number of failed tests.
+    const options = { // Run script(s) as unit tests; return code is the number of failed tests.
         args        :'',        // Argument string to call script with
         context     :99,         // Number of context lines for DIFF (>3 forces dir diff).
         echo        :false,     // Run with puts/assert output showing file:line number.
@@ -53,12 +53,12 @@ function Testing(fileargs:array, conf:object=void):number {
     function runOne(fn:string) {
         var fail = 0;
         if (!fn)
-            throw("Script file required");
+            throw "Script file required";
         if (!fn || !File.exists(fn))
-            throw("File not found: "+fn);
+            throw "File not found: "+fn;
         var ext = File.extension(fn);
         if (ext != '.jsi' && ext != '.js')
-            throw(fn+": Test module file extension "+ext+" not one of: .js .jsi: "+fn);
+            throw fn+": Test module file extension "+ext+" not one of: .js .jsi: "+fn;
         var scr = File.read(fn);
         var pat = "=!EXPECTSTART!=\n(.*)=!EXPECTEND!=";
         var sm = scr.match(pat);
@@ -202,7 +202,7 @@ function Testing(fileargs:array, conf:object=void):number {
                 return 1;
             }
             var fdat = File.read(fn);
-            if (res.indexOf('*/')>=0) throw("output contains comment terminator");
+            if (res.indexOf('*/')>=0) throw "output contains comment terminator";
             if (!sm) {
                 fdat += "\n/*\n=!EXPECTSTART!=\n"+res+"=!EXPECTEND!=\n*/\n";
                 puts('\rCreated '+fn);
@@ -281,7 +281,7 @@ function Testing(fileargs:array, conf:object=void):number {
             self.verbose = true;
         self.rootdir=Info.scriptDir();
         if ((self.echo) && self.verbose)
-            throw('can not use both verbose and line');
+            throw 'can not use both verbose and line';
         LogTrace('Files', fileargs);
         if (fileargs.length === 1) {
             fileargs = fileargs[0];
@@ -327,7 +327,4 @@ function Testing(fileargs:array, conf:object=void):number {
     return main();
 }
 
-provide(Testing, 1, {logmask:'trace'});
-
-if (Info.isMain())
-    exit(moduleRun(Testing));
+module(Testing, 1, {logmask:'trace', exit:true});

@@ -10,9 +10,9 @@ for (var i = 0; i<args.length; i+=2) {
     var a = args[i];
     var v = args[i+1];
     if (opts[a] == undefined)
-        throw('option "'+a+'" not one of: '+opts.keys().sort().join(', '));
+        throw 'option "'+a+'" not one of: '+opts.keys().sort().join(', ');
     if (v==undefined)
-        throw('expected even number of arguments');
+        throw 'expected even number of arguments';
     opts[a] = v;
 }
 if (opts.inFile=='')
@@ -55,13 +55,13 @@ var fdefs = '';
 var finit = '    JSI_STUBS_SIG,    "'+opts.prefix+'",    sizeof('+opts.pret+'_Stubs),     '+opts.preu+'_STUBS_BLDFLAGS,    '+opts.preu+'_STUBS_MD5,    NULL,\\\n';
 for (i = 0; i<l; i++) {
     var x = stubs[i];
-    if (!x) throw("missing index: "+i);
+    if (!x) throw "missing index: "+i;
     im = x.match(/([^\(]+)\(([^\)]*)\)/);
-    if (!im || im.length != 3) throw('bad stub: '+im.toString());
+    if (!im || im.length != 3) throw 'bad stub: '+im.toString();
     iopts = im[2];
     ipre = im[1];
     var ii = ipre.lastIndexOf(' '+opts.pret+'_');
-    if (ii<0) { puts("III: "+ipre+" "+opts.pret); throw('skip: '+im[0]); }
+    if (ii<0) { puts("III: "+ipre+" "+opts.pret); throw 'skip: '+im[0]; }
     iret = ipre.substr(0, ii);
     iname = ipre.substr(ii+1).trim();
     lopts = iopts.split(',');

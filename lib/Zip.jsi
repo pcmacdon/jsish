@@ -4,7 +4,7 @@
 
 function Zip(args:string|array, conf:object=void) {
 
-    var options = { // Implements zip functionality
+    const options = { // Implements zip functionality
         userDir     :'',        // User directory to add to zip (zvfs)
         outfile     :'',        // Output file for zvfs instead of appending "sh"
         indir       :'',        // Input directory
@@ -30,7 +30,7 @@ function Zip(args:string|array, conf:object=void) {
         File.mkdir(tdir);
         Zip(['unzip', Info.executable(), tdir]);
         if (self.userDir !== '') {
-            if (!File.isdir(self.userDir)) throw('userDir not found: '+self.userDir);
+            if (!File.isdir(self.userDir)) throw 'userDir not found: '+self.userDir;
             File.link(File.realpath(self.userDir), tdir+'/lib/user');
         }
         File.copy(fname, zdest);
@@ -152,9 +152,8 @@ function Zip(args:string|array, conf:object=void) {
     for (i of cmdList) {
         emsg += '  ' + i[0] + '      \t: ' + i[2] + '\n';
     }
-    throw(emsg); 
+    throw emsg; 
 }
 
-provide(Zip, 1);
-if (Info.isMain())
-    exit(runModule(Zip));
+module(Zip, 1, {exit:true});
+

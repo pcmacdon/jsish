@@ -42,8 +42,8 @@ int jsi_main(int argc, char **argv)
     }
     Jsi_InterpOpts opts = {.argc=argc, .argv=argv};
     Jsi_Interp *interp = Jsi_Main(&opts);
-    if (!interp) return opts.exitCode;
-    Jsi_InterpDelete(interp);
+    if (interp)
+        Jsi_InterpDelete(interp);
     Jsi_DSFree(&sStr);
     exit(0);
 }

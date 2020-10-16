@@ -20,7 +20,7 @@ require('Jsish');
 
 function Jspp(files:array|string=null, conf:object=undefined):string|object
 {
-    var options = { // A JS preprocessor to convert "typed" functions out to web-browser compatible form
+    const options = { // A JS preprocessor to convert "typed" functions out to web-browser compatible form
         checkRet    :false,     // Support return-type by creating a wrapper function
         disable     :false,     // Preprocess to vanilla JS. WARNING: callers using default values may break.
         listFuncs   :false,     // Echo function list.
@@ -171,6 +171,5 @@ function Jspp(files:array|string=null, conf:object=undefined):string|object
     return self;
 }
 
-provide(Jspp);
-moduleRun(Jspp);
+module(Jspp);
 

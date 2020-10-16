@@ -4,7 +4,7 @@ require('Jsish');
 
 function Help(args, ...) {
 
-    var options = { // Provide help for Jsi commands.
+    const options = { // Provide help for Jsi commands.
         max         :32,        // Max lines to output, if not web
         timeout     :10000,     // Time to wait for browser to open with -web.
         web         :false,     // Format for the web.
@@ -253,7 +253,7 @@ function Help(args, ...) {
                 //rv += DumpCmd(tinf);
                 break;
             default:
-                throw("bad id");
+                throw "bad id";
                 continue;
             }
         }
@@ -328,7 +328,7 @@ function Help(args, ...) {
                         rv += DumpCmd(tinf);
                         break;
                     default:
-                        throw("bad id");
+                        throw "bad id";
                         continue;
                 }           
             }
@@ -340,13 +340,13 @@ function Help(args, ...) {
         LogTrace('Starting');
         debugger;
         if (args.length>1)
-            throw('expected 0 or 1 args');
+            throw 'expected 0 or 1 args';
         var rv, arg = (args.length?args[0]:'');
         if (self.web) {
             rv = dumpWeb();
             if (!self.wiki) {
                 if (require('Websrv')<0)
-                    throw("websrv unavailable");
+                    throw "websrv unavailable";
                 var css = File.read('/zvfs/lib/web/jsiweb.css');
                 rv = '<style>'+css+'</style>\n' + rv;
                 var anchor = (arg===''?'':'#'+arg);
@@ -371,5 +371,5 @@ function Help(args, ...) {
     return main();
 }
 
-provide(Help, 1, {logmask:'trace'});
-moduleRun(Help);
+module(Help, 1, {logmask:'trace'});
+

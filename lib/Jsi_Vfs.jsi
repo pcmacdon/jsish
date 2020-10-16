@@ -2,7 +2,7 @@
 // Virtual File System
 function Jsi_Vfs(args:array=void, conf:object=void):void
 {
-    var options = { // Mount a zip, sqlar, or fossil repository as VFS. Fossil will use newest version supported by jsish version matching tag jsireq-VER
+    const options = { // Mount a zip, sqlar, or fossil repository as VFS. Fossil will use newest version supported by jsish version matching tag jsireq-VER
         dumpVers    :false,     // Dump version info.
         quiet       :false,     // Suppress info msgs.
         safe        :false,     // Forces use of Vfs.exec (which is always used by Safe-interps).
@@ -186,7 +186,7 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
             case 'list': return Fossil_List();
             case 'file': return Fossil_ReadFile(arg);
             case 'done': return Fossil_Done();
-            default: throw('unhandled msg: '+op);
+            default: throw 'unhandled msg: '+op;
         }
     }
 
@@ -230,7 +230,7 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
             case 'list': return Sqlar_List();
             case 'file': return Sqlar_ReadFile(arg);
             case 'done': return Sqlar_Done();
-            default: throw('unhandled msg: '+op);
+            default: throw 'unhandled msg: '+op;
         }
     }
 

@@ -4,7 +4,7 @@ require('Jsish');
 
 function Safe(fileargs:array, conf:object=void) {
 
-    var options = { // Run a safe sub-interp on script arg: when arg is ommitted or a dir, runs interactively.
+    const options = { // Run a safe sub-interp on script arg: when arg is ommitted or a dir, runs interactively.
         evalStr     :'',        // Code-string to eval instead of sourcing filearg.
         msgCmd      :null,      // Command to relay Interp.msgCallback..
         noRead      :false,     // Omit setting safeReadDirs that lets source() be used.
@@ -55,13 +55,13 @@ function Safe(fileargs:array, conf:object=void) {
         self.args = fileargs.splice(1);
         LogTrace('ARGS:', self.args);
         if (!File.exists(fn))
-            throw("script file does not exist: "+fn);
+            throw "script file does not exist: "+fn;
         var ext = File.extension(fn),
             isdir = File.isdir(fn);
         if (!isdir && ext != '.jsi' && ext != '.js')
-            throw("Safe module file extension "+ext+" not one of: .js .jsi: ");
+            throw "Safe module file extension "+ext+" not one of: .js .jsi: ";
         if (self.testMode && (isdir || self.noRead))
-            throw('can not use both testMode and noRead or directory arg');
+            throw 'can not use both testMode and noRead or directory arg';
         var sopts = {isSafe:true, name:'safeProg'};
         if (self.paranoid) {
             self.noRead = true;
@@ -129,5 +129,4 @@ function Safe(fileargs:array, conf:object=void) {
     return main();
 }
 
-provide(Safe, 1, {logmask:'trace'});
-moduleRun(Safe);
+module(Safe, 1, {logmask:'trace'});

@@ -4,7 +4,7 @@ Modules
 
 ## Usage
 
-Modules in Jsi use [moduleRun](#modulerun) and [moduleOpts](#moduleopts).
+Modules in Jsi use [module](#module) and [moduleOpts](#moduleopts).
 
 ### Minimal
 Consider the module `hello.jsi`:
@@ -15,7 +15,7 @@ function hello(args, ...) {
     return [args, self];
 }
 
-runModule(hello);
+module(hello);
 ```
 
 invoked from the command-line:
@@ -50,27 +50,28 @@ function add(args, ...) {
     var self = {
         max:4
     };
-    var options = { // Concat args into list.
+    const options = { // Concat args into list.
         name:'',    // Name prefix.
         start:0,    // Start position.
     };
     moduleOpts(options, self);
     return [args, self];
 }
-moduleRun(add);
+module(add);
 ```
 A benefit to decomposition is that help descriptions
 can be derived from `comments`:
 
 
 ```
-jsish add.jsi -h
-/tmp/add.jsi:7: help: ...
-Concat args into list..  Options are:
-    -name       ""      // Name prefix.
-    -start      0       // Start position.
+add.jsi -h
+/tmp/add.jsi:9: help: ...
+Concat args into list.
+Options are:
+	-name		""		// Name prefix. {}
+	-start		0		// Start position.
 
-Accepted by all .jsi modules: -Debug, -Trace, -Test.
+Accepted by all .jsi modules: -Debug, -Trace, -Test, -Assert.
 ```
 
 ### Logging
@@ -111,6 +112,18 @@ Importantly, when not enabled arguments are elided and do not evaluate.
 
 ## Directives
 
+### module
+
+Declare a module, invoking it if isMain.
+
+``` js
+function hello2(args, ...) {
+    return "Hello World: "+args.join(', ');
+};
+
+module(hello2);
+```
+
 ### moduleRun
 
 `moduleRun` passes non-option arguments are in the first parameter:
@@ -146,7 +159,7 @@ function hello3(args, conf) {
     var self = moduleOpts({start:0, name:''});
     return [self, args];
 }
-runModule();
+module(hello3);
 ```
 
 which are checked and placed into object **self**:
@@ -264,3 +277,4 @@ Modules help information extracted from options by `moduleOpts` where:
 - Comments must use `//`, not `/* */`.
 - The help title comes from the first comment after the opening `{`.
 
+<!-- meta:{"file":{"index":5}} -->

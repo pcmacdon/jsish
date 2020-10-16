@@ -1,27 +1,27 @@
 #!/usr/bin/env jsish
 
-// File generated using: "jsish -m -create other"
-require('mycall');
+// File generated using: "jsish -m -create mod"
 
-function other(args:array|string=void, conf:object=void) {
-    const options = { // Module description.
+function mod(args:array|string=void, conf:object=void) {
+    const options = { // module description.
         rootdir      :''      // Root directory.
     };
-    var self = moduleOpts(options, {}, conf);
+    var self = {};
+    
+    moduleOpts(options, self, conf);
     
     function main() {
         LogTest('Starting', args);
-        args = Util.argArray(args);
         if (self.rootdir === '')
             self.rootdir=Info.scriptDir();
         debugger;
-        mycall(args);
         LogDebug('Done');
     }
     
     return main();
 }
 
-module(other, 1);
+module(mod, 1);
+
 
 

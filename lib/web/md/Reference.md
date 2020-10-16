@@ -123,7 +123,7 @@ Commands for accessing the filesystem.
 |executable|(file:string):boolean |Return true if file is executable.|
 |exists|(file:string):boolean |Return true if file exists.|
 |extension|(file:string):string |Return file extension.|
-|glob|([options](#file-glob):function&#124;object&#124;null=void):array |Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory. The first argument can be a pattern (either a glob or regexp) of the files to return. When the second argument is a function, it is called with each path, and filter on false. Otherwise second argument must be a set of options.|
+|glob|(pattern:regexp&#124;string&#124;null='*', [options](#file-glob):function&#124;object&#124;null=void):array |Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory. The first argument can be a pattern (either a glob or regexp) of the files to return. When the second argument is a function, it is called with each path, and filter on false. Otherwise second argument must be a set of options.|
 |isdir|(file:string):boolean |Return true if file is a directory.|
 |isfile|(file:string):boolean |Return true if file is a normal file.|
 |isrelative|(file:string):boolean |Return true if file path is relative.|
@@ -191,7 +191,7 @@ Commands for inspecting internal state information in JSI.
 |Method|Function Argument Types|Description|
 |---|---|---|
 |argv0|():string&#124;void |Return initial start script file name.|
-|cmds|([options](#info-cmds):object=void):array&#124;object |Return details or list of matching commands.|
+|cmds|(val:string&#124;regexp='*', [options](#info-cmds):object=void):array&#124;object |Return details or list of matching commands.|
 |completions|(str:string, start:number=0, end:number=void):array |Return command completions on portion of string from start to end.|
 |data|(val:string&#124;regexp&#124;object=void):array&#124;object |Return list of matching data (non-functions). Like info.vars(), but does not return function values.|
 |error|():object |Return file and line number of error (used inside catch).|
@@ -416,7 +416,7 @@ Commands for accessing mysql databases.
 |lastRowid|():number |Return rowid of last insert.|
 |onecolumn|(sql:string) |Execute sql, and return a single value.|
 |ping|(noError:boolean=false):number |Ping connection.|
-|query|([options](#mysql-query):function&#124;string&#124;array&#124;object=void) |Run sql query with input and/or outputs..|
+|query|(sql:string, [options](#mysql-query):function&#124;string&#124;array&#124;object=void) |Run sql query with input and/or outputs..|
 |reconnect|():void |Reconnect with current settings.|
 |reset|():number |Reset connection.|
 ### MySql new
@@ -592,10 +592,10 @@ Commands for managing Socket server/client connections.
 |Socket|([options](#socket-new):object=void):userobj |Create socket server/client object.Create a socket server or client object.|
 |close|():void |Close socket(s).|
 |conf|([options](#socket-new):string&#124;object=void) |Configure options.|
-|idconf|([options](#socket-idconf):string&#124;object=void) |Configure options for a connection id, or return list of ids.|
+|idconf|(id:number=void, [options](#socket-idconf):string&#124;object=void) |Configure options for a connection id, or return list of ids.|
 |names|():array |Return list of active ids on server.|
 |recv|(id:number=void):string |Recieve data.|
-|send|([options](#socket-send):object=void):void |Send a socket message to id. Send a message to a (or all if -1) connection.|
+|send|(id:number, data:string, [options](#socket-send):object=void):void |Send a socket message to id. Send a message to a (or all if -1) connection.|
 |update|():void |Service events for just this socket.|
 ### Socket new
 |Option|Type|Description|Flags|
@@ -676,7 +676,7 @@ Commands for accessing sqlite databases.
 
 |Method|Function Argument Types|Description|
 |---|---|---|
-|Sqlite|([options](#sqlite-new):object=void):userobj |Create a new db connection to the named file or :memory:.|
+|Sqlite|(file:null&#124;string=void, [options](#sqlite-new):object=void):userobj |Create a new db connection to the named file or :memory:.|
 |backup|(file:string, dbname:string='main'):void |Backup db to file. Open or create a database file named FILENAME. Transfer the content of local database DATABASE (default: 'main') into the FILENAME database.|
 |collate|(name:string, callback:function):void |Create new SQL collation command.|
 |complete|(sql:string):boolean |Return true if sql is complete.|
@@ -685,10 +685,10 @@ Commands for accessing sqlite databases.
 |exists|(sql:string):boolean |Execute sql, and return true if there is at least one result value.|
 |filename|(name:string='main'):string |Return filename for named or all attached databases.|
 |func|(name:string, callback:function, numArgs:number=void):void |Register a new function with database.|
-|import|([options](#sqlite-import):object=void):number |Import data from file into table . Import data from a file into table. SqlOptions include the 'separator' to use, which defaults to commas for csv, or tabs otherwise. If a column contains a null string, or the value of 'nullvalue', a null is inserted for the column. A 'conflict' is one of the sqlite conflict algorithms:    rollback, abort, fail, ignore, replace On success, return the number of lines processed, not necessarily same as 'changeCnt' due to the conflict algorithm selected. |
+|import|(table:string, file:string, [options](#sqlite-import):object=void):number |Import data from file into table . Import data from a file into table. SqlOptions include the 'separator' to use, which defaults to commas for csv, or tabs otherwise. If a column contains a null string, or the value of 'nullvalue', a null is inserted for the column. A 'conflict' is one of the sqlite conflict algorithms:    rollback, abort, fail, ignore, replace On success, return the number of lines processed, not necessarily same as 'changeCnt' due to the conflict algorithm selected. |
 |interrupt|():void |Interrupt in progress statement.|
 |onecolumn|(sql:string) |Execute sql, and return a single value.|
-|query|([options](#sqlite-query):function&#124;string&#124;array&#124;object=void) |Evaluate an sql query with bindings. Return values in formatted as JSON, HTML, etc. , optionally calling function with a result object|
+|query|(sql:string, [options](#sqlite-query):function&#124;string&#124;array&#124;object=void) |Evaluate an sql query with bindings. Return values in formatted as JSON, HTML, etc. , optionally calling function with a result object|
 |restore|(file:string, dbname:string):void |Restore db from file (default db is 'main').    db.restore(FILENAME, ?,DATABASE? )  Open a database file named FILENAME.  Transfer the content of FILENAME into the local database DATABASE (default: 'main').|
 |transaction|(callback:function, type:string=void):void |Call function inside db tranasaction. Type is: 'deferred', 'exclusive', 'immediate'. Start a new transaction (if we are not already in the midst of a transaction) and execute the JS function FUNC. After FUNC completes, either commit the transaction or roll it back if FUNC throws an exception. Or if no new transation was started, do nothing. pass the exception on up the stack.|
 ### Sqlite new
@@ -849,38 +849,38 @@ Builtin system commands. All methods are exported as global.
 |LogTest|(str:string&#124;boolean,...):void |Debug logging command.|
 |LogTrace|(str:string&#124;boolean,...):void |Debug logging command.|
 |LogWarn|(str:string&#124;boolean,...):void |Debug logging command.|
-|assert|([options](#system-assert):object=void):void |Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.|
+|assert|(expr:boolean&#124;number&#124;function, msg:string=void, [options](#system-assert):object=void):void |Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.|
 |clearInterval|(id:number):void |Delete event id returned from setInterval/setTimeout/info.events().|
 |decodeURI|(val:string):string |Decode an HTTP URL.|
 |encodeURI|(val:string):string |Encode an HTTP URL.|
-|exec|([options](#system-exec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
+|exec|(val:string, [options](#system-exec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
 |exit|(code:number=0):void |Exit the current interpreter.|
 |format|(format:string, ...):string |Printf style formatting: adds %q and %S.|
-|import|([options](#system-import):object=void) |Same as source with {import:true}.|
+|import|(file:string, [options](#system-import):object=void) |Same as source with {import:true}.|
 |isFinite|(val):boolean |Return true if is a finite number.|
 |isMain|():boolean |Return true if current script was the main script invoked from command-line.|
 |isNaN|(val):boolean |Return true if not a number.|
 |load|(shlib:string):void |Load a shared executable and invoke its _Init call.|
 |log|(val, ...):void |Same as puts, but includes file:line.|
 |matchObj|(obj:object, match:string=void, partial=false, noerror=false):string&#124;boolean |Validate that object matches given name:type string. With single arg returns generated string.|
-|moduleOpts|(options:object=void, self:object&#124;userobj=void, conf:object&#124;null&#124;undefined=void):object |Parse module options.|
-|moduleRun|(cmd:string&#124;null&#124;function=void, conf:array=undefined) |Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.|
+|module|(cmd:string&#124;function, version:number&#124;string=1, [options](#system-module):object=void):void |Same as provide, but also invokes the function/name if isMain is true.|
+|moduleOpts|(options:object, self:object&#124;userobj=void, conf:object&#124;null&#124;undefined=void):object |Parse module options.|
+|moduleRun|(cmd:string&#124;function, args:array=undefined) |Invoke named module with given args or command-line args.|
 |noOp|() |A No-Op. A zero overhead command call that is useful for debugging.|
 |parseFloat|(val):number |Convert string to a double.|
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
 |parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
-|provide|([options](#system-provide):object=void):void |Provide a package for use with require.. Default is the file tail-rootname|
+|provide|(name:string&#124;function=void, version:number&#124;string=1, [options](#system-provide):object=void):void |Provide a package for use with require.|
 |puts|(val:any, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
 |quote|(val:string):string |Return quoted string.|
-|require|([options](#system-require):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|
-|runModule|(cmd:string&#124;null&#124;function=void, conf:array=undefined) |Invoke named module. If name is empty, uses file basename. If isMain invokes function with same name as file. With no args will invoke provide.|
+|require|(name:string=void, version:number&#124;string=1, [options](#system-require):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|
 |setInterval|(callback:function, ms:number):number |Setup recurring function to run every given millisecs.|
 |setTimeout|(callback:function, ms:number):number |Setup function to run after given millisecs.|
 |sleep|(secs:number=1.0):void |sleep for N milliseconds, minimum .001.|
-|source|([options](#system-source):object=void) |Load and evaluate source files: trailing '/' appends PARENTDIR.jsi.|
-|strftime|([options](#system-strftime):string&#124;object=void):string |Format numeric time (in ms) to a string. Null or no value will use current time.|
-|strptime|([options](#system-strptime):string&#124;object=void):number |Parse time from string and return ms time since 1970-01-01 in UTC, or NaN.|
+|source|(val:string&#124;array, [options](#system-source):object=void) |Load and evaluate source files.|
+|strftime|(num:number=null, [options](#system-strftime):string&#124;object=void):string |Format numeric time (in ms) to string. Null or no value will use current time.|
+|strptime|(val:string=void, [options](#system-strptime):string&#124;object=void):number |Parse time from string and return ms time since 1970-01-01 in UTC, or NaN on error.|
 |times|(callback:function&#124;boolean, count:number=1):number |Call function count times and return execution time in microseconds.|
 |unload|(shlib:string):void |Unload a shared executable and invoke its _Done call.|
 |update|([options](#system-update):number&#124;object=void):number |Service all events, eg. setInterval/setTimeout. Returns the number of events processed. Events are processed until minTime (in milliseconds) is exceeded, or forever if -1. The default minTime is 0, meaning return as soon as no events can be processed. A positive mintime will result in sleeps between event checks.|
@@ -914,9 +914,22 @@ Builtin system commands. All methods are exported as global.
 |noError|*BOOL*|Ignore errors in sourced file.||
 |once|*BOOL*|Source file only if not already sourced (Default: Interp.debugOpts.includeOnce).||
 |trace|*BOOL*|Trace include statements (Default: Interp.debugOpts.includeTrace).||
+### System module
+|Option|Type|Description|Flags|
+|---|---|---|---|
+|exit|*BOOL*|Call exit with return code after module run if isMain.||
+|log|*ARRAY*|Logging flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
+|logmask|*ARRAY*|Logging mask flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
+|coverage|*BOOL*|On exit generate detailed code coverage for function calls (with profile).||
+|nofreeze|*BOOL*|Disable moduleOpts freeze of first arg (self).||
+|info|*OBJ*|Info provided by module.|initOnly|
+|profile|*BOOL*|On exit generate profile of function calls.||
+|traceCall|*ARRAY*|Trace commands. (zero or more of: **funcs**, **cmds**, **new**, **return**, **args**, **notrunc**, **noparent**, **full**, **before**)||
+|udata|*OBJ*|User data settable by require.||
 ### System provide
 |Option|Type|Description|Flags|
 |---|---|---|---|
+|exit|*BOOL*|Call exit with return code after module run if isMain.||
 |log|*ARRAY*|Logging flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
 |logmask|*ARRAY*|Logging mask flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
 |coverage|*BOOL*|On exit generate detailed code coverage for function calls (with profile).||
@@ -928,6 +941,7 @@ Builtin system commands. All methods are exported as global.
 ### System require
 |Option|Type|Description|Flags|
 |---|---|---|---|
+|exit|*BOOL*|Call exit with return code after module run if isMain.||
 |log|*ARRAY*|Logging flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
 |logmask|*ARRAY*|Logging mask flags. (zero or more of: **bug**, **assert**, **debug**, **trace**, **test**, **info**, **warn**, **error**, **parse**)|noCase|
 |coverage|*BOOL*|On exit generate detailed code coverage for function calls (with profile).||
@@ -994,7 +1008,7 @@ Utilities commands.
 |getenv|(name:string=void):string&#124;object&#124;void |Get one or all environment.|
 |getpid|(parent:boolean=false):number |Get process/parent id.|
 |getuser|():object |Get userid info.|
-|hash|([options](#util-hash):object=void):string |Return hash (default SHA256) of string/file.|
+|hash|(val:string, [options](#util-hash):object=void):string |Return hash (default SHA256) of string/file.|
 |hexStr|(val:string, decode:boolean=false):string |Hex encode/decode a string.|
 |setenv|(name:string, value:string=void) |Set/get an environment var.|
 |sqlValues|(name:string, obj:object=void) |Get object values for SQL.|
@@ -1017,12 +1031,12 @@ Commands for creating in memory readonly Virtual file-systems.
 
 |Method|Function Argument Types|Description|
 |---|---|---|
-|conf|([options](#vfs-conf):string&#124;object&#124;string=void) |Configure mount.|
+|conf|(mount:string, [options](#vfs-conf):string&#124;object&#124;string=void) |Configure mount.|
 |exec|(cmd:string) |Safe mode exec for VFS support cmds eg. fossil info/ls/cat.|
-|fileconf|([options](#vfs-fileconf):string&#124;object=void) |Configure file info which is same info as in fileList.|
+|fileconf|(mount:string, path:string, [options](#vfs-fileconf):string&#124;object=void) |Configure file info which is same info as in fileList.|
 |list|():array |Return list of all vfs mounts.|
 |mount|(type:string, file:string, param:object=void):string |Mount fossil file as given VFS type name, returning the mount point: frontend for vmount.|
-|type|([options](#vfs-type):object&#124;null=void) |Set/get/delete VFS type name.|
+|type|(type:string=void, [options](#vfs-type):object&#124;null=void) |Set/get/delete VFS type name.|
 |unmount|(mount:string):void |Unmount a VFS.|
 |vmount|([options](#vfs-vmount):object=void):string |Create and mount a VFS, returning the mount point.|
 ### Vfs conf
@@ -1092,7 +1106,7 @@ Commands for managing WebSocket server/client connections.
 |file|(name:string=void):array&#124;void |Add file to hash, or with no args return file hash.|
 |handler|(extension:string=void, cmd:string&#124;function=void, flags:number=0):string&#124;array&#124;function&#124;void |Get/Set handler command for an extension. With no args, returns list of handlers.  With one arg, returns value for that handler. Otherwise, sets the handler. When cmd is a string, the call is via moduleRun([cmd], arg). If a cmd is a function, it is called with a single arg: the file name.|
 |header|(id:number, name:string=void):string&#124;array&#124;void |Get one or all input headers for connect id.|
-|idconf|([options](#websocket-idconf):string&#124;object=void) |Configure options for connect id.|
+|idconf|(id:number, [options](#websocket-idconf):string&#124;object=void) |Configure options for connect id.|
 |ids|(name:string=void):array |Return list of ids, or lookup one id.|
 |query|(id:number, name:string=void):string&#124;object&#124;void |Get one or all query values for connect id.|
 |send|(id:number, data:any):void |Send a websocket message to id. Send a message to one (or all connections if -1). If not already a string, msg is formatted as JSON prior to the send.|
@@ -1269,10 +1283,10 @@ Console input and output to stderr.
 
 |Method|Function Argument Types|Description|
 |---|---|---|
-|assert|([options](#console-assert):object=void):void |Same as System.assert().|
+|assert|(expr:boolean&#124;number&#124;function, msg:string=void, [options](#console-assert):object=void):void |Same as System.assert().|
 |error|(val, ...):void |Same as log but adding prefix ERROR:.|
 |input|(prompt:null&#124;string=''):string&#124;void |Read input from the console: if prompt uses linenoise line editing.|
-|log|(val, ...):void |Like System.puts, but goes to stderr and includes file:line..|
+|log|(val, ...):void |Like System.puts, but goes to stderr and includes file:line.|
 |logp|(val, ...):void |Same as console.log, but first arg is string prefix and if second is a boolean it controls output.|
 |printf|(format:string, ...):void |Same as System.printf but goes to stderr.|
 |puts|(val:any, ...):void |Same as System.puts, but goes to stderr.|

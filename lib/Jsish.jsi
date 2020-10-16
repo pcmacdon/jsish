@@ -15,7 +15,7 @@ RC=1 { a:3, b:1, c:2 }
    which invokes:
      command([arg1,arg2,...],{opt1:val1,opt2:val2,...});*/
 function Jsi_Run(cmd:string=void, conf:array=undefined) {
-    puts("NOTE: Jsi_Run has been deprecated by moduleRun");
+    puts("NOTE: Jsi_Run has been deprecated by module");
     if (!cmd) {
         cmd = Info.level(1).fileName;
         cmd = File.rootname(File.tail(cmd));
@@ -36,7 +36,7 @@ function Jsi_Run(cmd:string=void, conf:array=undefined) {
         c += "\""+ostr+"\":";
         if (conf[i+1] === undefined) {
             if (i!==0 || (conf[i] !== '-h' && conf[i] !== '--help'))
-                throw("Expected even number of conf: "+conf.toString());
+                throw "Expected even number of conf: "+conf.toString();
             else {
                 c += 'true';
                 break;
@@ -56,7 +56,7 @@ function Jsi_Run(cmd:string=void, conf:array=undefined) {
         }
     }
    // if (Jsi_Auto.__In_jsi_invokeMain__)
-    //    throw("recursive call to Jsi_Run");
+    //    throw "recursive call to Jsi_Run";
     //Jsi_Auto.__In_jsi_invokeMain__ = 1;
     for (; conf && i<conf.length; i++) {
         if (astr != '')
@@ -73,7 +73,7 @@ function Jsi_Run(cmd:string=void, conf:array=undefined) {
     }
     var func = this[cmd];
     if (typeof func !== "function")
-        throw('Unable to autoload the command: "'+cmd+'"');
+        throw 'Unable to autoload the command: "'+cmd+'"';
     var nargs = JSON.parse('['+astr+']');
     var nopts = JSON.parse('{'+c+'}');
     return(func(nargs, nopts));
@@ -136,7 +136,7 @@ function Jsi_ThrowHelp(self:object, options:object) {
             is += '\t';
         rc += '\t-'+is + ' \t'+ost+hs+'\n';
     }
-    throw(rc);
+    throw rc;
 }
 
 // A general option parser. conf is an object or an array of form: -nam1 val1 -nam2 val2
@@ -153,12 +153,12 @@ function Jsi_Conf (options:object, self:object, opts:object|null=undefined):obje
         if (opts.length%2) {
             if (opts[0] == '-h')
                 Jsi_ThrowHelp(self, options);
-            throw("Odd opts length: "+opts.toString());
+            throw "Odd opts length: "+opts.toString();
         }
         for (i=0; i<opts.length; i+= 2) {
             var dst = opts[i];
             if (dst.substr(0,1) != '-')
-                throw("expected - before arg: "+dst);
+                throw "expected - before arg: "+dst;
             dst = dst.substr(1);
             topts[dst] = opts[i+1];
         }
@@ -174,18 +174,18 @@ function Jsi_Conf (options:object, self:object, opts:object|null=undefined):obje
             for (i in options)
                 if (i !== 'Jsi_Auto')
                     ret += i + ' ';
-            throw(ret);
+            throw ret;
         }
         if (!isarr)
             switch (typeof self[dst]) {
             case "number":
                 topts[dst] = parseFloat(topts[dst]);
                 if (isNaN(topts[dst]))
-                    throw("expected number: "+topts[dst]);
+                    throw "expected number: "+topts[dst];
             case "object":
             case "boolean":
                 if (typeof topts[dst] != typeof self[dst])
-                    throw("type mismatch for '"+dst+"': '"+topts[dst]+"' is not a "+typeof self[dst]);
+                    throw "type mismatch for '"+dst+"': '"+topts[dst]+"' is not a "+typeof self[dst];
                 break;
             }
         self[dst] = topts[dst];
@@ -212,7 +212,7 @@ function Jsi_LogFile(path:string) {
 function Jsi_AutoPkg(pkg:string|array, dir:string) {
     var fn = File.join(Info.scriptDir(), dir);
     if (!File.exists(fn))
-        throw("no such directory: "+fn);
+        throw "no such directory: "+fn;
     if (typeof pkg === 'string')
         pkg = [pkg];
     for (var p of pkg)
@@ -232,7 +232,7 @@ function Jsi_AutoMake(objName:string) {
     //provide(objName);
     var sdir = Info.scriptDir();
     var methods = Info.methods(objName+'.*');
-    if (methods.length<=0) throw("can not generate methods for: "+objName);
+    if (methods.length<=0) throw "can not generate methods for: "+objName;
 
     var ext = File.extension(objName);
     var ldCmd =  "require('"+objName+"')";
@@ -259,7 +259,7 @@ function Jsi_SqlValues(name:string, val:object) {
 
 // Create/modify table compatible with the object: upgrade table adding missing columns that are in object.
 function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
-    var options = {
+    const options = {
         noCreate    :false,     // Create table, if not exists.
         objOpts     :{},        // Options for objOpts
         verbose     :false
@@ -308,7 +308,7 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
 if (Info.isMain()) {
     /* Self test for Jsi_Conf. */
     var self = {};
-    var options = {a:0, b:1, c:2};
+    const options = {a:0, b:1, c:2};
     var rc = Jsi_Conf(self, options, {a:2});
     puts("RC="+rc+" "+self.toString());
     rc = Jsi_Conf(self, options);

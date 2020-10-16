@@ -198,7 +198,7 @@ try {
 //Don't test the rest because they not be caught: bad return and function with no return.
 //function foo13(n:number=9):number {}
 //foo13();
-//try { foo13(); throw('failed'); } catch(e) { puts(e); }
+//try { foo13(); throw 'failed'; } catch(e) { puts(e); }
 
 //function foo14(n:number=9):number { }
 

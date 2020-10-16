@@ -356,10 +356,25 @@ The Sqlite driver comes (by default) builtin to Jsi.
 It can also be built the shared library can be built (for unix) with:
 
     make libmysql
+    
+## Gui
+
+The database GUI is invoked using `-S`:
+
+``` bash
+jsish -S mydata.db
+```
+
+To dump a database use:
+
+``` bash
+jsish -S -dump true mydata.db
+```
+
+which produces output like the sqlite .dump command.
 
 
-C-API
-====
+## C-API
 
 See [DbQuery](DBQuery.md) for a Sqlite C-API.
 

@@ -2,7 +2,7 @@
 
 function test() {
     try {
-        throw('abc');
+        throw 'abc';
     } finally {
     
     }
@@ -21,12 +21,12 @@ try {
                 continue;
             } finally {
                 puts("final");
-                throw(2);
+                throw 2;
             }
         } catch(f) {
             puts("shot");
             puts(f);
-            throw('ff');
+            throw 'ff';
         } finally {
             puts("2th final");
         }

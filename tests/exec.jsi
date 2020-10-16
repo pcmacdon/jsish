@@ -1,7 +1,7 @@
 #!/usr/local/bin/jsish -u %s
 if (Info.platform().os === 'win') {
     var x = exec('dir /b');
-    throw("This script 'exec.jsi' is not designed for windows");
+    throw "This script 'exec.jsi' is not designed for windows";
 }
 
 ;exec('ls -d /tmp');

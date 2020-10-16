@@ -5,7 +5,7 @@ function f(n) {
      if (n==1) return n;
      puts('TRY');
      if (n!=0)
-        throw(9);
+        throw 9;
   } catch(e) {
      puts("CATCH");
      if (n==2) return n;

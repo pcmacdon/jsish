@@ -5,18 +5,18 @@ try {
 for (a = 0; a < 100; ++a) {
     try {
         try {
-            throw(1);
+            throw 1;
         } catch(e) {
             puts("catch");
             continue;
         } finally {
             puts("final");
-            throw(2);
+            throw 2;
         }
     } catch(f) {
         puts("shot");
         puts(f);
-        throw('ff');
+        throw 'ff';
     } finally {
         puts("2th final");
     }

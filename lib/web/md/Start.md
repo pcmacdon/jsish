@@ -3,20 +3,21 @@ Start
 
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-JSish is a **javascript**-interpreter / web-server with sqlite, websockets and **C**-extensibility. 
+Jsi is a **javascript**-ish interpreter with builtin web-server, sqlite, websockets and **C**-extensibility. 
 
-## Download
+Get source and [build](Builds.md):
 
-Two ways to get a binary, download or [build](Builds.md):
-
-    wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
-    
     wget http://jsish.org/zip -O jsi.zip  && unzip jsi.zip && cd jsi && make
 
+or download a binary:
+
+    wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
+    wget http://jsish.org/bin/win -O jsish.exe
 
 ## Basics
 
-Jsi mostly implements **Ecma-script 5.1**, with deviations: See [Compatibility](#compatibility).
+Jsi mostly implements **Ecma-script 5.1** (see [Compatibility](#compatibility))
+with several deviations.
 
 ### Functions
 Function arguments *may* use **types** / **defaults**:
@@ -65,6 +66,46 @@ var o = {a:1, b, c, myfunc() { return 1;} };
 ```
 
 Also, an extended Object.[freeze](Builtins.md#freeze) is supported. 
+
+## Modules
+
+Use `module`/`moduleOpts` if option parsing, help, and command
+invocation are required.
+
+``` js
+// FILE: add.jsi
+function add(args, ...) {
+    var self = {
+        max:4
+    };
+    const options = { // Concat args into list.
+        name:'',    // Name prefix.
+        start:0,    // Start position.
+    };
+    moduleOpts(options, self);
+    return [args, self];
+}
+module(add);
+```
+
+```
+jsish  add.jsi a b c -name dog
+[ [ "a", "b", "c", "-name", "dog" ], { max:4, name:"", start:0 } ]
+```
+...
+
+```
+add.jsi -h
+/tmp/add.jsi:9: help: ...
+Concat args into list.
+Options are:
+	-name		""		// Name prefix. {}
+	-start		0		// Start position.
+
+Accepted by all .jsi modules: -Debug, -Trace, -Test, -Assert.
+```
+  
+🚩 See [Modules](Modules.md).
 
 ### Output
 
@@ -183,38 +224,6 @@ load('Baker.so'); // or .dll
 ### require
 `require` just invokes `source`/`load` and is described in [modules require](Modules.md#require).
 
-## Modules
-
-To facilitate option parsing, help, and command-line
-invocation in Jsi we use `moduleRun`/`moduleOpts`.
-
-``` js
-// FILE: hello.jsi
-function hello(args, ...) {
-    var self = moduleOpts({a:1, b:2});
-    return [args, self];
-}
-
-moduleRun(hello);
-```
-
-```
-jsish hello.jsi -a 1 -b 2 x y z
-[ [ "x", "y", "z" ], { a:1, b:2 } ]
-```
-
-```
-jsish hello.jsi -h
-/tmp/hello.jsi:2: help: ...
-.  Options are:
-	-a		1		
-	-b		2		
-
-Accepted by all .jsi modules: -Debug, -Trace, -Test.
-```
-Note that `moduleRun` invokes the function only if **"hello.jsi"** is first arg to **jsish**.
-  
-🚩 See [Modules](Modules.md).
 
 ## Help
 Jsi has command-line help:
@@ -452,6 +461,20 @@ function foo() {
     var x = 1
     return ++x
 }
+```
+
+### Conditionals
+
+Jsi will check for undefined vars used on the left-hand side (LHS) of conditional expressions.
+To such avoid errors, put the var on the RHS. 
+
+``` js
+// FILE: us.jsi
+var x;
+if ('' === x) puts('x empty'); //OK.
+if (x === '') puts('x empty');
+/tmp/us.jsi:4: error: lhs value undefined in ===/!==
+ERROR
 ```
 
 ## Shortcomings

@@ -4,7 +4,7 @@ require('Jsi', '2.4');
 
 function Module(args:array, conf:object=void) {
 
-    var options = { // Run or create a Jsi module.
+    const options = { // Run or create a Jsi module.
         create  :'',        // Create a Jsi module template with this name.
         force   :false,     // Remove output if exists.
         output  :'',        // Override the output filename default of create + .jsi.
@@ -45,7 +45,7 @@ function Module(args:array, conf:object=void) {
                 else if (ext === '.jsi' && ft !== 'Jsish.jsi' && ft !=='autoload.jsi')
                     rc.push(fr);
             }
-            throw('missing required module name or builtin:\n    '+rc.sort().join(', ')+'\n');
+            throw 'missing required module name or builtin:\n    '+rc.sort().join(', ')+'\n';
         }
         ext = File.extension(fn);
         if (ext !== '.jsi')
@@ -54,12 +54,12 @@ function Module(args:array, conf:object=void) {
             fn = self.output;
         if (File.exists(fn)) {
             if (!self.force)
-                throw('file exists: '+fn);
+                throw 'file exists: '+fn;
             File.remove(fn);
         }
         var pat = File.rootname(File.tail(fn));
-        var pref = (self.web?'WebApp':'module');
-        var tmpl = File.read('/zvfs/lib/templates/'+(self.web?'WebApp':'module')+'.jsi');
+        var pref = (self.web?'WebApp':'Module');
+        var tmpl = File.read('/zvfs/lib/templates/'+pref+'.jsi');
         var re = new RegExp(pref,'g');
         tmpl = tmpl.replace(re, pat);
         File.write(fn, tmpl);
@@ -72,5 +72,4 @@ function Module(args:array, conf:object=void) {
     return main();
 }
 
-provide(Module);
-moduleRun(Module);
+module(Module);

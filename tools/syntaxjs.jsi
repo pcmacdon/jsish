@@ -5,7 +5,7 @@ function syntaxjs(args:array, conf:object=void) {
     var self = {
         count: 0
     };
-    var options = { // Here is my test.
+    const options = { // Here is my test.
         debug       :false,     // Debugging output.
         trace       :false,     // Tracing output.
         test        :false,     // Testing output.
@@ -15,7 +15,7 @@ function syntaxjs(args:array, conf:object=void) {
     };
     
     moduleOpts(options, self, conf);
-    if (!args[0]) throw('expected file');
+    if (!args[0]) throw 'expected file';
     
     function htmlEntities(str) {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -65,6 +65,6 @@ function syntaxjs(args:array, conf:object=void) {
     return rc;
 }
 
-provide('syntaxjs');
-runModule();
+module('syntaxjs');
+
   

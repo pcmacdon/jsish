@@ -1,0 +1,47 @@
+var i = 0, j, err=0;
+try {
+;  i++;
+} catch(e) {
+  failme();
+}
+
+try {
+  j++;
+} catch(e) {
+; err++;
+}
+
+function dot2(dot) {
+try {
+  try {
+    j++;
+  } catch(e) {
+    puts('FAIL');
+    throw 'Bad incr: '+e;
+  }
+} catch(e2) {
+puts("ECATCH", e2);
+if (dot)
+  throw 'FAIL2: '+e2;
+}
+}
+
+dot2(0);
+try {
+  dot2(1);
+} catch(e) {
+  puts('FAIL3: ',e);
+} 
+
+
+/*
+=!EXPECTSTART!=
+i++ ==> 0
+err++ ==> 0
+FAIL
+ECATCH Bad incr: Eval error: value is NaN
+FAIL
+ECATCH Bad incr: Eval error: value is NaN
+FAIL3:  FAIL2: Bad incr: Eval error: value is NaN
+=!EXPECTEND!=
+*/

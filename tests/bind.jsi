@@ -1,19 +1,19 @@
 #!/usr/local/bin/jsish -u %s
 
 var x = 9; 
-var module = {
+var mod = {
   x: 81,
     getX: function() { return this.x; }
 };
 
-;module.getX();
+;mod.getX();
 
-var getX = module.getX;
+var getX = mod.getX;
 ;getX();
 // 9, because in this case, "this" refers to the global object
 
-// create a new function with 'this' bound to module
-var boundGetX = getX.bind(module);
+// create a new function with 'this' bound to mod
+var boundGetX = getX.bind(mod);
 ;boundGetX();
 
 
@@ -44,7 +44,7 @@ var i;
 
 /*
 =!EXPECTSTART!=
-module.getX() ==> 81
+mod.getX() ==> 81
 getX() ==> 9
 boundGetX() ==> 81
 add5(10) ==> 15

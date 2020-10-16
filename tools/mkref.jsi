@@ -2,7 +2,7 @@
 
 function mkref(args:array|string, opts:object) {
 
-    var options = { // Generate documentation for Jsi builtin cmd.
+    const options = { // Generate documentation for Jsi builtin cmd.
         O        :'',       // Output file
     };
     var self = moduleOpts(options);
@@ -68,7 +68,7 @@ function mkref(args:array|string, opts:object) {
         return rv + srv;
     }
 
-    function DumpCmd(cinf:object) {
+    /*function DumpCmd(cinf:object) {
         var rv = '', ret = '', casb;
         if (cinf.retType != "any")
             ret = ':'+cinf.retType;
@@ -85,10 +85,10 @@ function mkref(args:array|string, opts:object) {
         if (cinf.options) {
             rv += DumpOpts(cinf.options, cinf.optHelp, cinf.name);
         }
-        rv += '<a name="'+cinf.name+'end"></a>\n';
-        rv += '\n<p><a href="#TOC">Return to top</a>\n';
+        //rv += '<a name="'+cinf.name+'end"></a>\n';
+        //rv += '\n<p><a href="#TOC">Return to top</a>\n';
        return rv+'\n';
-    }
+    }*/
     
     function LinkOpts(astr:string, name:string) {
         var ii;
@@ -96,9 +96,9 @@ function mkref(args:array|string, opts:object) {
             return astr;
         var ss = '';
         if (ii>0)
-            ss += astr.slice(0, ii);
-        ss='[options](#'+name.toLowerCase()+')';
-        ss += astr.slice(ii+7);
+            ss += astr.substr(0, ii);
+        ss += '[options](#'+name.toLowerCase()+')';
+        ss += astr.substr(ii+7);
         return ss;
     }
 
@@ -194,7 +194,7 @@ function mkref(args:array|string, opts:object) {
             //rv += DumpCmd(tinf);
             break;
         default:
-            throw("bad id");
+            throw "bad id";
             continue;
         }
     }
@@ -206,4 +206,4 @@ function mkref(args:array|string, opts:object) {
         puts(rv);
 }
 
-runModule(mkref);
+module(mkref);

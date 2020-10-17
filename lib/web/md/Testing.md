@@ -7,7 +7,7 @@ Jsi's builtin test facility (`-t` / `--T`) tries to simplify code validation.
 ## Scripts
 A Jsi *test script* simply marks *testable lines* with leading/trailing semicolons:
 
-``` js{.line-numbers}
+``` javascript
 // FILE: test.jsi
 function test(n) { return "TEST: "+n; }
 ;test('this is a test');

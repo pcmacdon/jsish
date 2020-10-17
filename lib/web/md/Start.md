@@ -5,7 +5,7 @@ Start
 
 Jsi is a **javascript**-ish interpreter with builtin web-server, sqlite, websockets and **C**-extensibility. 
 
-Get source and [build](Builds.md):
+Get source and [build](Building.md):
 
     wget http://jsish.org/zip -O jsi.zip  && unzip jsi.zip && cd jsi && make
 

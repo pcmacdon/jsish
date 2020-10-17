@@ -205,7 +205,7 @@ Following are principle goals  Jsi:
 - But should also be compilable by **native GNU g++**, without use of *"extern C"*.
 - Have as few dependencies as possible.
 - Be generally free of value/object/memory leaks (verified with -fsanitize).
-- Provide amalgamated source for simplified [application integration](Builds.md#Embedding) .
+- Provide amalgamated source for simplified [application integration](Building.md#Embedding) .
 - Low-level C-functions available in a **C-only** [Lite](#jsi-lite) version.
 - Come with a [Debugger](Debug.md).
 - Support Web applications, particularly with database and websockets.

@@ -8,7 +8,7 @@ Jsi is a **C**-extensible javascript interpreter with integrated Web-server and 
 
 ### Quick-Start
 
-Either download binary or [build it](Builds.md):
+Either download binary or [build it](Building.md):
 
     wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
     

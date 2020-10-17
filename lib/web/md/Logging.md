@@ -198,7 +198,7 @@ conds.jsi:4:   "INFO:  will", LogInfo()
 conds.jsi:7:   "INFO:  three: 2", LogInfo()
 ```
 ## Navigation
-[Geany](Builds.md#geany) can navigate
+[Geany](Building.md#geany) can navigate
 through *Log* messages the same as with compiler warnings.
 
 By making your script executable, you can run it directly from Geany with F9.
@@ -211,6 +211,6 @@ with support for arguments:
 puts(console.args.join(' '));
 ```
 
-See [Shell](Builds.md#shell)
+See [Shell](Building.md#shell)
 
 <!-- meta:{"file":{"index":9}} -->

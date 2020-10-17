@@ -2,10 +2,12 @@ Building
 ====
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-Get source by [clicking here](http://jsish.org/jsi/zip/jsi), from [jsish.org](https://jsish.org/fossil/jsi3/vinfo?name=tip), or use command-line:
+Get source by [clicking here](http://jsish.org/jsi/jsi.zip),
+from [jsish.org](https://jsish.org/fossil/jsi3/vinfo?name=tip) / [github.com](https://github.com/pcmacdon/jsish),
+or from command-line:
  
 ```
-wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
+wget http://jsish.org/jsi.zip 
 unzip jsi.zip
 cd jsi
 ```

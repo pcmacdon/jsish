@@ -9,10 +9,10 @@ Get source and [build](Builds.md):
 
     wget http://jsish.org/zip -O jsi.zip  && unzip jsi.zip && cd jsi && make
 
-or download a binary:
+or download binary:
 
-    wget http://jsish.org/bin/linux -O jsish  && chmod u+x jsish
-    wget http://jsish.org/bin/win -O jsish.exe
+    wget http://jsish.org/bin/jsish   && chmod u+x jsish
+    wget http://jsish.org/bin/jsish.exe
 
 ## Basics
 
@@ -69,18 +69,18 @@ Also, an extended Object.[freeze](Builtins.md#freeze) is supported.
 
 ## Modules
 
-Use `module`/`moduleOpts` if option parsing, help, and command
-invocation are required.
+Using `module`/`moduleOpts` provides option parsing, help, and command
+invocation.
 
 ``` js
 // FILE: add.jsi
 function add(args, ...) {
-    var self = {
-        max:4
-    };
     const options = { // Concat args into list.
         name:'',    // Name prefix.
         start:0,    // Start position.
+    };
+    var self = {
+        max:4,
     };
     moduleOpts(options, self);
     return [args, self];
@@ -89,13 +89,12 @@ module(add);
 ```
 
 ```
-jsish  add.jsi a b c -name dog
+jsish add.jsi a b c -name dog
 [ [ "a", "b", "c", "-name", "dog" ], { max:4, name:"", start:0 } ]
 ```
-...
 
 ```
-add.jsi -h
+jsish add.jsi -h
 /tmp/add.jsi:9: help: ...
 Concat args into list.
 Options are:

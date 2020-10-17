@@ -2,7 +2,7 @@ Testing
 ====
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-Jsi's builtin test facility (`-t` / `--T`) simplifies code validation.
+Jsi's builtin test facility (`-t` / `--T`) tries to simplify code validation.
 
 ## Scripts
 A Jsi *test script* simply marks *testable lines* with leading/trailing semicolons:
@@ -15,7 +15,7 @@ function test(n) { return "TEST: "+n; }
 test('but not this');
 ```
 
-Run with:
+and is tested:
 
 ```
 jsish --T test.jsi
@@ -29,17 +29,17 @@ jsish -t test.jsi
 ```
 
 
-In a simple test like this, we get a `[PASS]` simply because there were no errors.
+This simple test is a `[PASS]` simply because there were no errors.
 
-### Passing
+### Pass
 
-Output can be captured in the script with:
+To convert a test so it also compares output, we capture it with `-update`:
 
 ```
 jsish -t -update 1 test.jsi
 ```
 
-This is appended as an `EXPECT` comment:
+This appends an `EXPECT` comment:
 
 ``` js
 /*
@@ -50,11 +50,11 @@ test('this to') ==> TEST: this to
 */
 ```
 
-Now output must match for a `[PASS]`.
+Now a `-t` test will not `[PASS]` unless its output matches.
 
 
-### Failing
-To induce a `[FAIL]` thus causing a mismatch, change line **3** to:
+### Fail
+To induce mismatch, thus causing a `[FAIL]`, change line **3** to:
 ``` js
 ;test('this is a BAD test');
 ```
@@ -73,14 +73,14 @@ at line 1 of output:
 ====================DIFFEND
 ```
 
-To locate the source line number use `-find BAD`:
+We can locate the source line number using `-find`:
 ```
 jsish -t -find BAD test.jsi
 test('this is a BAD test') ==> /tmp/test.jsi:3:   "TEST: this is a BAD test", 
 ```
 
 ### Exceptions
-Tests containing exceptions might look like:
+We could test exceptions with something like:
 
 ``` js
 try {
@@ -90,7 +90,7 @@ try {
 };
 ```
 
-This is somewhat verbose, so in Jsi exceptions can be expressed with the test-prefix `;//`:
+But as this is somewhat verbose, Jsi exception-tests can instead use the prefix `;//`:
 
 ``` js{.line-numbers}
 // FILE: trys.jsi
@@ -100,7 +100,7 @@ function bar(n) {}
 ;//  bar(1);
 ```
 
-Test mode will rewrite this to `try`/`catch`:
+In test mode, this rewrites to a `try`/`catch`:
 
 ```
 jsish --T trys.jsi
@@ -111,31 +111,31 @@ bar() ==>
 bar(1) ==>
 [FAIL]!: expected a throw
 ```
-Note that this test is a `[FAIL]` because line 4 was not an exception as claimed. 
-To properly fail, change it to:
+Note the `[FAIL]` because line 4 did not throw an error,
+which we can now change it to:
 
 ``` js
 ;//  bar(1,1);
 ```
 
-Now the result throws as expected.  But unfortunately this is not testable with `-t`:
+But although `--T` is now correct, `-t` gives us:
 
 ```
 jsish -t trys.jsi
 [FAIL]:! trys.jsi: Exceptions require an EXPECT comment; use -update
 ```
 
-until run update:
+So we run update:
 
 ```
 jsish -t -update 1 trys.jsi
 jsish -t trys.jsi
 [PASS]
 ```
-This requirement avoids false positives, as exceptions are just comments when not in test mode.
+Note that `EXPECT` is required to avoids false positives, because exceptions just become comments when not in test mode.
 
 ### Comments
-Comments that need to appear in the output are further delimited single-quotes: `;'  ';`.
+Comments that need to appear in the output are delimited single-quotes: `;'  ';`.
 
 ``` js
 ;'This is a comment';
@@ -195,7 +195,7 @@ a(1000) ==> /tmp/test3.jsi:13:  "499500",
 Test lines have the following limitations:
 
 - There must be a semicolon at the start and end of line.
-- Functions and var declarations are not allowed.
+- Statements like `function`, `var`, `throw` are not allowed.
 - Backticks are not allowed.
 
 

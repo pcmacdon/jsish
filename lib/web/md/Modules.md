@@ -4,7 +4,8 @@ Modules
 
 ## Usage
 
-Modules in Jsi use [module](#module) and [moduleOpts](#moduleopts).
+Using [module](#module)/`[moduleOpts](#moduleopts) provides option parsing, help, and command
+invocation.
 
 ### Minimal
 Consider the module `hello.jsi`:
@@ -28,7 +29,7 @@ or programatically:
 jsish -e 'require("hello"); hello(["x"])'
 Hello [ "x"] { a:1, b:2: m:0 }
 ```
-or gives help with **-h**:
+or help via **-h**:
 ```
 jsish hello.jsi -h
 /hello.jsi:2: help: ...
@@ -39,29 +40,24 @@ jsish hello.jsi -h
 Accepted by all .jsi modules: -Debug, -Trace, -Test.
 ```
 
-Note: as a side effect of `moduleOpts`, the  self object is [frozen](Builtins.md#freeze).
+### Expands
 
-### Decomposed
-
-As options and initializers grow we'll want to decompose:
+Expand options to get help from comments:
 
 ``` js
 function add(args, ...) {
-    var self = {
-        max:4
-    };
     const options = { // Concat args into list.
         name:'',    // Name prefix.
         start:0,    // Start position.
+    };
+    var self = {
+        max:4,
     };
     moduleOpts(options, self);
     return [args, self];
 }
 module(add);
 ```
-A benefit to decomposition is that help descriptions
-can be derived from `comments`:
-
 
 ```
 add.jsi -h
@@ -108,13 +104,53 @@ buggy.jsi:5:   "TRACE: Returning buggy: a, b", buggy()
 Importantly, when not enabled arguments are elided and do not evaluate.
 
 🚩 See [Logging](Logging.md).
-    
+
+### Freeze
+
+A side effect of using `moduleOpts`, is `self` gets [frozen](Builtins.md#freeze).
+
+``` js{.line-numbers}
+// FILE: frost.jsi
+function frost(...) {
+    var self = moduleOpts({a:1, b:2}, {m:0});
+    self.b += self.m++;
+    if (self.a)
+        self.m = self.x;
+    self.y = 1;
+
+module(frost);
+```
+
+```
+jsish frost.jsi
+CALL BACKTRACE:
+#1: frost.jsi:2:  in moduleRun()
+#2: frost.jsi:6:  in frost( [], {} )
+
+/tmp/frost.jsi:6: error: object freeze: read undefined "x"
+ERROR: 
+```
+
+```
+jsish frost.jsi -a 0
+CALL BACKTRACE:
+#1: frost.jsi:2:  in moduleRun( "-a", "0" )
+#2: frost.jsi:7:  in frost( [], { a:0 } )
+
+/tmp/frost.jsi:7: error: object freeze: attempted assign "y"
+ERROR: 
+```
+
+
 
 ## Directives
 
 ### module
+``` js
+function module(cmd:string|function, version:number|string=1, options:object=void):void
+```
 
-Declare a module, invoking it if isMain.
+`module` is like [provide](#provide), but also invokes when `isMain`==true.
 
 ``` js
 function hello2(args, ...) {
@@ -122,33 +158,6 @@ function hello2(args, ...) {
 };
 
 module(hello2);
-```
-
-### moduleRun
-
-`moduleRun` passes non-option arguments are in the first parameter:
-
-``` js
-function hello2(args, ...) {
-    return "Hello World: "+args.join(', ');
-};
-provide();
-runModule();
-```
-
-Run as ...
-
-```
-jsish hello2.jsi a b c
-Hello World: a, b, c
-```
-
-`moduleRun` may be invoked as:
-
-``` jsi
-moduleRun(hello); // function: must match file basename
-moduleRun('hello'); // name of function/file
-moduleRun(); // Default to function name matching file basename
 ```
 
 ### moduleOpts
@@ -177,13 +186,26 @@ To recap, a module:
 
 
 
+### moduleRun
+
+`moduleRun` invokes a module with arguments:
+
+``` js
+function hello2(args, ...) {
+    return "Hello World: "+args.join(', ');
+};
+provide(hello2);
+if (Info.isMain())
+    runModule('hello2', ['-num' 99, 'a',2] );
+```
+
 ### provide
 
 ``` js
-function provide(name:string|null=void, version:number=1):void
+function provide(cmd:string|function, version:number|string=1, options:object=void):void
 ```
 
-Packages are defined with **provide** wherein
+Packages defined **provide** and
 versions are either a string or float:
 
 ```

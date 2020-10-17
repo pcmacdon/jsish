@@ -33,7 +33,8 @@ JSI_EXTENSION_INI
 #include <assert.h>
 #include <limits.h>
 #include <fcntl.h>
-#ifdef WIN32
+#ifdef __WIN32
+#include "win/compat.h"
 #define _GET_TIME_OF_DAY_H
 #ifdef EXTERNAL_POLL
     #ifndef WIN32_LEAN_AND_MEAN

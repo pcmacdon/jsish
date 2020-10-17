@@ -1695,7 +1695,6 @@ static Jsi_RC writeFile(
     nameLen = Jsi_Strlen(zDest);
 
     /* Create a new ZFile structure for this file.
-     * TODO: fill in date/time etc.
     */
     nameLen+=isdir;
     p = newZFile(nameLen, ppList);
@@ -1728,7 +1727,7 @@ static Jsi_RC writeFile(
     /* Write the header and filename.
     */
     Jsi_Write(interp, out, zHdr, 30);
-    Jsi_Write(interp, out, zDest, nameLen);
+    Jsi_Write(interp, out, p->zName, nameLen);
 
     /* The first two bytes that come out of the deflate compressor are
     ** some kind of header that ZIP does not use.  So skip the first two

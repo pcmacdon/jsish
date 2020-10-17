@@ -5062,7 +5062,7 @@ static Jsi_CmdSpec sysCmds[] = {
 #endif
     { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Validate that object matches given name:type string. With single arg returns generated string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
-    { "module",     SysModuleCmd,    1,  3, "cmd:string|function, version:number|string=1, options:object=void", .help="Same as provide, but also invokes the function/name if isMain is true", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions },
+    { "module",     SysModuleCmd,    1,  3, "cmd:string|function, version:number|string=1, options:object=void", .help="Same as provide, but will invoke cmd if isMain is true", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions },
     { "moduleOpts", SysModuleOptsCmd,1,  3, "options:object, self:object|userobj=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "moduleRun",  SysModuleRunCmd, 1,  2, "cmd:string|function, args:array=undefined", .help="Invoke named module with given args or command-line args", .retType=(uint)JSI_TT_ANY},
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
@@ -5070,7 +5070,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
     { "parseOpts",  SysParseOptsCmd, 3,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
-    { "provide",    SysProvideCmd,   0,  3, "name:string|function=void, version:number|string=1, options:object=void", .help="Provide a package for use with require", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions  },
+    { "provide",    SysProvideCmd,   0,  3, "cmd:string|function=void, version:number|string=1, options:object=void", .help="Make a package available for use by require", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val:any, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },
     { "quote",      SysQuoteCmd,     1,  1, "val:string", .help="Return quoted string", .retType=(uint)JSI_TT_STRING },
     { "require",    SysRequireCmd,   0,  3, "name:string=void, version:number|string=1, options:object=void", .help="Load/query packages", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT|JSI_TT_ARRAY, .flags=0, .info=FN_require, .opts=jsiModuleOptions },

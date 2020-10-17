@@ -12,6 +12,7 @@ struct jsi_Pstate;
 #include "regex/tre-mem.c"
 #include "src/parser.h"
 #include "src/jsiInt.h"
+#include "src/linenoise.h"
 #if JSI__MINIZ
 #include "miniz/miniz.c"
 #endif //JSI__MINIZ

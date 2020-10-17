@@ -2,9 +2,7 @@ Building
 ====
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-## Source
-
-To get the source browse to [site](https://jsish.org/fossil/jsi3/vinfo?name=tip) or use command-line:
+Get source by [clicking here](http://jsish.org/jsi/zip/jsi), from [jsish.org](https://jsish.org/fossil/jsi3/vinfo?name=tip), or use command-line:
  
 ```
 wget http://jsish.org/jsi/zip/jsi -O jsi.zip 
@@ -21,9 +19,7 @@ fossil open jsi.fossil
 ```
 
 
-## Building
-
-Build is setup on Debian Linux with:
+Before building on Debian Linux, you may need:
 
 ```
 sudo apt-get install bison build-essential fossil unzip libmysqlclient-dev
@@ -42,7 +38,7 @@ During the build it will download:
 
 ## Configs
 
-Predefined configurations from **Configs/** can be made using:
+Predefined configurations (from **Configs/**) can be built using:
 ```
 make remake CONF=static
 ```

@@ -863,7 +863,7 @@ Builtin system commands. All methods are exported as global.
 |load|(shlib:string):void |Load a shared executable and invoke its _Init call.|
 |log|(val, ...):void |Same as puts, but includes file:line.|
 |matchObj|(obj:object, match:string=void, partial=false, noerror=false):string&#124;boolean |Validate that object matches given name:type string. With single arg returns generated string.|
-|module|(cmd:string&#124;function, version:number&#124;string=1, [options](#system-module):object=void):void |Same as provide, but also invokes the function/name if isMain is true.|
+|module|(cmd:string&#124;function, version:number&#124;string=1, [options](#system-module):object=void):void |Same as provide, but will invoke cmd if isMain is true.|
 |moduleOpts|(options:object, self:object&#124;userobj=void, conf:object&#124;null&#124;undefined=void):object |Parse module options.|
 |moduleRun|(cmd:string&#124;function, args:array=undefined) |Invoke named module with given args or command-line args.|
 |noOp|() |A No-Op. A zero overhead command call that is useful for debugging.|
@@ -871,7 +871,7 @@ Builtin system commands. All methods are exported as global.
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
 |parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
-|provide|(name:string&#124;function=void, version:number&#124;string=1, [options](#system-provide):object=void):void |Provide a package for use with require.|
+|provide|(cmd:string&#124;function=void, version:number&#124;string=1, [options](#system-provide):object=void):void |Make a package available for use by require.|
 |puts|(val:any, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|
 |quote|(val:string):string |Return quoted string.|
 |require|(name:string=void, version:number&#124;string=1, [options](#system-require):object=void):number&#124;array&#124;object |Load/query packages. With no arguments, returns the list of all loaded packages. With one argument, loads the package (if necessary) and returns its version. With two arguments, returns object containing: version, loadFile, func. A third argument sets options for package or module. Note an error is thrown if requested version is greater than actual version.|

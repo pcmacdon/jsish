@@ -3,13 +3,17 @@ Start
 
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-Jsi is a **javascript**-ish interpreter with builtin web-server, sqlite, websockets and **C**-extensibility. 
+Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite and **C**-extensibility. 
 
-Get source and [build](Building.md):
-
+To [build](Building.md) **jsish**
+get source by [clicking here](http://jsish.org/jsi/zip/jsi),
+from [jsish.org](https://jsish.org/fossil/jsi3/vinfo?name=tip) /
+[github.com](https://github.com/pcmacdon/jsish),
+or use command-line:
+ 
     wget http://jsish.org/zip -O jsi.zip  && unzip jsi.zip && cd jsi && make
 
-or download binary:
+or download a binary:
 
     wget http://jsish.org/bin/jsish   && chmod u+x jsish
     wget http://jsish.org/bin/jsish.exe

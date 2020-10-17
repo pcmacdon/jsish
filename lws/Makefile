@@ -7,7 +7,7 @@ SDIR=lws-$(LWS_VER)
 LWS_LIBNAME=liblws.a
 CFLAGS  = -g -Wall
 
-ifeq ($(MINIZ),1)
+ifeq ($(LWS_MINIZ),1)
 LWSOPTS = -I../../miniz
 endif
 
@@ -15,7 +15,7 @@ all: $(SDIR)/Makefile $(SDIR)/$(LWS_LIBNAME)
 
 $(SDIR)/$(LWS_LIBNAME): Makefile ../Makefile
 	rm -f $(SDIR)/$(LWS_LIBNAME)
-	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CFLAGS="$(CFLAGS)" CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME)
+	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CFLAGS="$(CFLAGS)" CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME) MINIZ=$(LWS_MINIZ)
 
 $(SDIR)/Makefile:
 	wget  http://jsish.org/fossil/lws/zip/lws?r=lws-$(LWS_VER) -O lws-$(LWS_VER).zip 

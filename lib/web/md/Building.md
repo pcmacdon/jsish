@@ -7,36 +7,29 @@ from [jsish.org](https://jsish.org/fossil/jsi3/vinfo?name=tip) / [github.com](ht
 or from command-line:
  
 ```
-wget http://jsish.org/jsi.zip 
-unzip jsi.zip
-cd jsi
+wget http://jsish.org/jsi.zip;  unzip jsi.zip;  cd jsi;  make
 ```
 
-Better still [fossil](https://www.fossil-scm.org/index.html/uv/download.html) clone the repository:
+Alternatively, [fossil](https://www.fossil-scm.org/index.html/uv/download.html) clone the repository:
 
 ```
 sudo apt install fossil
 fossil clone https://jsish.org/jsi jsi.fossil
 fossil open jsi.fossil
+make
 ```
 
+During the build the following will download:
 
-Before building on Debian Linux, you may need:
+- Sqlite: https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip
+- WebSocket: http://jsish.org/fossil/lws/zip/lws?r=lws-2.0202
+- SSL (if enabled): http://jsish.org/download/openssl-OpenSSL_1_1_1-stable.zip
+
+Pre-reqs on Debian Linux can be installed with:
 
 ```
 sudo apt-get install bison build-essential fossil unzip libmysqlclient-dev
 ```
-
-To build the Linux target use:
-
-```
-make
-```
-During the build it will download:
-
-- Sqlite: https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip
-- WebSocket: http://jsish.org/fossil/lws/zip/lws?r=lws-2.0202
-- SSL (optional): http://jsish.org/download/openssl-OpenSSL_1_1_1-stable.zip
 
 ## Configs
 
@@ -50,7 +43,7 @@ Available values for `CONF` are: **default devel memdebug minimal musl muslssl n
 ### Windows
 Jsi can be cross compiled from Linux to Windows using the Mingw32 package:
 
-``` bash
+```
 sudo apt-get install gcc-mingw-w64
 make remake CONF=win
 ```
@@ -64,7 +57,7 @@ The [musl](https://www.musl-libc.org/) build produces a static linux binary
 containing no external library references.
 This is useful when you need an executable with no external dependancies.
 
-``` bash
+```
 sudo apt-get install musl-tools
 make remake CONF=musl
 ```
@@ -73,7 +66,7 @@ make remake CONF=musl
 ### FreeBSD
 On FreeBSD you will need to use **gmake** instead of **make**:
 
-``` bash
+```
 pkg install fetch gmake bison
 gmake
 ```
@@ -82,15 +75,15 @@ gmake
 
 To build with SSL support use the provided configs **muslssl** / **winssl**, or:
 
-``` bash
+```
 make remake WITH_SSL=1
 ```
 
 
 ### Debian Package
-If you are on a Debian system, you can build then install as a package:
+On Debian system, a package can be built using:
 
-``` bash
+```
 cd tools
 ./makedep.sh
 sudo dpkg -i jsish-*

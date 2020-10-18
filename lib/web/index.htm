@@ -3,36 +3,33 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="/css/bootstrap.css">
-    <link rel="stylesheet" href="/css/bootstrap-vue.css">
-    <link rel="stylesheet" href="/css/animate.css">
-    <link rel="stylesheet" href="/css/prism.css">
-    <link rel="stylesheet" href="/app/app.css">
+    <link rel="stylesheet" href="/jsi/web/css/bootstrap.css">
+    <link rel="stylesheet" href="/jsi/web/css/bootstrap-vue.css">
+    <link rel="stylesheet" href="/jsi/web/css/animate.css">
+    <link rel="stylesheet" href="/jsi/web/css/prism.css">
+    <link rel="stylesheet" href="app.css">
     <script type="module">
-        // Absolute paths for server
-        import "/js/vue.min.js";
+        // Map /jsi/ with app.js in same dir as index.htm, served by jsish, or nginx with location/clone dir.
+        import "/jsi/web/js/vue.js";
         Vue.config.productionTip=true;
         Vue.config.historyMode=true;
-        import "/js/vue-router.min.js";
-        import "/js/bootstrap-vue.min.js";
-        import "/js/vue-markdown-pdq.min.js";
-        import "/js/prism.js";
-        import "/jsi.js";
-        import "/app/app.js";
+        import "/jsi/web/js/vue-router.min.js";
+        import "/jsi/web/js/bootstrap-vue.min.js";
+        import "/jsi/web/js/vue-markdown-pdq.min.js";
+        import "/jsi/web/js/prism.js";
+        import "/jsi/web/jsi.js";
+        import "./app.js";
+        
     </script>
 </head>
 
 <body>
-    <noscript> <img src="https://jsish.org/fossil/jsi/doc/tip/www/site/logojsi.png">
-        For Jsi Docs without javascript <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md">click here!</a>
+    <noscript> <img src="https://jsish.org/logojsi.png">
+        For Jsi Docs without javascript <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md" rel="noopener noreferrer nofollow">click here!</a>
     </noscript>
     <div id="app" style="height:100%; width:100%">
         <router-view />        
     </div>
-    <script>
-        let Session={id:''};
-    </script>
-
 </body>
 </html>
 

@@ -425,15 +425,34 @@ function Websrv(args:string|array, conf:object=void)
     if (self.app) {
         if (!self.rootdir)
             self.rootdir = '/zvfs/lib/web';
-        pal = {app:self.rootdir+'/'+self.app};
-        self.url = 'index.html';
+        if (!self.url)
+            self.url = 'index.html';
+        var apd = self.app, ard = self.rootdir, apu = self.url;
+       // if (File.tail(apd) == 'app.js')
+       //     apd = File.dirname(apd);
+        if (!File.exists(apd+'/app.js'))
+            throw 'app file not found: '+apd+'/app.js';
+        pal = {app:self.app};
+        if (File.exists(apd+'/'+apu)) { // Use /app/index.html
+            LogInfo("USE APP INDEX:", apu);
+            self.url = '/app/'+apu;
+        }
+        else if (File.exists(ard+'/'+apu)) { // Use /index.html
+            LogInfo("USE BUILTIN INDEX:", apu);
+        } else {
+            throw 'index file not found: '+apu;
+            /*LogInfo("NOT USING BI");
+            apd = self.rootdir+'/'+self.app;
+            var uad = apd+'/'+self.url;
+            if (!File.exists(uad))
+                throw 'index file not found: '+uad;
+            pal = {app:apd};*/
+        }
         if (!self.wsinc) {
             self.wsinc = pal.app+'/wsinc.jsi';
             if (!File.exists(self.wsinc))
                 self.wsinc = '';
         }
-        if (self.timeout == options.timeout)
-            self.timeout = 0;
     } if (self.docs) {
         if (self.rootdir || self.zip)
             throw 'can not use rootdir/zip with docs';
@@ -457,11 +476,7 @@ function Websrv(args:string|array, conf:object=void)
             self.wsinc = self.rootdir+'/docs/wsinc.jsi';
             if (!File.exists(self.wsinc))
                 self.wsinc = '';
-        }
-        if (self.timeout == options.timeout)
-            self.timeout = 0;
-            
-        
+        }            
     } else if (self.zip) {
         self.mnt = Jsi_Archive([self.zip], {noRun:true, version:self.zipVer});
         if (!self.rootdir)

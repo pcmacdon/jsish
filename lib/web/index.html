@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,7 +9,8 @@
     <link rel="stylesheet" href="css/prism.css">
     <link rel="stylesheet" href="app/app.css">
     <script type="module">
-        import "./js/vue.min.js";
+        // Map 'app', with relative paths for in jsi or builtin clone.
+        import "./js/vue.js";
         Vue.config.productionTip=false;
         import "./js/vue-router.min.js";
         import "./js/bootstrap-vue.min.js";
@@ -22,13 +22,11 @@
 </head>
 
 <body>
+    <noscript> <img src="https://jsish.org/logojsi.png">
+        For Jsi Docs without javascript <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md" rel="noopener noreferrer nofollow">click here!</a></noscript>
     <div id="app" style="height:100%; width:100%">
         <router-view />        
     </div>
-    <script>
-        let Session={id:''};
-    </script>
-
 </body>
 </html>
 

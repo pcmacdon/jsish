@@ -8,12 +8,12 @@ Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite an
 
 Download a binary for linux/win:
 
-    wget http://jsish.org/bin/jsish   &&  chmod u+x jsish
+    wget http://jsish.org/bin/jsish;  chmod u+x jsish
     wget http://jsish.org/bin/jsish.exe
 
 Or build from source:
  
-    wget http://jsish.org/jsi.zip  &&  unzip jsi.zip; make -C jsi
+    wget http://jsish.org/jsi.zip;  unzip jsi.zip;  cd jsi;  make
     
 &#x1f6a9; See [Start](./lib/web/md/Start.md).
     

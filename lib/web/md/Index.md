@@ -20,7 +20,7 @@
 | [DBQuery](DBQuery.md)      | Sqlite/C interface    | [Misc](Misc.md)           | Other, unfinished documentation|
 
 
-## By Topic
+## Topics
 
 - **Begin**: [Start](Start.md), [Download](Building.md), [Build](Building.md)
 - **Docs**: [Builtins](Builtins.md), [Reference](Reference.md), [Index](Index.md), [License](Misc.md#License), [Language](Misc.md#Syntax), [Compatibility](Start.md#Compatibility)

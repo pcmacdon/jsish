@@ -18,9 +18,11 @@
         import "/jsi/web/js/vue-markdown-pdq.min.js";
         import "/jsi/web/js/prism.js";
         import "/jsi/web/jsi.js";
-        import "./app.js";
-        
+        import Vuex from '/jsi/web/js/vuex.js';
+        window.Vuex = Vuex;
+        window.jsiroot = '/jsi/web/';        
     </script>
+    <script type="module" src="./app.js"></script>
 </head>
 
 <body>

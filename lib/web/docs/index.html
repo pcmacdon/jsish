@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../css/bootstrap-vue.css">
     <link rel="stylesheet" href="../css/animate.css">
     <link rel="stylesheet" href="../css/prism.css">
+    <link rel="stylesheet" href="../css/VuePrismEditor.css">
     <link rel="stylesheet" href="app.css">
     <script type="module">
         // Map /jsi/ with app.js in same dir as index.htm, served by jsish, or nginx with location/clone dir.
@@ -17,11 +18,15 @@
         import "../js/bootstrap-vue.min.js";
         import "../js/vue-markdown-pdq.min.js";
         import "../js/prism.js";
+        import "../js/VuePrismEditor.umd.min.js";
         import "../jsi.js";
         import Vuex from "../js/vuex.js";
         window.Vuex = Vuex;
         window.jsiroot = '/jsi/web/';        
     </script>
+    <script src="../js/VuePrismEditor.umd.min.js"></script>
+    <link rel="stylesheet" href="../css/VuePrismEditor.css">
+    
     <script type="module" src="./app.js"></script>
 </head>
 

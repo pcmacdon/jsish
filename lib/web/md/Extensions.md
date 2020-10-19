@@ -175,12 +175,12 @@ There are 4 different models where option structs may be applied:
 
 |Model  |Example| Description |
 |-------|-------|-------------|
-|single | [Bag.jsc](https://jsish.org/jsi/file/c-demos/cextn/Bag.jsc) | Struct private to a single method (as above).|
-|global | [Bee.jsc](https://jsish.org/jsi/file/c-demos/cextn/Bee.jsc) | An global data struct.|
-|private| [Baker.jsc](https://jsish.org/jsi/file/c-demos/cextn/Baker.jsc)| An interp-private data struct.|
-|new    | [Car.jsc](https://jsish.org/jsi/file/c-demos/cextn/Car.jsc) | Constructed, eg. **new Car()**.|
+|single | [Bag.jsc](https://jsish.org/fossil/jsi/file/c-demos/cextn/Bag.jsc) | Struct private to a single method (as above).|
+|global | [Bee.jsc](https://jsish.org/fossil/jsi/file/c-demos/cextn/Bee.jsc) | An global data struct.|
+|private| [Baker.jsc](https://jsish.org/fossil/jsi/file/c-demos/cextn/Baker.jsc)| An interp-private data struct.|
+|new    | [Car.jsc](https://jsish.org/fossil/jsi/file/c-demos/cextn/Car.jsc) | Constructed, eg. **new Car()**.|
 
-Here is a test script: [ext_test.jsi](https://jsish.org/jsi/file/c-demos/cextn/ext_test.jsi).
+Here is a test script: [ext_test.jsi](https://jsish.org/fossil/jsi/file/c-demos/cextn/ext_test.jsi).
 
 
 ## Conventions

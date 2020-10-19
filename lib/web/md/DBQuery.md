@@ -46,7 +46,7 @@ Jsi_DbCarray(jdb, spec, &mydata, 1, "INSERT INTO mytbl %s", NULL)
 ```
 
 To incorporate Jsi_DbCarray into an application,
-[download](https://jsish.org/jsi/download), extract jsi.c and include like so:
+[download](https://jsish.org/fossil/jsi/download), extract jsi.c and include like so:
 
 
 ``` clike
@@ -60,8 +60,8 @@ int main(int argc, char *argv) {
 }
 ```
 
-- For a simple but complete Jsi_DbCarray example see [Jsi-Lite demo](https://jsish.org/jsi/file/c-demos/litedemo.c).
-- For a complete working example see [https://jsish.org/jsi/file/c-demos/dbdemo.c]*.
+- For a simple but complete Jsi_DbCarray example see [Jsi-Lite demo](https://jsish.org/fossil/jsi/file/c-demos/litedemo.c).
+- For a complete working example see [https://jsish.org/fossil/jsi/file/c-demos/dbdemo.c]*.
 
 
 Example

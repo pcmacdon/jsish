@@ -321,7 +321,7 @@ var s = new Socket({noAsync:true});
 s.send('hello world\n');
 ```
 
-For another socket example see [sockdemo.jsi](https://jsish.org/jsi/file/js-demos/sockdemo.jsi).
+For another socket example see [sockdemo.jsi](https://jsish.org/fossil/jsi/file/js-demos/sockdemo.jsi).
 
 ## Sqlite
 
@@ -365,7 +365,7 @@ The first argument is treated as follows:
 
 In C, when the bg option is true, system() is called, otherwise popen() is used.
 
-For more examples see [exec test](https://jsish.org/jsi/file/tests/exec.jsi).
+For more examples see [exec test](https://jsish.org/fossil/jsi/file/tests/exec.jsi).
 
 
 ### format

@@ -99,7 +99,7 @@ var i = new Interp();
 ;i.eval('bar(99)');
 ```
 
-See test [alias2.jsi](https://jsish.org/jsi/file/tests/alias2.jsi) for more examples and output.
+See test [alias2.jsi](https://jsish.org/fossil/jsi/file/tests/alias2.jsi) for more examples and output.
 
 ## Safe-Mode
 
@@ -183,7 +183,7 @@ var interp1 = new Interp({subthread:true, scriptFile:'mythrd.js'});
 ```
 
 Function-calls between threaded interps use **call** and **alias**, as in this
-[example](https://jsish.org/jsi/file/js-demos/thread.jsi):
+[example](https://jsish.org/fossil/jsi/file/js-demos/thread.jsi):
 
 ``` js
 #!/usr/bin/env jsish
@@ -217,7 +217,7 @@ while (cnt<10) {
 }
 ```
 
-Another example: [threadn.jsi](https://jsish.org/jsi/file/js-demos/threadn.jsi).
+Another example: [threadn.jsi](https://jsish.org/fossil/jsi/file/js-demos/threadn.jsi).
 
 ## JSON
 

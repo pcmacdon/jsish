@@ -868,7 +868,7 @@ When a user provides a value for an option, the flag `JSI_OPT_IS_SPECIFIED` is s
 Call Jsi_OptionChanged to determine if an option was specified.
 
 **Note**:
-    The Jsi header file [jsi.h](https://jsish.org/jsi/file/jsi.h#Jsi_OptionSpec) and source are best consulted for complete examples.
+    The Jsi header file [jsi.h](https://jsish.org/fossil/jsi/file/jsi.h#Jsi_OptionSpec) and source are best consulted for complete examples.
 
 **Warning**:
     There are known concurrency issues with this feature.

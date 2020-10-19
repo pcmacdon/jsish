@@ -17,8 +17,8 @@ Or you can build from source:
 
 ## Basics
 
-Jsi mostly implements **Ecma-script 5.1** (see [Compatibility](#compatibility))
-with several deviations.
+Jsi implements most of **Ecma-script 5.1** (see [Compatibility](#compatibility))
+with deviations.
 
 ### Functions
 Function arguments *may* use **types** / **defaults**:

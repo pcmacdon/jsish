@@ -436,7 +436,8 @@ Jsi_RC jsi_ObjectToStringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }    
     int quote = JSI_OUTPUT_QUOTE;
     Jsi_DString dStr = {};
-    Jsi_ValueGetDString(interp, _this, &dStr, quote);
+    if (!Jsi_ValueGetDString(interp, _this, &dStr, quote))
+        return JSI_ERROR;
     Jsi_ValueMakeStringDup(interp, ret, Jsi_DSValue(&dStr));
     Jsi_DSFree(&dStr);
     return JSI_OK;

@@ -62,20 +62,22 @@ static Jsi_Value* jsonGenArray(Jsi_Interp *interp, Jsi_JsonParser *p, const char
 static Jsi_Value*
 jsonGen1Value(Jsi_Interp *interp, Jsi_JsonParser *p, const char *js, uint i, uint *endPos, int incr)
 {
-    uint len;
-    const char *t;
+    uint len = 0;
+    const char *t = NULL;
     Jsi_Value *v = NULL;
     
     switch (p->tokens[i].type) {
         case JSI_JTYPE_PRIMITIVE:
             t = Jsi_JsonGetTokstr(p, js, i, &len);
-            if (len == 4 && Jsi_Strncmp(t, "true", len)==0)
+            if (!t || (len == 4 && Jsi_Strncmp(t, "null", len)==0))
+                v = Jsi_ValueMakeNull(interp, NULL);
+            else if (len == 4 && Jsi_Strncmp(t, "true", len)==0)
                 v = Jsi_ValueMakeBool(interp, NULL, 1);
             else if (len == 5 && Jsi_Strncmp(t, "false", len)==0)
                 v = Jsi_ValueMakeBool(interp, NULL, 0);
-            else if (len == 4 && Jsi_Strncmp(t, "null", len)==0)
-                v = Jsi_ValueMakeNull(interp, NULL);
             else if (len == 9 && Jsi_Strncmp(t, "undefined", len)==0)
+                v = Jsi_ValueMakeNull(interp, NULL);
+            else if (!t)
                 v = Jsi_ValueMakeNull(interp, NULL);
             else {
                 char *ep;
@@ -88,7 +90,7 @@ jsonGen1Value(Jsi_Interp *interp, Jsi_JsonParser *p, const char *js, uint i, uin
             break;
         case JSI_JTYPE_STRING:
             t = Jsi_JsonGetTokstr(p, js, i, &len);
-            v = jsonNewStringObj(interp, t, len);
+            v = jsonNewStringObj(interp, t?t:"", len);
             break;
         case JSI_JTYPE_ARRAY:
             v = jsonGenArray(interp, p, js, i, &i);
@@ -124,12 +126,13 @@ jsonGenObject(Jsi_Interp *interp, Jsi_JsonParser *p, const char *js, uint pos, u
         Jsi_DString dStr;
         t = Jsi_JsonGetTokstr(p, js, i, &len);
         i++; n++;
-        if (n>=tok->size)
+        if (!t || n>=tok->size)
             nv = Jsi_ValueMakeUndef(interp, NULL);
         else
             nv = jsonGen1Value(interp, p, js, i, &i, 0);
         Jsi_DSInit(&dStr);
-        Jsi_DSAppendLen(&dStr, t, len);
+        if (t)
+            Jsi_DSAppendLen(&dStr, t, len);
         Jsi_ObjInsert(interp, obj, Jsi_DSValue(&dStr), nv, 0);
         Jsi_DSFree(&dStr);
     }
@@ -304,16 +307,17 @@ int Jsi_OptionsProcessJSON(Jsi_Interp *interp, Jsi_OptionSpec *opts, void *data,
         }
         name = Jsi_JsonGetTokstr(p, json, i, &len);
         Jsi_DSSetLength(&nStr, 0);
-        Jsi_DSAppendLen(&nStr, name, len);
+        if (name)
+            Jsi_DSAppendLen(&nStr, name, len);
         name = Jsi_DSValue(&nStr);
         i++;
         switch (p->tokens[i].type) {
             case JSI_JTYPE_PRIMITIVE:
                 t = Jsi_JsonGetTokstr(p, json, i, &len);
-                if ((len == 4 && Jsi_Strncmp(t, "true", len)==0) || (len == 5 && Jsi_Strncmp(t, "false", len)==0)) {
-                    Jsi_ValueMakeBool(interp, &v, (bool)(len==4?1:0));
-                } else if (len == 4 && Jsi_Strncmp(t, "null", len)==0) {
+                if (!t || (len == 4 && Jsi_Strncmp(t, "null", len)==0)) {
                     Jsi_ValueMakeNull(interp, &v);
+                } else if ((len == 4 && Jsi_Strncmp(t, "true", len)==0) || (len == 5 && Jsi_Strncmp(t, "false", len)==0)) {
+                    Jsi_ValueMakeBool(interp, &v, (bool)(len==4?1:0));
                 } else {
                     char *ep;
                     Jsi_Number d = strtod(t,&ep);
@@ -447,7 +451,8 @@ static Jsi_RC JSONStringifyCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     if (strict) quote|=JSI_JSON_STRICT;
     Jsi_DString dStr = {};
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
-    Jsi_ValueGetDString(interp, arg, &dStr, quote);
+    if (!Jsi_ValueGetDString(interp, arg, &dStr, quote))
+        return JSI_ERROR;
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }

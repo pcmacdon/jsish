@@ -1590,7 +1590,8 @@ static Jsi_RC MySqlQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     opts.obj.name = NULL;
     opts.obj.skip = NULL;
     Jsi_Value *callback = NULL, *width = NULL;
-            
+    if (!zSql) return JSI_ERROR;
+    
     if (arg) {
         if (Jsi_ValueIsFunction(interp,arg))
             callback = opts.callback = arg;
@@ -2129,7 +2130,7 @@ static Jsi_RC MySqlOnecolumnCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     const char *zSql = Jsi_ValueGetDString(interp, vSql, &dStr, 0);
 
     sEval.nocache = jdb->queryOpts.nocache;
-    if (mdbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0) != JSI_OK)
+    if (!zSql || mdbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0) != JSI_OK)
         return JSI_ERROR;
     sEval.ret = *ret;
     sEval.tocall = NULL;
@@ -2165,7 +2166,7 @@ static Jsi_RC MySqlExistsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     Jsi_DString sStr;
     Jsi_DSInit(&sStr);
     sEval.nocache = jdb->queryOpts.nocache;
-    if (mdbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0) != JSI_OK)
+    if (!zSql || mdbEvalInit(interp, &sEval, jdb, zSql, &sStr, 0, 0) != JSI_OK)
         return JSI_ERROR;
     sEval.ret = *ret;
     int cnt = 0;

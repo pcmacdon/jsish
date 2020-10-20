@@ -701,6 +701,7 @@ static Jsi_RC _object_get_callback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *da
 /* Format value into dStr.  Toplevel caller does init/free. */
 static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, objwalker *owPtr)
 {
+    Jsi_RC rc = JSI_OK;
     char buf[JSI_MAX_NUMBER_STRING], *str;
     Jsi_DString eStr;
     Jsi_DSInit(&eStr);
@@ -847,25 +848,25 @@ outstr:
                     Jsi_HashSearch search;
                     Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
                     for (hPtr = Jsi_HashSearchFirst(o->getters, &search);
-                        hPtr != NULL; hPtr = Jsi_HashSearchNext(&search)) {
-                        jsi_objectGetterFmt(interp, hPtr, owPtr, v);
+                        hPtr != NULL && rc == JSI_OK; hPtr = Jsi_HashSearchNext(&search)) {
+                        rc = jsi_objectGetterFmt(interp, hPtr, owPtr, v);
                     }
                 } else {
                     Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
                     owPtr->depth++;
-                    Jsi_TreeWalk(o->tree, _object_get_callback, owPtr, 0);
+                    rc = Jsi_TreeWalk(o->tree, _object_get_callback, owPtr, 0);
                     owPtr->depth--;
                 }
                 Jsi_DSAppend(dStr,len?" ":"","}", NULL);
             }
-            return JSI_OK;
+            return rc;
         }
 #ifndef __cplusplus
         default:
             Jsi_LogBug("Unexpected value type: %d", v->vt);
 #endif
     }
-    return JSI_OK;
+    return rc;
 }
 
 /* Format value into dStr.  Toplevel caller does init/free. */
@@ -875,7 +876,8 @@ const char* Jsi_ValueGetDString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *d
     ow.quote = quote;
     ow.depth = 0;
     ow.dStr = dStr;
-    jsiValueGetString(interp, v, dStr, &ow);
+    if (jsiValueGetString(interp, v, dStr, &ow) != JSI_OK)
+        return NULL;
     return Jsi_DSValue(dStr);
 }
 
@@ -1248,7 +1250,10 @@ Jsi_RC Jsi_Interactive(Jsi_Interp* interp, int flags)
         if (rc == JSI_OK) {
              if (interp->retValue->vt != JSI_VT_UNDEF || interp->subOpts.outUndef) {
                 Jsi_DString eStr = {};
-                fputs(Jsi_ValueGetDString(interp, interp->retValue, &eStr, wantHelp?0:quote), stdout);
+                const char *cp = Jsi_ValueGetDString(interp, interp->retValue, &eStr, wantHelp?0:quote);
+                if (!cp)
+                    return JSI_ERROR;
+                fputs(cp, stdout);
                 Jsi_DSFree(&eStr);
                 fputs("\n", stdout);
              }

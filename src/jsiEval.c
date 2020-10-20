@@ -596,7 +596,7 @@ Jsi_Value *jsi_LoadFunction(Jsi_Interp *interp, const char *str, Jsi_Value *tret
         if (v) {
             const char *cp = Jsi_ValueGetDString(interp, v, &dStr, 0);
             v = NULL;
-            if (Jsi_EvalString(interp, cp, 0) == JSI_OK) {
+            if (cp && Jsi_EvalString(interp, cp, 0) == JSI_OK) {
                 v = Jsi_NameLookup(interp, str);
                 if (v)
                     jsi_ValueDebugLabel(v, "jsiLoadFunction","f2");

@@ -1656,6 +1656,7 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     const char *fn = NULL;
     Jsi_DString dStr, oStr;
     Jsi_Value *v;
+    Jsi_RC rc = JSI_OK;
     if (args)
         argc = Jsi_ValueGetLength(interp, args);
     if (islog == 3 && argc > 1) {
@@ -1702,8 +1703,12 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                 continue;
             }
             Jsi_DSSetLength(&oStr, 0);
-            Jsi_ValueGetDString(interp, v, &oStr, JSI_OUTPUT_QUOTE);
-            Jsi_DSAppend(&dStr, Jsi_DSValue(&oStr), NULL);
+            if (Jsi_ValueGetDString(interp, v, &oStr, JSI_OUTPUT_QUOTE))
+                Jsi_DSAppend(&dStr, Jsi_DSValue(&oStr), NULL);
+            else {
+                rc = JSI_ERROR;
+                goto done;
+            }
         }
     }
     if (quote)
@@ -1719,10 +1724,10 @@ static Jsi_RC SysPutsCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     }
     Jsi_DSAppend(&dStr, "\n", NULL);
     Jsi_Puts(interp, chan, Jsi_DSValue(&dStr), Jsi_DSLength(&dStr));
-//done:
+done:
     Jsi_DSFree(&dStr);
     Jsi_DSFree(&oStr);
-    return JSI_OK;
+    return rc;
 }
 
 static Jsi_RC SysPrintfCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this, Jsi_Value **ret,
@@ -4120,12 +4125,16 @@ static Jsi_RC SysFormatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
 static Jsi_RC SysQuoteCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
+    Jsi_RC rc = JSI_OK;
     Jsi_DString dStr = {};
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
     const char *str = Jsi_ValueGetDString(interp, arg, &dStr, JSI_OUTPUT_QUOTE);
-    Jsi_ValueMakeStringDup(interp, ret, str);
+    if (str)
+        Jsi_ValueMakeStringDup(interp, ret, str);
+    else
+        rc = JSI_ERROR;
     Jsi_DSFree(&dStr);
-    return JSI_OK;
+    return rc;
 }
 // Karl Malbrain's compact CRC-32. See "A compact CCITT crc16 and crc32 C implementation that balances processor cache usage against speed": http://www.geocities.com/malbrain/
 uint32_t Jsi_Crc32(uint32_t crc, const void *ptr, size_t buf_len)
@@ -4805,6 +4814,8 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                     int vlen, klen = Jsi_Strlen(key);
                     Jsi_DSSetLength(&vStr, 0);
                     vstr = Jsi_ValueGetDString(interp, v, &vStr, JSI_OUTPUT_QUOTE);
+                    if (!vstr)
+                        vstr = "INVALID VALUE";
                     vlen = Jsi_Strlen(vstr);
                     if (!isLong)
                         Jsi_DSPrintf(&dStr, " -%s", key);

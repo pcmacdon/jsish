@@ -21,6 +21,18 @@ void Jsi_RegExpFree(Jsi_Regex* re) {
     Jsi_Free(re);
 }
 
+static bool jsi_regexValid(const char *str) {
+    return 1;
+    const char *cp = str;
+    int cnt = 0, cnts = 0;
+    while (*cp) {
+        if (*cp=='(' && ++cnt>50) return 0;
+        else if (*cp == '}' && cp[1]=='{' && ++cnts>1) return 0;
+        cp++;
+    }
+    return 1;
+}
+
 Jsi_Regex* Jsi_RegExpNew(Jsi_Interp *interp, const char *regtxt, int eflag)
 {
     bool isNew;
@@ -68,7 +80,7 @@ Jsi_Regex* Jsi_RegExpNew(Jsi_Interp *interp, const char *regtxt, int eflag)
     }
     *ce = 0;
     regex_t reg;
-    if (regcomp(&reg, cp, flag)) {
+    if (!jsi_regexValid(cp) || regcomp(&reg, cp, flag)) {
         *ce++ = '/';
         Jsi_LogError("Invalid regex string '%s'", cp);
         return NULL;

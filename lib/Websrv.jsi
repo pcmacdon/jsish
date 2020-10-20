@@ -335,7 +335,7 @@ function Websrv(args:string|array, conf:object=void)
     }
     
     /*function WebMenu(ws:userobj, id:number, url:string, query:array) {
-        return File.read('/zvfs/lib/web/wsMenu.htmli');
+        return File.read('/zvfs/lib/www/wsMenu.htmli');
     }*/
     
     // url = getUrlInDir(self.mnt)
@@ -431,7 +431,7 @@ function Websrv(args:string|array, conf:object=void)
     }
     if (self.app) {
         if (!self.rootdir)
-            self.rootdir = '/zvfs/lib/web';
+            self.rootdir = '/zvfs/lib/www';
         if (!self.url)
             self.url = 'index.html';
         var apd = self.app, ard = self.rootdir, apu = self.url;
@@ -469,7 +469,7 @@ function Websrv(args:string|array, conf:object=void)
         if (self.rootdir || self.zip)
             throw 'can not use rootdir/zip with docs';
         var surl = self.url = 'docs/index.html', sd = self.docs;
-        self.rootdir = '/zvfs/lib/web';
+        self.rootdir = '/zvfs/lib/www';
         if (self.arc) {
             self.mnt = archiveMnt(self.arc);
             sd = File.join(self.mnt, sd);
@@ -550,7 +550,7 @@ function Websrv(args:string|array, conf:object=void)
             wopts.onGet=WebAdmin;
             break;
         case 'menu':
-            self.url = '/jsi/web/Websrv.htmli';
+            self.url = '/jsi/Websrv.htmli';
             break;
         case '': break;
         default:

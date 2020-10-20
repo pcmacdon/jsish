@@ -189,7 +189,8 @@ Jsi_RC Jsi_EvalCmdJSON(Jsi_Interp *interp, const char *cmd, const char *jsonArgs
     Jsi_Value *nrPtr = Jsi_ValueNew1(interp);
     Jsi_RC rc = Jsi_CommandInvokeJSON(interp, cmd, jsonArgs, &nrPtr);
     Jsi_DSInit(dStr);
-    Jsi_ValueGetDString(interp, nrPtr, dStr, flags /*JSI_OUTPUT_JSON*/);
+    if (!Jsi_ValueGetDString(interp, nrPtr, dStr, flags /*JSI_OUTPUT_JSON*/))
+        rc = JSI_ERROR;
     Jsi_DecrRefCount(interp, nrPtr);
     Jsi_MutexUnlock(interp, interp->Mutex);
     return rc;
@@ -261,7 +262,7 @@ makestr:
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
     cp = Jsi_ValueGetDString(interp, val, &dStr, JSI_OUTPUT_JSON);
-    if (Jsi_JSONParse(tointerp, cp, ret, 0) != JSI_OK) {
+    if (!cp || Jsi_JSONParse(tointerp, cp, ret, 0) != JSI_OK) {
         Jsi_DSFree(&dStr);
         return Jsi_LogWarn("bad JSON parse in subinterp");
     }
@@ -310,7 +311,10 @@ Jsi_RC jsi_AliasInvoke(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         InterpStrEvent *se, *s = (InterpStrEvent *)Jsi_Calloc(1, sizeof(*s));
         // TODO: is s->data inited?
         Jsi_DSInit(&s->data);
-        Jsi_ValueGetDString(interp, nargs, &s->data, JSI_OUTPUT_JSON);
+        if (!Jsi_ValueGetDString(interp, nargs, &s->data, JSI_OUTPUT_JSON)) {
+            Jsi_Free(s);
+            return JSI_ERROR;
+        }
         if (inc)
             Jsi_DecrRefCount(dinterp, nargs);
         Jsi_DecrRefCount(dinterp, nrPtr);
@@ -925,7 +929,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
         Jsi_Value *ret = Jsi_ReturnValue(interp);
         if (!Jsi_ValueIsType(interp, ret, JSI_VT_UNDEF)) {
             Jsi_DString dStr = {};
-            fputs(Jsi_ValueGetDString(interp, ret, &dStr, JSI_OUTPUT_QUOTE|JSI_OUTPUT_NEWLINES), stdout);
+            const char *cp = Jsi_ValueGetDString(interp, ret, &dStr, JSI_OUTPUT_QUOTE|JSI_OUTPUT_NEWLINES);
+            if (cp) fputs(cp, stdout);
             Jsi_DSFree(&dStr);
             fputs("\n", stdout);
         }
@@ -2370,7 +2375,8 @@ static Jsi_RC SubInterpEvalCallback(Jsi_Interp *interp, void* data)
                 se->errLine = interp->errLine;
                 se->errFile = interp->errFile;
             } else {
-                Jsi_ValueGetDString(interp, interp->retValue, &se->data, JSI_OUTPUT_JSON);
+                if (!Jsi_ValueGetDString(interp, interp->retValue, &se->data, JSI_OUTPUT_JSON))
+                    se->rc = JSI_ERROR;
             }
             if (se->tryDepth)
                 interp->framePtr->tryDepth--;
@@ -2482,6 +2488,8 @@ static Jsi_RC InterpCallCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         Jsi_DString dStr = {};
         if (cp == NULL)
             cp = (char*)Jsi_ValueGetDString(interp, arg, &dStr, JSI_OUTPUT_JSON);
+        if (!cp)
+            return JSI_ERROR;
         if (interp->subOpts.mutexUnlock) Jsi_MutexUnlock(interp, interp->Mutex);
         if (Jsi_MutexLock(interp, sinterp->Mutex) != JSI_OK) {
             if (interp->subOpts.mutexUnlock) Jsi_MutexLock(interp, interp->Mutex);
@@ -2513,7 +2521,10 @@ static Jsi_RC InterpCallCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     // TODO: is s->data inited?
     Jsi_DSInit(&s->data);
     if (!cp) {
-        Jsi_ValueGetDString(interp, arg, &s->data, JSI_OUTPUT_JSON);
+        if (!Jsi_ValueGetDString(interp, arg, &s->data, JSI_OUTPUT_JSON)) {
+            Jsi_Free(s);
+            return JSI_ERROR;
+        }
     } else {
         Jsi_DSSetLength(&s->data, 0);
         Jsi_DSAppend(&s->data, cp, NULL);

@@ -500,6 +500,8 @@ static Jsi_RC ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *ke
     }
     if (key == NULL)
         key = Jsi_ValueGetDString(interp, keyVal, &dStr, 0);
+    if (!key)
+        return JSI_ERROR;
     return Jsi_ObjInsert(interp, obj, key, nv, flags);
 }
 

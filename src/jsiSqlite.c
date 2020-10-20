@@ -957,7 +957,8 @@ static Jsi_RC dbBindStmt(Jsi_Db *db, SqlPreparedStmt *prep)
                     !Jsi_Strncasecmp(dectyp,"charjson",8))) {
                     // Limitation: on INSERT can not access decltype.
                     Jsi_DString jStr = {};
-                    Jsi_ValueGetDString(interp, pv, &jStr, JSI_OUTPUT_JSON|JSI_JSON_STRICT);
+                    if (!Jsi_ValueGetDString(interp, pv, &jStr, JSI_OUTPUT_JSON|JSI_JSON_STRICT))
+                        rc = JSI_ERROR;
                     n = Jsi_DSLength(&jStr);
                     sqlite3_bind_text(pStmt, i, Jsi_DSValue(&jStr), n, SQLITE_TRANSIENT );
                     Jsi_DSFree(&jStr);
@@ -2579,7 +2580,9 @@ static Jsi_RC SqliteQueryCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     opts.obj.name = NULL;
     opts.obj.skip = NULL;
     Jsi_Value *callback = NULL, *width = NULL;
-            
+    if (!zSql)
+        return JSI_ERROR;
+    
     if (arg) {
         if (Jsi_ValueIsFunction(interp,arg))
             callback = opts.callback = arg;
@@ -3122,8 +3125,8 @@ static Jsi_RC SqliteOnecolumnCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     const char *zSql = Jsi_ValueGetDString(interp, vSql, &dStr, 0);
 
     sEval.nocache = db->queryOpts.nocache;
-    if ((rc = dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0)) != JSI_OK)
-        return rc;
+    if (!zSql || (rc = dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0)) != JSI_OK)
+        return JSI_ERROR;
     sEval.ret = *ret;
     sEval.tocall = NULL;
     int cnt = 0;
@@ -3159,7 +3162,7 @@ static Jsi_RC SqliteExistsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_DString sStr;
     Jsi_DSInit(&sStr);
     sEval.nocache = db->queryOpts.nocache;
-    if (dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0) != JSI_OK)
+    if (!zSql || dbEvalInit(interp, &sEval, db, zSql, &sStr, 0, 0) != JSI_OK)
         return JSI_ERROR;
     sEval.ret = *ret;
     int cnt = 0;

@@ -357,7 +357,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUnknown,  .help="Function to call to server out content when no file exists", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, url:string, query:array"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUpload,   .help="Function to call handle http-post", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onRecv,     .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
-    JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Alias document root  ({jsi:'/zvfs/lib/'}) ", jsi_IIOF),
+    JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Alias document root  ({jsi:'/zvfs/lib/www'}) ", jsi_IIOF),
     JSI_OPT(INT,    jsi_wsCmdObj, port,       .help="Port for server to listen on (8080)", jsi_IIOF),
     JSI_OPT(STRING, jsi_wsCmdObj, post,       .help="Post string to serve", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, protocol,   .help="Name of protocol (ws/wss)"),
@@ -1311,17 +1311,13 @@ static void jsi_wsPathAlias(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, char **inP
         }
     }
     if (!Jsi_Strncmp(*inPtr, "/jsi/", 5)) {
-        // Get/cache path for system load file, eg "/zvfs/lib"
+        // Get/cache path for system load file, eg "/zvfs/lib/Jsish.jsi"
         cp = jsi_wsGetJsiPath(interp, cmdPtr);
-        if (cp) {
+        if (cp && (lcp = Jsi_Strrchr(cp, '/'))) {
             Jsi_DSSetLength(dStr, 0);
-            Jsi_DSAppend(dStr, cp, NULL);
-            cp = Jsi_DSValue(dStr);
-            if ((lcp = Jsi_Strrchr(cp, '/'))) {
-                *lcp = 0;
-                *inPtr += 5;
-                cmdPtr->curRoot = cp;
-            }
+            Jsi_DSAppendLen(dStr, cp, lcp-cp);
+            *inPtr += 5;
+            cmdPtr->curRoot = Jsi_DSAppend(dStr, "/www", NULL);
         }
     }
 }
@@ -1824,13 +1820,14 @@ nofile:
                 goto done;
         }
 
-        if (0 && Jsi_Strstr(buf, "favicon.ico"))
+       /* if (0 && Jsi_Strstr(buf, "favicon.ico"))
             rc = jsi_wsServeString(pss, wsi, "data:;base64,iVBORw0KGgo=", 200, NULL, "image/icon");
-        else {
+        else */
+        {
             const char *cp = Jsi_Strrchr(buf,'/');
             if (cp && cp[1]) {
                 char statPath[PATH_MAX];
-                snprintf(statPath, sizeof(statPath), "/zvfs/lib/web%s", cp);
+                snprintf(statPath, sizeof(statPath), "/zvfs/lib/www%s", cp);
                 Jsi_DecrRefCount(interp, fname);
                 fname = Jsi_ValueNewStringDup(interp, statPath);
                 Jsi_IncrRefCount(interp, fname);
@@ -2956,7 +2953,8 @@ static Jsi_RC WebSocketSendCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 
     if (!str)
         str = (char*)Jsi_ValueGetDString(interp, arg, &eStr, JSI_OUTPUT_JSON);
-
+    if (!str)
+        return JSI_ERROR;
     if (cmdPtr->echo)
         Jsi_LogInfo("WS-SEND: %s", str);
     Jsi_LogTraceExt("WS-SEND: %s", str);

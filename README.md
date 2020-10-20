@@ -6,7 +6,7 @@ Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite an
 
 ### Quick-Start
 
-Download a binary for linux/win:
+Download a binary for [linux](http://jsish.org/bin/jsish) / [win](http://jsish.org/bin/jsish.exe):
 
     wget http://jsish.org/bin/jsish;  chmod u+x jsish
     wget http://jsish.org/bin/jsish.exe

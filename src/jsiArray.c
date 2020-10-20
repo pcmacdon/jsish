@@ -331,8 +331,8 @@ static Jsi_RC jsi_ArrayConcatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             Jsi_ValueDup2(interp, nobj->arr+m++, va);
        }
     }
-bail:
     Jsi_ObjSetLength(interp, nobj, curlen);
+bail:
     Jsi_ValueMakeArrayObject(interp, ret, nobj);
 
     return rc;
@@ -875,9 +875,9 @@ static Jsi_RC jsi_ArraySliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
             return rc;
     }
     nsiz = iend-istart+1;
-    if (nsiz<=0)
-        return rc;
     Jsi_ObjListifyArray(interp, obj);
+    if (nsiz<=0 || istart>=(int)obj->arrCnt)
+        return rc;
     
     if (Jsi_ObjArraySizer(interp, nobj, nsiz) <= 0)
         return Jsi_LogError("index too large: %d", nsiz);
@@ -889,7 +889,7 @@ static Jsi_RC jsi_ArraySliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
         nobj->arr[m] = NULL;
         Jsi_ValueDup2(interp, nobj->arr+m, obj->arr[i]);
     }
-    Jsi_ObjSetLength(interp, nobj, nsiz);
+    Jsi_ObjSetLength(interp, nobj, m);
     return rc;
 }
 

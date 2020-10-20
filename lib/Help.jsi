@@ -347,7 +347,7 @@ function Help(args, ...) {
             if (!self.wiki) {
                 if (require('Websrv')<0)
                     throw "websrv unavailable";
-                var css = File.read('/zvfs/lib/web/jsiweb.css');
+                var css = File.read('/zvfs/lib/www/jsiweb.css');
                 rv = '<style>'+css+'</style>\n' + rv;
                 var anchor = (arg===''?'':'#'+arg);
                 if (System[arg])

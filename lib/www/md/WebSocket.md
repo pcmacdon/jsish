@@ -181,7 +181,7 @@ jsish -W -udata "{NOPLUGIN:true}" index.shtml
 
 ## Utilities
 
-The following resources are available to include from **/jsi/lib/web/**:
+The following resources are available to include from **/jsi/lib/www/**:
 
 |[vue.min.js](https://vuejs.org/)| Web framework library.
 |[vue-router.min.js](https://router.vuejs.org/)| Router for Vue.

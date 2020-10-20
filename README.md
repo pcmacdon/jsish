@@ -2,7 +2,7 @@ Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite an
 
 
 - Sites: [Docs](https://docs.jsish.org) | [jsish.org](https://jsish.org) | [github.com](https://github.com/pcmacdon/jsish)
-- Links: [Start](./lib/web/md/Start.md) | [Index](./lib/web/md/Index.md) | [Issues](https://github.com/pcmacdon/jsish/issues)
+- Links: [Start](./lib/www/md/Start.md) | [Index](./lib/www/md/Index.md) | [Issues](https://github.com/pcmacdon/jsish/issues)
 
 ### Quick-Start
 
@@ -15,7 +15,7 @@ Or build from [source](http://jsish.org/jsi.zip):
  
     wget http://jsish.org/jsi.zip;  unzip jsi.zip;  cd jsi;  make
     
-&#x1f6a9; See [Start](./lib/web/md/Start.md).
+&#x1f6a9; See [Start](./lib/www/md/Start.md).
     
 ### Usage
 

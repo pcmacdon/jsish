@@ -116,8 +116,8 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
             else
                 fn = File.realpath(fn);
 
-            if (!File.exists(fn) && fn.substr(0,9) === '/jsi/web/') 
-                fn = '/zvfs/lib/' + fn.substr(5);
+            if (!File.exists(fn) && fn.substr(0,9) === '/jsi/') 
+                fn = '/zvfs/lib/web/' + fn.substr(5);
             else
                 fn = File.realpath(fn);
             if (0 && !File.exists(fn)) {
@@ -157,7 +157,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
                         pre += Fileread(fn);
                     else {
                         if (self.jsifiles.length==1 && self.noCheck) {
-                            pre += Fileread(self.dir+'/web/jsi.js');
+                            pre += Fileread(self.dir+'/jsi.js');
                             if (self.noCheck)
                                 pre += '$jsi.conf({disabled:true});\n';
                         }

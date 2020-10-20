@@ -66,17 +66,17 @@ See [Deploy](Deploy.md)
 
 - https://docs.jsish.org
 - https://jsish.org/docs
-- https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Start.md
-- https://jsish.org/fossil/jsi/doc/tip/lib/web/docs
-- https://github.com/pcmacdon/jsish/blob/master/lib/web/md/Start.md
+- https://jsish.org/fossil/jsi/doc/tip/lib/www/md/Start.md
+- https://jsish.org/fossil/jsi/doc/tip/lib/www/docs
+- https://github.com/pcmacdon/jsish/blob/master/lib/www/md/Start.md
 
 ### App
 
  jsish -W -docs /
- jsish -W -docs /zvfs/lib/web/md
- jsish -W -app /zvfs/lib/web/docs
- jsish -W -zip jsi.zip -docs lib/web/docs
- jsish -W -zip jsi.fossil -docs lib/web/docs
+ jsish -W -docs /zvfs/lib/www/md
+ jsish -W -app /zvfs/lib/www/docs
+ jsish -W -zip jsi.zip -docs lib/www/docs
+ jsish -W -zip jsi.fossil -docs lib/www/docs
  jsish -W -zip jsi.fossil -app app-demos/simple
 
 

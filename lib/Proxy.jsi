@@ -128,7 +128,7 @@ function Proxy(args:array, conf:object=void):void
             var cur = (id === nid?' (CURRENT)':'');
             rv += '<H3> Conn #'+nid+cur+'</H3>'+tablifyObj(cv, true);
         }
-        var pv = '<A href="http://127.0.0.1:'+self.port+'/jsi/web/wsadmin.htmli">Admin</A><P>';
+        var pv = '<A href="http://127.0.0.1:'+self.port+'/jsi/wsadmin.htmli">Admin</A><P>';
         return "<H2>Proxy Admin</H2>"+pv+rv;
     }
 

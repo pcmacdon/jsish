@@ -414,6 +414,7 @@ static Jsi_RC jsi_ArrayFilterCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     nobj = Jsi_ObjNewType(interp, JSI_OT_ARRAY);
     nsiz = obj->arrCnt;
     if (nsiz<=0) nsiz = 1;
+    Jsi_IncrRefCount(interp, _this);
     if (Jsi_ObjArraySizer(interp, nobj, nsiz) <= 0) {
         rc = Jsi_LogError("index too large: %d", nsiz);
         goto bail;
@@ -436,18 +437,23 @@ static Jsi_RC jsi_ArrayFilterCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
         rc = Jsi_FunctionInvoke(interp, func, vpargs, &nrPtr, sthis);
         Jsi_DecrRefCount(interp, vpargs);
         fval = Jsi_ValueIsTrue(interp, nrPtr);
-        Jsi_ValueMakeUndef(interp, &nrPtr);
         if( JSI_OK!=rc ) {
             goto bail;
         }
         if (fval) {
-            nobj->arr[n++] = obj->arr[i];
-            Jsi_IncrRefCount(interp, obj->arr[i]);
+            if (Jsi_ValueIsArray(interp, _this) && _this->d.obj == obj && i<(int)obj->arrCnt && obj->arr[i]) {
+                nobj->arr[n] = obj->arr[i];
+                Jsi_IncrRefCount(interp, nobj->arr[n]);
+            } else
+                nobj->arr[n] = Jsi_ValueDup(interp, nrPtr);
+            n++;
         }
+        Jsi_ValueMakeUndef(interp, &nrPtr);
     }
     Jsi_ObjSetLength(interp, nobj, n);
 
 bail:
+    Jsi_DecrRefCount(interp, _this);
     if (nthis)
         Jsi_DecrRefCount(interp, nthis);
     if (nrPtr)

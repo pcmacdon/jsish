@@ -355,6 +355,7 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         sthis = nthis = Jsi_ValueNewObj(interp, NULL);
         Jsi_IncrRefCount(interp, sthis);
     }
+    Jsi_IncrRefCount(interp, _this);
     obj = _this->d.obj;
     curlen = jsi_SizeOfArray(interp, obj);    
     Jsi_ObjListifyArray(interp, obj);
@@ -386,6 +387,7 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_ObjSetLength(interp, nobj, i);
            
 bail:
+    Jsi_DecrRefCount(interp, _this);
     if (nthis)
         Jsi_DecrRefCount(interp, nthis);
     return rc;
@@ -508,6 +510,7 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
     Jsi_ObjListifyArray(interp, obj);
     Jsi_RC rc = JSI_OK;
     
+    Jsi_IncrRefCount(interp, _this);
     Jsi_Value *vobjs[3];
     Jsi_Func *fptr = func->d.obj->d.fobj->func;
     int maa = (fptr->argnames?fptr->argnames->argCnt:0);
@@ -523,6 +526,7 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         rc = Jsi_FunctionInvoke(interp, func, vpargs, ret, sthis);
         Jsi_DecrRefCount(interp, vpargs);
     }
+    Jsi_DecrRefCount(interp, _this);
     if (nthis)
         Jsi_DecrRefCount(interp, nthis);
     return rc;
@@ -545,6 +549,7 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         Jsi_IncrRefCount(interp, sthis);
     }
 
+    Jsi_IncrRefCount(interp, _this);
     obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);
     int fval = 0;
@@ -580,6 +585,7 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         else if (op == 4)
             Jsi_ValueMakeNumber(interp, ret, (Jsi_Number)(fval?(int)i:-1));
     }
+    Jsi_DecrRefCount(interp, _this);
     if (nthis)
         Jsi_DecrRefCount(interp, nthis);
     Jsi_DecrRefCount(interp, nrPtr);
@@ -609,6 +615,7 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
     if (maa>4 || fptr->type == FC_BUILDIN)
         maa = 4;
 
+    Jsi_IncrRefCount(interp, _this);
     for (n = 0, i = (rev?obj->arrCnt-1:0); (rev?i>=0:i < (int)obj->arrCnt) && rc == JSI_OK; n++, i = (rev?i-1:i+1)) {
         if (!obj->arr[i]) continue;
         if (n==0 && !ini) {
@@ -630,6 +637,7 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
     }
     if (rc == JSI_OK && ini)
         Jsi_ValueCopy(interp, *ret, ini); 
+    Jsi_DecrRefCount(interp, _this);
     Jsi_DecrRefCount(interp, nrPtr);
     return rc;
 

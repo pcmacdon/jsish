@@ -7,7 +7,7 @@
 <script src='sqlite.js'></script> 
 <link rel="stylesheet" type="text/css" href="sqlite.css">
 -->
-<script src='/SqliteUI/jsi/web/jsi.js'></script> 
+<script src='/SqliteUI/jsi/web/js/Jsish.js'></script> 
 <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 <? 
 // Load .jsi and .cssi for preprocessing.

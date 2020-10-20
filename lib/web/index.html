@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="css/animate.css">
     <link rel="stylesheet" href="css/prism.css">
     <link rel="stylesheet" href="css/VuePrismEditor.css">
-    <link rel="stylesheet" href="app/app.css">
     <script type="module">
         // Map 'app', with relative paths for in jsi or builtin clone.
         import "./js/vue.js";
@@ -18,21 +17,25 @@
         import "./js/vue-markdown-pdq.min.js";
         import "./js/prism.js";
         import "./js/VuePrismEditor.umd.min.js";
-        import "./jsi.js";
+        import "./js/Jsish.js";
         import Vuex from './js/vuex.js';
         window.Vuex = Vuex;
-        window.jsiroot = './';        
+        Jsish.config.jsiroot = './';        
+        Jsish.config.approot = 'app/';
     </script>
 
+    <link rel="stylesheet" href="app/app.css">
     <script type="module" src="app/app.js"></script>
 
 </head>
 
 <body>
-    <noscript> <img src="https://jsish.org/logojsi.png">
-        For Jsi Docs without javascript <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md" rel="noopener noreferrer nofollow">click here!</a></noscript>
+    <noscript id="nojs">
+        <a href="https://jsish.org/" rel="noopener noreferrer nofollow">
+            <img src="https://jsish.org/logojsi.png" alt="Jsi"> apps</a> require javascript
+    </noscript>
     <div id="app" style="height:100%; width:100%">
-        <router-view />        
+        <app-view />
     </div>
 </body>
 </html>

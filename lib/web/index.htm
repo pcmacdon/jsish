@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/jsi/web/css/animate.css">
     <link rel="stylesheet" href="/jsi/web/css/prism.css">
     <link rel="stylesheet" href="/jsi/web/css/VuePrismEditor.css">
-    <link rel="stylesheet" href="app/app.css">
     <script type="module">
         // Map /jsi/ with app.js in same dir as index.htm, served by jsish, or nginx with location/clone dir.
         import "/jsi/web/js/vue.js";
@@ -19,20 +18,24 @@
         import "/jsi/web/js/vue-markdown-pdq.min.js";
         import "/jsi/web/js/prism.js";
         import "/jsi/web/js/VuePrismEditor.umd.min.js";
-        import "/jsi/web/jsi.js";
+        import "/jsi/web/js/Jsish.js";
         import Vuex from '/jsi/web/js/vuex.js';
         window.Vuex = Vuex;
-        window.jsiroot = '/jsi';        
+        Jsish.config.jsiroot = '/jsi';
+        Jsish.config.approot = 'app/';
     </script>
-    <script type="module" src="./app/app.js?root=/jsi"></script>
+
+    <link rel="stylesheet" href="app/app.css">
+    <script type="module" src="app/app.js"></script>
 </head>
 
 <body>
-    <noscript> <img src="https://jsish.org/logojsi.png">
-        For Jsi Docs without javascript <a href="https://jsish.org/fossil/jsi/doc/tip/lib/web/md/Index.md" rel="noopener noreferrer nofollow">click here!</a>
+    <noscript id="nojs">
+        <a href="https://jsish.org/" rel="noopener noreferrer nofollow">
+            <img src="https://jsish.org/logojsi.png" alt="Jsi"> apps</a> require javascript
     </noscript>
     <div id="app" style="height:100%; width:100%">
-        <router-view />        
+        <app-view />
     </div>
 </body>
 </html>

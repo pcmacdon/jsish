@@ -5,7 +5,7 @@
     <title>DebugUI</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 
-    <script src="/jsi/web/jsi.js"></script>
+    <script src="/jsi/web/js/Jsish.js"></script>
     <script src="/jsi/web/bind.js"></script>
 <? 
     // Load .jsi and .cssi for preprocessing inline.

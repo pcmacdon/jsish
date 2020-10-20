@@ -7,17 +7,22 @@ function Websrv(args:string|array, conf:object=void)
 {
     var self = {
         chans   :{},
+        css     :'',
+        done    :false,
+        mnt     :'',
         ssl     :false,
         sslcert :null,
         sslkey  :null,
         ws      :null,
         wsopts  :null,
-        css     :'',
-        done    :false,
+        zip         :'',        // A .zip, .sqlar, or .fossil file to mount and use as rootdir.
     };
     const options = { // Run a standalone web server, opening browser to serve out url.
         anchor      :'',        // Anchor after url.
-        app         :'',        // An application directory, archive or zip.
+        app         :'',        // An application directory.
+        arc         :'',        // Archive/zip to mount
+        arcOpts     :'',        // Archive options.
+        arcVer      :'',        // Version to mount in fossil.
         browser     :'',        // The browser to exec, eg. "chrome-browser"
         closeTimeout:0,         // Time til exit after close of final client websocket (ms).
         confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
@@ -56,8 +61,6 @@ function Websrv(args:string|array, conf:object=void)
         wsdebug     :0,         // Debug option for websockets.
         wsinc       :'',        // Name of file to include.
         wsOpts      :{},        // Websocket options.
-        zip         :'',        // A .zip, .sqlar, or .fossil file to mount and use as rootdir.
-        zipVer      :'',        // Version to mount in fossil.
     };
 
     moduleOpts(options, self);
@@ -363,6 +366,10 @@ function Websrv(args:string|array, conf:object=void)
         self.done = true;
     }
     
+    function archiveMnt(name:string) {
+        return Archive([name], {noRun:true, version:self.arcVer});
+    }
+    
     function ConvertVue(fn:string) { // Now builtin.
         // Simple conversion of .vue file to js module.
         var s = File.read(fn);
@@ -428,11 +435,16 @@ function Websrv(args:string|array, conf:object=void)
         if (!self.url)
             self.url = 'index.html';
         var apd = self.app, ard = self.rootdir, apu = self.url;
+        if (self.arc) {
+            self.mnt = archiveMnt(self.arc);
+            puts("MM:", self.mnt);
+            apd = File.join(self.mnt, apd);
+        }
        // if (File.tail(apd) == 'app.js')
        //     apd = File.dirname(apd);
         if (!File.exists(apd+'/app.js'))
             throw 'app file not found: '+apd+'/app.js';
-        pal = {app:self.app};
+        pal = {app:apd};
         if (File.exists(apd+'/'+apu)) { // Use /app/index.html
             LogInfo("USE APP INDEX:", apu);
             self.url = '/app/'+apu;
@@ -458,6 +470,10 @@ function Websrv(args:string|array, conf:object=void)
             throw 'can not use rootdir/zip with docs';
         var surl = self.url = 'docs/index.html', sd = self.docs;
         self.rootdir = '/zvfs/lib/web';
+        if (self.arc) {
+            self.mnt = archiveMnt(self.arc);
+            sd = File.join(self.mnt, sd);
+        }
         if (sd != '/') {
             if (File.exists(sd+'/'+surl))
                 self.rootdir = sd;
@@ -478,7 +494,7 @@ function Websrv(args:string|array, conf:object=void)
                 self.wsinc = '';
         }            
     } else if (self.zip) {
-        self.mnt = Jsi_Archive([self.zip], {noRun:true, version:self.zipVer});
+        self.mnt = archiveMnt(self.zip);
         if (!self.rootdir)
             self.rootdir = self.mnt;
         else

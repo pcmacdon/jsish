@@ -11,7 +11,7 @@ Download a binary for [linux](http://jsish.org/bin/jsish) / [win](http://jsish.o
     wget http://jsish.org/bin/jsish;  chmod u+x jsish
     wget http://jsish.org/bin/jsish.exe
 
-Or get [source](http://jsish.org/jsi.zip) and build:
+Or get the [source](http://jsish.org/jsi.zip) and build:
  
     wget http://jsish.org/jsi.zip;  unzip jsi.zip;  cd jsi;  make
     

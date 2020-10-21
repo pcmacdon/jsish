@@ -1,0 +1,11 @@
+puts('included wsinc');
+
+self.onRecv = function(ws:userobj, id:number, data:object) {
+    LogDebug('got msg', data);
+    switch (data.cmd) {
+        case 'exit': self.done = true; break;
+    }
+    return {status:1};
+};
+
+self.timeout = 3000;

@@ -72,12 +72,12 @@ See [Deploy](Deploy.md)
 
 ### App
 
- jsish -W -docs /
- jsish -W -docs /zvfs/lib/www/md
- jsish -W -app /zvfs/lib/www/docs
- jsish -W -zip jsi.zip -docs lib/www/docs
- jsish -W -zip jsi.fossil -docs lib/www/docs
- jsish -W -zip jsi.fossil -app app-demos/simple
+- jsish -W -docs /
+- jsish -W -docs /zvfs/lib/www/md
+- jsish -W -app /zvfs/lib/www/docs
+- jsish -W -zip jsi.zip -docs lib/www/docs
+- jsish -W -zip jsi.fossil -docs lib/www/docs
+- jsish -W -zip jsi.fossil -app app-demos/simple
 
 
 

@@ -3,30 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="../css/bootstrap.css">
-    <link rel="stylesheet" href="../css/bootstrap-vue.css">
-    <link rel="stylesheet" href="../css/animate.css">
-    <link rel="stylesheet" href="../css/prism.css">
-    <link rel="stylesheet" href="../css/VuePrismEditor.css">
-    <script type="module">
-        // Map /jsi/ with app.js in same dir as index.htm, served by jsish, or nginx with location/clone dir.
-        import "../js/vue.js";
-        Vue.config.productionTip=true;
-        Vue.config.historyMode=true;
-        import "../js/vue-router.min.js";
-        import "../js/bootstrap-vue.min.js";
-        import "../js/vue-markdown-pdq.min.js";
-        import "../js/prism.js";
-        import "../js/VuePrismEditor.umd.min.js";
-        import "../js/Jsish.js";
-        import Vuex from "../js/vuex.js";
-        window.Vuex = Vuex;
-        Jsish.config.jsiroot = '../';        
-        Jsish.config.approot = './';
+    <script>
+        window.VueJsiOptions={jsiroot:'../', approot:'./'};
     </script>
-    
-    <link rel="stylesheet" href="./app.css">
-    <script type="module" src="./app.js"></script>
+    <script type="module">
+        import "../VueJsi.js";
+        import "./app.js";
+    </script>
 </head>
 
 <body>

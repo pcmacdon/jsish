@@ -1,32 +1,16 @@
+<!-- index.htm : use on webserver for Vue-history mode, with root set to "lib/www" of repo -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="/jsi/css/bootstrap.css">
-    <link rel="stylesheet" href="/jsi/css/bootstrap-vue.css">
-    <link rel="stylesheet" href="/jsi/css/animate.css">
-    <link rel="stylesheet" href="/jsi/css/prism.css">
-    <link rel="stylesheet" href="/jsi/css/VuePrismEditor.css">
-    <script type="module">
-        // Map /jsi/ with app.js in same dir as index.htm, served by jsish, or nginx with location/clone dir.
-        import "/jsi/js/vue.js";
-        Vue.config.productionTip=true;
-        Vue.config.historyMode=true;
-        import "/jsi/js/vue-router.min.js";
-        import "/jsi/js/bootstrap-vue.min.js";
-        import "/jsi/js/vue-markdown-pdq.min.js";
-        import "/jsi/js/prism.js";
-        import "/jsi/js/VuePrismEditor.umd.min.js";
-        import "/jsi/js/Jsish.js";
-        import Vuex from '/jsi/js/vuex.js';
-        window.Vuex = Vuex;
-        Jsish.config.jsiroot = '/jsi/';
-        Jsish.config.approot = 'app/';
+    <script>
+        window.VueJsiOptions={jsiroot:'./', approot:'./app/', histmode:true, websock:false};
     </script>
-
-    <link rel="stylesheet" href="app/app.css">
-    <script type="module" src="app/app.js"></script>
+    <script type="module">
+        import "./VueJsi.js";
+        import "./app/app.js";
+    </script>
 </head>
 
 <body>

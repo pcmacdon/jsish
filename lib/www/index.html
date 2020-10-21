@@ -3,30 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="css/bootstrap.css">
-    <link rel="stylesheet" href="css/bootstrap-vue.css">
-    <link rel="stylesheet" href="css/animate.css">
-    <link rel="stylesheet" href="css/prism.css">
-    <link rel="stylesheet" href="css/VuePrismEditor.css">
-    <script type="module">
-        // Map 'app', with relative paths for in jsi or builtin clone.
-        import "./js/vue.js";
-        Vue.config.productionTip=false;
-        import "./js/vue-router.min.js";
-        import "./js/bootstrap-vue.min.js";
-        import "./js/vue-markdown-pdq.min.js";
-        import "./js/prism.js";
-        import "./js/VuePrismEditor.umd.min.js";
-        import "./js/Jsish.js";
-        import Vuex from './js/vuex.js';
-        window.Vuex = Vuex;
-        Jsish.config.jsiroot = './';        
-        Jsish.config.approot = 'app/';
+    <script>
+        window.VueJsiOptions={jsiroot:'./', approot:'./app/'};
     </script>
-
-    <link rel="stylesheet" href="app/app.css">
-    <script type="module" src="app/app.js"></script>
-
+    <script type="module">
+        import "./VueJsi.js";
+        import "./app/app.js";
+    </script>
 </head>
 
 <body>

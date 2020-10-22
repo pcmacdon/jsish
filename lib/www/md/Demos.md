@@ -65,7 +65,8 @@ See [Deploy](Deploy.md)
 ## Documentation
 
 - https://docs.jsish.org
-- https://jsish.org/docs
+- https://jsish.org/jsi/www/docs
+- https://jsish.org/repo/jsi/lib/www/docs/index.html#/Start.md
 - https://jsish.org/fossil/jsi/doc/tip/lib/www/md/Start.md
 - https://jsish.org/fossil/jsi/doc/tip/lib/www/docs
 - https://github.com/pcmacdon/jsish/blob/master/lib/www/md/Start.md

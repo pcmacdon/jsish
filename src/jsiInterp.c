@@ -1900,8 +1900,8 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
         Jsi_DecrRefCountIF(interp, interp->Function_prototype_prototype);
     }
     Jsi_DecrRefCountIF(interp, interp->Object_prototype);
-    Jsi_HashDeleteIF(interp->regexpTbl);
     Jsi_OptionsFree(interp, InterpOptions, interp, 0);
+    Jsi_HashDeleteIF(interp->regexpTbl);
     Jsi_HashDeleteIF(interp->userdataTbl);
     Jsi_HashDeleteIF(interp->eventTbl);
     Jsi_DecrRefCountIF(interp, interp->inopts);

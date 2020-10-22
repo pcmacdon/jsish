@@ -1676,6 +1676,8 @@ doredir:
                 return -1;
             }
             if (hdlPtr->proc) {
+                if (fname)
+                    Jsi_DecrRefCount(interp, fname);
                 fname = Jsi_ValueNewStringDup(interp, buf);
                 Jsi_IncrRefCount(interp, fname);
                 Jsi_DString tStr = {};
@@ -1775,10 +1777,13 @@ doredir:
             if (hrc<=0)
                 return -1;
             if (cmdPtr->onModify) {
+                if (fname)
+                    Jsi_DecrRefCount(interp, fname);
                 fname = Jsi_ValueNewStringDup(interp, buf);
                 Jsi_IncrRefCount(interp, fname);
                 jsi_wsFileAdd(interp, cmdPtr, fname, -1);
                 Jsi_DecrRefCount(interp, fname);
+                fname = NULL;
             }
             return 1;
         }
@@ -1788,6 +1793,8 @@ doredir:
             fprintf(stderr, "empty file: %s\n", inPtr);
         return -1;
     }
+    if (fname)
+        Jsi_DecrRefCount(interp, fname);
     fname = Jsi_ValueNewStringDup(interp, buf);
     Jsi_IncrRefCount(interp, fname);
 
@@ -1800,6 +1807,10 @@ nofile:
         if (cmdPtr->urlFallback && cmdPtr->urlFallback[0] && !fallbackTry) {
             inPtr = (char*)cmdPtr->urlFallback;
             fallbackTry=1;
+            if (fname) {
+                Jsi_DecrRefCount(interp, fname);
+                fname = NULL;
+            }
             goto falltry;
         }
         if (!cmdPtr->redirDisable && cmdPtr->urlUnknown && cmdPtr->urlUnknown[0]) {
@@ -1828,7 +1839,8 @@ nofile:
             if (cp && cp[1]) {
                 char statPath[PATH_MAX];
                 snprintf(statPath, sizeof(statPath), "/zvfs/lib/www%s", cp);
-                Jsi_DecrRefCount(interp, fname);
+                if (fname)
+                    Jsi_DecrRefCount(interp, fname);
                 fname = Jsi_ValueNewStringDup(interp, statPath);
                 Jsi_IncrRefCount(interp, fname);
                 if (!Jsi_Stat(interp, fname, &jsb) && jsb.st_size>0) {
@@ -1840,13 +1852,11 @@ nofile:
                 fprintf(stderr, "failed open file for read: %s\n", buf);
             rc = jsi_wsServeString(pss, wsi, "<b style='color:red'>ERROR: can not serve file!</b>", 404, NULL, NULL);
         }
-        Jsi_DecrRefCount(interp, fname);
         goto done;
     }
 serve:
     if (S_ISDIR(jsb.st_mode)) {
         rc = jsi_wsServeDir(pss, wsi, fname, inPtr, mime);
-        Jsi_DecrRefCount(interp, fname);
         goto done;
     }
 
@@ -1900,13 +1910,11 @@ serve:
     if (native && !isSSI && !isJsiWeb) {
 
         if (!jsi_wsAddStdHeader(interp, cmdPtr, wsi, &hStr)) {
-            Jsi_DecrRefCount(interp, fname);
             goto bail;
         }
         int hrc = lws_serve_http_file(wsi, buf, mime, Jsi_DSValue(&hStr), Jsi_DSLength(&hStr));
         if (hrc >= 0 && cmdPtr->onModify)
             jsi_wsFileAdd(interp, cmdPtr, fname, native);
-        Jsi_DecrRefCount(interp, fname);
         if (hrc<0) {
             if (cmdPtr->noWarn==0)
                 fprintf(stderr, "can not serve file (%d): %s\n", hrc, buf);
@@ -1934,7 +1942,6 @@ serve:
             int strLen = Jsi_DSLength(&dStr);
             hrc = jsi_wswrite(pss, wsi, (unsigned char*)strVal, strLen, LWS_WRITE_HTTP);
         }
-        Jsi_DecrRefCount(interp, fname);
         Jsi_DSFree(&dStr);
         Jsi_DSFree(&fStr);
         if (hrc<0) {
@@ -1946,6 +1953,8 @@ serve:
 
     }
 done:
+    if (fname)
+        Jsi_DecrRefCount(interp, fname);
     Jsi_DSFree(&hStr);
     return rc;
 

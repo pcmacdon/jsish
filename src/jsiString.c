@@ -209,16 +209,16 @@ static Jsi_RC StringRepeatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     
     Jsi_Number ncnt;
     if (!start || Jsi_GetNumberFromValue(interp,start, &ncnt) != JSI_OK || ncnt>MAX_LOOP_COUNT || ncnt<0 || bLen<=0) {
-        return JSI_ERROR;
+        return Jsi_LogError("count out of range");;
     }
     int cnt = (int)ncnt;
     Jsi_DString dStr = {};
     while (cnt-- > 0) {
-        Jsi_DSAppendLen(&dStr, v, bLen);
-        if (Jsi_DSLength(&dStr)>JSI_MAX_ALLOC_BUF) {
+        if ((Jsi_DSLength(&dStr)+bLen)>=JSI_MAX_ALLOC_BUF) {
             Jsi_DSFree(&dStr);
             return Jsi_LogError("too long");
         }
+        Jsi_DSAppendLen(&dStr, v, bLen);
     }
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
@@ -522,12 +522,17 @@ static Jsi_RC StringConcatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     for (i=skip; i<argc; i++)
     {
         Jsi_Value *s = Jsi_ValueArrayIndex(interp, args, i);
-        if (Jsi_GetStringFromValue(interp, s, &vstr)) {
+        vstr = Jsi_ValueString(interp, s, &sLen);
+        if (!vstr) {
             Jsi_LogError("String get failure");
             Jsi_DSFree(&dStr);
             return JSI_ERROR;
         }
-        Jsi_DSAppend(&dStr, vstr, NULL);
+        if ((Jsi_DSLength(&dStr)+sLen)>=JSI_MAX_ALLOC_BUF) {
+            Jsi_DSFree(&dStr);
+            return Jsi_LogError("too long");
+        }
+        Jsi_DSAppendLen(&dStr, vstr, sLen);
     }
 
     Jsi_ValueFromDS(interp, &dStr, ret);
@@ -609,6 +614,10 @@ static Jsi_RC StringMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
             int res = (nocase ? Jsi_Strncasecmp(cp, p, slen) : Jsi_Strncmp(cp, p, slen));
             if (!res) {
                 replace_str = Jsi_ValueToString(interp, obj->arr[i+1], &replace_len);
+                if ((Jsi_DSLength(&dStr)+replace_len+1)>=JSI_MAX_ALLOC_BUF) {
+                    Jsi_DSFree(&dStr);
+                    return Jsi_LogError("too long");
+                }
                 Jsi_DSAppendLen(&dStr, replace_str, replace_len);
                 p += slen-1;
                 j += slen-1;
@@ -669,9 +678,13 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
             slen = (ce-source_str);
             if (slen)
                 Jsi_DSAppendLen(&dStr, source_str, slen);
-            if (replace_str)
+            if (replace_str) {
+                if ((Jsi_DSLength(&dStr)+replace_len)>=JSI_MAX_ALLOC_BUF) {
+                    Jsi_DSFree(&dStr);
+                    return Jsi_LogError("too long");
+                }
                 Jsi_DSAppendLen(&dStr, replace_str, replace_len);
-            else {
+            } else {
                 Jsi_Value *inStr = Jsi_ValueNewStringDup(interp, source_str);
                 Jsi_IncrRefCount(interp, inStr);
                 Jsi_RC rc = Jsi_FunctionInvokeString(interp, repVal, inStr, &dStr, _this);

@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "aff068ab3a03d873e96f46a828943e9b"
+#define JSI_STUBS_MD5 "35c36c383d326b0ea9203585674dc009"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -137,7 +137,7 @@ typedef struct Jsi_Stubs {
     Jsi_Value*(*_Jsi_ValueNewStringDup)(Jsi_Interp *interp, const char *s);
     Jsi_Value*(*_Jsi_ValueNewArray)(Jsi_Interp *interp, const char **items, int count);
     Jsi_Value*(*_Jsi_ValueNewObj)(Jsi_Interp *interp, Jsi_Obj *o);
-    Jsi_RC(*_Jsi_GetStringFromValue)(Jsi_Interp* interp, Jsi_Value *value, const char **s);
+    Jsi_RC(*_Jsi_GetStringFromValue)(Jsi_Interp* interp, Jsi_Value *value, const char **sPtr, int *lenPtr);
     Jsi_RC(*_Jsi_GetNumberFromValue)(Jsi_Interp* interp, Jsi_Value *value, Jsi_Number *n);
     Jsi_RC(*_Jsi_GetBoolFromValue)(Jsi_Interp* interp, Jsi_Value *value, bool *n);
     Jsi_RC(*_Jsi_GetIntFromValue)(Jsi_Interp* interp, Jsi_Value *value, int *n);
@@ -1005,7 +1005,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_ValueNewStringDup(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewStringDup(n0,n1))
 #define Jsi_ValueNewArray(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewArray(n0,n1,n2))
 #define Jsi_ValueNewObj(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueNewObj(n0,n1))
-#define Jsi_GetStringFromValue(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_GetStringFromValue(n0,n1,n2))
+#define Jsi_GetStringFromValue(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_GetStringFromValue(n0,n1,n2,n3))
 #define Jsi_GetNumberFromValue(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_GetNumberFromValue(n0,n1,n2))
 #define Jsi_GetBoolFromValue(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_GetBoolFromValue(n0,n1,n2))
 #define Jsi_GetIntFromValue(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_GetIntFromValue(n0,n1,n2))

@@ -534,7 +534,7 @@ JSI_EXTERN Jsi_Value* Jsi_ValueNewFunction(Jsi_Interp *interp, Jsi_CmdProc *call
 #define Jsi_ValueNewBlobString(interp, s) Jsi_ValueNewBlob(interp, (uchar*)s, Jsi_Strlen(s))
 #define Jsi_ValueNewArrayObj(interp, items, count, copy) Jsi_ValueNewObj(interp, Jsi_ObjNewArray(interp, items, count, copy))
 
-JSI_EXTERN Jsi_RC Jsi_GetStringFromValue(Jsi_Interp* interp, Jsi_Value *value, const char **s); /*STUB = 109*/
+JSI_EXTERN Jsi_RC Jsi_GetStringFromValue(Jsi_Interp* interp, Jsi_Value *value, const char **sPtr, int *lenPtr); /*STUB = 109*/
 JSI_EXTERN Jsi_RC Jsi_GetNumberFromValue(Jsi_Interp* interp, Jsi_Value *value, Jsi_Number *n); /*STUB = 110*/
 JSI_EXTERN Jsi_RC Jsi_GetBoolFromValue(Jsi_Interp* interp, Jsi_Value *value, bool *n); /*STUB = 111*/
 JSI_EXTERN Jsi_RC Jsi_GetIntFromValue(Jsi_Interp* interp, Jsi_Value *value, int *n); /*STUB = 112*/

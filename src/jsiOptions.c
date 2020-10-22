@@ -367,7 +367,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
             goto bail;
         } else {
             const char *scp;
-            if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
+            if (Jsi_GetStringFromValue(interp, argValue, &scp, NULL) != JSI_OK) {
                 return JSI_ERROR;
             }
             *(const char**)ptr = Jsi_KeyAdd(interp,scp);
@@ -437,7 +437,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
                 *(double*)ptr = nv;
             } else {
                 const char *scp;
-                if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
+                if (Jsi_GetStringFromValue(interp, argValue, &scp, NULL) != JSI_OK) {
                     goto bail;
                 }
                 if (JSI_OK != Jsi_DatetimeParse(interp, scp, "", 0, &nv, false))
@@ -457,7 +457,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
             } else {
                 const char *scp;
                 Jsi_Number num;
-                if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
+                if (Jsi_GetStringFromValue(interp, argValue, &scp, NULL) != JSI_OK) {
                     goto bail;
                 }
                 if (JSI_OK != Jsi_DatetimeParse(interp, scp, "", 0, &num, false))
@@ -478,7 +478,7 @@ jsi_SetOption_(Jsi_Interp *interp, Jsi_OptionSpec *specPtr, const char *string /
                 *(time_t*)ptr = (time_t)num;
             } else {
                 const char *scp;
-                if (Jsi_GetStringFromValue(interp, argValue, &scp) != JSI_OK) {
+                if (Jsi_GetStringFromValue(interp, argValue, &scp, NULL) != JSI_OK) {
                     goto bail;
                 }
                 Jsi_Number nval;

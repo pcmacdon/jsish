@@ -258,9 +258,6 @@ static Jsi_RC jsiLogicLess(Jsi_Interp* interp, int i1, int i2) {
             str = Jsi_ValueString(interp, v, (s1?&l2:&l1));
             if (s1) s2 = str; else s1 = str;
         }
-        Assert(l1>=0 && l1<=JSI_MAX_ALLOC_BUF);
-        Assert(l2>=0 && l2<=JSI_MAX_ALLOC_BUF);
-        //int mlen = (l1>l2?l1:l2);
         val = Jsi_Strcmp(s1, s2);
   
         if (val > 0) val = 0;
@@ -1410,7 +1407,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_ADD: {
                 jsiVarDeref(interp,2);
                 Jsi_Value *v, *v1 = _jsi_TOP, *v2 = _jsi_TOQ;
-                int l1, l2;
+                int l1, l2, lnew;
                 if (strict)
                     if (Jsi_ValueIsUndef(interp, v1) || Jsi_ValueIsUndef(interp, v2)) {
                         rc = Jsi_LogError("operand value to + is undefined");
@@ -1429,12 +1426,17 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     }
                     Assert(l1>=0 && l1<=JSI_MAX_ALLOC_BUF);
                     Assert(l2>=0 && l2<=JSI_MAX_ALLOC_BUF);
-                    str = (char*)Jsi_Malloc(l1+l2+1);
-                    memcpy(str, s2, l2);
-                    memcpy(str+l2, s1, l1);
-                    str[l1+l2] = 0;
-                    jsiClearStack(interp,2);
-                    Jsi_ValueMakeBlob(interp, &v2, (uchar*)str, l1+l2);
+                    lnew = l1+l2+1;
+                    if (lnew >= JSI_MAX_ALLOC_BUF)
+                        rc = Jsi_LogError("string longer than max alloc size");
+                    else {
+                        str = (char*)Jsi_Malloc(lnew);
+                        memcpy(str, s2, l2);
+                        memcpy(str+l2, s1, l1);
+                        str[l1+l2] = 0;
+                        jsiClearStack(interp,2);
+                        Jsi_ValueMakeBlob(interp, &v2, (uchar*)str, l1+l2);
+                    }
                 } else {
                     Jsi_ValueToNumber(interp, v1);
                     Jsi_ValueToNumber(interp, v2);

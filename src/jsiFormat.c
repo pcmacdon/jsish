@@ -284,9 +284,8 @@ Jsi_RC Jsi_FormatString(Jsi_Interp *interp, Jsi_Value *args, Jsi_DString *dStr)
             } else
                 Jsi_ValueToString(interp, v, NULL);
             if (!(formatted_buf = Jsi_ValueString(interp, v, &formatted_chars))) {
-                if (Jsi_GetStringFromValue(interp, v, &formatted_buf) != JSI_OK)
+                if (Jsi_GetStringFromValue(interp, v, &formatted_buf, &formatted_chars) != JSI_OK)
                     goto error;
-                formatted_chars = Jsi_Strlen(formatted_buf);
             }
 doprec:
             formatted_bytes = formatted_chars;

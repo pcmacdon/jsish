@@ -1894,13 +1894,13 @@ static Jsi_RC jsiInterpDelete(Jsi_Interp* interp, void *unused)
     }
     Jsi_DecrRefCountIF(interp, interp->nullFuncArg);
     Jsi_DecrRefCountIF(interp, interp->NullValue);
+    Jsi_OptionsFree(interp, InterpOptions, interp, 0);
     if (interp->Function_prototype_prototype) {
         if (interp->Function_prototype_prototype->refCnt>1)
             Jsi_DecrRefCountIF(interp, interp->Function_prototype_prototype);
         Jsi_DecrRefCountIF(interp, interp->Function_prototype_prototype);
     }
     Jsi_DecrRefCountIF(interp, interp->Object_prototype);
-    Jsi_OptionsFree(interp, InterpOptions, interp, 0);
     Jsi_HashDeleteIF(interp->regexpTbl);
     Jsi_HashDeleteIF(interp->userdataTbl);
     Jsi_HashDeleteIF(interp->eventTbl);

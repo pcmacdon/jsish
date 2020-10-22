@@ -142,6 +142,8 @@ static Jsi_RC StringSubstrCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
             ostr = jsi_SubstrDup(v, bLen, istart, ilen, &olen);
             Jsi_ValueMakeBlob(interp, ret, (uchar*)ostr, olen);
         } else {
+            if (ilen>(bLen-istart))
+                ilen = (bLen-istart);
             Jsi_UtfSubstr(v, istart, ilen, &dStr);
             Jsi_ValueFromDS(interp, &dStr, ret);
         }

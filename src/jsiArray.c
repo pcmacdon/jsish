@@ -377,10 +377,12 @@ static Jsi_RC jsi_ArrayMapCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
         vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
-        vobjs[2] = _this;
+        vobjs[2] = Jsi_ValueNewObj(interp, obj);
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
+        Jsi_IncrRefCount(interp, vobjs[2]);
         nobj->arr[i] = Jsi_ValueNew1(interp);
+        Jsi_DecrRefCount(interp, vobjs[2]);
         rc = Jsi_FunctionInvoke(interp, func, vpargs, nobj->arr+i, sthis);
         Jsi_DecrRefCount(interp, vpargs);
     }
@@ -433,11 +435,13 @@ static Jsi_RC jsi_ArrayFilterCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
         vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
-        vobjs[2] = _this;
+        vobjs[2] = Jsi_ValueNewObj(interp, obj);
+        Jsi_IncrRefCount(interp, vobjs[2]);
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
         rc = Jsi_FunctionInvoke(interp, func, vpargs, &nrPtr, sthis);
         Jsi_DecrRefCount(interp, vpargs);
+        Jsi_DecrRefCount(interp, vobjs[2]);
         fval = Jsi_ValueIsTrue(interp, nrPtr);
         if( JSI_OK!=rc ) {
             goto bail;
@@ -520,10 +524,12 @@ static Jsi_RC jsi_ArrayForeachCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
         vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
-        vobjs[2] = _this;
+        vobjs[2] = Jsi_ValueNewObj(interp, obj);
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
+        Jsi_IncrRefCount(interp, vobjs[2]);
         rc = Jsi_FunctionInvoke(interp, func, vpargs, ret, sthis);
+        Jsi_DecrRefCount(interp, vobjs[2]);
         Jsi_DecrRefCount(interp, vpargs);
     }
     Jsi_DecrRefCount(interp, _this);
@@ -563,11 +569,13 @@ static Jsi_RC jsi_ArrayFindSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         if (!obj->arr[i]) continue;
         vobjs[0] = obj->arr[i];
         vobjs[1] = (maa>1?Jsi_ValueNewNumber(interp, i):interp->NullValue);
-        vobjs[2] = _this;
+        vobjs[2] = Jsi_ValueNewObj(interp, obj);
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
+        Jsi_IncrRefCount(interp, vobjs[2]);
         Jsi_IncrRefCount(interp, vpargs);
         rc = Jsi_FunctionInvoke(interp, func, vpargs, &nrPtr, sthis);
         Jsi_DecrRefCount(interp, vpargs);
+        Jsi_DecrRefCount(interp, vobjs[2]);
         if (rc != JSI_OK)
             break;
         fval = Jsi_ValueIsTrue(interp, nrPtr);
@@ -609,14 +617,14 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
     obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);
     Jsi_Value *vobjs[4];
-    int n, rev = (op==2);
+    int n, rev = (op==2), start = 0, end = obj->arrCnt-1;
     Jsi_Func *fptr = func->d.obj->d.fobj->func;
     int maa = (fptr->argnames?fptr->argnames->argCnt:0);
     if (maa>4 || fptr->type == FC_BUILDIN)
         maa = 4;
 
     Jsi_IncrRefCount(interp, _this);
-    for (n = 0, i = (rev?obj->arrCnt-1:0); (rev?i>=0:i < (int)obj->arrCnt) && rc == JSI_OK; n++, i = (rev?i-1:i+1)) {
+    for (n = 0, i = (rev?end:start); (rev?i>=start:i<=end) && rc == JSI_OK; n++, i += (rev?-1:1)) {
         if (!obj->arr[i]) continue;
         if (n==0 && !ini) {
             ini = obj->arr[i];
@@ -626,11 +634,13 @@ static Jsi_RC jsi_ArrayReduceSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Val
         vobjs[0] = ini;
         vobjs[1] = obj->arr[i];
         vobjs[2] = (maa>2?Jsi_ValueNewNumber(interp, i):interp->NullValue);
-        vobjs[3] = _this;
+        vobjs[3] = Jsi_ValueNewObj(interp, obj);
+        Jsi_IncrRefCount(interp, vobjs[3]);
         vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vobjs, maa, 0));
         Jsi_IncrRefCount(interp, vpargs);
         rc = Jsi_FunctionInvoke(interp, func, vpargs, &nrPtr, _this);
         Jsi_DecrRefCount(interp, vpargs);
+        Jsi_DecrRefCount(interp, vobjs[3]);
         if (rc != JSI_OK)
             break;
         ini = nrPtr;

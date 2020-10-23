@@ -129,7 +129,7 @@ static Jsi_RC StringSubstrCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
             ostr = jsi_SubstrDup(v, bLen, istart, -1, &olen);
             Jsi_ValueMakeBlob(interp, ret, (uchar*)ostr, olen);
         } else {
-            Jsi_UtfSubstr(v, istart, -1, &dStr);
+            Jsi_UtfSubstr(v, bLen, istart, -1, &dStr);
             Jsi_ValueFromDS(interp, &dStr, ret);
         }
         return JSI_OK;
@@ -144,7 +144,7 @@ static Jsi_RC StringSubstrCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         } else {
             if (ilen>(bLen-istart))
                 ilen = (bLen-istart);
-            Jsi_UtfSubstr(v, istart, ilen, &dStr);
+            Jsi_UtfSubstr(v, bLen, istart, ilen, &dStr);
             Jsi_ValueFromDS(interp, &dStr, ret);
         }
     }
@@ -175,7 +175,7 @@ static Jsi_RC StringSubstringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             ostr = jsi_SubstrDup(v, bLen, istart, -1, &olen);
             Jsi_ValueMakeBlob(interp, ret, (uchar*)ostr, olen);
         } else {
-            Jsi_UtfSubstr(v, istart, -1, &dStr);
+            Jsi_UtfSubstr(v, bLen, istart, -1, &dStr);
             Jsi_ValueFromDS(interp, &dStr, ret);
         }
         return JSI_OK;
@@ -190,7 +190,7 @@ static Jsi_RC StringSubstringCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             ostr = jsi_SubstrDup(v, bLen, istart, iend-istart+1, &olen);
             Jsi_ValueMakeBlob(interp, ret, (uchar*)ostr, olen);
         } else {
-            Jsi_UtfSubstr(v, istart, iend-istart+1, &dStr);
+            Jsi_UtfSubstr(v, bLen, istart, iend-istart+1, &dStr);
             Jsi_ValueFromDS(interp, &dStr, ret);
         }
     }
@@ -367,7 +367,7 @@ static Jsi_RC _StringTrimCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
-    Jsi_UtfSubstr(vstr, 0, vend+1, &dStr);
+    Jsi_UtfSubstr(vstr, bLen, 0, vend+1, &dStr);
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }
@@ -390,23 +390,27 @@ static Jsi_RC StringTrimRightCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 }
 
 
-char *jsi_utf_tocase(const char *cp, int upper, Jsi_DString *dsPtr)
+char *jsi_utf_tocase(const char *cp, int blen, int upper, Jsi_DString *dsPtr)
 {
-    char unibuf[10];
+    char unibuf[10], m = 0;
     while (*cp) {
 #if JSI__UTF8
         if (*cp&0x80) {
             int32_t c;
             Jsi_UtfToUniChar(cp, &c);
             int n = Jsi_UniCharToUtf(c, unibuf);
+            if ((m+n)>=blen)
+                break;
             unibuf[n] = 0;
             cp += n;
+            m += n;
         } else
 #endif
         {
             unibuf[0] = (upper?toupper(*cp):tolower(*cp));
             unibuf[1] = 0;
             cp++;
+            m++;
         }
         if (upper==2) //totile
             upper = 0;
@@ -425,7 +429,7 @@ static Jsi_RC StringToLowerCaseCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
     ChkString(_this, funcPtr, vstr, &sLen, &bLen);
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
-    jsi_utf_tocase(vstr, 0, &dStr);
+    jsi_utf_tocase(vstr, bLen, 0, &dStr);
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }
@@ -439,7 +443,7 @@ static Jsi_RC StringToUpperCaseCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
 
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
-    jsi_utf_tocase(vstr, 1, &dStr);
+    jsi_utf_tocase(vstr, bLen,1, &dStr);
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }
@@ -452,7 +456,7 @@ static Jsi_RC StringToTitleCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     ChkString(_this, funcPtr, vstr, &sLen, &bLen);
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
-    jsi_utf_tocase(vstr, 2, &dStr);
+    jsi_utf_tocase(vstr, bLen, 2, &dStr);
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }
@@ -473,7 +477,7 @@ static Jsi_RC StringCharAtCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     else {
         Jsi_DString dStr;
         Jsi_DSInit(&dStr);
-        Jsi_UtfSubstr(vstr, pos, 1, &dStr);
+        Jsi_UtfSubstr(vstr, bLen, pos, 1, &dStr);
         Jsi_ValueFromDS(interp, &dStr, ret);
     }
     return JSI_OK;
@@ -574,7 +578,7 @@ static Jsi_RC StringSliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
-    Jsi_UtfSubstr(vstr, istart, iend, &dStr);
+    Jsi_UtfSubstr(vstr, bLen, istart, iend, &dStr);
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }

@@ -465,7 +465,7 @@ JSI_EXTERN uint Jsi_UtfToUniChar(const char *utf, Jsi_UniChar *ch); /*STUB = 76*
 JSI_EXTERN uint Jsi_UtfToUniCharCase(const char *utf, Jsi_UniChar *ch, int upper); /*STUB = 77*/
 JSI_EXTERN uint Jsi_UtfDecode(const char *str, char* oututf); /*STUB = 78*/
 JSI_EXTERN uint Jsi_UtfEncode(const char *utf, char *outstr); /*STUB = 79*/
-JSI_EXTERN char* Jsi_UtfSubstr(const char *str, int n, int len, Jsi_DString *dStr); /*STUB = 80*/
+JSI_EXTERN char* Jsi_UtfSubstr(const char *str, int bLen, int n, int len, Jsi_DString *dStr); /*STUB = 80*/
 JSI_EXTERN int Jsi_UtfIndexToOffset(const char *utf, int index); /*STUB = 81*/
 /* -- */
 

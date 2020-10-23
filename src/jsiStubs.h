@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "35c36c383d326b0ea9203585674dc009"
+#define JSI_STUBS_MD5 "71408ed876f077893cd984b2f9f21794"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -108,7 +108,7 @@ typedef struct Jsi_Stubs {
     uint(*_Jsi_UtfToUniCharCase)(const char *utf, Jsi_UniChar *ch, int upper);
     uint(*_Jsi_UtfDecode)(const char *str, char* oututf);
     uint(*_Jsi_UtfEncode)(const char *utf, char *outstr);
-    char*(*_Jsi_UtfSubstr)(const char *str, int n, int len, Jsi_DString *dStr);
+    char*(*_Jsi_UtfSubstr)(const char *str, int bLen, int n, int len, Jsi_DString *dStr);
     int(*_Jsi_UtfIndexToOffset)(const char *utf, int index);
     Jsi_Obj*(*_Jsi_ObjNew)(Jsi_Interp* interp);
     Jsi_Obj*(*_Jsi_ObjNewType)(Jsi_Interp* interp, Jsi_otype type);
@@ -976,7 +976,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_UtfToUniCharCase(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_UtfToUniCharCase(n0,n1,n2))
 #define Jsi_UtfDecode(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_UtfDecode(n0,n1))
 #define Jsi_UtfEncode(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_UtfEncode(n0,n1))
-#define Jsi_UtfSubstr(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_UtfSubstr(n0,n1,n2,n3))
+#define Jsi_UtfSubstr(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_UtfSubstr(n0,n1,n2,n3,n4))
 #define Jsi_UtfIndexToOffset(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_UtfIndexToOffset(n0,n1))
 #define Jsi_ObjNew(n0) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjNew(n0))
 #define Jsi_ObjNewType(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjNewType(n0,n1))

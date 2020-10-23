@@ -1,8 +1,7 @@
 Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite and **C**-extensibility. 
 
 
-- Sites: [Docs](https://docs.jsish.org) | [jsish.org](https://jsish.org) | [github.com](https://github.com/pcmacdon/jsish)
-- Links: [Start](./lib/www/md/Start.md) | [Index](./lib/www/md/Index.md) | [Issues](https://github.com/pcmacdon/jsish/issues)
+[Docs](https://docs.jsish.org)  | [Docs-alt](https://jsish.org/docs/ "Alternate non-js docs") | [Issues](https://github.com/pcmacdon/jsish/issues "Issue tracker on github") | [jsish.org](https://jsish.org)
 
 ### Quick-Start
 

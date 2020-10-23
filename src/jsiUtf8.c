@@ -91,7 +91,7 @@ uint Jsi_UtfGetIndex(const char *str, int index, char cbuf[5]) {
 #endif
 }
 
-char* Jsi_UtfSubstr(const char *str, int n, int len, Jsi_DString *dStr) {
+char* Jsi_UtfSubstr(const char *str, int bLen, int n, int len, Jsi_DString *dStr) {
     int ulen, ustart;
     if (n<0) {
         int lenofa = Jsi_NumUtfChars(str, -1);
@@ -121,11 +121,11 @@ char* Jsi_UtfSubstr(const char *str, int n, int len, Jsi_DString *dStr) {
         }
     }
 #endif
-    if (ulen>len) {
+    if (ulen>(bLen-ustart)) {
 #if JSI__MEMDEBUG
         fprintf(stderr, "TODO: fix utf substr\n");
 #endif
-        ulen = len;
+        ulen = (bLen-ustart);
     }
     Jsi_DSAppendLen(dStr, str+ustart, ulen);
     return Jsi_DSValue(dStr);

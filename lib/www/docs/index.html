@@ -18,12 +18,17 @@
     <script src="../js/VuePrismEditor.umd.min.js"></script>
     <script src="../js/Jsish.js"></script>
     <script>
-        Jsish.conf({jsiroot:'../', approot:'./'})
-        Vue.config.productionTip=true;
+        Jsish.conf({jsiroot:'../', approot:'./'});
+        Vue.config.productionTip=false;
+        //Vue.config.devtools=false;
+        //if (location.port != 433)
+        Vue.config.errorHandler = 
+        window.onerror = function(msg, src, ln, col, err) {  console.warn("ERR: ",msg); document.getElementById('apperr').innerText = msg+': @'+src+' : '+ln; };
     </script>
 </head>
 
 <body>
+    <div id="apperr" style="background:pink"></div>
     <noscript id="nojs">
         <a href="https://jsish.org/" rel="noopener noreferrer nofollow">
             <img src="https://jsish.org/logojsi.png" alt="Jsi"> apps</a> require javascript

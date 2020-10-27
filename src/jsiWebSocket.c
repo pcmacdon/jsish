@@ -1821,10 +1821,6 @@ nofile:
             inPtr = (char*)cmdPtr->urlUnknown;
             goto doredir;
         }
-        if (!cmdPtr->redirDisable && cmdPtr->urlRedirect && cmdPtr->urlRedirect[0]) {
-            inPtr = (char*)cmdPtr->urlRedirect;
-            goto doredir;
-        }
         if (cmdPtr->onUnknown || pss->onUnknown) {
             Jsi_Value *uk = (pss->onUnknown?pss->onUnknown:cmdPtr->onUnknown);
             Jsi_RC jrc = jsi_wsGetCmd(interp, cmdPtr, pss, wsi, inPtr, uk, NULL);

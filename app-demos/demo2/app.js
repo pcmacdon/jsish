@@ -3,12 +3,23 @@ Vue.component('app-view', {template: '<router-view />' } );
 
 let data = {
    str:'', calval:'', rateval:3, tagval:['Fast', 'Easy'],
+    value: 45,
 };
 
 const App = {
   data() { return data; },
   template:`
     <b-card>
+      <div>
+        <b-progress :value="value" :max="max" show-progress animated></b-progress>
+        <b-progress class="mt-2" :max="max" show-value>
+          <b-progress-bar :value="value * (6 / 10)" variant="success"></b-progress-bar>
+          <b-progress-bar :value="value * (2.5 / 10)" variant="warning"></b-progress-bar>
+          <b-progress-bar :value="value * (1.5 / 10)" variant="danger"></b-progress-bar>
+        </b-progress>
+    
+        <b-button class="mt-3" @click="value = Math.random() * 100">Click me</b-button>
+      </div>
       <b-jumbotron bg-variant="info" header="Demo-2" lead="Jsi Web-App Using Bootstrap-Vue">
         <p>For more information visit <b-link href="https://jsish.org" class="text-white">jsish.org</b-link></p>
         <b-button variant="primary" href="#/Sub">Next></b-button>

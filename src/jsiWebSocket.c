@@ -1467,13 +1467,15 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     Jsi_Value* fname = NULL;
     bool isJsiWeb = 0, isSSI = 0, fallbackTry = 0;
     cmdPtr->stats.httpLast = now;
+    Jsi_DString hStr = {};
+
+    /* if a legal POST URL, let it continue and accept data */
+    if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
+        return 0;
 
 falltry:
     if (inPtr[0] != '~')
         inPtr = Jsi_NormalPath(interp, inPtr, iStr);
-    /* if a legal POST URL, let it continue and accept data */
-    if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
-        return 0;
     if (!pss)
         pss = jsi_wsgetPss(cmdPtr, wsi, user, 1, 1);
 
@@ -1502,7 +1504,7 @@ doredir:
             cmdPtr->redirDisable = 100;
         cmdPtr->stats.redirLast = now;
         rc = lws_http_redirect(wsi, redirCode, (uchar*)inPtr, Jsi_Strlen(inPtr), &p, end);
-        return (rc == 100 ? 0 : 1);
+        goto done;
     }
     
     if (cmdPtr->useridPass || cmdPtr->onAuth) {
@@ -1540,7 +1542,7 @@ doredir:
 
                     if (rc != JSI_OK) {
                         Jsi_LogErrorExt("websock bad rcv eval");
-                        return -1;
+                        goto bail;
                     }
                     ok = rb;
                 }
@@ -1555,7 +1557,7 @@ doredir:
                     (unsigned char *)buf, n, &p, end))
                 return -1;
             if (jsi_wsServeString(pss, wsi, "Password is required to access this page", 401, (char*)buffer, NULL)<0)
-                return -1;
+                goto bail;
             return lws_http_transaction_completed(wsi);
         }
     }
@@ -1567,7 +1569,7 @@ doredir:
             rrv = 0;
             jrc = Jsi_RegExpMatch(interp, cmdPtr->getRegexp, inPtr, &rrv, NULL);
             if (jrc != JSI_OK)
-                return -1; // Error in regexp.
+                goto bail;
         }
         if (rrv) {
             jrc = jsi_wsGetCmd(interp, cmdPtr, pss, wsi, inPtr, pss->onGet?pss->onGet:cmdPtr->onGet, tStr);
@@ -1673,7 +1675,7 @@ doredir:
 
             if (Jsi_Strchr(buf, '\'') || Jsi_Strchr(buf, '\"')) {
                 jsi_wsServeString(pss, wsi, "Can not handle quotes in url", 404, NULL, NULL);
-                return -1;
+                goto bail;
             }
             if (hdlPtr->proc) {
                 if (fname)
@@ -1689,7 +1691,8 @@ doredir:
                     jsi_wsFileAdd(interp, cmdPtr, fname, -1);
                 }
                 Jsi_DecrRefCount(interp, fname);
-                return hrc;
+                rc = hrc;
+                goto done;
             }
             cmdPtr->handlersPkg=1;
 
@@ -1707,7 +1710,7 @@ doredir:
                         Jsi_DecrRefCount(interp, vrc);
                     Jsi_LogErrorExt("Failed to autoload handle: %s", hstr);
                     jsi_wsServeString(pss, wsi, "Failed to autoload handler", 404, NULL, NULL);
-                    return -1;
+                    goto bail;
                 }
                 if (hdlPtr->val)
                     Jsi_DecrRefCount(interp, hdlPtr->val);
@@ -1724,17 +1727,17 @@ doredir:
                 vrc = Jsi_ValueNew1(interp);
                 evrc = Jsi_FunctionInvokeJSON(interp, hv, Jsi_DSValue(&jStr), &vrc, NULL);
                 if (Jsi_InterpGone(interp))
-                    return -1;
+                    goto bail;
                 if (evrc != JSI_OK || !vrc || !Jsi_ValueIsObjType(interp, vrc, JSI_OT_OBJECT)) {
                     Jsi_LogErrorExt("Failed to load obj: %s", hstr);
                     jsi_wsServeString(pss, wsi, "Failed to load obj", 404, NULL, NULL);
-                    return -1;
+                    goto bail;
                 }
                 Jsi_Value *fvrc = Jsi_ValueObjLookup(interp, vrc, "parse", 0);
                 if (!fvrc || !Jsi_ValueIsFunction(interp, fvrc)) {
                     Jsi_LogErrorExt("Failed to find parse: %s", hstr);
                     jsi_wsServeString(pss, wsi, "Failed to find parse", 404, NULL, NULL);
-                    return -1;
+                    goto bail;
                 }
                 hdlPtr->objVar = fvrc;
                 Jsi_IncrRefCount(interp, fvrc);
@@ -1775,7 +1778,7 @@ doredir:
             if (isalloc)
                 Jsi_DecrRefCount(interp, vrc);
             if (hrc<=0)
-                return -1;
+                goto bail;
             if (cmdPtr->onModify) {
                 if (fname)
                     Jsi_DecrRefCount(interp, fname);
@@ -1785,20 +1788,20 @@ doredir:
                 Jsi_DecrRefCount(interp, fname);
                 fname = NULL;
             }
-            return 1;
+            rc = 1;
+            goto done;
         }
     }
     if (!buf[0]) {
         if (cmdPtr->debug)
             fprintf(stderr, "empty file: %s\n", inPtr);
-        return -1;
+        goto bail;
     }
     if (fname)
         Jsi_DecrRefCount(interp, fname);
     fname = Jsi_ValueNewStringDup(interp, buf);
     Jsi_IncrRefCount(interp, fname);
 
-    Jsi_DString hStr = {};
     Jsi_StatBuf jsb;
     bool native = Jsi_FSNative(interp, fname);
     if ((native && Jsi_InterpSafe(interp) && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_READ) != JSI_OK) ||

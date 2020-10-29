@@ -1385,6 +1385,7 @@ static const char* jsi_ws_mtypes[] = {
     "jpg",  "image/jpeg",
     "jsi",  "application/x-javascript",
     "json", "application/json",
+    "md",   "text/x-markdown",
     "mid",  "audio/midi",
     "mkv",  "video/x-matroska",
     "mp3",  "audio/mpeg",

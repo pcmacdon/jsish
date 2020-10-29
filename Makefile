@@ -477,7 +477,7 @@ ref: docs
 	./$(PROGBIN) tools/mkproto.jsi > tools/protos.jsi
 
 docs:
-	$(MAKE) -C md BLDDIR=$(BLDDIR)
+	$(MAKE) -C lib/www/md BLDDIR=$(BLDDIR)
 
 release: stubs ref jsi.c jsish.c testsys test
 

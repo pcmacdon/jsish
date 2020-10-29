@@ -1156,7 +1156,7 @@ Commands for managing WebSocket server/client connections.
 |onUnknown|*FUNC*|Function to call to server out content when no file exists. @`function(ws:userobj, id:number, url:string, query:array)`||
 |onUpload|*FUNC*|Function to call handle http-post. @`function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)`||
 |onRecv|*FUNC*|Function to call when websock data recieved. @`function(ws:userobj, id:number, data:string)`||
-|pathAliases|*OBJ*|Alias document root  ({jsi:'/zvfs/lib/'}) .|initOnly|
+|pathAliases|*OBJ*|Alias document root  ({jsi:'/zvfs/lib/www'}) .|initOnly|
 |port|*INT*|Port for server to listen on (8080).|initOnly|
 |post|*STRING*|Post string to serve.|initOnly|
 |protocol|*STRKEY*|Name of protocol (ws/wss).||
@@ -1297,4 +1297,4 @@ Console input and output to stderr.
 |mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
 
-<!-- meta:{"file":{"index":3, "navindex":3}} -->
+<!-- meta:{"file":{"index":503, "navindex":3}} -->

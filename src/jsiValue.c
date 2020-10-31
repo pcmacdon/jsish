@@ -1129,7 +1129,8 @@ Jsi_Value* jsi_ValueSubscript(Jsi_Interp *interp, Jsi_Value *target, Jsi_Value *
 bool Jsi_ValueKeyPresent(Jsi_Interp *interp, Jsi_Value *target, const char *key, int isstrkey)
 {
     SIGASSERT(interp,INTERP);
-    //SIGASSERT(target,VALUE);
+    if (!Jsi_ValueIsObjType(interp, target, JSI_OT_OBJECT))
+        return 0;
     if (Jsi_TreeObjGetValue(target->d.obj, key, isstrkey))
         return 1;
     if (target->d.obj->__proto__ == NULL || target->d.obj->__proto__ == target)

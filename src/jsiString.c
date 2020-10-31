@@ -392,8 +392,9 @@ static Jsi_RC StringTrimRightCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 
 char *jsi_utf_tocase(const char *cp, int blen, int upper, Jsi_DString *dsPtr)
 {
-    char unibuf[10], m = 0;
-    while (*cp) {
+    char unibuf[10];
+    int m = 0;
+    while (m<blen && *cp) {
 #if JSI__UTF8
         if (*cp&0x80) {
             int32_t c;

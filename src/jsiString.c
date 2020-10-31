@@ -354,10 +354,10 @@ static Jsi_RC _StringTrimCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
                 if (tstr[n] == *vstr) break;
             if (n>=tlen) break;
             vstr++;
-            clen--;
+            bLen--;
         }
     }
-    vend = clen-1;
+    vend = bLen-1;
     if (ends&2) {
         for (; vend>=0; vend--) {
             for (n=0; n<tlen; n++)
@@ -367,7 +367,7 @@ static Jsi_RC _StringTrimCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     }
     Jsi_DString dStr;
     Jsi_DSInit(&dStr);
-    Jsi_UtfSubstr(vstr, bLen, 0, vend+1, &dStr);
+    Jsi_DSAppendLen(&dStr, vstr, vend+1);
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
 }

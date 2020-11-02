@@ -484,7 +484,7 @@ static int jsi_yylex (YYSTYPE *yylvalp, YYLTYPE *yyllocp, jsi_Lexer *lex)
             if (!regtxt)
                 return 0;
             Jsi_Regex *re = Jsi_RegExpNew(interp, regtxt, JSI_REG_STATIC);
-            if (!(yylvalp->regex = re)) {
+            if (!(yylvalp->regex = re) && !(interp->noEval && interp->noES6)) {
                  Jsi_Free(regtxt);
                  return -1;
             }

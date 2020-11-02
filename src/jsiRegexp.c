@@ -37,7 +37,7 @@ Jsi_Regex* Jsi_RegExpNew(Jsi_Interp *interp, const char *regtxt, int eflag)
 {
     bool isNew;
     Jsi_HashEntry *hPtr;
-    int flag = REG_EXTENDED;
+    int flag = REG_EXTENDED, rec = 0;
     char c, *cm, *ce;
     const char *cp;
     Jsi_Regex *re;
@@ -80,9 +80,17 @@ Jsi_Regex* Jsi_RegExpNew(Jsi_Interp *interp, const char *regtxt, int eflag)
     }
     *ce = 0;
     regex_t reg;
-    if (!jsi_regexValid(cp) || regcomp(&reg, cp, flag)) {
+    if (!jsi_regexValid(cp) || (rec=regcomp(&reg, cp, flag))) {
+        char errbuf[200];
+        errbuf[0] = 0;
         *ce++ = '/';
-        Jsi_LogError("Invalid regex string '%s'", cp);
+        if (rec) {
+            regerror(rec, &reg, errbuf, sizeof(errbuf)-20);
+            if (rec==REG_BADRPT && Jsi_Strstr(cp, "(?:"))
+                strcat(errbuf, " eg. (?:");
+        }
+        bool iswarn = (interp->inParse && interp->noEval && interp->noES6);
+        Jsi_LogMsg(interp, NULL,(iswarn?JSI_LOG_WARN:JSI_LOG_ERROR), "Invalid regex string '%s' : %s", cp, errbuf);            
         return NULL;
     }
     *ce++ = '/';

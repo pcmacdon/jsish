@@ -111,6 +111,7 @@ static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(BOOL,  Jsi_Interp, noCheck,     .help="Disable type checking", .flags=JSI_OPT_LOCKSAFE ),
     JSI_OPT(BOOL,  Jsi_Interp, noConfig,    .help="Disable use of Interp.conf to change options after create", jsi_IIOF),
     JSI_OPT(BOOL,  Jsi_Interp, noError,     .help="Type checks failures are warning", .flags=JSI_OPT_LOCKSAFE ),
+    JSI_OPT(BOOL,  Jsi_Interp, noES6,       .help="Warn/error when ES6 features are used, eg. arrow funcs or let/const" ),
     JSI_OPT(BOOL,  Jsi_Interp, noEval,      .help="Disable eval: just parses file to check syntax", jsi_IIOF),
     JSI_OPT(BOOL,  Jsi_Interp, noInput,     .help="Disable use of console.input()", .flags=JSI_OPT_LOCKSAFE),
     JSI_OPT(BOOL,  Jsi_Interp, noLoad,      .help="Disable load of shared libs", .flags=JSI_OPT_LOCKSAFE),

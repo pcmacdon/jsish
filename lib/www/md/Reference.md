@@ -276,6 +276,7 @@ Commands for accessing interps.
 |noCheck|*BOOL*|Disable type checking.||
 |noConfig|*BOOL*|Disable use of Interp.conf to change options after create.|initOnly|
 |noError|*BOOL*|Type checks failures are warning.||
+|noES6|*BOOL*|Warn/error when ES6 features are used, eg. arrow funcs or let/const.||
 |noEval|*BOOL*|Disable eval: just parses file to check syntax.|initOnly|
 |noInput|*BOOL*|Disable use of console.input().||
 |noLoad|*BOOL*|Disable load of shared libs.||

@@ -423,6 +423,8 @@ int jsi_BuiltinCmd(Jsi_Interp *interp, const char *name)
 void jsi_FuncCallCheck(jsi_Pstate *p, jsi_Pline *line, int argc, bool isNew, const char *name, const char *namePre, Jsi_OpCodes *argCodes)
 {
     Jsi_Interp *interp = p->interp;
+    if (name && interp->noES6 && interp->noEval && (!Jsi_Strcmp(name, "fetch") || !Jsi_Strcmp(name, "import")))
+        Jsi_LogWarn("possible ES6 function call: %s", name);
     if (interp->noCheck || name == NULL || (!interp->typeCheck.funcdecl && interp->inParse))
         return;
     if (name && isdigit(name[0]))
@@ -493,6 +495,10 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
     Jsi_Func *f = jsi_FuncNew(interp);
     jsi_Lexer *l = pstate->lexer;
     f->isArrow = flags&1;
+    if (f->isArrow && interp->noES6) {
+        Jsi_LogError("Arrow function used in noES6 mode: %s", name);
+        pstate->err_count++;
+    }
     f->isSet = flags&2;
     f->isGet = flags&4;
     f->type = FC_NORMAL;

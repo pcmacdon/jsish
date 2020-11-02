@@ -1130,6 +1130,7 @@ struct Jsi_Interp {
     bool noConfig;
     bool noLoad;
     bool noEval;
+    bool noES6;
     bool noAutoLoad;
     bool noStderr;
     bool noSubInterps;

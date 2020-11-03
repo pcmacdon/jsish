@@ -219,10 +219,10 @@ static Jsi_OpCodes *code_push_string(jsi_Pstate *p, jsi_Pline *line, const char 
     JSI_NEW_CODESLN(0,OP_PUSHSTR, str);
 }
 
-static void code_es6(jsi_Pstate *p) {
+static void code_es6(jsi_Pstate *p, const char *str) {
     Jsi_Interp *interp = p->interp;
     if (interp->noES6) {
-        Jsi_LogError("es6 feature");
+        Jsi_LogError("es6 feature: %s", str);
         p->err_count++;
     }
 }

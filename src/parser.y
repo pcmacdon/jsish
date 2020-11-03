@@ -150,8 +150,8 @@ statement:
 
 localvar:
     LOCAL { $$ = LOCAL; }
-    | LOCALLET { $$ = LOCALLET;  code_es6(pstate);}
-    | LOCALCONST { $$ = LOCALCONST; code_es6(pstate); }
+    | LOCALLET { $$ = LOCALLET;  code_es6(pstate, "let");}
+    | LOCALCONST { $$ = LOCALCONST; code_es6(pstate, "const"); }
 ;
     
 objexport:
@@ -389,7 +389,7 @@ if_statement:
 
 inof:
     IN      { $$ = 0; }
-    | OF    { $$ = 1;  code_es6(pstate); }
+    | OF    { $$ = 1;  code_es6(pstate, "for of"); }
 ;
     
 for_statement:
@@ -847,7 +847,7 @@ itemfunc:
         Jsi_OpCodes *lval = code_push_func(pstate, &@3, jsi_FuncMake(pstate, $3, $5, &@1, $1, 0));
         lval->lvalue_flag = 1; 
         lval->lvalue_name = $1;
-        code_es6(pstate);
+        code_es6(pstate, "object shorthand func");
         $$ = codes_join(code_push_string(pstate,&@1, $1), lval);
         jsi_PstatePop(pstate);
     }
@@ -856,7 +856,7 @@ itemfunc:
 itemident:
     itemfunc { $$ = $1; }
     | IDENTIFIER  {
-        code_es6(pstate);
+        code_es6(pstate, "object shorthands");
         Jsi_OpCodes *lval = code_push_index(pstate, &@1, $1, 0); 
         lval->lvalue_flag = 1; 
         lval->lvalue_name = $1; 

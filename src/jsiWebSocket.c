@@ -2521,15 +2521,17 @@ jsi_wscallback_websock(struct lws *wsi,
         break;
 
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
-        pss = jsi_wsgetPss(cmdPtr, wsi, user, 1, 1);
-        Jsi_DSSet(&pss->url, inPtr);
-        if (cmdPtr->instCtx == context && (cmdPtr->clientName[0] || cmdPtr->clientIP[0])) {
-            pss->clientName = cmdPtr->clientName;
-            pss->clientIP = cmdPtr->clientIP;
-        }
         if (cmdPtr->onFilter && !cmdPtr->deleted) {
-            if (!pss)
-                pss = jsi_wsgetPss(cmdPtr, wsi, user, 1, 0);
+            pss = jsi_wsgetPss(cmdPtr, wsi, user, 1, 0);
+            Jsi_DSSet(&pss->url, inPtr);
+            if (cmdPtr->instCtx == context && (cmdPtr->clientName[0] || cmdPtr->clientIP[0])) {
+                pss->clientName = cmdPtr->clientName;
+                pss->clientIP = cmdPtr->clientIP;
+                if (cmdPtr->debug>1)
+                    fprintf(stderr,  "Filter ws msg %d from %s (%s)\n", pss->wid,
+                         pss->clientName, pss->clientIP);
+    
+            }
             int killcon = 0, n = 0;
             Jsi_Obj *oarg1;
             Jsi_Value *vpargs, *vargs[10], *ret = Jsi_ValueNew1(interp);
@@ -2569,7 +2571,14 @@ jsi_wscallback_websock(struct lws *wsi,
         }
         if (!pss)
             pss = jsi_wsgetPss(cmdPtr, wsi, user, 1, 0);
-        if (cmdPtr->onOpen && !cmdPtr->deleted) {
+        if (cmdPtr->instCtx == context && (cmdPtr->clientName[0] || cmdPtr->clientIP[0])) {
+            pss->clientName = cmdPtr->clientName;
+            pss->clientIP = cmdPtr->clientIP;
+            if (cmdPtr->debug>1)
+                fprintf(stderr,  "Establish WS msg %d from %s (%s)\n", pss->wid,
+                     pss->clientName, pss->clientIP);
+        }
+         if (cmdPtr->onOpen && !cmdPtr->deleted) {
             /* Pass 2 args: ws id. */
             Jsi_Obj *oarg1;
             Jsi_Value *vpargs, *vargs[10];

@@ -33,7 +33,6 @@ Jsi_Auto.Sqlite         = 'require("Sqlite");';
 Jsi_Auto.MySql          = 'require("MySql");';
 Jsi_Auto.WebSocket      = 'require("WebSocket");';
 Jsi_Auto.Socket         = 'require("Socket");';
-Jsi_Auto.DebugUI        = 'require("DebugUI");';
 
 source(Info.scriptDir()+'/user/autoload.jsi', {exists:true, once:true});
 //source(File.pwd()+'/autoload.jsi', {exists:true, once:true});

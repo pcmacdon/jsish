@@ -992,7 +992,8 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
         Jsi_ValueMakeUndef(interp, &src);
         if (obj && obj->freeze && obj->freezeReadCheck) {
             const char *keyStr = Jsi_ValueToString(interp, idx, NULL);
-            rc = Jsi_LogError("object freeze: read undefined \"%s\"", keyStr);
+            if (!jsi_isDebugKey(keyStr))
+                rc = Jsi_LogError("object freeze: read undefined \"%s\"", keyStr);
         }
     }
     else {

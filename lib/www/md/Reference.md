@@ -731,7 +731,6 @@ Commands for accessing sqlite databases.
 |timeout|*INT*|Amount of time to wait when file is locked, in ms.||
 |udata|*OBJ*|User data.||
 |version|*OBJ*|Sqlite version info.|readOnly|
-|timeout|*INT*|Amount of time to wait when file is locked, in ms.||
 |vfs|*STRING*|VFS to use.|initOnly|
 ### Sqlite queryOpts
 |Option|Type|Description|Flags|

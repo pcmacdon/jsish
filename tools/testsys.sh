@@ -13,5 +13,6 @@ for i in `find . -name "*.jsi"`; do
         #echo $i
         continue
     fi
+    echo $i
     jsish --I noEval=true $i
 done

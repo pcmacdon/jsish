@@ -4708,6 +4708,10 @@ static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DStrin
     return "";
 }
 
+bool jsi_isDebugKey(const char *key) {
+    return (!Jsi_Strcmp(key, "Debug") || !Jsi_Strcmp(key, "Test") || !Jsi_Strcmp(key, "Trace")  || !Jsi_Strcmp(key, "Assert"));
+}
+
 static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr, bool parse)
 {
@@ -4833,7 +4837,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                 break;
             }
             Jsi_vtype oTyp, vTyp = jsi_getValType(val);
-            if (!parse && (!Jsi_Strcmp(key, "Debug") || !Jsi_Strcmp(key, "Test") || !Jsi_Strcmp(key, "Trace")  || !Jsi_Strcmp(key, "Assert"))) {
+            if (!parse && jsi_isDebugKey(key)) {
                 oTyp = JSI_VT_BOOL; // Accept these as builtin options.
                 oVal = NULL;
             } else if (!v2) {

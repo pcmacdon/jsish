@@ -438,7 +438,6 @@ extern int jsiOpCodesCnt[4];
 
 typedef struct jsi_OpCode {
     jsi_Eopcode op;
-    void *data;
     unsigned int Line:16;
     unsigned int Lofs:7;
     unsigned int  readonly:1;
@@ -448,6 +447,9 @@ typedef struct jsi_OpCode {
     unsigned char isof:1;
     unsigned char local:1;
     unsigned char logidx:3;
+    unsigned char setget:1;
+    unsigned int itemLen:24;
+    void *data;
     jsi_FileInfo* filePtr;
 } jsi_OpCode;
 
@@ -1013,12 +1015,6 @@ typedef struct {
     bool full;    // Show full file path.
     bool ftail;   // Show tail of file only, even in LogWarn, etc.
     bool func;    // Ouput function at end.
-/*    bool Debug;
-    bool Trace;
-    bool Test;
-    bool Info;
-    bool Warn;
-    bool Error;*/
     bool time;    // Prefix with time
     bool date;    // Prefix with date
     bool before;  // Print file:line before message instead of at end.
@@ -1506,6 +1502,8 @@ extern void jsi_DumpValue(Jsi_Interp *interp, Jsi_Value *arg);
 extern Jsi_RC jsi_ObjSetFlag(Jsi_Interp *interp, Jsi_Obj *obj, int flag, int on);
 extern Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value *val, Jsi_Value *_this, int flags);
 extern Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, Jsi_Value *_this, int flags);
+extern bool jsi_isDebugKey(const char *key);
+extern Jsi_TreeEntry *jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val, int isstrkey, bool unique);
 
 #if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/

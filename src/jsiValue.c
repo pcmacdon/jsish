@@ -1399,7 +1399,7 @@ Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres,
     return rc;
 }
 
-static Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, Jsi_Value *_this, int flags)
+static Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, Jsi_Value *_this, int flags, bool unique)
 {
     Jsi_TreeEntry *hPtr;
     SIGASSERT(val, VALUE);
@@ -1419,7 +1419,7 @@ static Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key
 
     if (val->vt == JSI_VT_OBJECT)
         jsi_ObjInsertObjCheck(interp, obj, val, 1); 
-    hPtr = Jsi_TreeObjSetValue(obj, key, val, 0);
+    hPtr = jsi_TreeObjSetValue(obj, key, val, 0, unique);
     if ((flags&JSI_OM_DONTDEL))
         val->f.bits.dontdel = hPtr->f.bits.dontdel = 1;
     if ((flags&JSI_OM_READONLY))
@@ -1435,12 +1435,12 @@ Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, J
     if (target->vt != JSI_VT_OBJECT)
         return Jsi_LogError("Target is not object");
     target->f.flag |= flags;
-    return jsi_ObjValInsert(interp, target->d.obj, key, val, target, flags);
+    return jsi_ObjValInsert(interp, target->d.obj, key, val, target, flags, 0);
 }
 
 Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
 {
-    return jsi_ObjValInsert(interp, obj, key, val, NULL, flags);
+    return jsi_ObjValInsert(interp, obj, key, val, NULL, flags, 1);
 }
 
 static Jsi_RC IterGetKeysCallback(Jsi_Tree* tree, Jsi_TreeEntry *hPtr, void *data)

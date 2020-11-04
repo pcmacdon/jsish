@@ -25,7 +25,7 @@ function Htmlpp(files:array|string=null, conf:object=undefined):string|object
     var self = {
         package:"Htmlpp",
         intOpts:{},
-        rc:'', files:[], files:[], chpos:0, rootdir:'', curdir:'', data:'', errs:'', dir:'',
+        rc:'', files:[], chpos:0, rootdir:'', curdir:'', data:'', errs:'', dir:'',
         jsifiles:[], cssfiles:[], mdfiles:[],
         Trace       :false,
     };

@@ -20,7 +20,7 @@ Jsi_Value *Jsi_TreeObjGetValue(Jsi_Obj* obj, const char *key, int isstrkey) {
     return v;
 }
 
-Jsi_TreeEntry *Jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val, int isstrkey) {
+Jsi_TreeEntry *jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val, int isstrkey, bool unique) {
     Jsi_Tree *treePtr = obj->tree;
     bool isNew;
     Jsi_TreeEntry *hPtr;
@@ -38,6 +38,8 @@ Jsi_TreeEntry *Jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val
     hPtr = Jsi_TreeEntryNew(treePtr, key, &isNew);
     if (!hPtr)
         return NULL;
+    if (unique && !isNew)
+        Jsi_LogWarn("add duplicate key: %s", key);
     if (val)
         SIGASSERT(val,VALUE);
     if (!isNew)
@@ -60,6 +62,10 @@ Jsi_TreeEntry *Jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val
 //        hPtr->value = val;
 
     return hPtr;
+}
+
+Jsi_TreeEntry *Jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val, int isstrkey) {
+    return jsi_TreeObjSetValue(obj, key, val, isstrkey, 0);
 }
 
 /*****************************************/

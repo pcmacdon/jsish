@@ -186,6 +186,13 @@ static Jsi_OpCodes *codes_join(Jsi_OpCodes *a, Jsi_OpCodes *b)
     jsiOpCodesCnt[2]-=2;
     return ret;
 }
+static Jsi_OpCodes *codes_join_item(Jsi_OpCodes *a, Jsi_OpCodes *b)
+{
+    if (a->code_len == 1 && a->codes[0].op == OP_PUSHSTR &&
+        b->code_len>1)
+        b->codes[0].itemLen = b->code_len;
+    return codes_join(a,b);
+}
 
 static Jsi_OpCodes *codes_join3(Jsi_OpCodes *a, Jsi_OpCodes *b, Jsi_OpCodes *c)
 {
@@ -330,7 +337,26 @@ static Jsi_OpCodes *code_jtrue(int off) { JSI_NEW_CODES(0,OP_JTRUE, off); }
 static Jsi_OpCodes *code_jfalse_np(int off) { JSI_NEW_CODES(0,OP_JFALSE_NP, off); }
 static Jsi_OpCodes *code_jtrue_np(int off) { JSI_NEW_CODES(0,OP_JTRUE_NP, off); }
 static Jsi_OpCodes *code_jmp(int off) { JSI_NEW_CODES(0,OP_JMP, off); }
-static Jsi_OpCodes *code_object(jsi_Pstate *p, jsi_Pline *line, int c) { JSI_NEW_CODESLN(0,OP_OBJECT, c); }
+static Jsi_OpCodes *code_object(jsi_Pstate *p, jsi_Pline *line, Jsi_OpCodes* cv) {
+    int c = cv->expr_counter, nested = (c*2 != cv->code_len);
+    Jsi_Interp *interp = p->interp;
+    if (c>0 && interp->noEval) {
+        int i, n;
+        bool isNew;
+        const char *cp;
+        Jsi_Hash *h = Jsi_HashNew(interp, JSI_KEYS_STRINGKEY, NULL);
+        for (i=0, n=0; i<c; i++, n+=2) {
+            if (cv->codes[n].op == OP_PUSHSTR && !cv->codes[n].setget
+                && Jsi_HashEntryNew(h, cp=(char*)cv->codes[n].data, &isNew) && !isNew) {
+                Jsi_LogWarn("duplicate key: %s", cp);
+            }
+            if (nested && cv->codes[n+1].itemLen)
+                n += cv->codes[n+1].itemLen-1;
+        }
+        Jsi_HashDelete(h);
+    }
+    JSI_NEW_CODESLN(0, OP_OBJECT, c);
+}
 static Jsi_OpCodes *code_array(jsi_Pstate *p, jsi_Pline *line, int c) { JSI_NEW_CODESLN(0,OP_ARRAY, c); }
 static Jsi_OpCodes *code_key() { JSI_NEW_CODES(0,OP_KEY, 0); }
 static Jsi_OpCodes *code_next() { JSI_NEW_CODES(0,OP_NEXT, 0); }

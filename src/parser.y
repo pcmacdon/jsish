@@ -839,7 +839,7 @@ value:
 ;
 
 object:
-    '{' items '}'   { $$ = codes_join($2, code_object(pstate, &@2, ($2)->expr_counter)); }
+    '{' items '}'   { $$ = codes_join($2, code_object(pstate, &@2, $2)); }
 ;
 
 itemfunc:
@@ -848,7 +848,7 @@ itemfunc:
         lval->lvalue_flag = 1; 
         lval->lvalue_name = $1;
         code_es6(pstate, "object shorthand func");
-        $$ = codes_join(code_push_string(pstate,&@1, $1), lval);
+        $$ = codes_join_item(code_push_string(pstate,&@1, $1), lval);
         jsi_PstatePop(pstate);
     }
 ;
@@ -860,7 +860,7 @@ itemident:
         Jsi_OpCodes *lval = code_push_index(pstate, &@1, $1, 0); 
         lval->lvalue_flag = 1; 
         lval->lvalue_name = $1; 
-        $$ = codes_join(code_push_string(pstate,&@1, $1), lval);
+        $$ = codes_join_item(code_push_string(pstate,&@1, $1), lval);
     }
     | item  { $$ = $1; }
 
@@ -914,23 +914,24 @@ itemres: /* Support reserved words in objects. */
 ;
 
 item:
-    IDENTIFIER ':' expr { $$ = codes_join(code_push_string(pstate,&@1, $1), $3); }
-    | strlit ':' expr   { $$ = codes_join(code_push_vstring(pstate,&@1, $1), $3); }
-    | itemres':' expr   { $$ = codes_join($1, $3); }
-    | FNUMBER ':' expr { $$ = codes_join(code_push_num($1), $3);  }
-    | _TRUE ':' expr { $$ = codes_join(code_push_bool(1), $3);  }
-    | _FALSE ':' expr { $$ = codes_join(code_push_bool(0), $3);  }
-    | UNDEF ':' expr { $$ = codes_join(code_push_undef(), $3);  }
-    | TYPENULL ':' expr { $$ = codes_join(code_push_null(), $3);  }
+    IDENTIFIER ':' expr { $$ = codes_join_item(code_push_string(pstate,&@1, $1), $3); }
+    | strlit ':' expr   { $$ = codes_join_item(code_push_vstring(pstate,&@1, $1), $3); }
+    | itemres':' expr   { $$ = codes_join_item($1, $3); }
+    | FNUMBER ':' expr { $$ = codes_join_item(code_push_num($1), $3);  }
+    | _TRUE ':' expr { $$ = codes_join_item(code_push_bool(1), $3);  }
+    | _FALSE ':' expr { $$ = codes_join_item(code_push_bool(0), $3);  }
+    | UNDEF ':' expr { $$ = codes_join_item(code_push_undef(), $3);  }
+    | TYPENULL ':' expr { $$ = codes_join_item(code_push_null(), $3);  }
     | OBJSET IDENTIFIER '(' IDENTIFIER ')' func_statement_block {
         Jsi_ScopeStrs *args = jsi_argInsert(pstate, NULL, $4, NULL, &@4, 0 );
-        $$ = codes_join(code_push_string(pstate,&@2, $2), 
+        $$ = codes_join_item(code_push_string(pstate,&@2, $2), 
             code_push_func(pstate,  &@3, jsi_FuncMake(pstate, args, $6, &@1, $2, 2)));
     }
     | OBJGET IDENTIFIER '(' ')' func_statement_block {
         Jsi_ScopeStrs *args = jsi_ArgsOptAdd(pstate, jsi_ScopeStrsNew());
-        $$ = codes_join(code_push_string(pstate,&@2, $2), 
+        $$ = codes_join_item(code_push_string(pstate,&@2, $2), 
             code_push_func(pstate,  &@3, jsi_FuncMake(pstate, args, $5, &@1, $2, 4)));
+        $$->codes[0].setget = 1;
     }
 ;
 

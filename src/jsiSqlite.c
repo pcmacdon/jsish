@@ -363,7 +363,6 @@ static Jsi_OptionSpec SqlOptions[] =
     JSI_OPT(INT,    Jsi_Db, timeout,    .help="Amount of time to wait when file is locked, in ms"),
     JSI_OPT(OBJ,    Jsi_Db, udata,      .help="User data" ),
     JSI_OPT(OBJ,    Jsi_Db, version,    .help="Sqlite version info", jsi_IIRO),
-    JSI_OPT(INT,    Jsi_Db, timeout,    .help="Amount of time to wait when file is locked, in ms"),
     JSI_OPT(STRING, Jsi_Db, vfs,        .help="VFS to use", jsi_IIOF),
     JSI_OPT_END(Jsi_Db, .help="Options for source command")
 };

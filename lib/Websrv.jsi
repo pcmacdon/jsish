@@ -27,7 +27,7 @@ function Websrv(args:string|array, conf:object=void)
         closeTimeout:0,         // Time til exit after close of final client websocket (ms).
         confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
         docs        :'',        // Display markdown docs from this directory.
-        es5test     :'',        // Verify as parsable-es5 all .js scripts within dir and below, then exit.
+        es5test     :'',        // Verify as parsable-es5 .js scripts in file or dir and below, then exit.
         hist        :false,     // Let Vue employ history mode, short for urlFallback=url: useful for -docs/-app.
         ignoreExit  :false,     // Ignore exit request.
         initArg     :[],        // List of app modules to run.
@@ -402,9 +402,11 @@ function Websrv(args:string|array, conf:object=void)
     
     function es5test() {
         var d = self.es5test;
-        if (!File.isdir(d))
-            throw 'not a directory: '+d;
-        var i, lst = File.glob('*.js', {dir:d, recurse:true});
+        var i, lst;
+        if (File.isdir(d))
+            lst = File.glob('*.js', {dir:d, recurse:true});
+        else
+            lst = [d];
         for (i of lst) {
             var int = new Interp({noEval:true, noES6:true, scriptFile:i});
             delete int;

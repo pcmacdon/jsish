@@ -737,6 +737,11 @@ fcall_exprs:
         int expr_cnt = opl ? opl->expr_counter:0;
         $$ = codes_join3(ff, (opl ? opl : code_nop()), code_fcall(pstate, &@3, expr_cnt, NULL, NULL, opl, NULL));
     }
+    | fcall_exprs '(' exprlist_opt ')' {
+        Jsi_OpCodes *opl = $3;
+        int expr_cnt = opl ? opl->expr_counter:0;
+        $$ = codes_join4($1, code_chthis(pstate,&@1, 0), (opl ? opl : code_nop()), code_fcall(pstate, &@2,expr_cnt, NULL, NULL, opl, NULL));
+    }
     | '(' expr ')' '(' exprlist_opt ')' {
         Jsi_OpCodes *opl = $5;
         int expr_cnt = opl ? opl->expr_counter:0;

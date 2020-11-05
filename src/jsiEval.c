@@ -1880,7 +1880,7 @@ undef_eval:
                 int itemcount = (uintptr_t)ip->data;
                 Assert(itemcount>=0);
                 jsiVarDeref(interp, itemcount * 2);
-                Jsi_Obj *obj = Jsi_ObjNewObj(interp, _jsi_STACK+(fp->Sp-itemcount*2), itemcount*2);
+                Jsi_Obj *obj = jsi_ObjNewObj(interp, _jsi_STACK+(fp->Sp-itemcount*2), itemcount*2, 1);
                 jsiPop(interp, itemcount * 2 - 1);       /* one left */
                 jsiClearStack(interp,1);
                 Jsi_ValueMakeObject(interp, &_jsi_TOP, obj);

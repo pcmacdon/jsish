@@ -1399,7 +1399,7 @@ Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres,
     return rc;
 }
 
-static Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, Jsi_Value *_this, int flags, bool unique)
+Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, Jsi_Value *_this, int flags, bool unique)
 {
     Jsi_TreeEntry *hPtr;
     SIGASSERT(val, VALUE);
@@ -1440,7 +1440,7 @@ Jsi_RC Jsi_ValueInsert(Jsi_Interp *interp, Jsi_Value *target, const char *key, J
 
 Jsi_RC Jsi_ObjInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, int flags)
 {
-    return jsi_ObjValInsert(interp, obj, key, val, NULL, flags, 1);
+    return jsi_ObjValInsert(interp, obj, key, val, NULL, flags, 0);
 }
 
 static Jsi_RC IterGetKeysCallback(Jsi_Tree* tree, Jsi_TreeEntry *hPtr, void *data)

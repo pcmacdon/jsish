@@ -7,10 +7,23 @@ function a(n) {
     return sum;
 };
 
+function foo() {
+  return function (x) { return('FOO',x); };
+}
+function bar() {
+  return function () { return foo(); };
+}
+
 ;'===Begin Test===';
 ;a(10);
 ;a(100);
 ;a(1000);
+
+;'===Func return-invoke===';
+;(foo())(1);
+;foo()(2);
+;bar()()(3);
+
 
 /*
 =!EXPECTSTART!=
@@ -18,6 +31,10 @@ function a(n) {
 a(10) ==> 45
 a(100) ==> 4950
 a(1000) ==> 499500
+'===Func return-invoke==='
+(foo())(1) ==> 1
+foo()(2) ==> 2
+bar()()(3) ==> 3
 =!EXPECTEND!=
 */
 

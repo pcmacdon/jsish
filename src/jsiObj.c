@@ -38,7 +38,7 @@ Jsi_TreeEntry *jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val
     hPtr = Jsi_TreeEntryNew(treePtr, key, &isNew);
     if (!hPtr)
         return NULL;
-    if (unique && !isNew)
+    if (unique && !isNew) // Want this only from OP_OBJECT in jsiEval.c
         Jsi_LogWarn("add duplicate key: %s", key);
     if (val)
         SIGASSERT(val,VALUE);
@@ -491,7 +491,7 @@ Jsi_Obj *Jsi_ObjNewArray(Jsi_Interp *interp, Jsi_Value **items, int count, int c
 
 /****** END ARRAY ************/
 
-static Jsi_RC ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *keyVal, Jsi_Value *nv)
+static Jsi_RC ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *keyVal, Jsi_Value *nv, bool unique)
 {
     const char *key = NULL;
     int flags = 0;
@@ -508,7 +508,7 @@ static Jsi_RC ObjInsertFromValue(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *ke
         key = Jsi_ValueGetDString(interp, keyVal, &dStr, 0);
     if (!key)
         return JSI_ERROR;
-    return Jsi_ObjInsert(interp, obj, key, nv, flags);
+    return jsi_ObjValInsert(interp, obj, key, nv, NULL, flags, unique);
 }
 
 Jsi_RC Jsi_ObjFreeze(Jsi_Interp *interp, Jsi_Obj *obj, bool freeze, bool modifyOk, bool readCheck) {
@@ -660,7 +660,7 @@ Jsi_AccessorSpec* Jsi_ObjAccessorWithSpec(Jsi_Interp *interp, const char* objNam
     return adp;
 }
 
-Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
+Jsi_Obj *jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count, bool unique)
 {
     Jsi_Obj *obj = Jsi_ObjNewType(interp, JSI_OT_OBJECT);
     if (count%2) return obj;
@@ -697,10 +697,15 @@ Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
             }
         }
         v = Jsi_ValueDup(interp, v);
-        ObjInsertFromValue(interp, obj, items[i], v);
+        ObjInsertFromValue(interp, obj, items[i], v, unique);
         Jsi_DecrRefCount(interp, v);
     }
     return obj;
+}
+
+Jsi_Obj *Jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count)
+{
+    return jsi_ObjNewObj(interp, items, count, 0);
 }
 
 void Jsi_ObjSetLength(Jsi_Interp *interp, Jsi_Obj *obj, uint len)

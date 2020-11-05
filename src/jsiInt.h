@@ -1547,6 +1547,8 @@ extern char *jsi_TrimStr(char *str);
 extern bool jsi_ModBlacklisted(Jsi_Interp *interp, const char *mod);
 extern bool jsi_FuncIsNoop(Jsi_Interp* interp, Jsi_Value *func);
 extern Jsi_RC jsi_InfoLocalsCmd(Jsi_Interp *interp, bool funcsOnly, bool varsOnly, Jsi_Value **ret);
+extern Jsi_Obj *jsi_ObjNewObj(Jsi_Interp *interp, Jsi_Value **items, int count, bool unique);
+extern Jsi_RC jsi_ObjValInsert(Jsi_Interp *interp, Jsi_Obj *obj, const char *key, Jsi_Value *val, Jsi_Value *_this, int flags, bool unique);
 
 typedef enum {
     _JSI_CDATA_INFO=0,

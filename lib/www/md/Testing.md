@@ -277,10 +277,23 @@ A script needing *input-arguments* can use:
 ```
 
 ### Assert
-Note that asserts are normally disabled in Jsi, but not in *test-mode*:
+
+Note asserts are normally disabled in Jsi, except in *test-mode*.
+Two simple ways to enable asserts:
+
+```
+jsish --I asserts script.js
+```
+
+and
 
 ``` js
-#!/usr/local/bin/jsish -t %s
+Interp.conf({asserts:true});
+assert(false,'failed');
+```
+
+
+``` js
 Interp.conf({log:{assert:true}}); // note: test mode already enables this.
 
 assert(true,'true');

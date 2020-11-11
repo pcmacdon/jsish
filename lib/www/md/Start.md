@@ -434,11 +434,11 @@ Jsi implements most of
 version 5.1 with numerous additions, ommissions and deviations:
 
 - **Additions**:
-    - Typed function parameters.
-    - ES6 features: `=>`, `for(x of y)`, `const`, and `let` (but unscoped like `var`).
+    - Functions parameters with types and defaults.
+    - ES6 features: `=>`, `for of`, `const`, and `let` (but unscoped like `var`).
     - `Info`, `Interp`, and other system builtins.
 - **Omissions**: 
-    - no *Automatic Semicolon Insertion*.
+    - no *Semicolon Insertion*.
     - no **Error** *(arg to `catch` is a string)*.
     - no **Date** *(supplanted by `strftime`/`strptime`)*.
 - **Deviations**:

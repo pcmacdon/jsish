@@ -17,5 +17,5 @@ function stubrenumber(args:array|string, opts:object) {
     return rc;
 }
 
-runModule(stubrenumber);
+module(stubrenumber);
 

@@ -21,7 +21,7 @@ function mkindex(args:array|string, opts:object) {
     puts(rv);
 }
 
-runModule(mkindex);
+module(mkindex);
 
 /*
 

@@ -971,9 +971,9 @@ typedef struct {
 } Jsi_TypeCheck;
 
 typedef enum {
-    jsi_AssertModeThrow,
     jsi_AssertModeLog,
-    jsi_AssertModePuts
+    jsi_AssertModePuts,
+    jsi_AssertModeThrow
 } jsi_AssertMode;
 
 typedef struct {
@@ -1119,6 +1119,7 @@ struct Jsi_Interp {
     int profileCnt;
     bool noNetwork;
     bool noInput;
+    bool asserts;
     jsi_AssertMode assertMode;
     uint testMode;
     const char *jsppChars;

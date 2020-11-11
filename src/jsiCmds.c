@@ -4709,7 +4709,9 @@ static const char *jsi_FindHelpStr(const char *fstr, const char *key, Jsi_DStrin
 }
 
 bool jsi_isDebugKey(const char *key) {
-    return (!Jsi_Strcmp(key, "Debug") || !Jsi_Strcmp(key, "Test") || !Jsi_Strcmp(key, "Trace")  || !Jsi_Strcmp(key, "Assert"));
+    return ((*key=='T' && (!Jsi_Strcmp(key, "Test") || !Jsi_Strcmp(key, "Trace")))
+        ||  (*key=='A' && !Jsi_Strcmp(key, "Assert"))
+        ||  (*key=='D' && !Jsi_Strcmp(key, "Debug")));
 }
 
 static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,

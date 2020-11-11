@@ -5,10 +5,11 @@
 function Zip(args:string|array, conf:object=void) {
 
     const options = { // Implements zip functionality
-        userDir     :'',        // User directory to add to zip (zvfs)
-        outfile     :'',        // Output file for zvfs instead of appending "sh"
         indir       :'',        // Input directory
-        verbose     :false      // Echo file name of unzip.
+        outfile     :'',        // Output file for zvfs instead of appending "sh"
+        startDir    :'',        // Start at dir for unzip.
+        userDir     :'',        // User directory to add to zip (zvfs)
+        verbose     :false,     // Echo file name of unzip.
     };
     var self = parseOpts({}, options, conf);
 
@@ -68,14 +69,17 @@ function Zip(args:string|array, conf:object=void) {
         return 0;
     }
     
-    function unzip(fname:string, ddir='') {
-        fname = File.realpath(fname);
-        if (fname === Info.executable())
+    function unzip(fname:string, destDir='') {
+        if (fname)
+            fname = File.realpath(fname);
+        if (!fname || fname === Info.executable())
             zdir = '/zvfs';
         else
             zdir = Zvfs.mount(fname);
-        if (ddir !== '' && ddir.substr(-1,1) != '/')
-            ddir += '/';
+        if (self.startDir)
+            zdir += '/'+self.startDir;
+        if (destDir !== '' && destDir.substr(-1,1) != '/')
+            destDir += '/';
             
         var flist = File.glob('*', {dir:zdir,recurse:true}).sort();
         for (var i in flist) {
@@ -85,10 +89,10 @@ function Zip(args:string|array, conf:object=void) {
             if (ftyp[0] === 'd') continue;
             if (self.verbose)
                 puts(""+fn);
-            var fdir = File.dirname(ddir+fn);
+            var fdir = File.dirname(destDir+fn);
             if (fdir !== '.' && !File.isdir(fdir))
                 File.mkdir(fdir, true);
-            File.write(ddir+fn, File.read(zdir+'/'+fn));
+            File.write(destDir+fn, File.read(zdir+'/'+fn));
         }
         return 0;
     }

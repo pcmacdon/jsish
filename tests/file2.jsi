@@ -4,6 +4,7 @@ File.mkdir('XX1');
 File.mkdir('XX1/AA');
 File.mkdir('XX1/BB');
 File.rename('XX1/BB','XX1/CC.txt');
+;File.glob({dir:'XX1'}).sort();
 ;File.glob(null,{dir:'XX1'}).sort();
 ;File.dirname('XX1/AA');
 ;File.rootname('XX1/CC.txt');
@@ -20,6 +21,7 @@ File.remove('XX1',true);
 
 /*
 =!EXPECTSTART!=
+File.glob({dir:'XX1'}).sort() ==> [ "AA", "CC.txt" ]
 File.glob(null,{dir:'XX1'}).sort() ==> [ "AA", "CC.txt" ]
 File.dirname('XX1/AA') ==> XX1
 File.rootname('XX1/CC.txt') ==> XX1/CC

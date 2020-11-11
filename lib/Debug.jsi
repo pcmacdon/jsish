@@ -483,7 +483,8 @@ function Debug(fileargs:array, conf:object=void):number {
             args:self.args,
             scriptFile:self.dbfile,
             isSafe:self.safe,
-            name:'debugProg'
+            name:'debugProg',
+            log:Interp.conf('log'),
         };        
         self.interp = new Interp(dopts);
         puts("Running in debugger: "+self.dbfile+' '+self.args.toString());

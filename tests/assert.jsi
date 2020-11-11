@@ -3,12 +3,15 @@ Interp.conf({log:{assert:true}});
 
 ;assert(true,'true');
 ;assert(2*3 == 6,'math');
+
+Interp.conf({asserts:true});
 try {
     assert(false,'false');
 } catch(e) {
     puts('caught error');
 }
-;Interp.conf({log:{assert:false}});
+
+;Interp.conf({asserts:false});
 var x;
 ;x = 1;
 ;assert(false,'false2');
@@ -42,14 +45,17 @@ try {
 assert(true,'true') ==> undefined
 assert(2*3 == 6,'math') ==> undefined
 caught error
-Interp.conf({log:{assert:false}}) ==> undefined
+Interp.conf({asserts:false}) ==> undefined
 x = 1 ==> 1
-assert(false,'false2') ==> undefined
-assert(false===true) ==> undefined
+assert(false,'false2') ==> false2
+undefined
+assert(false===true) ==> assert(false===true)`),puts(assert(false===true))
+undefined
 Interp.conf({log:{assert:true}}) ==> undefined
 assert(function () { return (i<j); },'fail') ==> undefined
-caught error2: assert(false==true)
-assert(false,'false') ==> caught error2: false
+assert(false==true)
+assert(false,'false') ==> false
+undefined
 assert(false,'this assert failed',{mode:'puts', noStderr:true}) ==> this assert failed
 undefined
 Interp.conf({assertMode:'puts', noStderr:true}) ==> undefined

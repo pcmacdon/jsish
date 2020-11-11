@@ -123,7 +123,7 @@ Commands for accessing the filesystem.
 |executable|(file:string):boolean |Return true if file is executable.|
 |exists|(file:string):boolean |Return true if file exists.|
 |extension|(file:string):string |Return file extension.|
-|glob|(pattern:regexp&#124;string&#124;null='*', [options](#file-glob):function&#124;object&#124;null=void):array |Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory. The first argument can be a pattern (either a glob or regexp) of the files to return. When the second argument is a function, it is called with each path, and filter on false. Otherwise second argument must be a set of options.|
+|glob|([options](#file-glob):regexp&#124;string&#124;object&#124;null='*', opts:function&#124;object&#124;null=void):array |Return list of files in dir with optional pattern match. With no arguments (or null) returns all files/directories in current directory. The first argument can be options, a pattern (either a glob or regexp) of the files to return. When the second argument is a function, it is called with each path, and filter on false. Otherwise second argument must be a set of options.|
 |isdir|(file:string):boolean |Return true if file is a directory.|
 |isfile|(file:string):boolean |Return true if file is a normal file.|
 |isrelative|(file:string):boolean |Return true if file path is relative.|
@@ -160,6 +160,7 @@ Commands for accessing the filesystem.
 |filter|*FUNC*|Filter function to call with each file, returning false to discard. @`function(file:string)`||
 |limit|*INT*|The maximum number of results to return/count: -1 is unlimited (Interp.maxArrayList).||
 |noTypes|*STRKEY*|Filter files to exclude these "types".||
+|pattern|*VALUE*|Pattern to use if arg 1 is null.||
 |prefix|*STRKEY*|String prefix to prepend to each file in result list.||
 |recurse|*BOOL*|Recurse into sub-directories.||
 |retCount|*BOOL*|Return only the count of matches.||
@@ -244,7 +245,8 @@ Commands for accessing interps.
 |Option|Type|Description|Flags|
 |---|---|---|---|
 |args|*ARRAY*|The console.arguments for interp.|initOnly|
-|assertMode|*STRKEY*|Action upon assert failure. (one of: **throw**, **log**, **puts**)||
+|asserts|*BOOL*|Shortcut for toggling log:assert and assertMode=throw.||
+|assertMode|*STRKEY*|Action upon assert failure. (one of: **log**, **puts**, **throw**)||
 |autoFiles|*ARRAY*|File(s) to source for loading Jsi_Auto to handle unknown commands.||
 |busyCallback|*CUSTOM*|Command in parent interp (or noOp) to periodically call.||
 |busyInterval|*INT*|Call busyCallback command after this many op-code evals (100000).||
@@ -887,7 +889,7 @@ Builtin system commands. All methods are exported as global.
 ### System assert
 |Option|Type|Description|Flags|
 |---|---|---|---|
-|mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
+|mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **log**, **puts**, **throw**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
 ### System exec
 |Option|Type|Description|Flags|
@@ -1294,7 +1296,7 @@ Console input and output to stderr.
 ### console assert
 |Option|Type|Description|Flags|
 |---|---|---|---|
-|mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **throw**, **log**, **puts**)||
+|mode|*STRKEY*|Action when assertion fails. Default from Interp.assertMode. (one of: **log**, **puts**, **throw**)||
 |noStderr|*BOOL*|Logged msg to stdout. Default from Interp.noStderr.||
 
 <!-- meta:{"file":{"index":503, "navindex":3}} -->

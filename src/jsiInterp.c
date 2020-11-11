@@ -75,10 +75,11 @@ static Jsi_OptionSpec InterpSubOptions[] = {
 static const char *jsi_SafeModeStrs[] = { "none", "read", "write", "writeRead", "lockdown", NULL };
 static const char *jsi_TypeChkStrs[] = { "noreturn", "noundef", "nowith", "builtins", "funcdecl", NULL };
 const char *jsi_callTraceStrs[] = { "funcs", "cmds", "new", "return", "args", "notrunc", "noparent", "full", "before", NULL};
-const char *jsi_AssertModeStrs[] = { "throw", "log", "puts", NULL};
+const char *jsi_AssertModeStrs[] = { "log", "puts", "throw", NULL};
 
 static Jsi_OptionSpec InterpOptions[] = {
     JSI_OPT(ARRAY, Jsi_Interp, args,        .help="The console.arguments for interp", jsi_IIOF),
+    JSI_OPT(BOOL,  Jsi_Interp, asserts,     .help="Shortcut for toggling log:assert and assertMode=throw"),
     JSI_OPT(CUSTOM,Jsi_Interp, assertMode,  .help="Action upon assert failure", .flags=0, .custom=Jsi_Opt_SwitchEnum, .data=jsi_AssertModeStrs ),
     JSI_OPT(ARRAY, Jsi_Interp, autoFiles,   .help="File(s) to source for loading Jsi_Auto to handle unknown commands"),
     JSI_OPT(CUSTOM,Jsi_Interp, busyCallback,.help="Command in parent interp (or noOp) to periodically call", .flags=0, .custom=Jsi_Opt_SwitchParentFunc, .data=(void*)"interpName:string, opCnt:number"),
@@ -1074,6 +1075,16 @@ static void jsi_UnitTestSetup(Jsi_Interp *interp)  {
         interp->tracePuts = 1;
 }
 
+static void jsi_interpAssertsUpdate(Jsi_Interp *interp) {
+    if (interp->asserts) {
+        interp->log |= JSI_LOG_ASSERT;
+        interp->assertMode = jsi_AssertModeThrow;
+    } else {
+        interp->log &= ~JSI_LOG_ASSERT;
+        interp->assertMode = jsi_AssertModePuts;
+    }
+}
+
 static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_InterpOpts *iopts)
 {
     Jsi_Interp* interp;
@@ -1446,6 +1457,7 @@ static Jsi_Interp* jsi_InterpNew(Jsi_Interp *parent, Jsi_Value *opts, Jsi_Interp
     interp->framePtr->ingsc = interp->gsc = jsi_ScopeChainNew(interp, 0);
 
     interp->ps = jsi_PstateNew(interp); /* Default parser. */
+    jsi_interpAssertsUpdate(interp);
     jsi_UnitTestSetup(interp);
     if (interp->args && argc) {
         Jsi_LogBug("args may not be specified both as options and parameter");
@@ -2879,12 +2891,14 @@ static Jsi_RC InterpConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     Jsi_RC rc;
     Jsi_Value *opts = Jsi_ValueArrayIndex(interp, args, 0);
     Jsi_Interp *sinterp = interp;
+    bool oasserts = interp->asserts;
     if (!udf || udf->subinterp == interp) {
         if (interp->noConfig && opts && !Jsi_ValueIsString(interp, opts))
             return Jsi_LogError("Interp conf() is disabled for set");
         rc = Jsi_OptionsConf(interp, InterpOptions, interp, opts, ret, 0);
     } else {
         sinterp = udf->subinterp;
+        oasserts = interp->asserts;
         Jsi_Value *popts = opts;
         if (opts && opts->vt != JSI_VT_NULL && !Jsi_ValueString(interp, opts, NULL) && opts->vt == JSI_VT_OBJECT) {
             popts = Jsi_ValueNew1(sinterp);
@@ -2895,6 +2909,8 @@ static Jsi_RC InterpConfCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
             Jsi_DecrRefCount(sinterp, popts);
         Jsi_CleanValue(sinterp, interp, *ret, ret);
     }
+    if (sinterp->asserts != oasserts)
+        jsi_interpAssertsUpdate(sinterp);
     jsi_UnitTestSetup(sinterp);
     return rc;
 }

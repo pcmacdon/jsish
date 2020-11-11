@@ -79,6 +79,7 @@ do { STMTS; } while( EXPR ) ;
 for ([var] IDENT = EXPR; EXPR; EXPR) { STMTS; }
 for ([var] IDENT in EXPR) { STMTS; }
 for ([var] IDENT of EXPR) { STMTS; }
+IDENT in OBJECT
 function [IDENT] ([IDENT, IDENT, ...]) { STMTS; }
 function [IDENT] ([IDENT:TYPE[=PRIMATIVE], IDENT:TYPE[=PRIMATIVE], ...]):TYPE { STMTS; }
 ([IDENT, IDENT, ...]) => EXPR
@@ -92,6 +93,8 @@ throw EXPR ;
 try { EXPR; } catch(IDENT) { STMTS; } [finally { STMTS; }]
 typeof EXPR ;
 var IDENT [ = EXPR ] [, ...] ;
+let IDENT [ = EXPR ] [, ...] ;
+const IDENT [ = EXPR ] [, ...] ;
 with ( EXPR ) { STMTS; }
 ```
 

@@ -305,6 +305,23 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
     return false;
 }
 
+function Jsi_CopyDir(dir:string, to:string, globOpts:object=void) {
+    var opts = {recurse:true, types:'f', dir};
+    if (globOpts)
+         opts = Object.assign(opts, globopts);
+    var i, n, dn, d = File.glob(opts).sort();
+    to = File.realpath(to);
+    if (!File.exists(to))
+        File.mkdir(to);
+    for (i of d) {
+        n = File.join(to, i);
+        dn = File.dirname(n);
+        if (!File.exists(dn))
+            File.mkdir(dn);
+        File.copy(File.join(dir, i), n);
+    }
+}
+
 if (Info.isMain()) {
     /* Self test for Jsi_Conf. */
     var self = {};

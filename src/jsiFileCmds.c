@@ -875,6 +875,7 @@ typedef struct {
     Jsi_Value *filter;    /* Function that returns true to keep. */
     Jsi_Value *dirFilter; /* Function that returns true to recurse into dir. */
     Jsi_Value *dir;
+    Jsi_Value *pattern;
     const char *dirStr;
     int dirLen;
     const char *prefix;
@@ -888,6 +889,7 @@ static Jsi_OptionSpec GlobOptions[] = {
     JSI_OPT(FUNC,   GlobData, filter,   .help="Filter function to call with each file, returning false to discard", .flags=0, .custom=0, .data=(void*)"file:string"),
     JSI_OPT(INT,    GlobData, limit,    .help="The maximum number of results to return/count: -1 is unlimited (Interp.maxArrayList)"),
     JSI_OPT(STRKEY, GlobData, noTypes,  .help="Filter files to exclude these \"types\""),
+    JSI_OPT(VALUE,  GlobData, pattern,  .help="Pattern to use if arg 1 is null"),
     JSI_OPT(STRKEY, GlobData, prefix,   .help="String prefix to prepend to each file in result list"),
     JSI_OPT(BOOL,   GlobData, recurse,  .help="Recurse into sub-directories"),
     JSI_OPT(BOOL,   GlobData, retCount, .help="Return only the count of matches"),
@@ -1165,10 +1167,10 @@ done:
 
 #define FN_glob JSI_INFO("\
 With no arguments (or null) returns all files/directories in current directory.\n\
-The first argument can be a pattern (either a glob or regexp) of the files to return.\n\
+The first argument can be options, a pattern (either a glob or regexp) of the files to return.\n\
 When the second argument is a function, it is called with each path, and filter on false.\n\
 Otherwise second argument must be a set of options.")
-static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+static Jsi_RC FileGlobCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     int fo = 1, isOpts = 0;
@@ -1177,6 +1179,7 @@ static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 1);
     GlobData Data = {};
     Jsi_Obj *obj = NULL;
+    bool iso1 = 0;
     //int len;
     //char *zPattern = NULL;
     const char *dcp, *zPattern = NULL;
@@ -1185,33 +1188,41 @@ static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     
     Data.flags = JSI_FILE_TYPE_FILES;
 
-    if (arg)
+    if (!arg && pat && Jsi_ValueIsObjType(interp, pat, JSI_OT_OBJECT)) {
+        arg = pat;
+        pat = NULL;
+        iso1 = 1;
+    }
+    if (arg) {
         switch (arg->vt) {
-        case JSI_VT_NULL: break;
-        case JSI_VT_OBJECT:
-        {
-            Jsi_Obj *sobj = arg->d.obj;
-            switch (sobj->ot) {
-                case JSI_OT_FUNCTION:
-                    Data.filter = arg;
-                    break;
-                case JSI_OT_OBJECT:
-                    if (!sobj->isarrlist) {
-                        isOpts = 1;
+            case JSI_VT_NULL: break;
+            case JSI_VT_OBJECT:
+            {
+                Jsi_Obj *sobj = arg->d.obj;
+                switch (sobj->ot) {
+                    case JSI_OT_FUNCTION:
+                        Data.filter = arg;
                         break;
-                    }
-                default: fo = 0;
+                    case JSI_OT_OBJECT:
+                        if (!sobj->isarrlist) {
+                            isOpts = 1;
+                            break;
+                        }
+                    default: fo = 0;
+                }
+                if (fo) break;
             }
-            if (fo) break;
+            default:
+                rc = Jsi_LogError("arg2 must be a function, object or null");
+                goto done;
         }
-        default:
-            rc = Jsi_LogError("arg2 must be a function, object or null");
-            goto done;
     }
     if (isOpts && Jsi_OptionsProcess(interp, GlobOptions, &Data, arg, 0) < 0) {
         rc = JSI_ERROR;
         goto done;
     }
+    if (!iso1 && pat && pat->vt == JSI_VT_NULL && Data.pattern)
+        pat = Data.pattern;
     if (!Data.limit)
         Data.limit = interp->maxArrayList;
     if (Data.dir) {
@@ -1220,8 +1231,12 @@ static Jsi_RC FileGlobsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
             dcp = Jsi_FileRealpath(interp, Data.dir, NULL);
             if (!dcp)
                 dcp = Data.dirStr;
-            else
+            else {
+                Jsi_DecrRefCount(interp, Data.dir);
+                Data.dir = Jsi_ValueNewStringDup(interp, dcp);
+                Jsi_IncrRefCount(interp, Data.dir);
                 Data.dirLen = Jsi_Strlen(dcp);
+            }
         }
         Jsi_DSAppend(&dStr, dcp, (*dcp && dcp[Jsi_Strlen(dcp)-1]!='/')?"/":"", NULL);
     }
@@ -1285,7 +1300,7 @@ static Jsi_CmdSpec fileCmds[] = {
     { "isdir",      FileIsdirCmd,       1,  1, "file:string",  .help="Return true if file is a directory", .retType=(uint)JSI_TT_BOOLEAN },
     { "isfile",     FileIsfileCmd,      1,  1, "file:string",  .help="Return true if file is a normal file", .retType=(uint)JSI_TT_BOOLEAN },
     { "isrelative", FileIsRelativeCmd,  1,  1, "file:string",  .help="Return true if file path is relative", .retType=(uint)JSI_TT_BOOLEAN },
-    { "glob",       FileGlobsCmd,        0,  2, "pattern:regexp|string|null='*', options:function|object|null=void", .help="Return list of files in dir with optional pattern match", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_glob, .opts=GlobOptions },
+    { "glob",       FileGlobCmd,        0,  2, "options:regexp|string|object|null='*', opts:function|object|null=void", .help="Return list of files in dir with optional pattern match", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_glob, .opts=GlobOptions },
     { "link",       FileLinkCmd,        2,  3, "src:string, dest:string, ishard:boolean=false",  .help="Link a file", .retType=0, .flags=0, .info=FN_link },
     { "lstat",      FileLstatCmd,       1,  1, "file:string",  .help="Return status info for file", .retType=(uint)JSI_TT_OBJECT },
     { "mkdir",      FileMkdirCmd,       1,  2, "file:string,force:boolean=false",  .help="Create a directory: force creates subdirs" },

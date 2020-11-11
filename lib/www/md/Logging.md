@@ -64,7 +64,7 @@ function mymod(args, ...) {
 LogDebug("MYGLOB 1");
 LogTrace("MYGLOB 2");
 
-runModule(mymod);
+module(mymod);
 ```
 
 Logging can be enabled via module-options:

@@ -34,8 +34,8 @@ or help via **-h**:
 jsish hello.jsi -h
 /hello.jsi:2: help: ...
 .  Options are:
-	-a		1		
-	-b		2		
+    -a      1       
+    -b      2       
 
 Accepted by all .jsi modules: -Debug, -Trace, -Test.
 ```
@@ -64,8 +64,8 @@ add.jsi -h
 /tmp/add.jsi:9: help: ...
 Concat args into list.
 Options are:
-	-name		""		// Name prefix. {}
-	-start		0		// Start position.
+    -name       ""      // Name prefix. {}
+    -start      0       // Start position.
 
 Accepted by all .jsi modules: -Debug, -Trace, -Test, -Assert.
 ```
@@ -81,7 +81,7 @@ function buggy(args, ...) {
     return r;
 }
 LogTrace('buggy:', console.args);
-runModule(buggy);
+module(buggy);
 ```
 Output appears if enabled, in-module:
 
@@ -186,9 +186,9 @@ To recap, a module:
 
 
 
-### moduleRun
+### module
 
-`moduleRun` invokes a module with arguments:
+`module` defines and/or invokes a module:
 
 ``` js
 function hello2(args, ...) {
@@ -196,7 +196,7 @@ function hello2(args, ...) {
 };
 provide(hello2);
 if (Info.isMain())
-    runModule('hello2', ['-num' 99, 'a',2] );
+    module('hello2', ['-num' 99, 'a',2] );
 ```
 
 ### provide

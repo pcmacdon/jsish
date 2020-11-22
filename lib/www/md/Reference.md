@@ -334,6 +334,7 @@ Commands for accessing interps.
 |before|*BOOL*|Output file:line before message string.||
 |isUTC|*BOOL*|Time is to be UTC.||
 |timeFmt|*STRKEY*|A format string to use with strftime.||
+|capture|*BOOL*|Capture first error.||
 |chan|*USEROBJ*|Channel to send output to.||
 ### Interp subOpts
 |Option|Type|Description|Flags|
@@ -366,7 +367,7 @@ Commands for handling JSON data.
 |---|---|---|
 |check|(str:string, strict:boolean=true):boolean |Return true if str is JSON.|
 |parse|(str:string, strict:boolean=true) |Parse JSON and return js.|
-|stringify|(value:any,  strict:boolean=true):string |Return JSON from a js object.|
+|stringify|(value:any,  strict:null&#124;boolean=true, indent:number=2):string |Return JSON from a js object.|
 
 
 ## Math
@@ -858,6 +859,7 @@ Builtin system commands. All methods are exported as global.
 |exec|(val:string, [options](#system-exec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
 |exit|(code:number=0):void |Exit the current interpreter.|
 |format|(format:string, ...):string |Printf style formatting: adds %q and %S.|
+|getOpts|(options:object, conf:object, self:object):object |Get options.|
 |import|(file:string, [options](#system-import):object=void) |Same as source with {import:true}.|
 |isFinite|(val):boolean |Return true if is a finite number.|
 |isMain|():boolean |Return true if current script was the main script invoked from command-line.|
@@ -871,7 +873,6 @@ Builtin system commands. All methods are exported as global.
 |noOp|() |A No-Op. A zero overhead command call that is useful for debugging.|
 |parseFloat|(val):number |Convert string to a double.|
 |parseInt|(val:any, base:number=10):number |Convert string to an integer.|
-|parseOpts|(self:object&#124;userobj, options:object, conf:object&#124;null&#124;undefined):object |Parse module options: similar to moduleOpts but arg order different and no freeze.|
 |printf|(format:string, ...):void |Formatted output to stdout.|
 |provide|(cmd:string&#124;function=void, version:number&#124;string=1, [options](#system-provide):object=void):void |Make a package available for use by require.|
 |puts|(val:any, ...):void |Output one or more values to stdout. Each argument is quoted.  Use Interp.logOpts to control source line and/or timestamps output.|

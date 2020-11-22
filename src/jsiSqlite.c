@@ -715,9 +715,12 @@ static Jsi_RC dbPrepareStmt(
     if( pPreStmt==0 ) {
         int nByte;
 
-        if( SQLITE_OK!=sqlite3_prepare_v2(db->db, zSql, -1, &pStmt, pzOut) )
-        
-            return Jsi_LogErrorExt("PREPARE: %s", sqlite3_errmsg(db->db));
+        if( SQLITE_OK!=sqlite3_prepare_v2(db->db, zSql, -1, &pStmt, pzOut) ) {
+            const char *em2 = "", *emsg = sqlite3_errmsg(db->db);
+            if (emsg && Jsi_Strstr(emsg, "near \"%\":") && Jsi_Strstr(zSql, "%v"))
+                em2 = ".  Note use of %v requires an \"obj\" option?";
+            return Jsi_LogErrorExt("PREPARE: %s%s", emsg, em2 );
+        }
         if( pStmt==0 ) {
             if( SQLITE_OK!=sqlite3_errcode(db->db) ) {
                 /* A compile-time error in the statement. */

@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.4.5
+//JSI Command Prototypes: version 3.4.6
 throw "NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG";
 
 var Array = function(cmd,args) {};
@@ -131,7 +131,7 @@ Interp.prototype.value = function(varName:string, level:number=0):any {};
 var JSON = function(cmd,args) {};
 JSON.prototype.check = function(str:string, strict:boolean=true):boolean {};
 JSON.prototype.parse = function(str:string, strict:boolean=true):any {};
-JSON.prototype.stringify = function(value:any,  strict:boolean=true):string {};
+JSON.prototype.stringify = function(value:any,  strict:null|boolean=true, indent:number=2):string {};
 var LogDebug = function(str:string|boolean,...):void {};
 var LogError = function(str:string|boolean,...):void {};
 var LogInfo = function(str:string|boolean,...):void {};
@@ -271,6 +271,7 @@ System.prototype.encodeURI = function(val:string):string {};
 System.prototype.exec = function(val:string, options:string|object=void):any {};
 System.prototype.exit = function(code:number=0):void {};
 System.prototype.format = function(format:string, ...):string {};
+System.prototype.getOpts = function(options:object, conf:object, self:object):object {};
 System.prototype.import = function(file:string, options:object=void):any {};
 System.prototype.isFinite = function(val):boolean {};
 System.prototype.isMain = function():boolean {};
@@ -370,6 +371,7 @@ var encodeURI = function(val:string):string {};
 var exec = function(val:string, options:string|object=void):any {};
 var exit = function(code:number=0):void {};
 var format = function(format:string, ...):string {};
+var getOpts = function(options:object, conf:object, self:object):object {};
 var import = function(file:string, options:object=void):any {};
 var isFinite = function(val):boolean {};
 var isMain = function():boolean {};

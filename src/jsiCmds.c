@@ -4715,7 +4715,7 @@ bool jsi_isDebugKey(const char *key) {
 }
 
 static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
-    Jsi_Value **ret, Jsi_Func *funcPtr, bool parse)
+    Jsi_Value **ret, Jsi_Func *funcPtr, int parse)
 {
     bool nofreeze = interp->subOpts.nofreeze;
     Jsi_TreeEntry *tPtr, *tPtr2;
@@ -4723,51 +4723,63 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     Jsi_RC rc = JSI_OK;
     jsi_Frame *fp = interp->framePtr, *pf = fp->parent;
     Jsi_Func *evfunc = fp->evalFuncPtr;
-    Jsi_Value *v1 = Jsi_ValueArrayIndex(interp, args, (parse?0:1)),
-    *v2 = Jsi_ValueArrayIndex(interp, args, (parse?1:0)),
-    *v3 = Jsi_ValueArrayIndex(interp, args, 2);
-    if (!v1)
-        v1 = Jsi_ValueMakeObject(interp, ret,  Jsi_ObjNewType(interp, JSI_OT_OBJECT));
-    else if (!Jsi_ValueIsObjType(interp, v1, JSI_OT_OBJECT))
+    /*Jsi_Value *vself = Jsi_ValueArrayIndex(interp, args, (parse?0:1)),
+    *vopts = Jsi_ValueArrayIndex(interp, args, (parse?1:0)),
+    *vconf = Jsi_ValueArrayIndex(interp, args, 2);*/
+    enum { VO_OPTS, VO_SELF, VO_CONF};
+    int vi[3] = {VO_OPTS, VO_SELF, VO_CONF};
+    switch (parse) {
+        case 0: break; // moduleOpts
+        case 1: vi[VO_CONF]=0; vi[VO_OPTS]=1; break; // parseOpts
+        case 2: // modOpts
+        case 3: vi[VO_CONF]=1; vi[VO_SELF]=2; break; // getOpts
+        default: Jsi_LogBug("bad index");
+    }
+    Jsi_Value *vopts = Jsi_ValueArrayIndex(interp, args, vi[VO_OPTS]),
+        *vself = Jsi_ValueArrayIndex(interp, args, vi[VO_SELF]),
+        *vconf = Jsi_ValueArrayIndex(interp, args, vi[VO_CONF]);
+    if (!vself)
+        vself = Jsi_ValueMakeObject(interp, ret,  Jsi_ObjNewType(interp, JSI_OT_OBJECT));
+    else if (!Jsi_ValueIsObjType(interp, vself, JSI_OT_OBJECT))
         return Jsi_LogError("arg 1: expected object 'self'");
     else
-        Jsi_ValueMakeObject(interp, ret, v1->d.obj);
+        Jsi_ValueMakeObject(interp, ret, vself->d.obj);
 
-    if (v2 && !Jsi_ValueIsObjType(interp, v2, JSI_OT_OBJECT))
+    if (vopts && !Jsi_ValueIsObjType(interp, vopts, JSI_OT_OBJECT))
         return Jsi_LogError("arg 2: expected object 'options'");
 
-    for (tPtr = (v2?Jsi_TreeSearchFirst(v2->d.obj->tree, &search, 0, NULL):NULL);
+    for (tPtr = (vopts?Jsi_TreeSearchFirst(vopts->d.obj->tree, &search, 0, NULL):NULL);
         tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
         Jsi_Value *v = (Jsi_Value*)Jsi_TreeValueGet(tPtr);
         if (v==NULL) continue;
         const char *key = (char*)Jsi_TreeKeyGet(tPtr);
-        if (!Jsi_ValueObjLookup(interp, v1, key, 1))
-            Jsi_ValueInsert(interp, v1, key, v, 0);
+        if (!Jsi_ValueObjLookup(interp, vself, key, 1))
+            Jsi_ValueInsert(interp, vself, key, v, 0);
     }
-    if (v2)
+    if (vopts)
         Jsi_TreeSearchDone(&search);
-    if (!parse && !v3 && pf && pf->funcName && !Jsi_Strcmp(pf->funcName, "moduleRun") && ((v3=pf->arguments))) {
-        if (Jsi_ValueIsObjType(interp, v3, JSI_OT_ARRAY))
-            v3 = Jsi_ValueArrayIndex(interp, v3, 1);
+    if (!parse && !vconf && pf && pf->funcName && !Jsi_Strcmp(pf->funcName, "moduleRun") && ((vconf=pf->arguments))) {
+        if (Jsi_ValueIsObjType(interp, vconf, JSI_OT_ARRAY))
+            vconf = Jsi_ValueArrayIndex(interp, vconf, 1);
         else {
-            v3 = NULL;
+            vconf = NULL;
         }
     }
-    if (!parse && !v3 && (v3=interp->framePtr->fargs)) {
-        if (Jsi_ValueIsObjType(interp, v3, JSI_OT_ARRAY))
-            v3 = Jsi_ValueArrayIndex(interp, v3, 1);
+    if (!parse && !vconf && (vconf=interp->framePtr->fargs)) {
+        if (Jsi_ValueIsObjType(interp, vconf, JSI_OT_ARRAY))
+            vconf = Jsi_ValueArrayIndex(interp, vconf, 1);
         else {
-            v3 = NULL;
+            vconf = NULL;
         }
     }
         
-    if (v3 && !Jsi_ValueIsNull(interp, v3) && !Jsi_ValueIsUndef(interp, v3)) {
-        if (!Jsi_ValueIsObjType(interp, v3, JSI_OT_OBJECT))
+    if (vconf && !Jsi_ValueIsNull(interp, vconf) && !Jsi_ValueIsUndef(interp, vconf)) {
+        if (!Jsi_ValueIsObjType(interp, vconf, JSI_OT_OBJECT))
             return Jsi_LogError("arg 3: expected object|null|undefined");
     
         Jsi_Value *oVal;
         int cnt = 0;
-        for (tPtr = Jsi_TreeSearchFirst(v3->d.obj->tree, &search, 0, NULL);
+        for (tPtr = Jsi_TreeSearchFirst(vconf->d.obj->tree, &search, 0, NULL);
             tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {
             Jsi_Value *val;
             const char *key;
@@ -4780,7 +4792,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                 break;
             }
 
-            if (!parse && cnt == 1 && !Jsi_Strcmp(key, "help") && v3->d.obj->tree->numEntries==1) {
+            if (!parse && cnt == 1 && !Jsi_Strcmp(key, "help") && vconf->d.obj->tree->numEntries==1) {
                 int isLong = 1;//Jsi_ValueIsTrue(interp, val);
                 const char *help = "", *es = NULL, *fstr = NULL, *fname = fp->ip->filePtr->fileName;
                 Jsi_TreeSearchDone(&search);
@@ -4811,7 +4823,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                     Jsi_DSPrintf(&dStr, "\n%s\nOptions are:\n", help);
                 else
                     Jsi_DSPrintf(&dStr, "\n%s.  Options are:\n    ", help);
-                for (tPtr = (v2?Jsi_TreeSearchFirst(v2->d.obj->tree, &search, 0, NULL):NULL);
+                for (tPtr = (vopts?Jsi_TreeSearchFirst(vopts->d.obj->tree, &search, 0, NULL):NULL);
                     tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
                     Jsi_Value *v = (Jsi_Value*)Jsi_TreeValueGet(tPtr);
                     const char *vstr, *key = (char*)Jsi_TreeKeyGet(tPtr);
@@ -4842,13 +4854,13 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             if (!parse && jsi_isDebugKey(key)) {
                 oTyp = JSI_VT_BOOL; // Accept these as builtin options.
                 oVal = NULL;
-            } else if (!v2) {
+            } else if (!vopts) {
                 continue;
-            } else if (!(tPtr2=Jsi_TreeEntryFind(v2->d.obj->tree, key)) || !(oVal = (Jsi_Value*)Jsi_TreeValueGet(tPtr2))) {
+            } else if (!(tPtr2=Jsi_TreeEntryFind(vopts->d.obj->tree, key)) || !(oVal = (Jsi_Value*)Jsi_TreeValueGet(tPtr2))) {
                 Jsi_TreeSearchDone(&search);
                 Jsi_DString dStr = {};
                 int cnt = 0;
-                for (tPtr = Jsi_TreeSearchFirst(v2->d.obj->tree, &search, 0, NULL);
+                for (tPtr = Jsi_TreeSearchFirst(vopts->d.obj->tree, &search, 0, NULL);
                     tPtr; tPtr = Jsi_TreeSearchNext(&search)) {
                     const char *key = (char*)Jsi_TreeKeyGet(tPtr);
                     if (!key) continue;
@@ -4878,7 +4890,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                     }
             }
             if (rc == JSI_OK)
-                Jsi_ValueInsert(interp, v1, key, val, 0);
+                Jsi_ValueInsert(interp, vself, key, val, 0);
         }
         Jsi_TreeSearchDone(&search);
     }
@@ -4899,7 +4911,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
             uint iff = (1<<i);
             if ((mo->log&iff))
                 continue;
-            if ((vlv = Jsi_ValueObjLookup(interp, v1, jsi_LogCodesU[i], 0))) {
+            if ((vlv = Jsi_ValueObjLookup(interp, vself, jsi_LogCodesU[i], 0))) {
                  if (Jsi_ValueIsFalse(interp, vlv)) {
                      pf->pkg->logmask |= iff;
                  } else {
@@ -4909,7 +4921,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
         }
     }
     if (rc == JSI_OK && !nofreeze) {
-        Jsi_Obj *obj = v1->d.obj;
+        Jsi_Obj *obj = vself->d.obj;
         obj->freeze = 1;
         obj->freezeNoModify = 0;
         obj->freezeReadCheck = 1;
@@ -4926,6 +4938,11 @@ static Jsi_RC SysModuleOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     return SysModuleOptsCmdEx(interp, args, _this, ret, funcPtr, 0);
+}
+static Jsi_RC SysGetOptsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    return SysModuleOptsCmdEx(interp, args, _this, ret, funcPtr, 3);
 }
 
 static Jsi_CmdSpec consoleCmds[] = {
@@ -5070,6 +5087,7 @@ static Jsi_CmdSpec sysCmds[] = {
     { "exec",       SysExecCmd,      1,  2, "val:string, options:string|object=void", .help="Execute an OS command", .retType=(uint)JSI_TT_ANY, .flags=0, .info=FN_exec, .opts=ExecOptions},
     { "exit",       SysExitCmd,      0,  1, "code:number=0", .help="Exit the current interpreter", .retType=(uint)JSI_TT_VOID },
     { "format",     SysFormatCmd,    1, -1, "format:string, ...", .help="Printf style formatting: adds %q and %S", .retType=(uint)JSI_TT_STRING },
+    { "getOpts",    SysGetOptsCmd,   2,  3, "options:object, conf:object, self:object", .help="Get options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
     { "import",     SysImportCmd,    1,  2, "file:string, options:object=void",  .help="Same as source with {import:true}", .retType=(uint)JSI_TT_ANY, .flags=0, .info=0, .opts=SourceOptions},
     { "isFinite",   isFiniteCmd,     1,  1, "val", .help="Return true if is a finite number", .retType=(uint)JSI_TT_BOOLEAN },
     { "isMain",     InfoIsMainCmd,   0,  0, "", .help="Return true if current script was the main script invoked from command-line", .retType=(uint)JSI_TT_BOOLEAN },
@@ -5080,12 +5098,12 @@ static Jsi_CmdSpec sysCmds[] = {
     { "log",        SysLogCmd,       1, -1, "val, ...", .help="Same as puts, but includes file:line", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "matchObj",   SysMatchObjCmd,  1,  4, "obj:object, match:string=void, partial=false, noerror=false", .help="Validate that object matches given name:type string. With single arg returns generated string", .retType=(uint)JSI_TT_BOOLEAN|JSI_TT_STRING },
     { "module",     SysModuleCmd,    1,  3, "cmd:string|function, version:number|string=1, options:object=void", .help="Same as provide, but will invoke cmd if isMain is true", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions },
-    { "moduleOpts", SysModuleOptsCmd,1,  3, "options:object, self:object|userobj=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "moduleOpts", SysModuleOptsCmd,1,  3, "options:object, self:object|userobj=void, conf:object|null|undefined=void", .help="Parse module options", .retType=(uint)JSI_TT_OBJECT},
     { "moduleRun",  SysModuleRunCmd, 1,  2, "cmd:string|function, args:array=undefined", .help="Invoke named module with given args or command-line args", .retType=(uint)JSI_TT_ANY},
     { "noOp",       jsi_NoOpCmd,     0, -1, "", .help="A No-Op. A zero overhead command call that is useful for debugging" },
     { "parseInt",   parseIntCmd,     1,  2, "val:any, base:number=10", .help="Convert string to an integer", .retType=(uint)JSI_TT_NUMBER },
     { "parseFloat", parseFloatCmd,   1,  1, "val", .help="Convert string to a double", .retType=(uint)JSI_TT_NUMBER },
-    { "parseOpts",  SysParseOptsCmd, 3,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=0},
+    { "parseOpts",  SysParseOptsCmd, 3,  3, "self:object|userobj, options:object, conf:object|null|undefined", .help="Parse module options: similar to moduleOpts but arg order different and no freeze", .retType=(uint)JSI_TT_OBJECT, .flags=JSI_OPT_DEPRECATED},
     { "printf",     SysPrintfCmd,    1, -1, "format:string, ...", .help="Formatted output to stdout", .retType=(uint)JSI_TT_VOID, .flags=0 },
     { "provide",    SysProvideCmd,   0,  3, "cmd:string|function=void, version:number|string=1, options:object=void", .help="Make a package available for use by require", .retType=(uint)JSI_TT_VOID, .flags=0, .info=0, .opts=jsiModuleOptions  },
     { "puts",       SysPutsCmd,      1, -1, "val:any, ...", .help="Output one or more values to stdout", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_puts },

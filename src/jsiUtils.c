@@ -123,7 +123,28 @@ uint jsi_GetLogFlag(Jsi_Interp *interp, uint maskidx, Jsi_PkgOpts* popts) {
         log &= (1<<maskidx);
     return log;
 }
- 
+
+void jsi_GetLineOfs(Jsi_Interp *interp, jsi_Frame* fp, int *line, int *lofs, const char** curFile) {
+    if (interp->inParse && interp->parseLine) {
+        *line = interp->parseLine->first_line;
+        *lofs = interp->parseLine->first_column;
+    } else if (interp->inParse && interp->parsePs) {
+        *line = interp->parsePs->lexer->cur_line;
+        *lofs = interp->parsePs->lexer->cur_char;
+    } else if (interp->curIp) {
+        if (interp->callerErr && fp && fp->parent) {
+            jsi_Frame *fptr = fp->parent;
+            *line = fptr->line;
+            *lofs = 0;
+            *curFile = fptr->filePtr->fileName;
+        } else {
+            *line = interp->curIp->Line;
+            *lofs = interp->curIp->Lofs;
+            if (*line<=0)
+                *line = fp->line;
+        }
+    }
+}
 static void (*logHook)(const char *buf, va_list va) = NULL;
 
 // Format message: always returns JSI_ERROR.
@@ -189,10 +210,11 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
             && (!interp->tryList || !(interp->tryList->inCatch|interp->tryList->inFinal))) { 
             /* Should only do the first or traceback? */
             if (!interp->errMsgBuf[0]) {
+                
                 vsnprintf(interp->errMsgBuf, sizeof(interp->errMsgBuf), format, va);
                 //interp->errMsgBuf[sizeof(interp->errMsgBuf)-1] = 0;
-                interp->errFile =  jsi_GetCurFile(interp);
-                interp->errLine = (interp->curIp?interp->curIp->Line:0);
+                interp->errFile =  curFile;
+                interp->errLine = line;
                 emsg = interp->errMsgBuf;
             }
             goto done;
@@ -227,25 +249,8 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
             snprintf(pbuf, sizeof(pbuf), "    (at or near \"%s\")\n", ss);
     }
     pbuf[sizeof(pbuf)-1] = 0;
-    if (interp->inParse && interp->parseLine) {
-        line = interp->parseLine->first_line;
-        lofs = interp->parseLine->first_column;
-    } else if (interp->inParse && interp->parsePs) {
-        line = interp->parsePs->lexer->cur_line;
-        lofs = interp->parsePs->lexer->cur_char;
-    } else if (interp->curIp) {
-        if (interp->callerErr && fp && fp->parent) {
-            jsi_Frame *fptr = fp->parent;
-            line = fptr->line;
-            lofs = 0;
-            curFile = fptr->filePtr->fileName;
-        } else {
-            line = interp->curIp->Line;
-            lofs = interp->curIp->Lofs;
-            if (line<=0)
-                line = fp->line;
-        }
-    }
+    jsi_GetLineOfs(interp, fp, &line, &lofs, &curFile);
+
     islog = (interp->parent && interp->debugOpts.msgCallback && code != JSI_LOG_BUG);
     Jsi_DString pStr;
     Jsi_DSInit(&pStr);
@@ -273,6 +278,8 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
 
     if (logHook)
         (*logHook)(buf, va);
+    else if (code == JSI_LOG_ERROR && interp->logOpts.capture && !interp->errMsgBuf[0])
+        vsnprintf(interp->errMsgBuf, sizeof(interp->errMsgBuf), buf, va);    
     else if (interp->subOpts.logAllowDups)
         vfprintf(stderr, buf, va);
     else {
@@ -492,6 +499,8 @@ typedef struct {
     Jsi_DString *dStr;
     int quote; /* Set to JSI_OUTPUT_JSON, etc*/
     int depth;
+    int indent;
+    int subcnt;
 } objwalker;
 
 bool Jsi_StrIsAlnum(const char *cp)
@@ -654,16 +663,27 @@ char *jsi_TrimStr(char *str) {
 
 static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, objwalker *owPtr);
 
+static void jsiJsonIndent(objwalker *ow) {
+    Jsi_DString *dStr = ow->dStr;
+    int i, n, ind = ow->indent;
+    if (ind<=0) ind = 2;
+    Jsi_DSAppend(dStr, "\n", NULL);
+    for (i=0; i<ow->depth; i++) {
+        for (n=0; n<ind; n++)
+            Jsi_DSAppend(dStr, " ", NULL);
+    }
+}
 static Jsi_RC jsi_ObjectGetFmt(Jsi_Interp *interp, const char *key, Jsi_Value *v, objwalker *ow)
 {
     Jsi_DString *dStr = ow->dStr;
-    int len;
+    int isfmt = ow->quote&JSI_JSON_FORMAT;
+    ow->subcnt++;
     if ((ow->quote&JSI_OUTPUT_JSON) && v && v->vt == JSI_VT_UNDEF)
         return JSI_OK;
-    char *cp = Jsi_DSValue(dStr);
-    len = Jsi_DSLength(dStr);
-    if (len>=2 && (cp[len-2] != '{' || cp[len-1] == '}'))
+    if (ow->subcnt>1)
         Jsi_DSAppend(dStr, ", ", NULL);
+    if (isfmt)
+        jsiJsonIndent(ow);
     if (((ow->quote&JSI_OUTPUT_JSON) == 0 || (ow->quote&JSI_JSON_STRICT) == 0) && Jsi_StrIsAlnum(key)
         && !Jsi_HashEntryFind(interp->lexkeyTbl, key))
         Jsi_DSAppend(dStr, key, NULL);
@@ -671,9 +691,7 @@ static Jsi_RC jsi_ObjectGetFmt(Jsi_Interp *interp, const char *key, Jsi_Value *v
         /* JSON/spaces, etc requires quoting the name. */
         Jsi_DSAppend(dStr, "\"", key, "\"", NULL);
     Jsi_DSAppend(dStr, ":", NULL);
-    ow->depth++;
     Jsi_RC rc = jsiValueGetString(interp, v, dStr, ow);
-    ow->depth--;
     return rc;
 }
 
@@ -709,6 +727,7 @@ static Jsi_RC jsiValueGetString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *d
         return Jsi_LogError("recursive ToString");
     int quote = owPtr->quote, len = -1, i;
     int isjson = owPtr->quote&JSI_OUTPUT_JSON;
+    int isfmt = owPtr->quote&JSI_JSON_FORMAT;
     Jsi_Number num;
     switch(v->vt) {
         case JSI_VT_UNDEF:
@@ -826,7 +845,7 @@ outstr:
                 
                 if (!o->arr)
                     len = Jsi_ValueGetLength(interp, v);
-                Jsi_DSAppend(dStr,"[",len?" ":"", NULL);
+                Jsi_DSAppend(dStr,"[",(len?" ":""), NULL);
                 for (i = 0; i < len; ++i) {
                     nv = Jsi_ValueArrayIndex(interp, v, i);
                     if (i) Jsi_DSAppend(dStr,", ", NULL);
@@ -840,24 +859,32 @@ outstr:
                     else Jsi_DSAppend(dStr, "undefined", NULL);
                     owPtr->depth--;
                 }
-                Jsi_DSAppend(dStr,len?" ":"","]", NULL);
+                Jsi_DSAppend(dStr,(len?" ":""),"]", NULL);
             } else {
                 int len = Jsi_TreeSize(o->tree);
+                if (len<=0) {
+                    Jsi_DSAppend(dStr, "{}", NULL);
+                    return rc;
+                }
+                Jsi_DSAppend(dStr, "{", (isfmt?"":" "), NULL);
                 if (len==0 && o->getters && o->accessorSpec && (len=o->getters->numEntries)) {
                     Jsi_HashEntry *hPtr;
                     Jsi_HashSearch search;
-                    Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
                     for (hPtr = Jsi_HashSearchFirst(o->getters, &search);
                         hPtr != NULL && rc == JSI_OK; hPtr = Jsi_HashSearchNext(&search)) {
                         rc = jsi_objectGetterFmt(interp, hPtr, owPtr, v);
                     }
                 } else {
-                    Jsi_DSAppend(dStr,"{",len?" ":"", NULL);
                     owPtr->depth++;
+                    int oldcnt = owPtr->subcnt;
+                    owPtr->subcnt = 0;
                     rc = Jsi_TreeWalk(o->tree, _object_get_callback, owPtr, 0);
+                    owPtr->subcnt = oldcnt;
                     owPtr->depth--;
                 }
-                Jsi_DSAppend(dStr,len?" ":"","}", NULL);
+                if (isfmt)
+                    jsiJsonIndent(owPtr);
+                Jsi_DSAppend(dStr, (isfmt?"":" "), "}", NULL);
             }
             return rc;
         }
@@ -870,15 +897,20 @@ outstr:
 }
 
 /* Format value into dStr.  Toplevel caller does init/free. */
-const char* Jsi_ValueGetDString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, int quote)
+const char* jsiValueGetDString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, int quote, int indent)
 {
     objwalker ow;
     ow.quote = quote;
     ow.depth = 0;
     ow.dStr = dStr;
+    ow.indent = indent;
     if (jsiValueGetString(interp, v, dStr, &ow) != JSI_OK)
         return NULL;
     return Jsi_DSValue(dStr);
+}
+
+const char* Jsi_ValueGetDString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, int quote) {
+    return jsiValueGetDString(interp, v, dStr, quote, 4);
 }
 
 char* jsi_KeyFind(Jsi_Interp *interp, const char *str, int nocreate, int *isKey)

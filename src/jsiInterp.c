@@ -49,6 +49,7 @@ Jsi_OptionSpec jsi_InterpLogOptions[] = {
     JSI_OPT(BOOL,   jsi_LogOptions, before,  .help="Output file:line before message string" ),
     JSI_OPT(BOOL,   jsi_LogOptions, isUTC,   .help="Time is to be UTC" ),
     JSI_OPT(STRKEY, jsi_LogOptions, timeFmt, .help="A format string to use with strftime" ),
+    JSI_OPT(BOOL,   jsi_LogOptions, capture, .help="Capture first error" ),
     JSI_OPT(USEROBJ,jsi_LogOptions, chan,    .help="Channel to send output to", .flags=0, .custom=0, .data=(void*)"Channel" ),
     JSI_OPT_END(jsi_LogOptions, .help="Interp options for logging")
 };

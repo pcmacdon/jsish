@@ -443,15 +443,29 @@ Jsi_JSONQuote(Jsi_Interp *interp, const char *str, int len, Jsi_DString *dsPtr)
 static Jsi_RC JSONStringifyCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    bool strict = 1;
+    bool strict = 1, fmt = 0;
+    int indent = 2;
+    Jsi_Number num;
     Jsi_Value *jsv = Jsi_ValueArrayIndex(interp, args, 1);
-    if (jsv && Jsi_ValueGetBoolean(interp, jsv, &strict) != JSI_OK) 
-        return Jsi_LogError("Expected boolean");
+    Jsi_Value *jsi = Jsi_ValueArrayIndex(interp, args, 2);
+    if (jsv) {
+        if (Jsi_ValueIsNull(interp, jsv))
+            fmt = 1;
+        else if (Jsi_ValueGetBoolean(interp, jsv, &strict) != JSI_OK) 
+            return Jsi_LogError("Expected boolean|null");
+    }
+    if (jsi) {
+        if (Jsi_ValueGetNumber(interp, jsi, &num) != JSI_OK) 
+            return Jsi_LogError("Expected number");
+        fmt = 1;
+        indent = num;
+    }
     int quote = JSI_OUTPUT_JSON;
     if (strict) quote|=JSI_JSON_STRICT;
+    if (fmt) quote|=JSI_JSON_FORMAT;
     Jsi_DString dStr = {};
     Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 0);
-    if (!Jsi_ValueGetDString(interp, arg, &dStr, quote))
+    if (!jsiValueGetDString(interp, arg, &dStr, quote, indent))
         return JSI_ERROR;
     Jsi_ValueFromDS(interp, &dStr, ret);
     return JSI_OK;
@@ -468,7 +482,7 @@ Jsi_RC Jsi_CommandInvoke(Jsi_Interp *interp, const char *cmdstr, Jsi_Value *args
 static Jsi_CmdSpec jsonCmds[] = {
     { "check",      JSONCheckCmd,       1, 2, "str:string, strict:boolean=true", .help="Return true if str is JSON", .retType=(uint)JSI_TT_BOOLEAN },
     { "parse",      JSONParseCmd,       1, 2, "str:string, strict:boolean=true", .help="Parse JSON and return js", .retType=(uint)JSI_TT_ANY },
-    { "stringify",  JSONStringifyCmd,   1, 2, "value:any,  strict:boolean=true", .help="Return JSON from a js object", .retType=(uint)JSI_TT_STRING },
+    { "stringify",  JSONStringifyCmd,   1, 3, "value:any,  strict:null|boolean=true, indent:number=2", .help="Return JSON from a js object", .retType=(uint)JSI_TT_STRING },
     { NULL, 0,0,0,0, .help="Commands for handling JSON data" }
 };
 

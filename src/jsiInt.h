@@ -1018,6 +1018,7 @@ typedef struct {
     bool time;    // Prefix with time
     bool date;    // Prefix with date
     bool before;  // Print file:line before message instead of at end.
+    bool capture; // Capture first error.
     bool isUTC;
     const char* timeFmt;
     Jsi_Value *chan;
@@ -1505,6 +1506,7 @@ extern Jsi_RC jsi_SetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value 
 extern Jsi_RC jsi_GetterCall(Jsi_Interp *interp, Jsi_HashEntry *hPtr, Jsi_Value **vres, Jsi_Value *_this, int flags);
 extern bool jsi_isDebugKey(const char *key);
 extern Jsi_TreeEntry *jsi_TreeObjSetValue(Jsi_Obj *obj, const char *key, Jsi_Value *val, int isstrkey, bool unique);
+extern const char* jsiValueGetDString(Jsi_Interp *interp, Jsi_Value* v, Jsi_DString *dStr, int quote, int indent);
 
 #if !defined(_JSI_MEMCLEAR) && defined(JSI_MEM_DEBUG) 
 #define _JSI_MEMCLEAR(ptr) memset(ptr, 0, sizeof(*ptr)) /* To aid debugging memory.*/

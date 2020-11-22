@@ -139,12 +139,16 @@ function mkref(args:array|string, opts:object) {
             rv += "|"+cnam+"|("+tblEsc(aastr)+")"+tblEsc(tret)+" |"+conhelp.map(['\n',' '])+'|\n';
         }
         if (cmds !== undefined) {
+            var deprecated = (1<<17);
             for (var cmd of cmds) {
                 var namspl = cmd.split('.'), nam = namspl[namspl.length-1];
                 tret = '';
                 if (nam == cnam)
                     continue;
                 ci = Info.cmds(cnam+'.'+nam);
+                var cflags = ci.flags;
+                if (cflags&deprecated)
+                    continue;
                 if (ci.retType !== "any")
                     tret = ':'+ci.retType;
                 conhelp = (ci.help?ci.help+'.':'');

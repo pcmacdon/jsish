@@ -4,7 +4,7 @@
 
 #define JSI_VERSION_MAJOR   3
 #define JSI_VERSION_MINOR   4
-#define JSI_VERSION_RELEASE 5
+#define JSI_VERSION_RELEASE 6
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -199,6 +199,7 @@ typedef enum {
     JSI_OUTPUT_STDERR = 0x8,
     JSI_JSON_STATIC_DEFAULT =100,
     JSI_JSON_STRICT   = 0x101, /* property names must be quoted. */
+    JSI_JSON_FORMAT   = 0x200,
     JSI_STUBS_STRICT  = 0x1, JSI_STUBS_SIG = 0xdeadaa00, JSI_SIG_TYPEDEF,
     JSI_SIG_OPTS = 0xdeadab00,
     JSI_SIG_OPTS_STRUCT, JSI_SIG_OPTS_ENUM, JSI_SIG_OPTS_VARDEF, JSI_SIG_OPTS_FIELD,
@@ -1209,7 +1210,7 @@ enum {
     JSI_OPT_TIME_DATEONLY   =   (1<<14),  /* Time field is date only. */
     JSI_OPT_TIME_TIMEONLY   =   (1<<15),  /* Time field is time only. */
     JSI_OPT_IS_BITS         =   (1<<16),  /* Is a C bit-field. */
-    JSI_OPT_FMT_STRING      =   (1<<17),  /* Format value (eg. time) as string. */
+    JSI_OPT_DEPRECATED      =   (1<<17),  /* Option is deprectated. */
     JSI_OPT_FMT_NUMBER      =   (1<<18),  /* Format value (eg. enum) as number. */
     JSI_OPT_FMT_HEX         =   (1<<19),  /* Format number in hex. */
     JSI_OPT_STRICT          =   (1<<20),  /* Strict mode. */

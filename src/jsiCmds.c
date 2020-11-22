@@ -4730,7 +4730,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     int vi[3] = {VO_OPTS, VO_SELF, VO_CONF};
     switch (parse) {
         case 0: break; // moduleOpts
-        case 1: vi[VO_CONF]=0; vi[VO_OPTS]=1; break; // parseOpts
+        case 1: vi[VO_SELF]=0; vi[VO_OPTS]=1; break; // parseOpts
         case 2: // modOpts
         case 3: vi[VO_CONF]=1; vi[VO_SELF]=2; break; // getOpts
         default: Jsi_LogBug("bad index");

@@ -566,6 +566,8 @@ Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts* op
     for (i=0; i<io->count; i++) {
         kstr = io->keys[i];
         const char *chk = NULL, *chk2 = NULL;
+        if (!Jsi_Strcmp("rowid", kstr))
+            continue;
         if (opts->skip && jsi_StrInArray(interp, opts->skip, kstr))
             continue;
         Jsi_DSAppend(tsPtr, pre, "[", kstr, "]", NULL);

@@ -4727,7 +4727,7 @@ static Jsi_RC SysModuleOptsCmdEx(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     *vopts = Jsi_ValueArrayIndex(interp, args, (parse?1:0)),
     *vconf = Jsi_ValueArrayIndex(interp, args, 2);*/
     enum { VO_OPTS, VO_SELF, VO_CONF};
-    int vi[3] = {VO_OPTS, VO_SELF, VO_CONF};
+    int vi[] = {0, 1, 2};
     switch (parse) {
         case 0: break; // moduleOpts
         case 1: vi[VO_SELF]=0; vi[VO_OPTS]=1; break; // parseOpts

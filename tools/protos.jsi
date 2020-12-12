@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.4.6
+//JSI Command Prototypes: version 3.4.7
 throw "NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG";
 
 var Array = function(cmd,args) {};
@@ -267,7 +267,9 @@ System.prototype.LogWarn = function(str:string|boolean,...):void {};
 System.prototype.assert = function(expr:boolean|number|function, msg:string=void, options:object=void):void {};
 System.prototype.clearInterval = function(id:number):void {};
 System.prototype.decodeURI = function(val:string):string {};
+System.prototype.decodeURIComponent = function(val:string):string {};
 System.prototype.encodeURI = function(val:string):string {};
+System.prototype.encodeURIComponent = function(val:string):string {};
 System.prototype.exec = function(val:string, options:string|object=void):any {};
 System.prototype.exit = function(code:number=0):void {};
 System.prototype.format = function(format:string, ...):string {};
@@ -367,7 +369,9 @@ console.prototype.printf = function(format:string, ...):void {};
 console.prototype.puts = function(val:any, ...):void {};
 console.prototype.warn = function(val, ...):void {};
 var decodeURI = function(val:string):string {};
+var decodeURIComponent = function(val:string):string {};
 var encodeURI = function(val:string):string {};
+var encodeURIComponent = function(val:string):string {};
 var exec = function(val:string, options:string|object=void):any {};
 var exit = function(code:number=0):void {};
 var format = function(format:string, ...):string {};

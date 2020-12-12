@@ -1,7 +1,8 @@
 #!/usr/local/bin/jsish -u %s
 
-var x = '{"type":"", "label":"editTran", "data" : [6,2961]}';
-var x2 = '{"type":"", "label":"editTran", data : [6,2961]}';
+var x, x2, o;
+;x = '{"type":"", "label":"editTran", "data" : [6,2961]}';
+;x2 = '{"type":"", "label":"editTran", data : [6,2961]}';
 ;JSON.check(x,false);
 ;JSON.check(x);
 ;JSON.check(x2,false);
@@ -25,8 +26,15 @@ JSON.parse('{ "Columns": [ 1, 2], "A" : 1 }');
 x = JSON.parse('{ "Columns": [ 1, 2, {"ABC":1, "B":[2,3]}, 2], "A" : 1 }');
 ;x.toString();
 
+;o = {a:1,b:2,c:{d:1,e:{a:1},g:[1,2]},d:9};
+;JSON.stringify(o);
+;JSON.stringify(o, null);
+;JSON.stringify(o, false, 4);
+
 /*
 =!EXPECTSTART!=
+x = '{"type":"", "label":"editTran", "data" : [6,2961]}' ==> {"type":"", "label":"editTran", "data" : [6,2961]}
+x2 = '{"type":"", "label":"editTran", data : [6,2961]}' ==> {"type":"", "label":"editTran", data : [6,2961]}
 JSON.check(x,false) ==> true
 JSON.check(x) ==> true
 JSON.check(x2,false) ==> true
@@ -38,5 +46,31 @@ JSON.parse(x2) ==> e ==> JSON parse error (unexpected char in strict mode) at of
 JSON.stringify(dat) ==> { "able":1 }
 x.toString() ==> [ "ABC", 1 ]
 x.toString() ==> { A:1, Columns:[ 1, 2, { ABC:1, B:[ 2, 3 ] }, 2 ] }
+o = {a:1,b:2,c:{d:1,e:{a:1},g:[1,2]},d:9} ==> { a:1, b:2, c:{ d:1, e:{ a:1 }, g:[ 1, 2 ] }, d:9 }
+JSON.stringify(o) ==> { "a":1, "b":2, "c":{ "d":1, "e":{ "a":1 }, "g":[ 1, 2 ] }, "d":9 }
+JSON.stringify(o, null) ==> {
+  "a":1, 
+  "b":2, 
+  "c":{
+    "d":1, 
+    "e":{
+      "a":1
+    }, 
+    "g":[ 1, 2 ]
+  }, 
+  "d":9
+}
+JSON.stringify(o, false, 4) ==> {
+    a:1, 
+    b:2, 
+    c:{
+        d:1, 
+        e:{
+            a:1
+        }, 
+        g:[ 1, 2 ]
+    }, 
+    d:9
+}
 =!EXPECTEND!=
 */

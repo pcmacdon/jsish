@@ -27,7 +27,7 @@ function Websrv(args:string|array, conf:object=void)
         closeTimeout:0,         // Time til exit after close of final client websocket (ms).
         confFile    :'',        // JSON file of options (eg. for useridPass or wsOpts).
         docs        :'',        // Display markdown docs from this directory.
-        es5lint     :'',        // Parse-only a .js file or dir of files recursively disabling es6 features.
+        es5lint     :'',        // For a .js file or dir of files recursively do parse-only with es6 features disabled.
         hist        :false,     // Let Vue employ history mode, short for urlFallback=url: useful for -docs/-app.
         ignoreExit  :false,     // Ignore exit request.
         initArg     :[],        // List of app modules to run.

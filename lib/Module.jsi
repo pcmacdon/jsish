@@ -6,7 +6,9 @@ function Module(args:array, conf:object=void) {
 
     const options = { // Run or create a Jsi module.
         create  :'',        // Create a Jsi module template with this name.
+        es5lint :'',        // For a .js file or dir of files recursively do parse-only with es6 features disabled.
         force   :false,     // Remove output if exists.
+        json    :'',        // Json file to normalize
         output  :'',        // Override the output filename default of create + .jsi.
         quiet   :false,     // No messages.
         setup   :'',        // Download and setup fossil repos from jsish.org.
@@ -27,8 +29,38 @@ function Module(args:array, conf:object=void) {
         File.write('run_'+app+'.sh', "#!\njsish -a -update true "+app+'.fossil $*\n');
     }
     
+    function jsonify(name) {
+        var d = File.read(name);
+        d = JSON.parse(d, false);
+        d = JSON.stringify(d, null, 4);
+        if (self.output == '-')
+            puts(d);
+        else if (self.output == '.')
+            File.write(name, d);
+        else if (self.output)
+            File.write(self.output, d);
+        else
+            return d;
+    }
+    
+    function es5lint(d) {
+        var i, lst;
+        if (File.isdir(d))
+            lst = File.glob('*.js', {dir:d, recurse:true});
+        else
+            lst = [d];
+        for (i of lst) {
+            var int = new Interp({noEval:true, noES6:true, scriptFile:i});
+            delete int;
+        }
+    }
+    
     function main() {
         LogTrace('Starting');
+        if (self.json)
+            return jsonify(self.json);
+        if (self.es5lint)
+            return es5lint(self.es5lint);
         if (self.rootdir === '')
             self.rootdir=Info.scriptDir();
         debugger;

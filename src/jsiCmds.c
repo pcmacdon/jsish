@@ -1168,10 +1168,12 @@ static Jsi_RC isFiniteCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
 
 /* Returns a url-encoded version of str */
 /* IMPORTANT: be sure to free() the returned string after use */
-static char *url_encode(char *str) {
+static char *url_encode(char *str, bool comp) {
+  const char *ncomps = "-_.!~*'()", *comps = ";,/?:@&=+$#";
+
   char *pstr = str, *buf = (char*)Jsi_Malloc(Jsi_Strlen(str) * 3 + 1), *pbuf = buf;
   while (*pstr) {
-    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') 
+    if (isalnum(*pstr) || (!Jsi_Strchr(ncomps, *pstr) && (!comp || !Jsi_Strchr(comps, *pstr))))
       *pbuf++ = *pstr;
     else if (*pstr == ' ') 
       *pbuf++ = '+';
@@ -1183,15 +1185,21 @@ static char *url_encode(char *str) {
   return buf;
 }
 
-/* Returns a url-decoded version of str */
+/* Returns a url-decoded version of str.  */
 /* IMPORTANT: be sure to free() the returned string after use */
-static char *url_decode(char *str, int *len) {
+static char *url_decode(char *str, int *len, bool comp) {
+  char *comps = ";,/?:@&=+$#", cc;
   char *pstr = str, *buf = (char*)Jsi_Malloc(Jsi_Strlen(str) + 1), *pbuf = buf;
   while (*pstr) {
     if (*pstr == '%') {
       if (pstr[1] && pstr[2]) {
-        *pbuf++ = jsi_fromHexChar(pstr[1]) << 4 | jsi_fromHexChar(pstr[2]);
-        pstr += 2;
+        cc = jsi_fromHexChar(pstr[1]) << 4 | jsi_fromHexChar(pstr[2]);
+        if (!comp && Jsi_Strchr(comps, cc))
+            *pbuf++ = '%';
+        else {
+            pstr += 2;
+            *pbuf++ = cc;
+        }
       }
     } else if (*pstr == '+') { 
       *pbuf++ = ' ';
@@ -1209,7 +1217,7 @@ static Jsi_RC EncodeURICmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     char *cp, *str = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
-    cp = url_encode(str);
+    cp = url_encode(str,0);
     Jsi_ValueMakeString(interp, ret, cp);
     return JSI_OK;
 }
@@ -1219,7 +1227,26 @@ static Jsi_RC DecodeURICmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
 {
     char *cp, *str = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
     int len;
-    cp = url_decode(str, &len);
+    cp = url_decode(str, &len,0);
+    Jsi_ValueMakeBlob(interp, ret, (uchar*)cp, len);
+    return JSI_OK;
+}
+
+static Jsi_RC EncodeURIComponentCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    char *cp, *str = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+    cp = url_encode(str,1);
+    Jsi_ValueMakeString(interp, ret, cp);
+    return JSI_OK;
+}
+
+static Jsi_RC DecodeURIComponentCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    char *cp, *str = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+    int len;
+    cp = url_decode(str, &len,1);
     Jsi_ValueMakeBlob(interp, ret, (uchar*)cp, len);
     return JSI_OK;
 }
@@ -5083,7 +5110,9 @@ static Jsi_CmdSpec sysCmds[] = {
     { "clearInterval",clearIntervalCmd,1,1, "id:number", .help="Delete event id returned from setInterval/setTimeout/info.events()", .retType=(uint)JSI_TT_VOID },
 #endif
     { "decodeURI",  DecodeURICmd,    1,  1, "val:string", .help="Decode an HTTP URL", .retType=(uint)JSI_TT_STRING },
+    { "decodeURIComponent",  DecodeURIComponentCmd,    1,  1, "val:string", .help="Decode an HTTP URL", .retType=(uint)JSI_TT_STRING },
     { "encodeURI",  EncodeURICmd,    1,  1, "val:string", .help="Encode an HTTP URL", .retType=(uint)JSI_TT_STRING },
+    { "encodeURIComponent",  EncodeURIComponentCmd,    1,  1, "val:string", .help="Encode an HTTP URL", .retType=(uint)JSI_TT_STRING },
     { "exec",       SysExecCmd,      1,  2, "val:string, options:string|object=void", .help="Execute an OS command", .retType=(uint)JSI_TT_ANY, .flags=0, .info=FN_exec, .opts=ExecOptions},
     { "exit",       SysExitCmd,      0,  1, "code:number=0", .help="Exit the current interpreter", .retType=(uint)JSI_TT_VOID },
     { "format",     SysFormatCmd,    1, -1, "format:string, ...", .help="Printf style formatting: adds %q and %S", .retType=(uint)JSI_TT_STRING },

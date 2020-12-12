@@ -855,7 +855,9 @@ Builtin system commands. All methods are exported as global.
 |assert|(expr:boolean&#124;number&#124;function, msg:string=void, [options](#system-assert):object=void):void |Throw or output msg if expr is false. Assertions.  Enable with jsish --I Assert or using the -Assert module option.|
 |clearInterval|(id:number):void |Delete event id returned from setInterval/setTimeout/info.events().|
 |decodeURI|(val:string):string |Decode an HTTP URL.|
+|decodeURIComponent|(val:string):string |Decode an HTTP URL.|
 |encodeURI|(val:string):string |Encode an HTTP URL.|
+|encodeURIComponent|(val:string):string |Encode an HTTP URL.|
 |exec|(val:string, [options](#system-exec):string&#124;object=void) |Execute an OS command. If the command ends with '&', set the 'bg' option to true. The second argument can be a string, which is the same as setting the 'inputStr' option. By default, returns the string output, unless the 'bg', 'inputStr', 'retCode' or 'retAll' options are used|
 |exit|(code:number=0):void |Exit the current interpreter.|
 |format|(format:string, ...):string |Printf style formatting: adds %q and %S.|

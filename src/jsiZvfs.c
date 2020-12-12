@@ -623,13 +623,13 @@ addentry:
         pZvfs->hPtr = pEntry;
         Jsi_HashValueSet(pEntry, (void*) pZvfs);
 
+skip:
         if (nFile < 0)
             break;
 
         /* Skip over the extra information so that the next read will be from
         ** the beginning of the next directory entry.
         */
-skip:
         Jsi_Seek(interp, chan, lenExtra, SEEK_CUR);
     }
     pArchive->chan = chan;

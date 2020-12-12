@@ -880,4 +880,15 @@ Call Jsi_OptionChanged to determine if an option was specified.
 
 Jsi source is generally is covered by an MIT.
 
+## Vue
+Vue related components included:
+
+- [Vue](https://vuejs.org/), [Vuex](https://vuex.vuejs.org/), [Vue-Router](https://router.vuejs.org/)
+- [Bootstrap](https://getbootstrap.com/), [Bootstrap-Vue](https://bootstrap-vue.org/)
+- [vue-markdown-pdq](https://github.com/pdqi/vue-markdown-pdq)
+- [Vue Prism Editor](https://www.npmjs.com/package/vue-prism-editor)
+- [Vue Draggable](https://github.com/SortableJS/Vue.Draggable)
+- [Prism](js.com/download.html#themes=prism-coy&languages=markup+css+clike+javascript+bash+c+css-extras+json+markdown+markup-templating+php+python+sql+typescript&plugins=line-numbers+show-language+toolbar+copy-to-clipboard)
+
+
 <!-- meta:{"file":{"index":1002}} -->

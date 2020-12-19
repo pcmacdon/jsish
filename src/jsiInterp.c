@@ -787,7 +787,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "  -d\t\tDebug: console script debugger.\n"
           "  -e CODE\tEvaluate javascript and exit.\n"
           "  -h ?CMD?\tHelp: show help for jsish or its commands.\n"
-          "  -m\t\tModule: utility create/manage/invoke a Module.\n"
+          "  -m\t\tInvoke named Module.\n"
+          "  -M\t\tModule utilities\n"
           "  -s\t\tSafe: runs script in safe sub-interp.\n"
           "  -t\t\tTesting of scripts or directories of scripts with .js/.jsi extension.\n"
           "  -w\t\tWget: web client to download file from url.\n"
@@ -821,7 +822,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 break;
             case 'e':
                 if (argc < 3)
-                    rc = Jsi_LogError("missing argument");
+                    rc = Jsi_LogError("expected eval-expression argument");
                 else {
                     Jsi_ShiftArgs(interp, NULL);
                     rc = Jsi_EvalString(interp, argv[2], JSI_EVAL_ISMAIN|JSI_EVAL_NOSKIPBANG);
@@ -832,9 +833,12 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             case 'J':
                 rc = Jsi_EvalString(interp, "moduleRun('Jspp');", JSI_EVAL_ISMAIN);
                 break;
+            case 'M':
+                rc = Jsi_EvalString(interp, "moduleRun('Module');", JSI_EVAL_ISMAIN);
+                break;
             case 'm':
-                if (argc <= 2 || argv[2][0] == '-')
-                    rc = Jsi_EvalString(interp, "moduleRun('Module');", JSI_EVAL_ISMAIN);
+                if (argc <= 2)
+                    rc = Jsi_LogError("expected a module-name: see available with 'jsish -M run'");
                 else {
                     Jsi_DString dStr = {}, eStr = {};
                     const char *cps, *cpe;
@@ -888,7 +892,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 break;
             default:
                 puts("usage: jsish [ --E CODE | --I OPT:VAL | --T ] \n\t"
-                "-a | -c | -d | -D | -e CODE | -h | J | -m | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
+                "-a | -c | -d | -D | -e CODE | -h | J | -m  | -M | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
                 return jsi_DoExit(interp, 1);
         }
     } else {
@@ -914,7 +918,14 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
 
         } else {
             if (argc>1) {
-                jsi_vf = Jsi_ValueNewStringKey(interp, argv[first]);
+                const char *avf = argv[first];
+                int avlen = Jsi_Strlen(avf), isdot=!Jsi_Strcmp(avf,".");
+                if (avlen && (isdot || avf[avlen-1]=='/')) {
+                    char avfp[PATH_MAX];
+                    snprintf(avfp, sizeof(avfp), "%smain.jsi", (isdot?"./":avf));
+                    jsi_vf = Jsi_ValueNewStringDup(interp, avfp);
+                } else
+                    jsi_vf = Jsi_ValueNewStringKey(interp, avf);
                 Jsi_IncrRefCount(interp, jsi_vf);
             }
             rc = Jsi_EvalFile(interp, jsi_vf, JSI_EVAL_ARGV0|JSI_EVAL_AUTOINDEX|JSI_EVAL_ISMAIN);

@@ -889,12 +889,14 @@ static Jsi_OptionSpec jsiModuleOptions[] = {
     JSI_OPT_END(Jsi_ModuleConf, .help="Options for require command")
 };
 
-Jsi_RC jsi_PkgDumpInfo(Jsi_Interp *interp, const char *name, Jsi_Value **ret) {
+Jsi_RC jsi_PkgDumpInfo(Jsi_Interp *interp, const char *name, Jsi_Value **ret, Jsi_Number lastReq) {
     jsi_PkgInfo *ptr;
     Jsi_HashEntry *hPtr = Jsi_HashEntryFind(interp->packageHash, name);
     if (hPtr && ((ptr = (jsi_PkgInfo*)Jsi_HashValueGet(hPtr)))) {
         Jsi_Obj *nobj = Jsi_ObjNew(interp);
         Jsi_ValueMakeObject(interp, ret, nobj);
+        if (lastReq)
+            ptr->lastReq = lastReq;
         Jsi_ObjInsert(interp, nobj, "name", Jsi_ValueNewStringDup(interp, name), 0);
         Jsi_ObjInsert(interp, nobj, "version", Jsi_ValueNewNumber(interp, ptr->version), 0);
         Jsi_ObjInsert(interp, nobj, "lastReq", Jsi_ValueNewNumber(interp, ptr->lastReq), 0);
@@ -930,7 +932,7 @@ static Jsi_RC InfoPackageCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     const char *name = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
-    if (!name || jsi_PkgDumpInfo(interp, name, ret) != JSI_OK)
+    if (!name || jsi_PkgDumpInfo(interp, name, ret, 0) != JSI_OK)
         Jsi_ValueMakeNull(interp, ret);
     return JSI_OK;
 }
@@ -976,7 +978,7 @@ static Jsi_RC SysRequireCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
             rc = Jsi_LogType("package '%s' downlevel: %." JSI_NUMGFMT " < %." JSI_VERFMT_LEN JSI_NUMGFMT, name, ver, n);
         if (rc != JSI_OK)
             return rc;
-        return jsi_PkgDumpInfo(interp, name, ret);
+        return jsi_PkgDumpInfo(interp, name, ret, n);
     }
     Jsi_Value *opts = Jsi_ValueArrayIndex(interp, args, 2);
        
@@ -3551,8 +3553,9 @@ static Jsi_RC InfoObjCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         fval = Jsi_ValueNewArray(interp, NULL, 0);
         jsi_DumpOptionSpecs(interp, fval->d.obj, obj->accessorSpec->spec);
     } else
-        fval = Jsi_ValueNew(interp);
+        fval = Jsi_ValueNewNull(interp);
     Jsi_ObjInsert(interp, nobj, "spec", fval, 0);
+    Jsi_ObjInsert(interp, nobj, "refcnt", Jsi_ValueNewNumber(interp, (Jsi_Number)obj->refcnt), 0);
     return JSI_OK;
 }
 

@@ -5,14 +5,9 @@ require('Jsi', '2.4');
 function Module(args:array, conf:object=void) {
 
     const options = { // Run or create a Jsi module.
-        create  :'',        // Create a Jsi module template with this name.
-        es5lint :'',        // For a .js file or dir of files recursively do parse-only with es6 features disabled.
-        force   :false,     // Remove output if exists.
-        json    :'',        // Json file to normalize
         output  :'',        // Override the output filename default of create + .jsi.
         quiet   :false,     // No messages.
-        setup   :'',        // Download and setup fossil repos from jsish.org.
-        web     :false      // Use websock server template.
+        repo    :'https://jsish.org/afossil',        // Repo source for parent of subproject
     };
     var self = {
         rootdir      :'',   // Root directory.
@@ -21,14 +16,88 @@ function Module(args:array, conf:object=void) {
 
     moduleOpts(options, self);
     
-    function setupApp(app) {
-        if (app !== 'pdq') LogWarn('app is not pdq');
-        //Wget('http://jsish.org/fossil/pdq/zip/pdq', {O:'pdq.zip'});
-        //Wget('http://jsish.org/bin/fossil', {O:'fossil'}); exec('chmod u+x fossil');;
-        exec('fossil clone http://jsish.org/fossil/'+app+' '+app+'.fossil');
-        File.write('run_'+app+'.sh', "#!\njsish -a -update true "+app+'.fossil $*\n');
+    function getfossil(out='') {
+        if (!out)
+            out = 'fossil';
+        else if (File.isdir(out))
+            out += '/fossil';
+            
+        Wget('http://jsish.org/download/fossil', {O:out});
+        File.chmod(out, 0755);
     }
     
+    // Clone child sub project from parent project
+    function sclone(app:string='pdq', name:string='') {
+        var ver;
+        if (Info.platform().platform == 'unix')
+            ver = exec('which fossil');
+        else
+            ver = exec('fossil version', {noError:true});
+        if (!ver)
+            throw 'install fossil first, eg. use "sudo apt install fossil" or "sudo jsish -M getfossil"';
+        var cnt = File.glob('*', {retCount:true});
+        if (cnt)
+            throw 'setup must be used in an empty directory';
+        
+        if (File.exists('.fslckout')) {
+            ver = exec('fossil info', {noError:true});
+            throw 'sorry: already in open fossil: '+ver.split('\n')[0];
+        }
+        var dname = File.tail(File.pwd());
+        
+        if (!name)
+            name = dname;
+    
+        var proj = name.toUpperCase();
+        if (app.toLowerCase() == proj)
+            throw 'can not use name same as app: '+name;
+        var pfn = name+'.fossil';
+        var url = self.repo+'/'+app;
+        if (url[0] == '/' && File.exists(url+'.fossil'))
+            url += '.fossil';
+        var ccmd = 'fossil clone '+url+' '+pfn;
+        if (!self.quiet)
+            puts(ccmd);
+        var cval = exec(ccmd);
+        if (!self.quiet)
+            puts(cval);
+        var db = new Sqlite(pfn);
+        var now = parseInt(strptime()/1000);
+        db.eval("UPDATE config SET name='parent-project-code' WHERE name='project-code';"+
+            "UPDATE config SET name='parent-project-name' WHERE name='project-name';");
+        db.query("INSERT INTO config(name,mtime,value) VALUES('project-code',@now, lower(hex(randomblob(20))));");
+        db.query("INSERT INTO config(name,mtime,value) VALUES('parent-project-url', @now,(SELECT value FROM config WHERE name == 'last-sync-url'));");
+        db.query("INSERT INTO config(name,mtime,value)  VALUES('project-name', @now, @proj);");
+        if (self.quiet)
+            return;
+        exec('fossil open '+pfn);
+        exec('fossil remote-url off');
+        Jsi_CopyDir('/zvfs/lib/www', 'jsi');
+        var dfn = 'html/index.html';
+        if (!File.exists('index.html') && File.exists(dfn)) {
+            var idat = File.read(dfn);
+            idat = idat.map(['"../', '"']);
+            File.write('index.html', idat);
+        }
+        exec('fossil add jsi');
+        exec('fossil commit -m Subclone --no-warnings');
+        puts('DONE! Change password with: fossil user password '+Util.getuser().user+' NEWPASS');
+        if (File.exists('main.jsi'))
+            puts('To finish setup run: "jsish ."');
+    }
+
+    function supdate() {
+        var url = exec(`fossil sql "SELECT value FROM config WHERE name = 'parent-project-url'"`);
+        if (!url)
+            throw 'not a subproject';
+        if (url[0] == "'" && url.length>3)
+            url = url.substr(1,url.length-3);
+        var dif = exec('fossil diff');
+        if (dif)
+            throw 'sorry: run "fossil commit" first';
+        return exec('fossil pull --from-parent-project '+url);
+    }
+
     function jsonify(name) {
         var d = File.read(name);
         d = JSON.parse(d, false);
@@ -54,24 +123,13 @@ function Module(args:array, conf:object=void) {
             delete int;
         }
     }
-    
-    function main() {
-        LogTrace('Starting');
-        if (self.json)
-            return jsonify(self.json);
-        if (self.es5lint)
-            return es5lint(self.es5lint);
-        if (self.rootdir === '')
-            self.rootdir=Info.scriptDir();
-        debugger;
-        var ext, fn = self.create;
-        if (self.setup !== '')
-            return setupApp(self.setup);
+
+    function run(fn:string='', ...) {
         if (fn === '') {
             var lst = File.glob('/zvfs/lib/*'), rc = [];
             for (var i of lst) {
                 var ft = File.tail(i), fr = File.rootname(ft);
-                ext = File.extension(ft);
+                var ext = File.extension(ft);
                 if (File.isdir(i) && File.exists(i+'/'+fr+'.jsi'))
                     rc.push(fr);
                 else if (ext === '.jsi' && ft !== 'Jsish.jsi' && ft !=='autoload.jsi')
@@ -79,18 +137,23 @@ function Module(args:array, conf:object=void) {
             }
             throw 'missing required module name or builtin:\n    '+rc.sort().join(', ')+'\n';
         }
+        require(fn);
+        return moduleRun(fn);
+    }
+    
+    function createmod(fn:string, tmpname='Module') {
+        if (self.rootdir === '')
+            self.rootdir=Info.scriptDir();
+        var ext;
         ext = File.extension(fn);
         if (ext !== '.jsi')
             fn += '.jsi';
         if (self.output !== '')
             fn = self.output;
-        if (File.exists(fn)) {
-            if (!self.force)
-                throw 'file exists: '+fn;
-            File.remove(fn);
-        }
+        if (File.exists(fn))
+            throw 'file exists: '+fn;
         var pat = File.rootname(File.tail(fn));
-        var pref = (self.web?'WebApp':'Module');
+        var pref = tmpname;
         var tmpl = File.read('/zvfs/lib/templates/'+pref+'.jsi');
         var re = new RegExp(pref,'g');
         tmpl = tmpl.replace(re, pat);
@@ -101,7 +164,17 @@ function Module(args:array, conf:object=void) {
             console.printf("Created module '%s' in %s\n", pat, fn);
     }
     
-    return main();
+    var cmdList = [
+        ["createmod",   createmod,     "Create a .jsi module from template" ],
+        ["es5lint",     es5lint,    "Perform lint check with ES6 features disabled"],
+        ["getfossil",   getfossil,  "Download fossil executable"],
+        ["jsonify",     jsonify,    "Normalize a json file"],
+        ["run",         run,        "Run a module" ],
+        ["sclone",      sclone,     "Clone a sub-project from fossil parent (pdq)"],
+        ["supdate",     supdate,    "Update a sub-project created with sclone: pulls changes"]
+    ];
+    
+    return Jsi_CmdTable(args, cmdList);
 }
 
 module(Module);

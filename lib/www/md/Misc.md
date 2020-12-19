@@ -888,7 +888,7 @@ Vue related components included:
 - [vue-markdown-pdq](https://github.com/pdqi/vue-markdown-pdq)
 - [Vue Prism Editor](https://www.npmjs.com/package/vue-prism-editor)
 - [Vue Draggable](https://github.com/SortableJS/Vue.Draggable)
-- [Prism](js.com/download.html#themes=prism-coy&languages=markup+css+clike+javascript+bash+c+css-extras+json+markdown+markup-templating+php+python+sql+typescript&plugins=line-numbers+show-language+toolbar+copy-to-clipboard)
+- [Prism](http://prism.com/download.html#themes=prism-coy&languages=markup+css+clike+javascript+bash+c+css-extras+json+markdown+markup-templating+php+python+sql+typescript&plugins=line-numbers+show-language+toolbar+copy-to-clipboard)
 
 
 <!-- meta:{"file":{"index":1002}} -->

@@ -278,7 +278,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
 
     if (logHook)
         (*logHook)(buf, va);
-    else if (code == JSI_LOG_ERROR && interp->logOpts.capture && !interp->errMsgBuf[0])
+    else if ((code == JSI_LOG_ERROR || code == JSI_LOG_PARSE) && interp->logOpts.capture && !interp->errMsgBuf[0])
         vsnprintf(interp->errMsgBuf, sizeof(interp->errMsgBuf), buf, va);    
     else if (interp->subOpts.logAllowDups)
         vfprintf(stderr, buf, va);

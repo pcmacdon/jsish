@@ -94,6 +94,8 @@ function Zip(args:string|array, conf:object=void) {
                 File.mkdir(fdir, true);
             File.write(destDir+fn, File.read(zdir+'/'+fn));
         }
+        if (zdir != '/zvfs')
+            Zvfs.unmount(zdir);
         return 0;
     }
 
@@ -139,23 +141,12 @@ function Zip(args:string|array, conf:object=void) {
         usage('');
         throw 'first arg must be a cmd';
     }
-
+    
     var fname = args[1];
     if (args[0] !== 'zip' && fname && !File.exists(fname))
         throw 'file does not exist: ' + fname;
-    
-    if (args.length > 0) {
-        for (var i of cmdList) {
-            if (i[0] == args[0]) {
-                return i[1].apply(null, args.slice(1));
-            }
-        }
-    }
-    var emsg = 'Arg 1 must be one of:\n';
-    for (i of cmdList) {
-        emsg += '  ' + i[0] + '      \t: ' + i[2] + '\n';
-    }
-    throw emsg; 
+
+    return Jsi_CmdTable(args, cmdList);
 }
 
 module(Zip, 1, {exit:true});

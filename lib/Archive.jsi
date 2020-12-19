@@ -19,7 +19,7 @@ function Archive(args:array, conf:object=void)
         rootdir     :null,      // Base directory.
         update      :false,     // Do a pull update if a .fossil.
         updateAll   :false,     // For all .fossil files in given directory do a pull update and exit.
-        version     :''         // Version or commit
+        version     :''         // Version or commit: use 'tip' for latest.
     };
 
     moduleOpts(options, self);
@@ -90,11 +90,12 @@ function Archive(args:array, conf:object=void)
         }
         if (self.noRun)
             return mnt;
+        var msrc;
         for (var cmnt of dlst) {
-            var msrc = cmnt+'/'+self.mainFile;
+            msrc = cmnt+'/'+self.mainFile;
             if (File.exists(msrc)) break;
         }
-        if (!File.exists(msrc))
+        if (!msrc || !File.exists(msrc))
             throw 'no '+self.mainFile+' found in . or lib/ within archive';
         //var cargs = console.args;
         console.args.shift(); // = console.args.slice(1);

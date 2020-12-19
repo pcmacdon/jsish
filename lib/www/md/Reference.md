@@ -1136,7 +1136,7 @@ Commands for managing WebSocket server/client connections.
 |flags|*INT*|Flags for future use..||
 |getRegexp|*REGEXP*|Call onGet() only if Url matches pattern.||
 |headers|*ARRAY*|Headers to send to browser: name/value pairs.|initOnly|
-|jsiFnPattern|*STRKEY*|A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsig*.js).|readOnly|
+|jsiFnPattern|*STRKEY*|A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsi_config*.js).|readOnly|
 |interface|*STRING*|Interface for server to listen on, eg. 'eth0' or 'lo'.|initOnly|
 |local|*BOOL*|Limit connections to localhost addresses on the 127 network.||
 |localhostName|*STRKEY*|Client name used by localhost connections ('localhost').||
@@ -1162,6 +1162,7 @@ Commands for managing WebSocket server/client connections.
 |onUpload|*FUNC*|Function to call handle http-post. @`function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)`||
 |onRecv|*FUNC*|Function to call when websock data recieved. @`function(ws:userobj, id:number, data:string)`||
 |pathAliases|*OBJ*|Alias document root  ({jsi:'/zvfs/lib/www'}) .|initOnly|
+|pollms|*INT*|Poll wait time in ms (0).||
 |port|*INT*|Port for server to listen on (8080).|initOnly|
 |post|*STRING*|Post string to serve.|initOnly|
 |protocol|*STRKEY*|Name of protocol (ws/wss).||

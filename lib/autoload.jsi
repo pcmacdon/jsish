@@ -12,6 +12,7 @@ Jsi_Auto.Jsi_Opts       =
 Jsi_Auto.Jsi_SqlValues  =
 Jsi_Auto.Jsi_TableObj   =
 Jsi_Auto.Jsi_CopyDir    =
+Jsi_Auto.Jsi_CmdTable   =
 Jsi_Auto.Jsi_Conf       = 'source("'+Info.scriptDir()+'/Jsish.jsi")';
 Jsi_Auto.Htmlpp     = 'source("'+Info.scriptDir()+'/Htmlpp.jsi")';
 Jsi_Auto.Csspp      = 'source("'+Info.scriptDir()+'/Csspp.jsi")';

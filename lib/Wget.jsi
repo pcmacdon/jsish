@@ -63,88 +63,85 @@ function Wget(fileargs:array|string, conf:object=void) {
             self.onDone(id, self, isError);
     }
     
-    function main() {
-        if (typeof(fileargs) === 'string')
-            fileargs = [fileargs];
-        if (!fileargs || fileargs.length !== 1)
-            throw "expected a url arg";
-        self.url = fileargs[0];
-        var m = self.url.match(/^([a-zA-Z]+):\/\/([^\/]*+)(.*)$/);
-        if (!m)
-            throw 'invalid url: '+self.url;
-        self.scheme = m[1];
-        self.address = m[2];
-        self.path = m[3];
-        var as = self.address.split(':');
-        if (as.length==2) {
-            self.port = parseInt(as[1]);
-            self.address = as[0];
-        } else  if (as.length != 1)
-            throw 'bad port in address: '+self.address;
-        
-        if (self.O == '')
-            self.O = File.tail(self.path);
-        if (self.O == '')
-            self.O = '.';
-        if (self.O !== '-' && self.O !== '.' && File.exists(self.O)) {
-            if (!self.force)
-                throw 'output file already exists: '+self.O;
-            File.remove(self.O);
-        }
-        if (self.post.length)
-            self.protocol = 'post';
+    if (typeof(fileargs) === 'string')
+        fileargs = [fileargs];
+    if (!fileargs || fileargs.length !== 1)
+        throw "expected a url arg";
+    self.url = fileargs[0];
+    var m = self.url.match(/^([a-zA-Z]+):\/\/([^\/]*+)(.*)$/);
+    if (!m)
+        throw 'invalid url: '+self.url;
+    self.scheme = m[1];
+    self.address = m[2];
+    self.path = m[3];
+    var as = self.address.split(':');
+    if (as.length==2) {
+        self.port = parseInt(as[1]);
+        self.address = as[0];
+    } else  if (as.length != 1)
+        throw 'bad port in address: '+self.address;
+    
+    if (self.O == '')
+        self.O = File.tail(self.path);
+    if (self.O == '')
+        self.O = '.';
+    if (self.O !== '-' && self.O !== '.' && File.exists(self.O)) {
+        if (!self.force)
+            throw 'output file already exists: '+self.O;
+        File.remove(self.O);
+    }
+    if (self.post.length)
+        self.protocol = 'post';
 
-        if (self.sslDir) {
-            if (self.sslFnKey != '') self.sslkey = File.join(self.sslDir, self.sslFnKey);
-            if (self.sslFnCert != '') self.sslcert = File.join(self.sslDir, self.sslFnCert);
-            self.ssl = true;
-        }
-        
-        var wsopts = {
-            client:true,
-            onRecv:WsRecv,
-            onClose:WsClose,
-            debug:self.wsdebug,
-            rootdir:self.path,
-            port:self.port,
-            address:self.address,
-            protocol:self.protocol,
-            clientHost:self.address,
-            sslCert:self.sslcert,
-            sslKey:self.sslkey,
-            ssl:self.ssl,
-        };
-        for (var i in self.wsOpts)
-            wsopts[i] = self.wsOpts[i];
-        if (self.post.length)
-            wsopts.post = self.post;
-        if (self.headers.length)
-            wsopts.headers = self.headers;
-        if (self.scheme === 'https') {
-            if (!Interp.conf('hasOpenSSL'))
-                puts('SSL is not compiled in: falling back to http:');
-            else {
-                if (self.port === 80)
-                    wsopts.port = 443;
-                self.ssl = true;
-            }
-        }
-        LogTrace("Starting:", conf, wsopts);
-        self.ws = new WebSocket( wsopts );
-        if (self.nowait)
-            return self;
-        while (!self.done) {
-            update(200);
-            LogTrace("UPDATE");
-        }
-        if (self.unzip)
-            Zip(['unzip', self.O]);
-        //delete self.ws;
-        if (self.response !== '')
-            return self.response;
+    if (self.sslDir) {
+        if (self.sslFnKey != '') self.sslkey = File.join(self.sslDir, self.sslFnKey);
+        if (self.sslFnCert != '') self.sslcert = File.join(self.sslDir, self.sslFnCert);
+        self.ssl = true;
     }
     
-    return main();
+    var wsopts = {
+        client:true,
+        onRecv:WsRecv,
+        onClose:WsClose,
+        debug:self.wsdebug,
+        rootdir:self.path,
+        port:self.port,
+        address:self.address,
+        protocol:self.protocol,
+        clientHost:self.address,
+        sslCert:self.sslcert,
+        sslKey:self.sslkey,
+        ssl:self.ssl,
+    };
+    for (var i in self.wsOpts)
+        wsopts[i] = self.wsOpts[i];
+    if (self.post.length)
+        wsopts.post = self.post;
+    if (self.headers.length)
+        wsopts.headers = self.headers;
+    if (self.scheme === 'https') {
+        if (!Interp.conf('hasOpenSSL'))
+            puts('SSL is not compiled in: falling back to http:');
+        else {
+            if (self.port === 80)
+                wsopts.port = 443;
+            self.ssl = true;
+        }
+    }
+    LogTrace("Starting:", conf, wsopts);
+    self.ws = new WebSocket( wsopts );
+    if (self.nowait)
+        return self;
+    while (!self.done) {
+        update(200);
+        LogTrace("UPDATE");
+    }
+    if (self.unzip)
+        Zip(['unzip', self.O]);
+    
+    self.ws = null; // Need cleanup because local functions prevent context deletion.
+    if (self.response)
+        return self.response;
 }
 
 module(Wget, "1.2", {logmask:'trace'});

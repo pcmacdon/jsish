@@ -620,14 +620,13 @@ function Websrv(args:string|array, conf:object=void)
     }
 
     if (self.noWait) {
-        self.openWebsock = OpenWebsock;
         return self;
     }
 
     if (self.timeout)
         setTimeout(function () { DoTimeout(); }, self.timeout<0?-self.timeout:self.timeout);
     while (!self.done && Event.update(100) ) ;
-    
+    self.ws = null;
 }
 
 module(Websrv, '1.2.3', {nofreeze:false, logmask:'debug,trace'});

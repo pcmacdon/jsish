@@ -19,6 +19,13 @@ fossil open jsi.fossil
 make
 ```
 
+Or download fossil with:
+
+```
+wget http://jsish.org/download/fossil
+chmod u+x fossil
+```
+
 During the build the following will download:
 
 - Sqlite: https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip
@@ -198,25 +205,25 @@ USAGE:
   jsish [PREFIX-OPTS] [COMMAND-OPTS|FILE] ...
 
 PREFIX-OPTS:
-  --E CODE	Javascript evaluated before program starts
-  --I OPT=VAL	Interp option bits: equivalent to Interp.conf({OPT:VAL}); VAL defaults to true.
+  --E CODE  Javascript evaluated before program starts
+  --I OPT=VAL   Interp option bits: equivalent to Interp.conf({OPT:VAL}); VAL defaults to true.
 
 COMMAND-OPTS:
-  -a		Archive: mount an archive (zip, sqlar or fossil repo) and run module.
-  -c		CData: generate .c or JSON output from a .jsc description.
-  -d		Debug: console script debugger.
-  -e CODE	Evaluate javascript and exit.
-  -h ?CMD?	Help: show help for jsish or its commands.
-  -m		Module: utility create/manage/invoke a Module.
-  -s		Safe: runs script in safe sub-interp.
-  -t		testMode: test script file(s) or directories .js/.jsi files.
-  -w		Wget: web client to download file from url.
-  -v		Version: show version detail: add an arg to show only X.Y.Z
-  -z		Zip: append/manage zip files at end of executable.
-  -D		DebugUI: web-gui script debugger.
-  -J		JSpp: preprocess javascript for web.
-  -S		SqliteUI: web-gui for sqlite database file.
-  -W		Websrv: web server to serve out content.
+  -a        Archive: mount an archive (zip, sqlar or fossil repo) and run module.
+  -c        CData: generate .c or JSON output from a .jsc description.
+  -d        Debug: console script debugger.
+  -e CODE   Evaluate javascript and exit.
+  -h ?CMD?  Help: show help for jsish or its commands.
+  -m        Module: utility create/manage/invoke a Module.
+  -s        Safe: runs script in safe sub-interp.
+  -t        testMode: test script file(s) or directories .js/.jsi files.
+  -w        Wget: web client to download file from url.
+  -v        Version: show version detail: add an arg to show only X.Y.Z
+  -z        Zip: append/manage zip files at end of executable.
+  -D        DebugUI: web-gui script debugger.
+  -J        JSpp: preprocess javascript for web.
+  -S        SqliteUI: web-gui for sqlite database file.
+  -W        Websrv: web server to serve out content.
 ```
 +++
 
@@ -256,7 +263,7 @@ Accepted by all .jsi modules: -Debug, -Trace, -Test
 ``` bash
 /tmp/module.jsi:11: help: ...
 Module description..  Options are:
-	-rootdir	""		// Root directory.
+    -rootdir    ""      // Root directory.
 
 Accepted by all .jsi modules: -Debug, -Trace, -Test.
 

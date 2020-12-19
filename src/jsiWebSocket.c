@@ -94,8 +94,8 @@ enum {
 #endif
 
 typedef struct {
-  int activeCnt;  /* Count of active objects. */ 
-  int newCnt;  /* Total number of new. */ 
+    int activeCnt;  /* Count of active objects. */ 
+    int newCnt;  /* Total number of new. */ 
 } ws_Pkg_Status;
 
 static ws_Pkg_Status ws_PkgStatus = {};
@@ -132,6 +132,7 @@ typedef struct { /* Per server data (or client if client-mode). */
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
         *rootdir, *interface, *address, *mimeTypes, *mimeLookupFunc, *extOpts, *headers, *ssiExts;
     bool client, noUpdate, noWebsock, noWarn, ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
+    int pollms;
     Jsi_Value* version;
     int idx;
     ws_IndexTypeE dirIndex;
@@ -332,7 +333,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(REGEXP, jsi_wsCmdObj, getRegexp,  .help="Call onGet() only if Url matches pattern"),
 //    JSI_OPT(CUSTOM, jsi_wsCmdObj, handlersPkg,.help="Handlers use package() to upgrade string to function object"),
     JSI_OPT(ARRAY,  jsi_wsCmdObj, headers,    .help="Headers to send to browser: name/value pairs", jsi_IIOF),
-    JSI_OPT(STRKEY, jsi_wsCmdObj, jsiFnPattern,.help="A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsig*.js)", jsi_IIRO),
+    JSI_OPT(STRKEY, jsi_wsCmdObj, jsiFnPattern,.help="A glob-match pattern for files to which is appended 'window.jsiWebSocket=true;' (jsi_config*.js)", jsi_IIRO),
     JSI_OPT(STRING, jsi_wsCmdObj, interface,  .help="Interface for server to listen on, eg. 'eth0' or 'lo'", jsi_IIOF),
     JSI_OPT(BOOL,   jsi_wsCmdObj, local,      .help="Limit connections to localhost addresses on the 127 network"),
     JSI_OPT(STRKEY, jsi_wsCmdObj, localhostName,.help="Client name used by localhost connections ('localhost')"),
@@ -358,6 +359,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUpload,   .help="Function to call handle http-post", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onRecv,     .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Alias document root  ({jsi:'/zvfs/lib/www'}) ", jsi_IIOF),
+    JSI_OPT(INT,    jsi_wsCmdObj, pollms,     .help="Poll wait time in ms (0)"),
     JSI_OPT(INT,    jsi_wsCmdObj, port,       .help="Port for server to listen on (8080)", jsi_IIOF),
     JSI_OPT(STRING, jsi_wsCmdObj, post,       .help="Post string to serve", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, protocol,   .help="Name of protocol (ws/wss)"),
@@ -1976,7 +1978,7 @@ static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_
         func = ((pss && pss->onRecv)?pss->onRecv:cmdPtr->onRecv);
     if (!func)
         return JSI_OK;
-    vargs[n++] = (cmdPtr->deleted?Jsi_ValueNewNull(interp):Jsi_ValueNewObj(interp, cmdPtr->fobj));
+    vargs[n++] = (cmdPtr->deleted || !cmdPtr->fobj?Jsi_ValueNewNull(interp):Jsi_ValueNewObj(interp, cmdPtr->fobj));
     vargs[n++] = Jsi_ValueNewNumber(interp, (Jsi_Number)(pss?pss->wid:0));
     if (isClose)
         vargs[n++] = Jsi_ValueNewBoolean(interp, isError);
@@ -2618,7 +2620,7 @@ jsi_wscallback_websock(struct lws *wsi,
             // 1 args: ws
             Jsi_Value *vpargs, *vargs[10];
             int n = 0;
-            vargs[n++] = (cmdPtr->deleted?Jsi_ValueNewNull(interp):Jsi_ValueNewObj(interp, cmdPtr->fobj));
+            vargs[n++] = (cmdPtr->deleted || !cmdPtr->fobj?Jsi_ValueNewNull(interp):Jsi_ValueNewObj(interp, cmdPtr->fobj));
             vpargs = Jsi_ValueMakeObject(interp, NULL, Jsi_ObjNewArray(interp, vargs, n, 0));
             Jsi_IncrRefCount(interp, vpargs);
             jrc = Jsi_FunctionInvoke(interp, cmdPtr->onCloseLast, vpargs, &retStr, NULL);
@@ -3112,7 +3114,7 @@ static int jsi_wsService(jsi_wsCmdObj *cmdPtr)
      * which also includes libwebsocket sockets
      */
 
-    n = poll(jsi_wspollfds, jsi_wsnum_pollfds, 50);
+    n = poll(jsi_wspollfds, jsi_wsnum_pollfds, cmdPtr->pollms);
     if (n < 0) {
         n = 0;
         goto done;
@@ -3132,7 +3134,7 @@ static int jsi_wsService(jsi_wsCmdObj *cmdPtr)
                 }
 done:
 #else
-    n = lws_service(cmdPtr->context, 50);
+    n = lws_service(cmdPtr->context, cmdPtr->pollms);
 #endif
     if (cmdPtr->onModify) {
         jsi_wsOnModify(cmdPtr);
@@ -3358,7 +3360,7 @@ static Jsi_RC WebSocketConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
     cmdPtr->startTime = time(NULL);
     cmdPtr->hasOpts = 1;
     cmdPtr->includeFile = "include.shtml";
-    cmdPtr->jsiFnPattern = "jsig*.js";
+    cmdPtr->jsiFnPattern = "jsi_config*.js";
     if ((arg != NULL && !Jsi_ValueIsNull(interp,arg))
         && Jsi_OptionsProcess(interp, WSOptions, cmdPtr, arg, 0) < 0) {
 bail:

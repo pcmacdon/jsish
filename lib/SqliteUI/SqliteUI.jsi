@@ -559,11 +559,11 @@ function SqliteUI(files:array|string, conf:object=void)
 
     function cleanup() {
         LogDebug("Done!");
-        /*if (self.optdbfile)
-            delete self.optdb;
-        delete self.db;
+        if (self.optdbfile)
+            self.optdb = null;
+        self.db = null;
         if (!self.wsObj)
-            delete self.ws;*/
+            self.ws = null;
     }
     
     function main() {

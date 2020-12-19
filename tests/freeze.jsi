@@ -34,7 +34,7 @@ x = {a:1, b:2} ==> { a:1, b:2 }
 Object.freeze(x) ==> undefined
 '
 ---- Query freeze state'
-Info.obj(x) ==> { freeze:true, freezeModify:true, freezeReadCheck:true, getters:[], objType:"object", setters:[], spec:undefined }
+Info.obj(x) ==> { freeze:true, freezeModify:true, freezeReadCheck:true, getters:[], objType:"object", refcnt:3, setters:[], spec:null }
 x.a = 9 ==> 9
 ++x.b ==> 3
 '

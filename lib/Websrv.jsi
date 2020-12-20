@@ -400,21 +400,24 @@ function Websrv(args:string|array, conf:object=void)
         }
     }
     
-    function es5lint() {
-        var d = self.es5lint;
-        var i, lst;
-        if (File.isdir(d))
+    function es5lint(d) {
+        var i, lst, isdir = File.isdir(d);
+        if (isdir)
             lst = File.glob('*.js', {dir:d, recurse:true});
         else
             lst = [d];
         for (i of lst) {
-            var int = new Interp({noEval:true, noES6:true, scriptFile:i});
+            if (i.substr(i.length-7) == '.min.js') continue;
+            var ft = File.tail(i);
+            if (ft=='prism.js' || ft.substr(0,3)=='vue') continue;
+            var di = i;
+            if (isdir) di = d+'/'+i;
+            var int = new Interp({noEval:true, noES6:true, scriptFile:di});
             delete int;
         }
-    }
-    
+    }    
     if (self.es5lint)
-        return es5lint();
+        return es5lint(self.es5lint);
         
     if (self.srcFile !== '')
         source(self.srcFile);

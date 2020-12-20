@@ -359,7 +359,7 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(FUNC,   jsi_wsCmdObj, onUpload,   .help="Function to call handle http-post", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean"),
     JSI_OPT(FUNC,   jsi_wsCmdObj, onRecv,     .help="Function to call when websock data recieved", .flags=0, .custom=0, .data=(void*)"ws:userobj, id:number, data:string"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, pathAliases,.help="Alias document root  ({jsi:'/zvfs/lib/www'}) ", jsi_IIOF),
-    JSI_OPT(INT,    jsi_wsCmdObj, pollms,     .help="Poll wait time in ms (0)"),
+    JSI_OPT(INT,    jsi_wsCmdObj, pollms,     .help="Poll wait time in ms (5)"),
     JSI_OPT(INT,    jsi_wsCmdObj, port,       .help="Port for server to listen on (8080)", jsi_IIOF),
     JSI_OPT(STRING, jsi_wsCmdObj, post,       .help="Post string to serve", jsi_IIOF),
     JSI_OPT(STRKEY, jsi_wsCmdObj, protocol,   .help="Name of protocol (ws/wss)"),
@@ -3354,6 +3354,7 @@ static Jsi_RC WebSocketConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
     cmdPtr->maxUpload = 100000;
     cmdPtr->interp = interp;
     cmdPtr->ietf_version = -1;
+    cmdPtr->pollms = 5;
     cmdPtr->bufferPwr2 = 0;
     cmdPtr->ws_gid = -1;
     cmdPtr->ws_uid = -1;

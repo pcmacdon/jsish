@@ -6,7 +6,6 @@
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <link rel="stylesheet" href="/jsi/www/jsiweb.css" type="text/css" media="screen" />
     <script src="/jsi/www/jsi.js"></script>
-    <script src="/jsi/www/bind.js"></script>
   </head>
 
 <script>

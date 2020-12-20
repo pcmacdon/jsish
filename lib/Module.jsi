@@ -48,11 +48,17 @@ function Module(args:array, conf:object=void) {
         if (!name)
             name = dname;
     
+        var url = app;
+        if (!app.match(/^[-0-9a-zA-Z_]+$/)) {
+            app = File.rootname(File.tail(app));
+            if (!app.match(/^[-0-9a-zA-Z_]+$/))
+                throw 'app name invalid: '+app;
+        } else
+            url = self.repo+'/'+app;
         var proj = name.toUpperCase();
         if (app.toLowerCase() == proj)
             throw 'can not use name same as app: '+name;
         var pfn = name+'.fossil';
-        var url = self.repo+'/'+app;
         if (url[0] == '/' && File.exists(url+'.fossil'))
             url += '.fossil';
         var ccmd = 'fossil clone '+url+' '+pfn;
@@ -72,18 +78,21 @@ function Module(args:array, conf:object=void) {
             return;
         exec('fossil open '+pfn);
         exec('fossil remote-url off');
-        Jsi_CopyDir('/zvfs/lib/www', 'jsi');
+        if (!File.isdir('jsi')) {
+            Jsi_CopyDir('/zvfs/lib/www', 'jsi');
+            exec('fossil add jsi');
+        }
         var dfn = 'html/index.html';
         if (!File.exists('index.html') && File.exists(dfn)) {
             var idat = File.read(dfn);
             idat = idat.map(['"../', '"']);
             File.write('index.html', idat);
         }
-        exec('fossil add jsi');
-        exec('fossil commit -m Subclone --no-warnings');
-        puts('DONE! Change password with: fossil user password '+Util.getuser().user+' NEWPASS');
+        exec('fossil commit -m sclone --no-warnings');
         if (File.exists('main.jsi'))
-            puts('To finish setup run: "jsish ."');
+            puts('DONE! To finish setup run: "jsish ."');
+        else
+            puts('DONE! Change password with: fossil user password '+Util.getuser().user+' NEWPASS');
     }
 
     function supdate() {
@@ -94,7 +103,7 @@ function Module(args:array, conf:object=void) {
             url = url.substr(1,url.length-3);
         var dif = exec('fossil diff');
         if (dif)
-            throw 'sorry: run "fossil commit" first';
+            throw 'must run "fossil commit" first';
         return exec('fossil pull --from-parent-project '+url);
     }
 
@@ -113,13 +122,18 @@ function Module(args:array, conf:object=void) {
     }
     
     function es5lint(d) {
-        var i, lst;
-        if (File.isdir(d))
+        var i, lst, isdir = File.isdir(d);
+        if (isdir)
             lst = File.glob('*.js', {dir:d, recurse:true});
         else
             lst = [d];
         for (i of lst) {
-            var int = new Interp({noEval:true, noES6:true, scriptFile:i});
+            if (i.substr(i.length-7) == '.min.js') continue;
+            var ft = File.tail(i);
+            if (ft=='prism.js' || ft.substr(0,3)=='vue') continue;
+            var di = i;
+            if (isdir) di = d+'/'+i;
+            var int = new Interp({noEval:true, noES6:true, scriptFile:di});
             delete int;
         }
     }
@@ -165,7 +179,7 @@ function Module(args:array, conf:object=void) {
     }
     
     var cmdList = [
-        ["createmod",   createmod,     "Create a .jsi module from template" ],
+        ["createmod",   createmod,  "Create a .jsi module from template" ],
         ["es5lint",     es5lint,    "Perform lint check with ES6 features disabled"],
         ["getfossil",   getfossil,  "Download fossil executable"],
         ["jsonify",     jsonify,    "Normalize a json file"],

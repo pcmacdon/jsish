@@ -975,7 +975,7 @@ static Jsi_RC SysRequireCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     Jsi_RC rc = JSI_OK;
     if (argc==2) {
         if (ver < n)
-            rc = Jsi_LogType("package '%s' downlevel: %." JSI_NUMGFMT " < %." JSI_VERFMT_LEN JSI_NUMGFMT, name, ver, n);
+            rc = Jsi_LogType("package '%s' downlevel: %." JSI_VERFMT_LEN JSI_NUMGFMT " < %." JSI_VERFMT_LEN JSI_NUMGFMT, name, ver, n);
         if (rc != JSI_OK)
             return rc;
         return jsi_PkgDumpInfo(interp, name, ret, n);
@@ -2729,18 +2729,36 @@ static Jsi_RC InfoVersionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
     Jsi_Value *full = Jsi_ValueArrayIndex(interp, args, 0);
+    Jsi_Value *uver = Jsi_ValueArrayIndex(interp, args, 1);
+    Jsi_Number v, n = Jsi_Version();
+    if (uver && jsi_GetVerFromVal(interp, uver, &n, 0) != JSI_OK)
+        return JSI_ERROR;
     if (!full)
-        Jsi_ValueMakeNumber(interp, ret, Jsi_Version());
-    else if (!Jsi_ValueIsBoolean(interp, full))
-        return Jsi_LogError("arg1: expected bool 'full'");
+        Jsi_ValueMakeNumber(interp, ret, n);
+    else if (Jsi_ValueIsNumber(interp, full) || Jsi_ValueIsString(interp, full)) {
+        if (uver)
+            return Jsi_LogError("no arg2 when arg1 is a string|number");
+        if (jsi_GetVerFromVal(interp, full, &n, 0) != JSI_OK)
+            return JSI_ERROR;
+        Jsi_ValueMakeNumber(interp, ret, n);
+    } else if (!Jsi_ValueIsBoolean(interp, full))
+        return Jsi_LogError("arg1: expected 'full' to be boolean|string|number");
     else if (!Jsi_ValueIsTrue(interp, full))
-        Jsi_ValueMakeNumber(interp, ret, Jsi_Version());
+        Jsi_ValueMakeNumber(interp, ret, n);
     else {
         char buf[JSI_BUFSIZ];
+        int major=JSI_VERSION_MAJOR, minor=JSI_VERSION_MINOR, release=JSI_VERSION_RELEASE;
+        v = n;
+        if (uver) {
+            major=n;
+            n = (n+.00001-major)*100.0;
+            minor = n;
+            n = (n+.001-minor)*100.0;
+            release = n;
+        }
         snprintf(buf, sizeof(buf),
-            "{major:%d, minor:%d, release:%d, verStr:\"%d.%d.%d\"}",
-            JSI_VERSION_MAJOR, JSI_VERSION_MINOR, JSI_VERSION_RELEASE,
-            JSI_VERSION_MAJOR, JSI_VERSION_MINOR, JSI_VERSION_RELEASE);
+            "{major:%d, minor:%d, release:%d, verStr:\"%d.%d.%d\", version:%g}",
+            major, minor, release, major, minor, release, v);
         return Jsi_JSONParse(interp, buf, ret, 0);
     }
     return JSI_OK;
@@ -5027,7 +5045,7 @@ static Jsi_CmdSpec infoCmds[] = {
     { "script",     InfoScriptCmd,      0,  1, "func:function|regexp=void", .help="Get current script file name, or file containing function", .retType=(uint)JSI_TT_STRING|JSI_TT_ARRAY|JSI_TT_VOID },
     { "scriptDir",  InfoScriptDirCmd,   0,  0, "", .help="Get directory of current script", .retType=(uint)JSI_TT_STRING|JSI_TT_VOID },
     { "vars",       InfoVarsCmd,        0,  1, "val:string|regexp|object=void", .help="Return details or list of matching variables", .retType=(uint)JSI_TT_ARRAY|JSI_TT_OBJECT, .flags=0, .info=FN_infovars },
-    { "version",    InfoVersionCmd,     0,  1, "full:boolean=false", .help="JSI version: returns object when full=true", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT  },
+    { "version",    InfoVersionCmd,     0,  2, "full:boolean|number|string=false, ver:number|string=void", .help="Return version: when full=true returns as object", .retType=(uint)JSI_TT_NUMBER|JSI_TT_OBJECT  },
     { NULL, 0,0,0,0, .help="Commands for inspecting internal state information in JSI"  }
 };
 static Jsi_RC SysSqlValuesCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,

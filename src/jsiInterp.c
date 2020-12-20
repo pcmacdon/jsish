@@ -787,8 +787,8 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "  -d\t\tDebug: console script debugger.\n"
           "  -e CODE\tEvaluate javascript and exit.\n"
           "  -h ?CMD?\tHelp: show help for jsish or its commands.\n"
-          "  -m\t\tInvoke named Module.\n"
-          "  -M\t\tModule utilities\n"
+          "  -i MOD\tInvoke named Module.\n"
+          "  -m\t\tModule utilities\n"
           "  -s\t\tSafe: runs script in safe sub-interp.\n"
           "  -t\t\tTesting of scripts or directories of scripts with .js/.jsi extension.\n"
           "  -w\t\tWget: web client to download file from url.\n"
@@ -833,12 +833,12 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
             case 'J':
                 rc = Jsi_EvalString(interp, "moduleRun('Jspp');", JSI_EVAL_ISMAIN);
                 break;
-            case 'M':
+            case 'm':
                 rc = Jsi_EvalString(interp, "moduleRun('Module');", JSI_EVAL_ISMAIN);
                 break;
-            case 'm':
+            case 'i':
                 if (argc <= 2)
-                    rc = Jsi_LogError("expected a module-name: see available with 'jsish -M run'");
+                    rc = Jsi_LogError("expected a module-name to invoke: or use 'jsish -m run'");
                 else {
                     Jsi_DString dStr = {}, eStr = {};
                     const char *cps, *cpe;
@@ -892,7 +892,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 break;
             default:
                 puts("usage: jsish [ --E CODE | --I OPT:VAL | --T ] \n\t"
-                "-a | -c | -d | -D | -e CODE | -h | J | -m  | -M | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
+                "-a | -c | -d | -D | -e | -h | -i | J | -m  | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
                 return jsi_DoExit(interp, 1);
         }
     } else {

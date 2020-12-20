@@ -216,7 +216,7 @@ Commands for inspecting internal state information in JSI.
 |script|(func:function&#124;regexp=void):string&#124;array&#124;void |Get current script file name, or file containing function.|
 |scriptDir|():string&#124;void |Get directory of current script.|
 |vars|(val:string&#124;regexp&#124;object=void):array&#124;object |Return details or list of matching variables. Returns all values, data or function.|
-|version|(full:boolean=false):number&#124;object |JSI version: returns object when full=true.|
+|version|(full:boolean&#124;number&#124;string=false, ver:number&#124;string=void):number&#124;object |Return version: when full=true returns as object.|
 ### Info cmds
 |Option|Type|Description|Flags|
 |---|---|---|---|
@@ -1162,7 +1162,7 @@ Commands for managing WebSocket server/client connections.
 |onUpload|*FUNC*|Function to call handle http-post. @`function(ws:userobj, id:number, filename:string, data:string, startpos:number, complete:boolean)`||
 |onRecv|*FUNC*|Function to call when websock data recieved. @`function(ws:userobj, id:number, data:string)`||
 |pathAliases|*OBJ*|Alias document root  ({jsi:'/zvfs/lib/www'}) .|initOnly|
-|pollms|*INT*|Poll wait time in ms (0).||
+|pollms|*INT*|Poll wait time in ms (5).||
 |port|*INT*|Port for server to listen on (8080).|initOnly|
 |post|*STRING*|Post string to serve.|initOnly|
 |protocol|*STRKEY*|Name of protocol (ws/wss).||

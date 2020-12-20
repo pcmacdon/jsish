@@ -6,7 +6,7 @@
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 
     <script src="/jsi/js/Jsish.js"></script>
-    <script src="/jsi/bind.js"></script>
+    <script src="bind.jsi"></script>
 <? 
     // Load .jsi and .cssi for preprocessing inline.
     include(['debugui.jsi', 'debugui.cssi']);

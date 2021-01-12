@@ -134,8 +134,7 @@ function Jsi_Vfs(args:array=void, conf:object=void):void
                 }
             }
             if (!ver || ver === '') ver = 'tip';
-            if (!self.quiet && ver !== '')
-                puts('Fossil mount:', ver, mount, repoFile);
+            LogDebug('Fossil mount:', ver, mount, repoFile);
             info = dosplit(self.exec('fossil info "' + ver + '" ' + sfx), info);
             info.mntTag = ver;
             if (ver.match(/^ver-[0-9]+\.[0-9]+$/))

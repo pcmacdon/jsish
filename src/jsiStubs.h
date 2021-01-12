@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "71408ed876f077893cd984b2f9f21794"
+#define JSI_STUBS_MD5 "66a604e16467a7a4ac605486b9ae23fc"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -308,7 +308,7 @@ typedef struct Jsi_Stubs {
     Jsi_TreeEntry*(*_Jsi_TreeSearchFirst)(Jsi_Tree *treePtr, Jsi_TreeSearch *searchPtr, int flags, const void *startKey);
     Jsi_TreeEntry*(*_Jsi_TreeSearchNext)(Jsi_TreeSearch *searchPtr);
     void(*_Jsi_TreeSearchDone)(Jsi_TreeSearch *searchPtr);
-    int(*_Jsi_TreeWalk)(Jsi_Tree* treePtr, Jsi_TreeWalkProc* callback, void *data, int flags);
+    Jsi_RC(*_Jsi_TreeWalk)(Jsi_Tree* treePtr, Jsi_TreeWalkProc* callback, void *data, int flags);
     Jsi_TreeEntry*(*_Jsi_TreeSet)(Jsi_Tree *treePtr, const void *key, void *value);
     void*(*_Jsi_TreeGet)(Jsi_Tree *treePtr, void *key, int flags);
     bool(*_Jsi_TreeUnset)(Jsi_Tree *treePtr, void *key);

@@ -1190,8 +1190,8 @@ static char *url_encode(char *str, bool comp) {
 /* Returns a url-decoded version of str.  */
 /* IMPORTANT: be sure to free() the returned string after use */
 static char *url_decode(char *str, int *len, bool comp) {
-  char *comps = ";,/?:@&=+$#", cc;
-  char *pstr = str, *buf = (char*)Jsi_Malloc(Jsi_Strlen(str) + 1), *pbuf = buf;
+  const char *comps = ";,/?:@&=+$#";
+  char cc = 0, *pstr = str, *buf = (char*)Jsi_Malloc(Jsi_Strlen(str) + 1), *pbuf = buf;
   while (*pstr) {
     if (*pstr == '%') {
       if (pstr[1] && pstr[2]) {
@@ -1494,6 +1494,9 @@ Jsi_RC jsi_SysExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
                 return Jsi_LogError("invalid regex");
             if (rc)
                 no = 0;
+            restricted = 1;
+        } else if (interp->lockDown && !Jsi_Strcmp(interp->lockDown, ".") && !Jsi_Strncmp(cp, "fossil ", 7)) {
+            no = 0;
             restricted = 1;
         }
         if (no)
@@ -2757,8 +2760,8 @@ static Jsi_RC InfoVersionCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_th
             release = n;
         }
         snprintf(buf, sizeof(buf),
-            "{major:%d, minor:%d, release:%d, verStr:\"%d.%d.%d\", version:%g}",
-            major, minor, release, major, minor, release, v);
+            "{major:%d, minor:%d, release:%d, verStr:\"%d.%d.%d\", version:%g, zhash:\"%s\"}",
+            major, minor, release, major, minor, release, v, interp->opts.zhash);
         return Jsi_JSONParse(interp, buf, ret, 0);
     }
     return JSI_OK;
@@ -4591,6 +4594,7 @@ static Jsi_RC SysModuleCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     uint i, n = 0, siz, anum = 0, acnt=0;
     Jsi_Value **arr, *oargs;
     Jsi_Obj *obj;
+    Jsi_Func *func;
     const char *anam;
     bool oisMain = interp->isMain, isMain = jsi_isMain(interp);
     if (interp->isMain) {
@@ -4629,7 +4633,7 @@ static Jsi_RC SysModuleCmd_(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
         rc = Jsi_LogError("unknown command: %s", (mod?mod:""));
         goto done;
     }
-    Jsi_Func *func = cmd->d.obj->d.fobj->func;
+    func = cmd->d.obj->d.fobj->func;
     if (!isMain && func->filePtr->fileName == interp->framePtr->filePtr->fileName) {
         interp->framePtr->filePtr->pkg->loadLine = interp->curIp->Line; // for backtrace.
         goto done;

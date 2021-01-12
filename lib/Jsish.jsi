@@ -285,12 +285,12 @@ function Jsi_TableObj(db:userobj, table:string, data:object, conf:object=void) {
         return true;
     var cln = cl.length, fln=fl.length;
     if (cln > fln) {
-        LogWarn('Can not sync obj with fewer fields than table: "'+table+'"');
+        LogWarn('Can not sync table: fewer fields than table: "'+table+'"');
         return false;
     }
     var fadds = cl.filter( n => !fl.includes(n) );
     if (fadds.length) {
-        LogWarn('Can not sync, obj is missing fields in table: "'+table+'"\n'+fadds.join('\n|'));
+        LogWarn('Can not sync table: missing fields in table: "'+table+'"\n'+fadds.join('\n|'));
         return false;
     }
     var cadds = fl.filter( n => !cl.includes(n) );
@@ -322,32 +322,42 @@ function Jsi_CopyDir(dir:string, to:string, globOpts:object=void) {
     }
 }
 
-function Jsi_CmdTable(args:array, cmdList:array) {
-    if (typeof(cmdList[0]) != 'array' || cmdList[0].length != 3)
-        throw 'expected list of [string, func, string]';
-    var emsg = '';
+function Jsi_CmdTable(args:array, cmdList:array|object) {
+    var i, j, sn, emsg = '', cmds;
+    if (typeof(cmdList) == 'object')
+        cmds = cmdList;
+     else {
+        cmds = {};
+        for (i of cmdList) {
+            if (!i) throw 'null';
+            j = i[0];
+            cmds[j] = i.slice(1);
+        }
+    }
+
+
     if (args.length > 0) {
-        var sub, a0 = args[0], alen = a0.length;
+        var sub, cc, a0 = args[0], alen = a0.length;
         if (!alen) throw 'null length';
-        for (var i of cmdList) {
-            var sn = i[0];
-            if (sn == a0)
-                return i[1].apply(null, args.slice(1));
+        cc = cmds[a0];
+        if (cc)
+            return cc[0].apply(null, args.slice(1));
+        for (sn in cmds) {
             if (sn.substr(0,alen) == a0) {
                 if (sub) { emsg = 'Error: prefix not unique\n'; sub=null; break; }
-                sub = i;
+                sub = cmds[sn];
             }
         }
         if (sub)
-            return sub[1].apply(null, args.slice(1));
+            return sub[0].apply(null, args.slice(1));
     }
     emsg += 'Arg 1 must be unique prefix of:\n';
     var len = 0;
-    for (i of cmdList) 
-        if (i[0].length>len)
-            len = i[0].length;
-    for (i of cmdList) 
-        emsg += format("  %-*s - %s\n", len, i[0], i[2]);
+    for (i in cmds) 
+        if (i.length>len)
+            len = i.length;
+    for (i in cmds) 
+        emsg += format("  %-*s - %s\n", len, i, cmds[i][1]);
 
     throw emsg; 
 }

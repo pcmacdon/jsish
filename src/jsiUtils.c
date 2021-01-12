@@ -984,7 +984,7 @@ static char *get_inputline(Jsi_Interp *interp, int istty, const char *prompt)
     }
     res = Jsi_Strdup(Jsi_DSValue(&dStr));
     Jsi_DSFree(&dStr);
-    printf("READ: %s\n", res);
+    //printf("READ: %s\n", res);
     return res;
 }
 

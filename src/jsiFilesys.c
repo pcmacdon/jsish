@@ -524,8 +524,10 @@ Jsi_Channel Jsi_Open(Jsi_Interp *interp, Jsi_Value *file, const char *modeString
             || (Jsi_InterpAccess(interp, file, aflag) != JSI_OK
                 && (aflag || !interp->opts.argv[0] || Jsi_Strcmp(fileName, Jsi_FileRealpathStr(interp, interp->opts.argv[0], pbuf))))
             ) {
-                Jsi_LogError("%s access denied: %s", writ?"write":"read", fileName);
-                goto done;
+                if (writ || Jsi_Strcmp(fileName, jsiIntData.execName)) {
+                    Jsi_LogError("%s access denied: %s", writ?"write":"read", fileName);
+                    goto done;
+                }
             }
         }
         FILE *fp = fopen(fileName, Mode);
@@ -618,8 +620,8 @@ int Jsi_Chdir(Jsi_Interp *interp, Jsi_Value* path) {
     void *data;
     int rc = 0;
     const char *pathPtr = Jsi_ValueToString(interp, path, NULL);
-    if (interp->isSafe && Jsi_InterpAccess(interp, path, JSI_INTACCESS_READ) != JSI_OK) 
-        return Jsi_LogError("read access denied");
+    if (interp->isSafe && Jsi_InterpAccess(interp, path, JSI_INTACCESS_READ) != JSI_OK)
+        return Jsi_LogError("read access denied: %s", pathPtr);
     Jsi_Filesystem *fsPtr = Jsi_FilesystemForPath(interp, path, &data);
     if (fsPtr == &jsiFilesystem) {
         rc = chdir(pathPtr);

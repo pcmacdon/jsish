@@ -338,7 +338,7 @@ shared: $(DESTDIR)libjsi$(SHLEXT) $(DESTDIR)libjsish$(SHLEXT) $(DESTDIR)jsishs$(
 #	exit 0
 #endif
 
-$(PROGBIN): $(PROGBINA)  checkjsiminver .FORCE
+$(PROGBIN): $(PROGBINA)  checkjsiminver zhash .FORCE
 ifneq ($(JSI__ZIPLIB),1)
 	cp -f $(PROGBINA) $(PROGBIN)
 else
@@ -346,6 +346,7 @@ else
 	cp $(PROGBINA) $@
 ifneq ($(wildcard .fslckout),) 
 	fossil info | grep ^checkout | cut -b15- > lib/sourceid.txt
+	touch -r src/jsi.h lib/sourceid.txt
 endif
 	./jsimin lib/Zip.jsi create $@ $(ZIPDIR) lib
 endif
@@ -376,6 +377,8 @@ openssllib: openssl/$(TARGET)/libcypto.a
 openssl/$(TARGET)/libcypto.a:  $(MAKECONF)
 	$(MAKE) -C openssl CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
 
+src/main.o: src/main.c
+	$(CC) -c -o $@ $< $(CFLAGS) -DJSI__ZHASH=`cat zhash.txt`
 
 src/%.o: src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS) 
@@ -487,6 +490,9 @@ printconf:
 uchroot: src/uchroot.c
 	gcc -g -o uchroot src/uchroot.c && sudo chown root.root uchroot && sudo chmod u+s uchroot
 	
+zhash:
+	test -x jsish && jsish -e 'Util.hash(JSON.stringify(Zvfs.list()), {type:"sha1"})' > zhash.txt && echo "Generated zhash.txt"
+
 test:
 	./jsish -t tests
 

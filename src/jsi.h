@@ -3,8 +3,8 @@
 #define __JSI_H__
 
 #define JSI_VERSION_MAJOR   3
-#define JSI_VERSION_MINOR   4
-#define JSI_VERSION_RELEASE 9
+#define JSI_VERSION_MINOR   5
+#define JSI_VERSION_RELEASE 0
 
 #define JSI_VERSION (JSI_VERSION_MAJOR + ((Jsi_Number)JSI_VERSION_MINOR/100.0) + ((Jsi_Number)JSI_VERSION_RELEASE/10000.0))
 
@@ -287,7 +287,8 @@ typedef struct {
     uint reserved:11;           // Reserved for future use.
     int exitCode:16;            // Call exit with this code.
     Jsi_Interp* interp;         // Jsi_InterpNew sets this to let Jsi_Main use this interp.
-    void *reserved2[8];         // Reserved for future
+    const char *zhash;          // Zvfs sha code for appended zip files.
+    void *reserved2[7];         // Reserved for future
 } Jsi_InterpOpts;
 
 JSI_EXTERN Jsi_Interp* Jsi_InterpNew(Jsi_InterpOpts *opts); /*STUB = 1*/
@@ -814,7 +815,7 @@ JSI_EXTERN int Jsi_TreeEntryDelete(Jsi_TreeEntry *entryPtr); /*STUB = 276*/
 JSI_EXTERN Jsi_TreeEntry* Jsi_TreeSearchFirst(Jsi_Tree *treePtr, Jsi_TreeSearch *searchPtr, int flags, const void *startKey); /*STUB = 277*/
 JSI_EXTERN Jsi_TreeEntry* Jsi_TreeSearchNext(Jsi_TreeSearch *searchPtr); /*STUB = 278*/
 JSI_EXTERN void Jsi_TreeSearchDone(Jsi_TreeSearch *searchPtr); /*STUB = 279*/
-JSI_EXTERN int Jsi_TreeWalk(Jsi_Tree* treePtr, Jsi_TreeWalkProc* callback, void *data, int flags); /*STUB = 280*/
+JSI_EXTERN Jsi_RC Jsi_TreeWalk(Jsi_Tree* treePtr, Jsi_TreeWalkProc* callback, void *data, int flags); /*STUB = 280*/
 JSI_EXTERN Jsi_TreeEntry* Jsi_TreeSet(Jsi_Tree *treePtr, const void *key, void *value); /*STUB = 281*/
 JSI_EXTERN void* Jsi_TreeGet(Jsi_Tree *treePtr, void *key, int flags); /*STUB = 282*/
 JSI_EXTERN bool Jsi_TreeUnset(Jsi_Tree *treePtr, void *key); /*STUB = 283*/

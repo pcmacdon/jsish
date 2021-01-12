@@ -826,7 +826,7 @@ bool Jsi_TreeUnset(Jsi_Tree *treePtr, void *key) {
     return true;
 }
 
-static int tree_inorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback, void *data) {
+static Jsi_RC tree_inorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback, void *data) {
     uint epoch = treePtr->epoch;
     if (hPtr == NULL) return JSI_OK;
     if (hPtr->right != NULL) {
@@ -844,7 +844,7 @@ static int tree_inorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc
 }
 
 
-static int tree_preorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback, void *data) {
+static Jsi_RC tree_preorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback, void *data) {
     uint epoch = treePtr->epoch;
     if (hPtr == NULL) return JSI_OK;
     if (callback(treePtr, hPtr, data) != JSI_OK || epoch != treePtr->epoch)
@@ -861,7 +861,7 @@ static int tree_preorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkPro
 }
 
 
-static int tree_postorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback, void *data) {
+static Jsi_RC tree_postorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback, void *data) {
     uint epoch = treePtr->epoch;
     if (hPtr == NULL) return JSI_OK;
     if (hPtr->right != NULL) {
@@ -878,7 +878,7 @@ static int tree_postorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkPr
 }
 
 
-static int tree_levelorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback,
+static Jsi_RC tree_levelorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkProc *callback,
     void *data, int curlev, int level, int *cnt) {
     uint epoch = treePtr->epoch;
     if (hPtr == NULL) return JSI_OK;
@@ -900,7 +900,7 @@ static int tree_levelorder(Jsi_Tree *treePtr, Jsi_TreeEntry *hPtr, Jsi_TreeWalkP
 }
 
 
-int Jsi_TreeWalk(Jsi_Tree* treePtr, Jsi_TreeWalkProc* callback, void *data, int flags) {
+Jsi_RC Jsi_TreeWalk(Jsi_Tree* treePtr, Jsi_TreeWalkProc* callback, void *data, int flags) {
     Jsi_Interp *interp = treePtr->opts.interp;
     JSI_NOTUSED(interp);
     int n = 0, m = -1, lastm, order;

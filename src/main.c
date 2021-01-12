@@ -41,6 +41,9 @@ int jsi_main(int argc, char **argv)
         }
     }
     Jsi_InterpOpts opts = {.argc=argc, .argv=argv};
+#ifdef JSI__ZHASH
+    opts.zhash = JSI__ZHASH;
+#endif
     Jsi_Interp *interp = Jsi_Main(&opts);
     if (interp)
         Jsi_InterpDelete(interp);

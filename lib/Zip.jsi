@@ -56,6 +56,8 @@ function Zip(args:string|array, conf:object=void) {
     
     function list(fname:string) {
         fname = File.realpath(fname);
+        if (verbose)
+            return Zvfs.list(fname);
         if (fname === Info.executable())
             zdir = '/zvfs';
         else
@@ -127,15 +129,15 @@ function Zip(args:string|array, conf:object=void) {
         return create.apply(null, args);
     }
     
-    var cmdList = [
-        ["create",  create,  "Create standalone executable"],
-        ["fuse",    fuse,    "Use .zip file to produce a standalone executable"],
-        ["list",    list,    "List files in zip"],
-        ["trunc",   trunc,   "Truncate zip files off of executable"],
-        ["unzip",   unzip,   "Unpack files from zip archive, optionally into dest dir"],
-        ["zip",     zip,     "Create zip File"],
-        ["zvfs",    zvfs,    "Add zvfs files from jsish to a standalone executable"]
-    ];
+    var cmdList = {
+        create: [ create,  "Create standalone executable"],
+        fuse:   [ fuse,    "Use .zip file to produce a standalone executable"],
+        list:   [ list,    "List files in zip"],
+        trunc:  [ trunc,   "Truncate zip files off of executable"],
+        unzip:  [ unzip,   "Unpack files from zip archive, optionally into dest dir"],
+        zip:    [ zip,     "Create zip File"],
+        zvfs:   [ zvfs,    "Add zvfs files from jsish to a standalone executable"]
+    };
     var zdir, rc = 0;
     if (!args || args.length < 1) {
         usage('');

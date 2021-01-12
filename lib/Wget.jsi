@@ -45,9 +45,14 @@ function Wget(fileargs:array|string, conf:object=void) {
             self.response += str;
             return;
         }
-        if (!self.fd)
-            self.fd = new Channel((self.O==='-'?"stdout":self.O), 'wb+');
-        self.fd.write(str);
+        try {
+            if (!self.fd)
+                self.fd = new Channel((self.O==='-'?"stdout":self.O), 'wb+');
+            self.fd.write(str);
+        } catch(e) {
+            LogError('Failed! '+e);
+            throw(e);
+        }
     }
     
     function WsClose(ws:userobj|null, id:number, isError:boolean) {

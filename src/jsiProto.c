@@ -532,7 +532,7 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         return Jsi_LogError("must call via Object.assign");
 
     Jsi_Value *v = Jsi_ValueArrayIndex(interp, args,0);
-    if (!v || !Jsi_ValueIsObjType(interp, v, JSI_VT_OBJECT))
+    if (!v || !Jsi_ValueIsObjType(interp, v, JSI_OT_OBJECT))
         return Jsi_LogError("arg1: expected object");
     Jsi_Obj *obj = v->d.obj;
     Jsi_RC rc = JSI_OK;
@@ -542,7 +542,7 @@ static Jsi_RC ObjectAssignCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         Jsi_TreeEntry *tPtr;
         Jsi_TreeSearch search;
         Jsi_Value *vs = Jsi_ValueArrayIndex(interp, args, i);
-        if (!vs || !Jsi_ValueIsObjType(interp, vs, JSI_VT_OBJECT))
+        if (!vs || !Jsi_ValueIsObjType(interp, vs, JSI_OT_OBJECT))
             return Jsi_LogError("arg%d: expected object", i+1);
         for (tPtr = Jsi_TreeSearchFirst(vs->d.obj->tree, &search, 0, NULL);
             tPtr && rc == JSI_OK; tPtr = Jsi_TreeSearchNext(&search)) {

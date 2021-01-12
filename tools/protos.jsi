@@ -1,4 +1,4 @@
-//JSI Command Prototypes: version 3.4.9
+//JSI Command Prototypes: version 3.5.0
 throw "NOT EXECUTABLE: USE FILE IN GEANY EDITOR FOR CMD LINE COMPLETION + GOTO TAG";
 
 var Array = function(cmd,args) {};
@@ -350,10 +350,10 @@ Zvfs.prototype.append = function(archive:string, filelist:array, path:string|nul
 Zvfs.prototype.create = function(archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...):void {};
 Zvfs.prototype.deflate = function(data:string):string {};
 Zvfs.prototype.inflate = function(data:string):string {};
-Zvfs.prototype.list = function(archive:string):array {};
+Zvfs.prototype.list = function(archive:string=void):array {};
 Zvfs.prototype.mount = function(archive:string, mountdir:string=void):string {};
 Zvfs.prototype.names = function(mountdir:string=void):array {};
-Zvfs.prototype.offset = function(archive:string):number {};
+Zvfs.prototype.offset = function(archive:string=void):number {};
 Zvfs.prototype.stat = function(filename:string):object {};
 Zvfs.prototype.truncate = function(archive:string, noerror:boolean=false):number {};
 Zvfs.prototype.unmount = function(archive:string):void {};

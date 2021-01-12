@@ -788,7 +788,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
           "  -e CODE\tEvaluate javascript and exit.\n"
           "  -h ?CMD?\tHelp: show help for jsish or its commands.\n"
           "  -i MOD\tInvoke named Module.\n"
-          "  -m\t\tModule utilities\n"
+          "  -m\t\tManagement operatoins and utilities\n"
           "  -s\t\tSafe: runs script in safe sub-interp.\n"
           "  -t\t\tTesting of scripts or directories of scripts with .js/.jsi extension.\n"
           "  -w\t\tWget: web client to download file from url.\n"
@@ -834,7 +834,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Jspp');", JSI_EVAL_ISMAIN);
                 break;
             case 'm':
-                rc = Jsi_EvalString(interp, "moduleRun('Module');", JSI_EVAL_ISMAIN);
+                rc = Jsi_EvalString(interp, "moduleRun('Manage');", JSI_EVAL_ISMAIN);
                 break;
             case 'i':
                 if (argc <= 2)

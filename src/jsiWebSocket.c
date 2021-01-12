@@ -1471,6 +1471,10 @@ static int jsi_wsHttp(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, struct lws *wsi,
     bool isJsiWeb = 0, isSSI = 0, fallbackTry = 0;
     cmdPtr->stats.httpLast = now;
     Jsi_DString hStr = {};
+    char extBuf[JSI_BUFSIZ], *cpde;
+    bool isgzip = 0, native = 0;
+    Jsi_Value *rdir;
+    Jsi_DString sStr;
 
     /* if a legal POST URL, let it continue and accept data */
     if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
@@ -1590,9 +1594,8 @@ doredir:
     }
     ext = Jsi_Strrchr(inPtr, '.');
 
-    Jsi_Value *rdir = (pss->rootdir?pss->rootdir:cmdPtr->rootdir);
+    rdir = (pss->rootdir?pss->rootdir:cmdPtr->rootdir);
     cmdPtr->curRoot = (rdir?Jsi_ValueString(cmdPtr->interp, rdir, NULL):"./");
-    Jsi_DString sStr;
     Jsi_DSInit(&sStr);
     jsi_wsPathAlias(interp, cmdPtr, &inPtr, &sStr);
     snprintf(buf, sizeof(buf), "%s/%s", cmdPtr->curRoot, inPtr);
@@ -1602,9 +1605,8 @@ doredir:
     Jsi_DSFree(&sStr);
     if (cmdPtr->debug>1)
         fprintf(stderr, "FILE: %s in %s | %s\n", buf, cmdPtr->curRoot, Jsi_ValueString(interp, cmdPtr->rootdir, NULL));
-    char extBuf[JSI_BUFSIZ], *cpde = Jsi_Strrchr(buf, '/');
+    cpde = Jsi_Strrchr(buf, '/');
     isJsiWeb = (cpde && cmdPtr->jsiFnPattern && Jsi_GlobMatch(cmdPtr->jsiFnPattern, cpde+1, 0));
-    bool isgzip = 0;
     if (!ext || !ext[1])
         mime = "text/html";
     else {
@@ -1806,7 +1808,7 @@ doredir:
     Jsi_IncrRefCount(interp, fname);
 
     Jsi_StatBuf jsb;
-    bool native = Jsi_FSNative(interp, fname);
+    native = Jsi_FSNative(interp, fname);
     if ((native && Jsi_InterpSafe(interp) && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_READ) != JSI_OK) ||
         (Jsi_Stat(interp, fname, &jsb) || (jsb.st_size<=0 && !S_ISDIR(jsb.st_mode)))) {
 nofile:
@@ -1980,13 +1982,14 @@ static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_
         return JSI_OK;
     vargs[n++] = (cmdPtr->deleted || !cmdPtr->fobj?Jsi_ValueNewNull(interp):Jsi_ValueNewObj(interp, cmdPtr->fobj));
     vargs[n++] = Jsi_ValueNewNumber(interp, (Jsi_Number)(pss?pss->wid:0));
+    int echo = (cmdPtr->echo||(pss && pss->echo));
     if (isClose)
         vargs[n++] = Jsi_ValueNewBoolean(interp, isError);
     else {
         if (nlen<=0)
             return JSI_OK;
         vargs[n++]  = Jsi_ValueNewBlob(interp, (uchar*)inPtr, nlen);
-        if ((cmdPtr->echo||(pss && pss->echo)) && inPtr)
+        if (echo && inPtr)
             Jsi_LogInfo("WS-RECV: %s", inPtr);
         Jsi_LogTraceExt("WS-RECV: %s", inPtr);
     }
@@ -1995,6 +1998,8 @@ static Jsi_RC jsi_wsrecv_callback(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_
 
     Jsi_Value *ret = Jsi_ValueNew1(interp);
     Jsi_RC rc = Jsi_FunctionInvoke(interp, func, vpargs, &ret, NULL);
+    if (rc != JSI_OK && echo && !Jsi_InterpGone(interp))
+        Jsi_LogWarn("WS-RECV ERROR");
     if (rc == JSI_OK && Jsi_ValueIsUndef(interp, ret)==0 && !isClose) {
         /* TODO: should we handle callback return data??? */
     }

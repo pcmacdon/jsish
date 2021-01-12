@@ -352,7 +352,7 @@ static Jsi_RC ZvfsReadTOCStart(
         p->nByteCompr = INT32(zBuf, 20);
         p->nByte = INT32(zBuf, 24);
         p->nExtra = INT32(zBuf, 28);
-        p->iCRC = INT32(zBuf, 32);
+        p->iCRC = INT32(zBuf, 16);
 
         if (nFile < 0)
             break;
@@ -1623,7 +1623,9 @@ static Jsi_RC ZvfsListCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Obj *sobj;
     Jsi_Value *sval;
  
-    Jsi_Value *Filename = Jsi_ValueArrayIndex(interp, args, 0);;
+    Jsi_Value *Filename = Jsi_ValueArrayIndex(interp, args, 0);
+    if (!Filename)
+        Filename = jsiIntData.execValue;
     chan = Jsi_Open(interp, Filename, "rb");
     if (chan==0)
         return JSI_ERROR;
@@ -1637,7 +1639,7 @@ static Jsi_RC ZvfsListCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_ValueMakeArrayObject(interp, ret, nobj);
     sobj = Jsi_ObjNew(interp);
     sval = Jsi_ValueMakeArrayObject(interp, NULL, sobj);
-    static const char *keys[] = {"Name", "Special", "Offset", "Bytes", "BytesCompressed", 0 };
+    static const char *keys[] = {"Name", "Special", "Offset", "Bytes", "BytesCompressed", "CRC", 0 };
     int i;
     for (i=0; keys[i]; i++)
         Jsi_ObjArrayAdd(interp, sobj, Jsi_ValueNewStringKey(interp, keys[i]));
@@ -1654,6 +1656,9 @@ static Jsi_RC ZvfsListCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         Jsi_ObjArrayAdd(interp, sobj, Jsi_ValueNewNumber(interp, (Jsi_Number)pList->iOffset));
         Jsi_ObjArrayAdd(interp, sobj, Jsi_ValueNewNumber(interp, (Jsi_Number)pList->nByte));
         Jsi_ObjArrayAdd(interp, sobj, Jsi_ValueNewNumber(interp, (Jsi_Number)pList->nByteCompr));
+        char sbuf[100];
+        snprintf(sbuf, sizeof(sbuf), "%x", pList->iCRC);
+        Jsi_ObjArrayAdd(interp, sobj, Jsi_ValueNewStringDup(interp, sbuf));
         pNext = pList->pNext;
         Jsi_Free((char*)pList);
         pList = pNext;
@@ -2168,6 +2173,8 @@ static Jsi_RC ZvfsOffsetCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     int zipStart;
 
     Jsi_Value *Archive = Jsi_ValueArrayIndex(interp, args, 0);
+    if (!Archive)
+        Archive = jsiIntData.execValue;
     chan = Jsi_Open(interp, Archive, "rb");
     if( chan==0 ) return JSI_ERROR;
 
@@ -2349,10 +2356,10 @@ bail:
 static Jsi_CmdSpec zvfsCmds[] = {
     { "append",     ZvfsAppendCmd,      2, -1, "archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...",  .help="Like 'create()', but appends to an existing archive (with no dup checking)", .retType=(uint)JSI_TT_VOID },
     { "create",     ZvfsCreateCmd,      2, -1, "archive:string, filelist:array, path:string|null=void, filelist2:array=void, path2:string|null=void, ...",  .help="Create a zip with the given files in prefix path", .retType=(uint)JSI_TT_VOID, .flags=0, .info=FN_create },
-    { "list",       ZvfsListCmd,        1,  1, "archive:string",  .help="List files in archive", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_list },
+    { "list",       ZvfsListCmd,        0,  1, "archive:string=void",  .help="List files in archive", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_list },
     { "mount",      ZvfsMountCmd,       1,  2, "archive:string, mountdir:string=void",  .help="Mount zip on mount point", .retType=(uint)JSI_TT_STRING, .flags=0, .info=FN_mount },
     { "names",      ZvfsNamesCmd,       0,  1, "mountdir:string=void",  .help="Return all zvfs mounted zips, or archive for specified mount", .retType=(uint)JSI_TT_ARRAY, .flags=0, .info=FN_info },
-    { "offset",     ZvfsOffsetCmd,      1,  1, "archive:string",  .help="Return the start offset of zip data", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=FN_truncate },
+    { "offset",     ZvfsOffsetCmd,      0,  1, "archive:string=void",  .help="Return the start offset of zip data", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=FN_truncate },
     { "stat",       ZvfsStatCmd,        1,  1, "filename:string",  .help="Return details on file in zvfs mount", .retType=(uint)JSI_TT_OBJECT, .flags=0, .info=FN_stat },
     { "truncate",   ZvfsTruncateCmd,    1,  2, "archive:string, noerror:boolean=false",  .help="Truncate zip data from archive", .retType=(uint)JSI_TT_NUMBER, .flags=0, .info=FN_truncate },
     { "unmount",    ZvfsUnmountCmd,     1,  1, "archive:string",  .help="Unmount zip", .retType=(uint)JSI_TT_VOID },

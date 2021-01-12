@@ -630,7 +630,7 @@ void jsi_TraceFuncCall(Jsi_Interp *interp, Jsi_Func *fstatic, jsi_OpCode *iPtr,
     jsi_OpCode *ip = (iPtr ? iPtr : interp->curIp);
     if (!ip)
         return;
-    const char *ff, *fname = ip->filePtr->fileName;
+    const char *ff, *fname = (ip->filePtr?ip->filePtr->fileName:"");
     if ((tc&jsi_callTraceFullPath)==0 && ((ff=Jsi_Strrchr(fname,'/'))))
         fname = ff+1;
     if (interp->traceHook)

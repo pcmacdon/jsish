@@ -52,6 +52,12 @@ if (interp->isSafe && (Jsi_InterpAccess(interp, fname, (!writ ? JSI_INTACCESS_RE
         || (create && Jsi_InterpAccess(interp, fname, JSI_INTACCESS_CREATE) != JSI_OK))) \
         return Jsi_LogError("%s access denied by safe interp: %s", writ?"write":"read", GSVal(fname));
 
+static Jsi_RC jsi_SAFEACCESS(Jsi_Interp *interp, Jsi_Value *fname, bool write, bool create)
+{
+    SAFEACCESS(fname, write, create);
+    return JSI_OK;
+}
+
 static char* getFileTypeCh(int mode, char smode[])
 {
     char c = '-';
@@ -98,7 +104,7 @@ Jsi_RC jsi_FileStatCmd(Jsi_Interp *interp, Jsi_Value *fnam, Jsi_Value **ret, int
 {
     int rc;
     Jsi_StatBuf st;
-    SAFEACCESS(fnam, 0, 1)
+    SAFEACCESS(fnam, 0, 0)
     int islstat = flags&1;
     int isshort = flags&2;
     if (islstat)
@@ -306,11 +312,6 @@ static Jsi_RC FileMkdirCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     return JSI_OK;
 }
 
-static Jsi_RC jsi_SAFEACCESS(Jsi_Interp *interp, Jsi_Value *fname, bool write)
-{
-    SAFEACCESS(fname, write, 1);
-    return JSI_OK;
-}
 
 static Jsi_RC FileTempfileCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
@@ -327,7 +328,7 @@ static Jsi_RC FileTempfileCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (Jsi_InterpSafe(interp)) {
         Jsi_Value *fname = Jsi_ValueNewStringConst(interp, templ, -1);
         Jsi_IncrRefCount(interp, fname);
-        Jsi_RC rc = jsi_SAFEACCESS(interp, fname, 1);
+        Jsi_RC rc = jsi_SAFEACCESS(interp, fname, 1, 1);
         Jsi_DecrRefCount(interp, fname);
         if (rc != JSI_OK)
             return rc;
@@ -347,7 +348,7 @@ static Jsi_RC FileTempfileCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     if (Jsi_InterpSafe(interp)) {
         Jsi_Value *fname = Jsi_ValueNewStringConst(interp, name, -1);
         Jsi_IncrRefCount(interp, fname);
-        Jsi_RC rc = jsi_SAFEACCESS(interp, fname, 1);
+        Jsi_RC rc = jsi_SAFEACCESS(interp, fname, 1, 1);
         Jsi_DecrRefCount(interp, fname);
         if (rc != JSI_OK)
             return rc;

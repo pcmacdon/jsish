@@ -699,7 +699,7 @@ JSI_EXTERN const char* Jsi_KeyAdd(Jsi_Interp *interp, const char *str); /*STUB =
 JSI_EXTERN const char* Jsi_KeyLookup(Jsi_Interp *interp, const char *str); /*STUB = 225*/
 JSI_EXTERN bool Jsi_IsReserved(Jsi_Interp *interp, const char* str, bool sql); /*STUB = 415*/
 JSI_EXTERN Jsi_RC Jsi_SqlObjBinds(Jsi_Interp* interp, Jsi_DString* zStr, Jsi_SqlObjOpts*opts); /*STUB = 417*/
-JSI_EXTERN Jsi_RC  Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags); /*STUB = 428*/ /*LAST*/
+JSI_EXTERN Jsi_RC  Jsi_NewVariable(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags); /*STUB = 428*/
 
 JSI_EXTERN Jsi_RC Jsi_DatetimeFormat(Jsi_Interp *interp, Jsi_Number date, const char *fmt, int isUtc, Jsi_DString *dStr);  /*STUB = 226*/
 JSI_EXTERN Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, int isUtc, Jsi_Number *datePtr, bool noMsg); /*STUB = 227*/
@@ -716,6 +716,7 @@ JSI_EXTERN Jsi_RC Jsi_Base64(const char *str, int len, Jsi_DString *buf, bool de
 JSI_EXTERN int Jsi_HexStr(const uchar *data, int len, Jsi_DString *dStr, bool decode); /*STUB = 232*/
 JSI_EXTERN uint32_t Jsi_Crc32(uint32_t crc, const void *ptr, size_t buf_len); /*STUB = 234*/
 JSI_EXTERN Jsi_RC Jsi_FileRead(Jsi_Interp *interp, Jsi_Value *name, Jsi_DString *dStr); /*STUB = 408*/
+JSI_EXTERN Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6); /*STUB = 429*/ /*LAST*/
 
 JSI_EXTERN int Jsi_NumberIsInfinity(Jsi_Number a);  /*STUB = 235*/
 JSI_EXTERN bool Jsi_NumberIsEqual(Jsi_Number n1, Jsi_Number n2);  /*STUB = 236*/

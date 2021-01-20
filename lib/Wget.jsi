@@ -138,7 +138,7 @@ function Wget(fileargs:array|string, conf:object=void) {
     if (self.nowait)
         return self;
     while (!self.done) {
-        update(200);
+        Event.update(200);
         LogTrace("UPDATE");
     }
     if (self.unzip)

@@ -2289,6 +2289,51 @@ static Jsi_RC jsiJsPreprocessLineCB(Jsi_Interp* interp, char *buf, size_t bsiz, 
     return JSI_OK;
 }
 
+Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6) {
+    // Simple conversion of .vue file to js module.
+    Jsi_RC rc = JSI_OK;
+    const char *t[5] = {0,0,0,0,0}, *pf = NULL;
+    static const char *p[3] = {"\n<template>", "\n</template>\n<script>\nexport default {", "\n}\n</script>" };
+    t[0] = str;
+    if (!Jsi_Strncmp(str, p[0]+1, 10))
+        t[1] = str + Jsi_Strlen(p[0]+1);
+    else if ((t[1] = Jsi_Strstr(str, p[0])))
+        t[1] += + Jsi_Strlen(p[0]);
+    if (!t[1])
+        pf = p[0];
+    else {
+        t[2] = Jsi_Strrstr(t[1], p[1]);
+        if (!t[2])
+            pf = p[1];
+        else {
+            t[3] = t[2]+Jsi_Strlen(p[1]);
+            t[4] = Jsi_Strstr(t[3], p[2]);
+            if (!t[4])
+                pf = p[2];
+        }
+    }
+    if (pf) {
+        rc = Jsi_LogError("bad vue template '%s': expected '%s'", Jsi_ValueString(interp, fn, NULL), pf);
+    } else if (ES6) {
+        Jsi_DSAppendLen(tStr, str, t[0]-str);
+        Jsi_DSAppend(tStr, "export default {\n  template:`", NULL);
+        Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
+        Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
+        Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
+        Jsi_DSAppend(tStr, "}",  t[4]+Jsi_Strlen(p[2]), NULL);
+    }
+    else {
+        Jsi_DSAppendLen(tStr, str, t[0]-str);
+        Jsi_DSAppend(tStr, "VueComponent('",
+            Jsi_ValueString(interp, fn, NULL), "', { template:`", NULL);
+        Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
+        Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
+        Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
+        Jsi_DSAppend(tStr, "\n});", t[4]+Jsi_Strlen(p[2]), NULL);
+    }
+    return rc;
+}
+
 Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int flags, int level)
 {
     Jsi_Channel tinput = NULL, input = Jsi_GetStdChannel(interp, 0);
@@ -2302,7 +2347,7 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
     jsi_Pstate *oldps = interp->ps;
     jsi_FileInfo *fi = interp->framePtr->filePtr;
     char *origFile = Jsi_ValueString(interp, path, &fnLen);
-    const char *fname = origFile;
+    const char *fext = NULL, *fname = origFile;
     char *oldDir = interp->curDir, *cp;
     char dirBuf[PATH_MAX];
     jsi_Pstate *ps = NULL;
@@ -2316,12 +2361,14 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
     
     oldSp = interp->framePtr->Sp;
     dirBuf[0] = 0;
-    Jsi_DString dStr, fStr;
+    Jsi_DString dStr, fStr, tStr;
     Jsi_DSInit(&dStr);
     Jsi_DSInit(&fStr);
+    Jsi_DSInit(&tStr);
 
     if (str == NULL) {
         if (fname != NULL) {
+            fext = Jsi_Strrchr(fname, '.');
             /*if (fnLen>2 && fname[fnLen-1]=='/') {
                 Jsi_DSAppendLen(&fStr, fname, fnLen-1);
                 const char *fcp = Jsi_DSValue(&fStr), *fce = strrchr(fcp,'/');
@@ -2475,6 +2522,12 @@ cont:
     oldSp = interp->framePtr->Sp;
     // Evaluate code.
     rc = JSI_OK;
+    if (fext && !Jsi_Strcmp(fext, ".vue") && (interp->noEval || (flags&JSI_EVAL_NOEVAL))) {
+        rc = Jsi_VueConvert(interp, path, str, &tStr, !interp->noES6);
+        if (rc != JSI_OK)
+            goto bail;
+        str = Jsi_DSValue(&tStr);
+    }
     ps = jsiNewParser(interp, str, input, 0, fi);
     interp->evalFlags = flags;
     if (!ps) {
@@ -2515,6 +2568,7 @@ bail:
         Jsi_DecrRefCount(interp, npath);
     Jsi_DSFree(&dStr);
     Jsi_DSFree(&fStr);
+    Jsi_DSFree(&tStr);
     if (tinput)
         Jsi_Close(interp, tinput);
     Jsi_MutexUnlock(interp, interp->Mutex);

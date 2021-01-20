@@ -52,8 +52,8 @@ function Manage(args:array, conf:object=void) {
         if (cnt)
             throw 'setup must be used in an empty directory';
         
-        ver = fossil('info', true);
-        if (ver.match(/^project-name:.*/))
+        ver = fossil('status', true);
+        if (ver.match(/^repository:.*/))
             throw 'sorry: already in open fossil: '+ver.split('\n')[0];
 
         var dname = File.tail(File.pwd());
@@ -134,11 +134,6 @@ function Manage(args:array, conf:object=void) {
             fossil('commit --comment Private --private --allow-empty');
     }
     
-    function spupdate(opts='', msg='') {
-        var rs = supdate(opts+' --private', msg);
-        return rs;
-    }
-    
     function fossil(str, noerr=false) {
         if (self.v)
             puts('EXEC: fossil '+str);
@@ -147,13 +142,18 @@ function Manage(args:array, conf:object=void) {
         return exec('fossil '+str, {noError:true});
     }
     
+    function spupdate(opts='', msg='') {
+        var cur = fossil('branch current').trim();
+        if (cur != 'private')
+            throw 'need to use "fossil update private" before spupdate: '+cur;
+        var rs = supdate(opts+' --private', msg);
+        return rs;
+    }
+    
     function supdate(opts='', msg='') {
         var proj = fossil("sql \"select value from config where name == 'project-name'\"").trim();
         proj = proj.trim("'");
         var tl1, tl2, tip, ispriv = (opts.indexOf('--private')>=0);
-        var cur = fossil('branch current').trim();
-        if (ispriv && cur != 'trunk')
-            throw 'private supdate must be on trunk: '+cur;
         if (!msg)
             msg = 'supdate '+opts+': '+proj;
         if (ispriv) {
@@ -171,7 +171,7 @@ function Manage(args:array, conf:object=void) {
         }
         var mrg = '', ms;
         try {
-            mrg = fossil('merge '+(ispriv?' --baseline trunk private':''));
+            mrg = fossil('merge');
             ms = mrg.match(/WARNING: [0-9]+ merge conflicts/);
         } catch (e) {
             return 'nothing to merge';

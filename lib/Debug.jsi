@@ -408,7 +408,7 @@ function Debug(fileargs:array, conf:object=void):number {
         while (!done) {
             var prompt = format("#%d==> ", self.curlev?self.curlev:level);
             var inp = console.input(prompt);
-            update(); // Handle signals.
+            Event.update(); // Handle signals.
             if (self.stopSig) {
                 self.stopSig = false;
                 continue;

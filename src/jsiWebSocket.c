@@ -131,7 +131,8 @@ typedef struct { /* Per server data (or client if client-mode). */
     Jsi_Value *onAuth, *onCloseLast, *onClose, *onFilter, *onOpen, *onRecv,
         *onUpload, *onGet, *onUnknown, *onModify, *pathAliases, *udata,
         *rootdir, *interface, *address, *mimeTypes, *mimeLookupFunc, *extOpts, *headers, *ssiExts;
-    bool client, noUpdate, noWebsock, noWarn, ssl, local, extHandlers, handlersPkg, inUpdate, noCompress, noConfig, echo;
+    bool client, noUpdate, noWebsock, noWarn, ssl, local, extHandlers, handlersPkg,
+        inUpdate, noCompress, noConfig, echo, vueES6, vueCvt, redirMax;
     int pollms;
     Jsi_Value* version;
     int idx;
@@ -161,7 +162,6 @@ typedef struct { /* Per server data (or client if client-mode). */
     int close_test;
     int createCnt;
     int redirAllCnt;
-    bool redirMax;
     int redirDisable;
     int recvBufMax;
     int recvBufCnt;
@@ -384,6 +384,8 @@ static Jsi_OptionSpec WSOptions[] =
     JSI_OPT(STRKEY, jsi_wsCmdObj, urlUnknown, .help="Redirect for 404 unknown page."),
     JSI_OPT(STRKEY, jsi_wsCmdObj, useridPass, .help="The USERID:PASSWORD to use for basic authentication"),
     JSI_OPT(OBJ,    jsi_wsCmdObj, version,    .help="WebSocket version info", jsi_IIRO),
+    JSI_OPT(BOOL,   jsi_wsCmdObj, vueCvt,     .help="Convert .vue rewrite enable"),
+    JSI_OPT(BOOL,   jsi_wsCmdObj, vueES6,     .help="Use ES6 export for .vue rewrite"),
     JSI_OPT_END(jsi_wsCmdObj, .help="Websocket options")
 };
 
@@ -1696,6 +1698,7 @@ doredir:
                     jsi_wsFileAdd(interp, cmdPtr, fname, -1);
                 }
                 Jsi_DecrRefCount(interp, fname);
+                fname = NULL;
                 rc = hrc;
                 goto done;
             }
@@ -2837,26 +2840,12 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 static Jsi_RC jsi_wsHandleVue(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, Jsi_Value *fn, Jsi_DString *tStr) {
     // Simple conversion of .vue file to js module.
     Jsi_DString dStr = {};
+    //Jsi_IncrRefCount(interp, fn);
     Jsi_RC rc = jsi_wsFileRead(interp, fn, &dStr, cmdPtr, pss);
     if (rc != JSI_OK)
         return JSI_ERROR;
-    char *s = Jsi_DSValue(&dStr),
-        *ts = Jsi_Strstr(s, "<template>"),
-        *te = Jsi_Strrstr(s, "\n</template>"),
-        *sxs = (char*)"<script>\nexport default {",
-        *sx = Jsi_Strstr(s, sxs), *sxb,
-        *se = Jsi_Strstr(s, "\n</script>");
-    if (ts<0||te<0||se<0||sx<0)
-        rc = Jsi_LogErrorExt("bad template: %s", Jsi_ValueString(interp, fn, NULL));
-    else {
-        Jsi_DSAppendLen(tStr, s, ts-s);
-        Jsi_DSAppend(tStr, "let template=`", NULL);
-        Jsi_DSAppendLen(tStr, ts+10, te-ts-9);
-        Jsi_DSAppend(tStr, "`;\n\nexport default {\n  template, ", NULL);
-        sxb = sx+Jsi_Strlen(sxs);
-        Jsi_DSAppendLen(tStr, sxb, se-sxb);
-        Jsi_DSAppend(tStr, se+10, NULL);
-    }
+    const char *s = Jsi_DSValue(&dStr);
+    rc = Jsi_VueConvert(interp, fn, s, tStr, cmdPtr->vueES6);
     return rc;
 }
 
@@ -3532,8 +3521,9 @@ fail:
         jsi_wsHandlerAdd(interp, cmdPtr, "jsi",   "Jspp",     1, NULL);
         jsi_wsHandlerAdd(interp, cmdPtr, "htmli", "Htmlpp",   1, NULL);
         jsi_wsHandlerAdd(interp, cmdPtr, "cssi",  "Csspp",    1, NULL);
-        jsi_wsHandlerAdd(interp, cmdPtr, "vue",   NULL,       1, jsi_wsHandleVue);
     }
+    if (cmdPtr->vueCvt)
+        jsi_wsHandlerAdd(interp, cmdPtr, "vue",   NULL,       1, jsi_wsHandleVue);
     cmdPtr->fobj = fobj;
 #ifdef LWS_LIBRARY_VERSION_NUMBER
     Jsi_JSONParseFmt(interp, &cmdPtr->version, "{libVer:\"%s\", hdrVer:\"%s\", hdrNum:%d, pkgVer:%d}",

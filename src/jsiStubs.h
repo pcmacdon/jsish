@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "66a604e16467a7a4ac605486b9ae23fc"
+#define JSI_STUBS_MD5 "06f4b81e3ef88190a192804091ac9f52"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -457,6 +457,7 @@ typedef struct Jsi_Stubs {
     Jsi_AccessorSpec*(*_Jsi_ObjAccessorWithSpec)(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, void *dataPtr, Jsi_Value* callback, int flags);
     Jsi_Func*(*_Jsi_FunctionFromValue)(Jsi_Interp *interp, Jsi_Value* value);
     Jsi_RC (*_Jsi_NewVariable)(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags);
+    Jsi_RC(*_Jsi_VueConvert)(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6);
     void *endPtr;
 } Jsi_Stubs;
 
@@ -893,6 +894,7 @@ extern Jsi_Stubs* jsiStubsPtr;
     Jsi_ObjAccessorWithSpec,\
     Jsi_FunctionFromValue,\
     Jsi_NewVariable,\
+    Jsi_VueConvert,\
     NULL
 
 #ifdef JSI_USE_STUBS
@@ -1325,6 +1327,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_ObjAccessorWithSpec(n0,n1,n2,n3,n4,n5) JSISTUBCALL(jsiStubsPtr, _Jsi_ObjAccessorWithSpec(n0,n1,n2,n3,n4,n5))
 #define Jsi_FunctionFromValue(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_FunctionFromValue(n0,n1))
 #define Jsi_NewVariable(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_NewVariable(n0,n1,n2,n3))
+#define Jsi_VueConvert(n0,n1,n2,n3,n4) JSISTUBCALL(jsiStubsPtr, _Jsi_VueConvert(n0,n1,n2,n3,n4))
 
 #endif
 

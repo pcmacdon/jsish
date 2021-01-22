@@ -323,6 +323,7 @@ Util.prototype.setenv = function(name:string, value:string=void):any {};
 Util.prototype.sqlValues = function(name:string, obj:object=void):any {};
 Util.prototype.times = function(callback:function|boolean, count:number=1):number {};
 Util.prototype.verConvert = function(ver:string|number, zeroTrim:number=0):number|string|null {};
+Util.prototype.vueConvert = function(fn:string, es6:boolean=false):string {};
 var Vfs = function(cmd,args) {};
 Vfs.prototype.conf = function(mount:string, options:string|object|string=void):any {};
 Vfs.prototype.exec = function(cmd:string):any {};

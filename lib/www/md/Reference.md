@@ -1019,6 +1019,7 @@ Utilities commands.
 |sqlValues|(name:string, obj:object=void) |Get object values for SQL.|
 |times|(callback:function&#124;boolean, count:number=1):number |Call function count times and return execution time in microseconds.|
 |verConvert|(ver:string&#124;number, zeroTrim:number=0):number&#124;string&#124;null |Convert a version to/from a string/number, or return null if not a version. For string output zeroTrim says how many trailing .0 to trim (0-2).|
+|vueConvert|(fn:string, es6:boolean=false):string |Convert a .vue file to .js.|
 ### Util hash
 |Option|Type|Description|Flags|
 |---|---|---|---|
@@ -1187,6 +1188,8 @@ Commands for managing WebSocket server/client connections.
 |urlUnknown|*STRKEY*|Redirect for 404 unknown page..||
 |useridPass|*STRKEY*|The USERID:PASSWORD to use for basic authentication.||
 |version|*OBJ*|WebSocket version info.|readOnly|
+|vueCvt|*BOOL*|Convert .vue rewrite enable.||
+|vueES6|*BOOL*|Use ES6 export for .vue rewrite.||
 ### WebSocket stats
 |Option|Type|Description|Flags|
 |---|---|---|---|

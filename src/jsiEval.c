@@ -2291,45 +2291,82 @@ static Jsi_RC jsiJsPreprocessLineCB(Jsi_Interp* interp, char *buf, size_t bsiz, 
 
 Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6) {
     // Simple conversion of .vue file to js module.
+    static const char *p[3] = {"<template", "\n</template>\n<script>\n", "\n</script>\n" };
     Jsi_RC rc = JSI_OK;
-    const char *t[5] = {0,0,0,0,0}, *pf = NULL;
-    static const char *p[3] = {"\n<template>", "\n</template>\n<script>\nexport default {", "\n}\n</script>" };
-    t[0] = str;
-    if (!Jsi_Strncmp(str, p[0]+1, 10))
-        t[1] = str + Jsi_Strlen(p[0]+1);
-    else if ((t[1] = Jsi_Strstr(str, p[0])))
-        t[1] += + Jsi_Strlen(p[0]);
-    if (!t[1])
-        pf = p[0];
-    else {
-        t[2] = Jsi_Strrstr(t[1], p[1]);
-        if (!t[2])
-            pf = p[1];
-        else {
-            t[3] = t[2]+Jsi_Strlen(p[1]);
-            t[4] = Jsi_Strstr(t[3], p[2]);
-            if (!t[4])
-                pf = p[2];
+    int cnt = 0, lt = Jsi_Strlen(p[0]), nameLen = 0;
+    const char *s = str, *cp, *fns = Jsi_ValueString(interp, fn, NULL);
+    if (fns && (cp = Jsi_Strrchr(fns, '/')))
+        fns = cp+1;
+    while (rc == JSI_OK) {
+        while (*s && isspace(*s)) s++;
+        if (!*s) break;
+        const char *t[5] = {0,0,0,0,0}, *pf = NULL, *name = NULL;
+        t[0] = str;
+        if (Jsi_Strncmp(s, p[0], lt))
+            pf = p[0];
+        else if (!cnt) {
+            if (s[lt]=='>')
+                t[1] = s + lt+1;
+        } else {
+            cp = s+lt;
+            if (Jsi_Strncmp(cp, " name=\"", 7))
+                pf = "<template name=";
+            else {
+                cp += 7;
+                name = cp;
+                while (*cp && (isalnum(*cp) || *cp == '-' || *cp == '_')) cp++;
+                if (*cp == '"' && cp[1] == '>' && name != cp) {
+                    t[1] = cp + 2;
+                    nameLen = cp-name;
+                }
+            }
         }
-    }
-    if (pf) {
-        rc = Jsi_LogError("bad vue template '%s': expected '%s'", Jsi_ValueString(interp, fn, NULL), pf);
-    } else if (ES6) {
-        Jsi_DSAppendLen(tStr, str, t[0]-str);
-        Jsi_DSAppend(tStr, "export default {\n  template:`", NULL);
-        Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
-        Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
-        Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
-        Jsi_DSAppend(tStr, "}",  t[4]+Jsi_Strlen(p[2]), NULL);
-    }
-    else {
-        Jsi_DSAppendLen(tStr, str, t[0]-str);
-        Jsi_DSAppend(tStr, "VueComponent('",
-            Jsi_ValueString(interp, fn, NULL), "', { template:`", NULL);
-        Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
-        Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
-        Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
-        Jsi_DSAppend(tStr, "\n});", t[4]+Jsi_Strlen(p[2]), NULL);
+    
+        if (!pf) {
+            if (!t[1])
+                pf = p[0];
+            else {
+                t[2] = Jsi_Strstr(t[1], p[1]);
+                if (!t[2])
+                    pf = p[1];
+                else {
+                    t[3] = t[2]+Jsi_Strlen(p[1]);
+                    cp = Jsi_Strchr(t[3], '{'); // Skip "export default" or "module.export", etc.
+                    if (cp) {
+                        t[3] = cp+1;
+                        t[4] = Jsi_Strstr(t[3], p[2]);
+                    }
+                    if (!t[4])
+                        pf = p[2];
+                }
+            }
+        }
+        if (pf)
+            rc = Jsi_LogError("bad vue template '%s': expected '%s' at %.20s", fns, pf, s);
+        else if (cnt==0 && ES6) {
+            //Jsi_DSAppendLen(tStr, s, t[0]-s);
+            Jsi_DSAppend(tStr, "export default {\n  template:`", NULL);
+            Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
+            Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
+            Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
+            //Jsi_DSAppend(tStr, "}", NULL);
+        }
+        else {
+            //Jsi_DSAppendLen(tStr, s, t[0]-s);
+            if (!cnt)
+                Jsi_DSAppend(tStr, "'use strict'; Pdq.Component('", fns, NULL);
+            else {
+                Jsi_DSAppend(tStr, "\nVue.component('", NULL);
+                Jsi_DSAppendLen(tStr, name, nameLen);
+            }
+            Jsi_DSAppend(tStr, "', { template:`", NULL);
+            Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
+            Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
+            Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
+            Jsi_DSAppend(tStr, "\n);", NULL);
+        }
+        s = t[4]+Jsi_Strlen(p[2]);
+        cnt++;
     }
     return rc;
 }

@@ -308,10 +308,14 @@ This also works for [logging](Logging.md) messages: [mytest2](https://jsish.org/
 [Geany](http://www.geany.org) is a convenient editor to use with Jsi.
 To enable Jsi file completion with Geany:
 
-- Copy tools/geany/filetypes.javascript to ~/.config/geany/filedefs/.
-- Open geany and navigate to Tools->Configuration Files->filetypes_extensions.conf, then:
-- Add ".jsi;.jsc" to Javascript, ".md.html;.htmli;" to HTML and "*.cssi;" to CSS
+- cp /usr/share/geany/filetypes.javascript ~/.config/geany/filedefs/.
+- Edit to add ".jsi;.jsc" to Javascript, ".md.html;.htmli;.vue;" to HTML and "*.cssi;" to CSS
 - Keep the file tools/protos.jsi open in the editor so Geany knows how to complete Jsi functions.
+
+To update with vue support for Pdq:
+
+- cp /usr/share/geany/filedefs/filetypes.html ~/.config/geany/filedefs/.
+- Edit to add after "html=" the following "^b- ^v- transition"
 
 Geany can also navigate
 through Jsi's gcc style scripting errors:

@@ -133,6 +133,7 @@ Commands for accessing the filesystem.
 |mkdir|(file:string,force:boolean=false) |Create a directory: force creates subdirs.|
 |mknod|(file:string, mode:number, dev:number) |Create unix device file using mknod.|
 |mtime|(file:string):number |Return file modified time.|
+|normalize|(file:string):string |Return normalized file path.|
 |owned|(file:string):boolean |Return true if file is owned by user.|
 |perms|(file:string):string |Return perms string.|
 |pwd|():string |Return current directory.|
@@ -1019,7 +1020,7 @@ Utilities commands.
 |sqlValues|(name:string, obj:object=void) |Get object values for SQL.|
 |times|(callback:function&#124;boolean, count:number=1):number |Call function count times and return execution time in microseconds.|
 |verConvert|(ver:string&#124;number, zeroTrim:number=0):number&#124;string&#124;null |Convert a version to/from a string/number, or return null if not a version. For string output zeroTrim says how many trailing .0 to trim (0-2).|
-|vueConvert|(fn:string, es6:boolean=false):string |Convert a .vue file to .js.|
+|vueConvert|(fn:string,data:string&#124;null=void):string |Convert/generate .vue/.js file; returns a %s fmt string when data=null.|
 ### Util hash
 |Option|Type|Description|Flags|
 |---|---|---|---|

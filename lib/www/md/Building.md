@@ -315,7 +315,7 @@ To enable Jsi file completion with Geany:
 To update with vue support for Pdq:
 
 - cp /usr/share/geany/filedefs/filetypes.html ~/.config/geany/filedefs/.
-- Edit to add after "html=" the following "^b- ^v- transition"
+- Edit to add to the end of "html=" the following **^b- ^v-**
 
 Geany can also navigate
 through Jsi's gcc style scripting errors:

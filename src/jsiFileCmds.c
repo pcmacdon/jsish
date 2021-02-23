@@ -426,11 +426,11 @@ static Jsi_RC FileChmodCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
 Jsi_RC Jsi_FileRead(Jsi_Interp *interp, Jsi_Value *name, Jsi_DString *dStr) {
     Jsi_RC rc = JSI_ERROR;
     Jsi_Channel chan = Jsi_Open(interp, name, "rb");
-    int n, sum = 0;
+    int n, sum = 0, cnt = 0;
     if (!chan)
         return rc;
     char buf[JSI_BUFSIZ];
-    while (sum < MAX_LOOP_COUNT && (n = Jsi_Read(interp, chan, buf, sizeof(buf))) > 0) {
+    while (cnt++ < MAX_LOOP_COUNT && (n = Jsi_Read(interp, chan, buf, sizeof(buf))) > 0) {
         Jsi_DSAppendLen(dStr, buf, n);
         sum += n;
     }
@@ -447,12 +447,12 @@ static Jsi_RC FileReadCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     SAFEACCESS(fname, 0, 0)
 
     Jsi_Channel chan = Jsi_Open(interp, fname, (mode ? mode : "rb"));
-    int n, sum = 0;
+    int n, sum = 0, cnt = 0;
     if (!chan) 
         return Jsi_LogError("failed open for read: %s", GSVal(fname));
     Jsi_DString dStr = {};
     char buf[JSI_BUFSIZ];
-    while (sum < MAX_LOOP_COUNT && (n = Jsi_Read(interp, chan, buf, sizeof(buf))) > 0) {
+    while (cnt++ < MAX_LOOP_COUNT && (n = Jsi_Read(interp, chan, buf, sizeof(buf))) > 0) {
         Jsi_DSAppendLen(&dStr, buf, n);
         sum += n;
     }
@@ -481,7 +481,7 @@ static Jsi_RC FileWriteCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
     chan = Jsi_Open(interp, fname, (mode ? mode : "wb+"));
     if (!chan) 
         return Jsi_LogError("failed open for write: %s", GSVal(fname));
-    while (cnt < MAX_LOOP_COUNT && len > 0 && (n = Jsi_Write(interp, chan, data, len)) > 0) {
+    while (cnt < MAX_LOOP_COUNT && len > 0 && (n = Jsi_Write(interp, chan, data+sum, len)) > 0) {
         len -= n;
         sum += n;
         cnt++;
@@ -817,6 +817,19 @@ static Jsi_RC FileRealpathCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 
 }
 
+static Jsi_RC FileNormalizeCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
+    Jsi_Value **ret, Jsi_Func *funcPtr)
+{
+    const char *path = Jsi_ValueArrayIndexToStr(interp, args, 0, NULL);
+    Jsi_DString dStr = {};
+    if (path)
+        path = Jsi_NormalPath(interp, path, &dStr);
+    if (path)
+        Jsi_ValueMakeStringDup(interp, ret, (char*)path);
+    Jsi_DSFree(&dStr);
+    return JSI_OK;
+
+}
 static Jsi_RC FileJoinCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
@@ -906,7 +919,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
 {
     if (cnt>interp->maxIncDepth || !path)
         return Jsi_LogError("runaway File.globs");
-    struct dirent **namelist;
+    struct dirent **namelist = NULL;
     char pbuf[PATH_MAX];
     Jsi_RC rc = JSI_OK;
     int i, n, flags = opts->flags, slen;
@@ -963,7 +976,7 @@ static Jsi_RC SubGlobsDirectory(Jsi_Interp *interp, Jsi_Obj* obj, Jsi_Value *reg
         Jsi_ValueMakeString(interp, &rpPath, dcp);
     }*/
     if ((n=Jsi_Scandir(interp, rpPath, &namelist, 0, alphasort)) < 0) {
-        if (opts->recurse && deep) return JSI_OK;
+        if (opts->recurse && deep) goto done;
         Jsi_LogError("bad directory");
         Jsi_DecrRefCount(interp, rpPath);
         return JSI_ERROR;
@@ -1114,19 +1127,25 @@ dumpit:
         opts->cnt++;
         if (!opts->retCount) {
             Jsi_DSSetLength(&tStr, 0);
-            if (opts->prefix)
-                Jsi_DSAppend(&tStr, opts->prefix, NULL);
             if (!opts->tails)
                 Jsi_DSAppend(&tStr, spath, (spath[0]?"/":""), NULL);
             Jsi_DSAppend(&tStr, z, NULL);
             z = Jsi_DSValue(&tStr);
-            if (!opts->tails && opts->dirLen && Jsi_Strlen(z)>=(uint)opts->dirLen) {
-                z += opts->dirLen;
-                if (z[0] == '/') z++;
+            uint dlen = (uint)opts->dirLen;
+            if (!opts->tails && dlen && Jsi_Strlen(z)>=dlen) {
+                z += dlen;
+                if (z[0] == '/' && !opts->prefix) z++;
             }
             Jsi_Value *nv;
-            if (!opts->retInfo)
-                nv = Jsi_ValueNewStringDup(interp, z);
+            if (!opts->retInfo) {
+                if (!opts->prefix)
+                    nv = Jsi_ValueNewStringDup(interp, z);
+                else {
+                    Jsi_DString pStr = {};
+                    nv = Jsi_ValueNewStringDup(interp, Jsi_DSAppend(&pStr, opts->prefix, z, NULL));
+                    Jsi_DSFree(&pStr);
+                }
+            }
             else {
                 Jsi_Value *info = Jsi_ValueNew1(interp);
                 snprintf(pbuf, sizeof(pbuf), "%s%s%s", spath, (spath[0]?"/":""),  z);
@@ -1226,7 +1245,15 @@ static Jsi_RC FileGlobCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         pat = Data.pattern;
     if (!Data.limit)
         Data.limit = interp->maxArrayList;
-    if (Data.dir) {
+    if (!Data.dir) {
+        Jsi_DString dStr = {};
+        dcp = Jsi_GetCwd(interp, &dStr);
+        Data.dirLen = Jsi_Strlen(dcp);
+        Data.dir = Jsi_ValueNewStringDup(interp, dcp);
+        Jsi_IncrRefCount(interp, Data.dir);
+        Jsi_DSFree(&dStr);
+        isOpts = 1;
+    } else {
         dcp = Data.dirStr = Jsi_ValueString(interp, Data.dir, &Data.dirLen);
         if (*dcp == '~') {
             dcp = Jsi_FileRealpath(interp, Data.dir, NULL);
@@ -1307,6 +1334,7 @@ static Jsi_CmdSpec fileCmds[] = {
     { "mkdir",      FileMkdirCmd,       1,  2, "file:string,force:boolean=false",  .help="Create a directory: force creates subdirs" },
     { "mknod",      FileMknodCmd,       3,  3, "file:string, mode:number, dev:number", .help="Create unix device file using mknod"  },
     { "mtime",      FileMtimeCmd,       1,  1, "file:string",  .help="Return file modified time", .retType=(uint)JSI_TT_NUMBER },
+    { "normalize",  FileNormalizeCmd,   1,  1, "file:string",  .help="Return normalized file path", .retType=(uint)JSI_TT_STRING },
     { "owned",      FileOwnedCmd,       1,  1, "file:string",  .help="Return true if file is owned by user", .retType=(uint)JSI_TT_BOOLEAN },
     { "perms",      FilePermsCmd,       1,  1, "file:string",  .help="Return perms string", .retType=(uint)JSI_TT_STRING },
     { "pwd",        FilePwdCmd,         0,  0, "",  .help="Return current directory", .retType=(uint)JSI_TT_STRING },

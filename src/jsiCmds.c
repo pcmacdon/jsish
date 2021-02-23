@@ -4373,17 +4373,29 @@ static Jsi_RC SysBase64Cmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this
 static Jsi_RC VueConvertCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    bool ES6 = 0;
-    Jsi_Value *path = Jsi_ValueArrayIndex(interp, args, 0), 
-        *bval = Jsi_ValueArrayIndex(interp, args, 1);
+    int dLen;
+    Jsi_Value *path = Jsi_ValueArrayIndex(interp, args, 0);
+    Jsi_Value *arg = Jsi_ValueArrayIndex(interp, args, 1);
+    const char *data = NULL;
     if (!path)
         return Jsi_LogError("arg 1: expected path");
-    if (bval && Jsi_ValueGetBoolean(interp, bval, &ES6) != JSI_OK)
-        return Jsi_LogError("arg 1: expected boolean");
+    if (arg) {
+        if (Jsi_ValueIsNull(interp, arg)) {
+            data = "%";
+            dLen = 1;
+        } else 
+            data = Jsi_ValueString(interp, arg, &dLen);
+        if (!data)
+            return Jsi_LogError("arg 1: expected null or string");
+    }
     Jsi_DString dStr = {}, tStr = {};
-    Jsi_RC rc = Jsi_FileRead(interp, path, &dStr);
+    Jsi_RC rc = JSI_OK;
+    if (data)
+        Jsi_DSAppendLen(&dStr, data, dLen);
+    else
+        rc = Jsi_FileRead(interp, path, &dStr);
     if (rc == JSI_OK)
-        rc = Jsi_VueConvert(interp, path, Jsi_DSValue(&dStr), &tStr, ES6);
+        rc = Jsi_VueConvert(interp, path, Jsi_DSValue(&dStr), Jsi_DSLength(&dStr), &tStr);
     Jsi_DSFree(&dStr);    
     if (rc == JSI_OK)
         Jsi_ValueMakeDStringObject(interp, ret, &tStr);
@@ -5149,7 +5161,7 @@ static Jsi_CmdSpec utilCmds[] = {
     { "sqlValues",  SysSqlValuesCmd, 1,  2, "name:string, obj:object=void", .help="Get object values for SQL"  },
     { "times",      SysTimesCmd,     1,  2, "callback:function|boolean, count:number=1", .help="Call function count times and return execution time in microseconds", .retType=(uint)JSI_TT_NUMBER },
     { "verConvert", SysVerConvertCmd,1,  2, "ver:string|number, zeroTrim:number=0", .help="Convert a version to/from a string/number, or return null if not a version. For string output zeroTrim says how many trailing .0 to trim (0-2)", .retType=(uint)JSI_TT_NUMBER|JSI_TT_STRING|JSI_TT_NULL },
-    { "vueConvert", VueConvertCmd,   1,  2, "fn:string, es6:boolean=false",.help="Convert a .vue file to .js", .retType=(uint)JSI_TT_STRING },
+    { "vueConvert", VueConvertCmd,   1,  2, "fn:string,data:string|null=void",.help="Convert/generate .vue/.js file; returns a %s fmt string when data=null", .retType=(uint)JSI_TT_STRING },
     { NULL, 0,0,0,0, .help="Utilities commands"  }
 };
 

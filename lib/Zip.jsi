@@ -104,13 +104,13 @@ function Zip(args:string|array, conf:object=void) {
     function create(fname:string, zdir:string, ...) {
         if (!File.isdir(zdir))
             return usage("must give a directory to zip: " + zdir);
-        var i = 0, zargs = [];
+        var x, i = 0, zargs = [];
         zargs[i++] = File.realpath(fname);
         zargs[i++] = File.glob('*', {dir:zdir, recurse:true}).sort();
         zargs[i++] = zdir;
         for (var n = 3; n<args.length; n++) {
             var ldir = args[n];
-            zargs[i++] = File.glob(ldir, {recurse:true}).concat([ldir]).sort();
+            zargs[i++] = x = File.glob('*', {dir:ldir, recurse:true, prefix:ldir+'/'}).concat([ldir]).sort();
             zargs[i++] = null;
         }
         Zvfs.create.apply({},zargs);

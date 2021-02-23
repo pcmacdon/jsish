@@ -23,7 +23,7 @@ try {
 /*
 =!EXPECTSTART!=
 e ==> 'xx', functions are: bad big ugly.
-e2 ==> 'xx' sub-commands are: atime chdir chmod copy dirname executable exists extension glob isdir isfile isrelative join link lstat mkdir mknod mtime owned perms pwd read readable readlink realpath remove rename rootname size stat tail tempfile truncate writable write.
+e2 ==> 'xx' sub-commands are: atime chdir chmod copy dirname executable exists extension glob isdir isfile isrelative join link lstat mkdir mknod mtime normalize owned perms pwd read readable readlink realpath remove rename rootname size stat tail tempfile truncate writable write.
 Info.funcs(x) ==> [ "bad", "big", "ugly" ]
 Info.data(x) ==> [ "a", "b" ]
 Info.data() ==> [ "x" ]

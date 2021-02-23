@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "06f4b81e3ef88190a192804091ac9f52"
+#define JSI_STUBS_MD5 "8a8a6dd17365785032ac1fe8558d64fd"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -457,7 +457,7 @@ typedef struct Jsi_Stubs {
     Jsi_AccessorSpec*(*_Jsi_ObjAccessorWithSpec)(Jsi_Interp *interp, const char* objName, Jsi_OptionSpec *spec, void *dataPtr, Jsi_Value* callback, int flags);
     Jsi_Func*(*_Jsi_FunctionFromValue)(Jsi_Interp *interp, Jsi_Value* value);
     Jsi_RC (*_Jsi_NewVariable)(Jsi_Interp *interp, const char *name, Jsi_Value *val, int flags);
-    Jsi_RC(*_Jsi_VueConvert)(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6);
+    Jsi_RC(*_Jsi_VueConvert)(Jsi_Interp *interp, Jsi_Value *fn, const char *str, int slen, Jsi_DString *outStr);
     void *endPtr;
 } Jsi_Stubs;
 

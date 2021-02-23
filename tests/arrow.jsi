@@ -1,4 +1,4 @@
-var array1, n = 0;;
+var array1, n = 0;
 array1 = [1, 4, 9, 16];
 //Old way.
 ;array1.map(function(x) { return x * 2; });
@@ -20,6 +20,15 @@ var y = [1,2,3,4];
 ;y.filter( function(n) { return x.includes(n); } );
 
 
+var z = {a:1, b:2, z:99};
+function foo() {
+  var bad = () => { return this.z; };
+  return bad();
+}
+
+// Preserve this
+;foo.call(z);
+
 /*
 =!EXPECTSTART!=
 array1.map(function(x) { return x * 2; }) ==> [ 2, 8, 18, 32 ]
@@ -35,5 +44,6 @@ y.filter( (n,m,x) => x.includes(n) ) ==> [ 1, 2, 3, 4 ]
 y.filter( n => x.includes(n) ) ==> [ 1, 2, 3 ]
 y.filter( n => { return x.includes(n); } ) ==> [ 1, 2, 3 ]
 y.filter( function(n) { return x.includes(n); } ) ==> [ 1, 2, 3 ]
+foo.call(z) ==> 99
 =!EXPECTEND!=
 */

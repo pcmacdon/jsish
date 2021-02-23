@@ -1697,6 +1697,7 @@ doredir:
                     hrc = jsi_wsServeString(pss, wsi, Jsi_DSValue(&tStr), 0, NULL, mime);
                     jsi_wsFileAdd(interp, cmdPtr, fname, -1);
                 }
+                Jsi_DSFree(&tStr);
                 Jsi_DecrRefCount(interp, fname);
                 fname = NULL;
                 rc = hrc;
@@ -2293,9 +2294,10 @@ static int jsi_wscallback_http(struct lws *wsi,
                 fprintf(stderr,  "Received network connect from %s (%s)\n",
                      cmdPtr->clientName, cmdPtr->clientIP);
 #ifndef __WIN32
-            if (cmdPtr->local && (cmdPtr->clientName && Jsi_Strcmp(cmdPtr->clientName, loname))) {
+            if (cmdPtr->local && (cmdPtr->clientName && 
+            (Jsi_Strcmp(cmdPtr->clientName, loname) && !Jsi_Strstr(cmdPtr->clientName, "127.0.0.1")))) {
                 if (cmdPtr->debug>1)
-                    fprintf(stderr,  "Dropping non-localhost connection\n");
+                    fprintf(stderr,  "Dropping non-localhost connection: %s != %s\n", cmdPtr->clientName, loname);
                 return 1;
             }
 #endif
@@ -2838,14 +2840,18 @@ static Jsi_RC WebSocketIdsCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 }
 
 static Jsi_RC jsi_wsHandleVue(Jsi_Interp *interp, jsi_wsCmdObj *cmdPtr, jsi_wsPss *pss, Jsi_Value *fn, Jsi_DString *tStr) {
-    // Simple conversion of .vue file to js module.
+    // Convert file .vue to/from .js format.
     Jsi_DString dStr = {};
-    //Jsi_IncrRefCount(interp, fn);
     Jsi_RC rc = jsi_wsFileRead(interp, fn, &dStr, cmdPtr, pss);
-    if (rc != JSI_OK)
-        return JSI_ERROR;
-    const char *s = Jsi_DSValue(&dStr);
-    rc = Jsi_VueConvert(interp, fn, s, tStr, cmdPtr->vueES6);
+    if (rc == JSI_OK) {
+        const char *s = Jsi_DSValue(&dStr);
+        int dlen = Jsi_DSLength(&dStr);
+        if (!dlen)
+            rc = Jsi_LogErrorExt("empty file");
+        else
+            rc = Jsi_VueConvert(interp, fn, s, dlen, tStr);
+    }
+    Jsi_DSFree(&dStr);
     return rc;
 }
 

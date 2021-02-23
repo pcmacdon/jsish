@@ -377,7 +377,7 @@ openssllib: openssl/$(TARGET)/libcypto.a
 openssl/$(TARGET)/libcypto.a:  $(MAKECONF)
 	$(MAKE) -C openssl CC=$(CC) AR=$(AR) LD=$(LD) WIN=$(WIN) TARGET=$(TARGET)
 
-src/main.o: src/main.c
+src/main.o: src/main.c zhash
 	$(CC) -c -o $@ $< $(CFLAGS) -DJSI__ZHASH=`cat zhash.txt`
 
 src/%.o: src/%.c
@@ -491,7 +491,7 @@ uchroot: src/uchroot.c
 	gcc -g -o uchroot src/uchroot.c && sudo chown root.root uchroot && sudo chmod u+s uchroot
 	
 zhash:
-	test -x jsish && jsish -e 'Util.hash(JSON.stringify(Zvfs.list()), {type:"sha1"})' > zhash.txt && echo "Generated zhash.txt"
+	test -x jsish && (jsish -e 'Util.hash(JSON.stringify(Zvfs.list()), {type:"sha1"})' > zhash.txt) || (echo '"0000000000000000000000000000000000000000"' > zhash.txt)
 
 test:
 	./jsish -t tests

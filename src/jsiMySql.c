@@ -28,6 +28,9 @@ typedef enum { MYSQL_SIG_DB = 0xbeefdeaa, MYSQL_SIG_FUNC, MYSQL_SIG_EXEC, MYSQL_
 #include <stdio.h>
 #include <mysql/mysql.h>
 #include <mysql/my_config.h>
+#ifndef my_bool
+#define my_bool bool
+#endif
 
 #if JSI__MEMDEBUG
 #include "jsiInt.h"

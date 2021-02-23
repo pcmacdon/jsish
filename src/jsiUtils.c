@@ -1071,7 +1071,7 @@ char *jsiLNhints(const char *buf, int *color, int *bold) {
 }
 
 static void jsiLNGetMatches(const char *str, linenoiseCompletions *lc) {
-    char buf[JSI_BUFSIZ], pre[JSI_BUFSIZ], hpre[6] = {};
+    char buf[JSI_BUFSIZ], pre[JSI_BUFSIZ-15], hpre[6] = {};
     const char *cp, *fnam = "Info.completions";
     int i = 0, len;
     int rc, isfile = 0, start = 0, end = Jsi_Strlen(str);

@@ -358,8 +358,14 @@ static Jsi_RC jsiDoThrow(Jsi_Interp *interp, jsi_Pstate *ps, jsi_OpCode **ipp, j
             if (str) {
                 if (!Jsi_Strcmp(nam, "help"))
                     Jsi_LogInfo("...%s", str);
-                else
-                    Jsi_LogError("%s near \"%s\"", nam, str);
+                else if (str[0] != '!')
+                    Jsi_LogError("%s near \"%s\"", nam, str);                    
+                else {
+                    bool ov = interp->dumpedStack;
+                    interp->dumpedStack = 1;
+                    Jsi_LogError("%s", str);                    
+                    interp->dumpedStack = ov;
+                }
             }
             return JSI_ERROR;
         }
@@ -811,20 +817,27 @@ static Jsi_RC jsiEvalFunction(jsi_Pstate *ps, jsi_OpCode *ip, int discard) {
     jsiVarDeref(interp, stackargc + 1);
     int tocall_index = interp->framePtr->Sp - stackargc - 1;
     Jsi_Value *_this = _jsi_THISIDX(tocall_index),
-        *tocall = _jsi_STACKIDX(tocall_index), **spargs = _jsi_STACK+(interp->framePtr->Sp - stackargc),   
+        *tocall = _jsi_STACKIDX(tocall_index),
+        **spargs = _jsi_STACK+(interp->framePtr->Sp - stackargc),   
         *spretPtr = Jsi_ValueNew1(interp), *spretPtrOld = spretPtr,
         *args = Jsi_ValueNewArrayObj(interp, spargs, stackargc, 1);
-        
     Jsi_IncrRefCount(interp, args);
-    if (_this->vt != JSI_VT_OBJECT)
+    bool isArrow = 0;
+    if (tocall && tocall->vt == JSI_VT_OBJECT && tocall->d.obj->ot == JSI_OT_FUNCTION)
+        isArrow = tocall->d.obj->d.fobj->func->isArrow;
+    if (isArrow) {
+        _this = interp->framePtr->inthis;
+        Jsi_IncrRefCount(interp, _this);
+    } else if (_this->vt != JSI_VT_OBJECT) {
         _this = Jsi_ValueDup(interp, interp->Top_object);
-    else {
+    } else {
         _this = Jsi_ValueDup(interp, _this);
         jsiClearThis(interp, tocall_index);
-    }   
+    }
     Jsi_RC rc = jsiFunctionSubCall(interp, args, _this, &spretPtr, tocall, discard);
     
     jsiPop(interp, stackargc);
+    
     jsiClearStack(interp,1);
     if (rc == JSI_CONTINUE) {
         Jsi_ValueMakeUndef(interp, &_jsi_TOP);
@@ -2289,35 +2302,80 @@ static Jsi_RC jsiJsPreprocessLineCB(Jsi_Interp* interp, char *buf, size_t bsiz, 
     return JSI_OK;
 }
 
-Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6) {
+Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, int sLen, Jsi_DString *tStr) {
     // Simple conversion of .vue file to js module.
-    static const char *p[3] = {"<template", "\n</template>\n<script>\n", "\n</script>\n" };
+    static const char **p,
+        *r[3] = {"<template", "\n</template>\n<script>", "\n}\n</script>\n" },
+        *q[3] = {"\"use strict\";Pdq.component(\"", "\n`\n,\n", "\n});" },
+        *x[2] = { "Pdq.subcomponent(\"", "\",{template:`" };
     Jsi_RC rc = JSI_OK;
-    int cnt = 0, lt = Jsi_Strlen(p[0]), nameLen = 0;
-    const char *s = str, *cp, *fns = Jsi_ValueString(interp, fn, NULL);
-    if (fns && (cp = Jsi_Strrchr(fns, '/')))
+    const char *s = str, *cp, *cx, *fext, *fns = Jsi_ValueString(interp, fn, NULL);
+    if (!fns)
+        return Jsi_LogError("missing file name");
+    if ((cp = Jsi_Strrchr(fns, '/')))
         fns = cp+1;
+    if ((cp = Jsi_Strrchr(fns, '.')))
+        fext = cp+1;
+    if (!fext || (Jsi_Strcmp(fext, "js") && Jsi_Strcmp(fext, "vue")))
+        return Jsi_LogError("file ext must be .js or .vue");
+    bool invue = (*fext == 'v');
+    p = (invue ? r:q);
+    int cnt = 0, nameLen = 0, xcnt, lcnt;
     while (rc == JSI_OK) {
-        while (*s && isspace(*s)) s++;
-        if (!*s) break;
         const char *t[5] = {0,0,0,0,0}, *pf = NULL, *name = NULL;
+        if (cnt==0 && (!*s || (*s=='%' &&  !s[1]))) {
+            if (!*s)
+                t[0] = t[1] = t[2] = t[3] = t[4] = "";
+            else {
+                t[1] =  "\n%s";
+                t[3] = (invue?"\n%s":"%s");
+                t[2] = t[1]+Jsi_Strlen(t[1]);
+                t[4] = t[3]+Jsi_Strlen(t[3]);
+                s = t[2];
+            }
+            if (invue)
+                goto outjs;
+            else
+                goto outvue;
+        }
+        while (*s && isspace(*s))
+            Jsi_DSAppendLen(tStr, s++, 1);
+        if (!*s) break;
         t[0] = str;
-        if (Jsi_Strncmp(s, p[0], lt))
+        cp = (cnt==0 || invue ? p[0] : x[0]);
+        int lt = Jsi_Strlen(cp);
+        if (Jsi_Strncmp(s, cp, lt))
             pf = p[0];
         else if (!cnt) {
-            if (s[lt]=='>')
-                t[1] = s + lt+1;
+            if (invue) {
+                if (s[lt]=='>')
+                    t[1] = s + lt+1;
+            } else {
+                cp = Jsi_Strstr(s + lt, x[1]);
+                if (cp)
+                    t[1] = cp + Jsi_Strlen(x[1]);
+                else
+                    pf = x[1];
+            }
         } else {
             cp = s+lt;
-            if (Jsi_Strncmp(cp, " name=\"", 7))
+            cx = (cnt==0 || invue ? " name=\"" : "");
+            xcnt = Jsi_Strlen(cx);
+            if (Jsi_Strncmp(cp, cx, xcnt))
                 pf = "<template name=";
             else {
-                cp += 7;
+                cp += xcnt;
                 name = cp;
+                lcnt = Jsi_Strlen(x[1]);
                 while (*cp && (isalnum(*cp) || *cp == '-' || *cp == '_')) cp++;
-                if (*cp == '"' && cp[1] == '>' && name != cp) {
-                    t[1] = cp + 2;
-                    nameLen = cp-name;
+                if (*cp == '"' && name != cp) {
+                    if (xcnt && cp[1] == '>') {
+                        t[1] = cp + 2;
+                        nameLen = cp-name;
+                    } else if (!xcnt && !Jsi_Strncmp(cp, x[1], lcnt)) {
+                        t[1] = cp + lcnt;
+                        nameLen = cp-name;
+                    }
                 }
             }
         }
@@ -2331,9 +2389,12 @@ Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DS
                     pf = p[1];
                 else {
                     t[3] = t[2]+Jsi_Strlen(p[1]);
-                    cp = Jsi_Strchr(t[3], '{'); // Skip "export default" or "module.export", etc.
+                    if (invue)
+                        cp = Jsi_Strchr(t[3], '{'); // Skip "export default" or "module.export", etc.
+                    else
+                        cp = t[3];
                     if (cp) {
-                        t[3] = cp+1;
+                        t[3] = cp+(invue?1:0);
                         t[4] = Jsi_Strstr(t[3], p[2]);
                     }
                     if (!t[4])
@@ -2342,32 +2403,42 @@ Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DS
             }
         }
         if (pf)
-            rc = Jsi_LogError("bad vue template '%s': expected '%s' at %.20s", fns, pf, s);
-        else if (cnt==0 && ES6) {
-            //Jsi_DSAppendLen(tStr, s, t[0]-s);
-            Jsi_DSAppend(tStr, "export default {\n  template:`", NULL);
+            rc = Jsi_LogError("bad vue template '%s': expected '%s' at %.40s", fns, pf, s);
+        else if (!invue) {
+outvue:
+            Jsi_DSAppend(tStr, r[0], (cnt?" name=\"":">"), NULL);
+            if (cnt) {
+                Jsi_DSAppendLen(tStr, name, nameLen);
+                Jsi_DSAppend(tStr, "\">", NULL);
+            }
             Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
-            Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
+            Jsi_DSAppend(tStr, r[1], " export default {\n", NULL);
             Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
-            //Jsi_DSAppend(tStr, "}", NULL);
+            Jsi_DSAppend(tStr, r[2], NULL);
         }
         else {
-            //Jsi_DSAppendLen(tStr, s, t[0]-s);
-            if (!cnt)
-                Jsi_DSAppend(tStr, "'use strict'; Pdq.Component('", fns, NULL);
-            else {
-                Jsi_DSAppend(tStr, "\nVue.component('", NULL);
+outjs:
+            if (!cnt) {
+                int fnln = Jsi_Strlen(fns)-4;
+                Jsi_DSAppend(tStr, q[0], NULL);
+                Jsi_DSAppendLen(tStr, fns, fnln);
+            } else {
+                Jsi_DSAppend(tStr, "\n\n", x[0], NULL);
                 Jsi_DSAppendLen(tStr, name, nameLen);
             }
-            Jsi_DSAppend(tStr, "', { template:`", NULL);
+            Jsi_DSAppend(tStr, x[1], NULL);
             Jsi_DSAppendLen(tStr, t[1], t[2]-t[1]);
-            Jsi_DSAppend(tStr, "\n\n`,\n", NULL);
+            Jsi_DSAppendLen(tStr, q[1], Jsi_Strlen(q[1])-1);
+           // if (*t[3]=='\n')
+            //    t[3]++;
             Jsi_DSAppendLen(tStr, t[3], t[4]-t[3]);
-            Jsi_DSAppend(tStr, "\n);", NULL);
+            Jsi_DSAppend(tStr, q[2], NULL);
         }
-        s = t[4]+Jsi_Strlen(p[2]);
+        if (*s)
+            s = t[4]+Jsi_Strlen(p[2]) + (invue?0:2);
         cnt++;
     }
+    Jsi_DSAppend(tStr, "\n", NULL);
     return rc;
 }
 
@@ -2404,7 +2475,9 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
     Jsi_DSInit(&tStr);
 
     if (str == NULL) {
-        if (fname != NULL) {
+        if (fname == NULL)
+            goto bail;
+        else {
             fext = Jsi_Strrchr(fname, '.');
             /*if (fnLen>2 && fname[fnLen-1]=='/') {
                 Jsi_DSAppendLen(&fStr, fname, fnLen-1);
@@ -2514,10 +2587,10 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
             if (flags&JSI_EVAL_IMPORT)
                 Jsi_DSAppend(&dStr, "return (function(){ ", NULL);
 
-            while (cnt<MAX_LOOP_COUNT) {
+            while (cnt++ < MAX_LOOP_COUNT) {
                 if (!Jsi_Gets(interp, input, buf, sizeof(buf)))
                     break;
-                if (++cnt==1 && (!(flags&JSI_EVAL_NOSKIPBANG)) && (buf[0] == '#' && buf[1] == '!')) {
+                if (cnt==1 && (!(flags&JSI_EVAL_NOSKIPBANG)) && (buf[0] == '#' && buf[1] == '!')) {
                     Jsi_DSAppend(&dStr, "\n", NULL);
                     continue;
                 }
@@ -2559,8 +2632,9 @@ cont:
     oldSp = interp->framePtr->Sp;
     // Evaluate code.
     rc = JSI_OK;
-    if (fext && !Jsi_Strcmp(fext, ".vue") && (interp->noEval || (flags&JSI_EVAL_NOEVAL))) {
-        rc = Jsi_VueConvert(interp, path, str, &tStr, !interp->noES6);
+    if (str && *str && fext && !Jsi_Strcmp(fext, ".vue") && (interp->noEval || (flags&JSI_EVAL_NOEVAL))) {
+        // Syntax checking a .vue file
+        rc = Jsi_VueConvert(interp, path, str, Jsi_Strlen(str), &tStr);
         if (rc != JSI_OK)
             goto bail;
         str = Jsi_DSValue(&tStr);

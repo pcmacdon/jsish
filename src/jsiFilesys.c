@@ -951,14 +951,14 @@ static Jsi_RC FilesysFlushCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
 static Jsi_RC FilesysWriteCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
     Jsi_Value **ret, Jsi_Func *funcPtr)
 {
-    int  sum = 0, n, m;
+    int  sum = 0, n, m, cnt = 0;
     UdfGet(udf, _this, funcPtr);
     char *buf = Jsi_ValueArrayIndexToStr(interp, args, 0, &m);
 
     if (!udf->filename) {
         goto bail;
     }
-    while (m > 0 && sum < MAX_LOOP_COUNT && (n = Jsi_Write(interp, udf->chan, buf, m)) > 0) {
+    while (m > 0 && cnt++ < MAX_LOOP_COUNT && (n = Jsi_Write(interp, udf->chan, buf+sum, m)) > 0) {
         /* TODO: limit max size. */
         sum += n;
         m -= n;
@@ -1202,20 +1202,19 @@ const char *jsi_GetHomeDir(Jsi_Interp *interp) {
 
 /* TODO: reconcile with NormalizeUnixPath */
 char* Jsi_NormalPath(Jsi_Interp *interp, const char *path, Jsi_DString *dStr) {
-    char prefix[3] = "";
     char cdbuf[PATH_MAX];
     Jsi_DSInit(dStr);
     if (!path || !path[0]) return NULL;
     if (*path == '/')
         Jsi_DSAppend(dStr, path, NULL);
-#ifdef __WIN32  /* TODO: add proper handling for windows paths. */
-    else if (*path && path[1] == ':') {
+/*#ifdef __WIN32  // TODO: add proper handling for windows paths.
+    else if (isalpha(*path) && path[1] == ':') {
         Jsi_DSAppend(dStr, path, NULL);
         return Jsi_DSValue(dStr);
     }
-#endif
+#endif*/
     else if (path[0] == '~') {
-        Jsi_DSAppend(dStr, jsi_GetHomeDir(interp), (path[1] == '/' ? "" : "/"), path+1, NULL);
+        jsi_TildePath(interp, path, dStr);
     } else if (path[0] == '.' && path[1] == 0) {
         if (jsiIntData.pwd) {
             Jsi_DSAppend(dStr, jsiIntData.pwd, NULL);
@@ -1232,15 +1231,14 @@ char* Jsi_NormalPath(Jsi_Interp *interp, const char *path, Jsi_DString *dStr) {
     Jsi_DString sStr = {};
     char *cp = Jsi_DSValue(dStr);
 #ifdef __WIN32
-    if (*cp && cp[1] == ':') {
-        prefix[0] = *cp;
-        prefix[1] = cp[1];
-        prefix[2] = 0;
+    if (isalpha(*cp) && cp[1] == ':') {
+        /* Drive prefix for windows. */
+        Jsi_DSAppendLen(&sStr, cp, 2);
         cp += 2;
     }
 #endif
     int i=0, n=0, m, nmax, unclean=0, slens[PATH_MAX];
-    char *sp = cp, *ss;
+    char *ss;
     char *sptrs[PATH_MAX];
     while (*cp && n<PATH_MAX) {
         while (*cp && *cp == '/') {
@@ -1258,7 +1256,7 @@ char* Jsi_NormalPath(Jsi_Interp *interp, const char *path, Jsi_DString *dStr) {
         cp = ss;
     }
     if (!unclean)
-        return sp;
+        goto done;
     /* Need to remove //, /./, /../ */
     nmax = n--;
     while (n>0) {
@@ -1278,12 +1276,10 @@ char* Jsi_NormalPath(Jsi_Interp *interp, const char *path, Jsi_DString *dStr) {
                 m--;
             }
             if (cnt<1)
-                return sp;  /* Can't fix it */
+                goto done;  /* Can't fix it */
         }
         n--;
     }
-    /* TODO: prefix for windows. */
-    Jsi_DSAppend(&sStr, prefix, NULL);
     for (i=0; i<nmax; i++) {
         if (slens[i]) {
 #ifdef __WIN32
@@ -1296,6 +1292,7 @@ char* Jsi_NormalPath(Jsi_Interp *interp, const char *path, Jsi_DString *dStr) {
     }
     Jsi_DSSetLength(dStr, 0);
     Jsi_DSAppend(dStr, Jsi_DSValue(&sStr), NULL);
+done:
     Jsi_DSFree(&sStr);
     return Jsi_DSValue(dStr);
 }

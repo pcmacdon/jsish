@@ -18,8 +18,10 @@ function SqliteUI(files:array|string, conf:object=void)
         local       :true,              // Web server is to listen only on localhost.
         noCheck     :false,             // Disable typechecking.
         noGui       :false,             // Disable starting local browser.
+        noOptFile   :false,             // Do not use ~/.sqliteui.db.
         noUpdate    :false,             // Caller will provide update calls.
         noIO        :false,             // Disable disk io operations, other than to db.
+        optdbfile   :'~/.sqliteui.db',  // Store options, saved queries, etc.
         port        :0,                 // Port, or zero to let OS choose.
         readonly    :false,             // Databases are opened readonly.
         server      :false,             // Server mode: same as noGui=true and closeTimout=0
@@ -55,7 +57,6 @@ function SqliteUI(files:array|string, conf:object=void)
             win: [ "start" ],
             mac: [ "open" ]
         },
-        optdbfile: '~/.sqliteui.db',    // Store options, saved queries, etc.
         optSchema :
             "CREATE TABLE IF NOT EXISTS dbfiles (file);" +
             "CREATE TABLE IF NOT EXISTS saved_queries (query NOT NULL, dbID NOT NULL);" +

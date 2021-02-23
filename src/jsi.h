@@ -716,7 +716,7 @@ JSI_EXTERN Jsi_RC Jsi_Base64(const char *str, int len, Jsi_DString *buf, bool de
 JSI_EXTERN int Jsi_HexStr(const uchar *data, int len, Jsi_DString *dStr, bool decode); /*STUB = 232*/
 JSI_EXTERN uint32_t Jsi_Crc32(uint32_t crc, const void *ptr, size_t buf_len); /*STUB = 234*/
 JSI_EXTERN Jsi_RC Jsi_FileRead(Jsi_Interp *interp, Jsi_Value *name, Jsi_DString *dStr); /*STUB = 408*/
-JSI_EXTERN Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, Jsi_DString *tStr, bool ES6); /*STUB = 429*/ /*LAST*/
+JSI_EXTERN Jsi_RC Jsi_VueConvert(Jsi_Interp *interp, Jsi_Value *fn, const char *str, int slen, Jsi_DString *outStr); /*STUB = 429*/ /*LAST*/
 
 JSI_EXTERN int Jsi_NumberIsInfinity(Jsi_Number a);  /*STUB = 235*/
 JSI_EXTERN bool Jsi_NumberIsEqual(Jsi_Number n1, Jsi_Number n2);  /*STUB = 236*/

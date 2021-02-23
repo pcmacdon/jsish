@@ -838,7 +838,7 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 break;
             case 'i':
                 if (argc <= 2)
-                    rc = Jsi_LogError("expected a module-name to invoke: or use 'jsish -m run'");
+                    rc = Jsi_LogError("expected a module-name to invoke'");
                 else {
                     Jsi_DString dStr = {}, eStr = {};
                     const char *cps, *cpe;
@@ -891,9 +891,14 @@ Jsi_Interp* Jsi_Main(Jsi_InterpOpts *opts)
                 rc = Jsi_EvalString(interp, "moduleRun('Zip');", JSI_EVAL_ISMAIN);
                 break;
             default:
-                puts("usage: jsish [ --E CODE | --I OPT:VAL | --T ] \n\t"
-                "-a | -c | -d | -D | -e | -h | -i | J | -m  | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
-                return jsi_DoExit(interp, 1);
+                goto helpout;
+        }
+    } else if (ai1[0] == '-') {
+        if (ai1[1] != '-' ||  !((ai1[2] == 'T' || (argc<2 && (ai1[2] == 'E' || ai1[2] == 'I'))) && !ai1[3])) {
+helpout:
+            puts("usage: jsish [ --E CODE | --I OPT:VAL | --T ] \n\t"
+            "-a | -c | -d | -D | -e | -h | -i | J | -m  | -s | -S | -u | -v | -w | -W | -z | FILE ...\nUse -help for long help.");
+            return jsi_DoExit(interp, 1);
         }
     } else {
 //dofile:

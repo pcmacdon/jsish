@@ -29,11 +29,11 @@ function Manage(args:array, conf:object=void) {
     }
     
     function sunzip(foss='') {
-        if (File.isdir('jsi'))
+        if (File.isdir('jsi')) {
             if (foss)
                 fossil('rm --hard jsi');
-            else
-                File.remove('jsi', true);
+            File.remove('jsi', true);
+        }
         Jsi_CopyDir('/zvfs/lib/www', 'jsi');
         if (foss)
             fossil('add jsi');
@@ -47,14 +47,14 @@ function Manage(args:array, conf:object=void) {
         else
             ver = fossil('version', true);
         if (!ver)
-            throw 'install fossil first, eg. use "sudo apt install fossil" or "sudo jsish -M getfossil"';
+            throw '!install fossil first, eg. use "sudo apt install fossil" or "sudo jsish -M getfossil"';
         var cnt = File.glob('*', {retCount:true});
         if (cnt)
-            throw 'setup must be used in an empty directory';
+            throw '!setup must be used in an empty directory';
         
         ver = fossil('status', true);
         if (ver.match(/^repository:.*/))
-            throw 'sorry: already in open fossil: '+ver.split('\n')[0];
+            throw '!sorry: already in open fossil: '+ver.split('\n')[0];
 
         var dname = File.tail(File.pwd());
         
@@ -65,12 +65,12 @@ function Manage(args:array, conf:object=void) {
         if (!app.match(/^[-0-9a-zA-Z_]+$/)) {
             app = File.rootname(File.tail(app));
             if (!app.match(/^[-0-9a-zA-Z_]+$/))
-                throw 'app name invalid: '+app;
+                throw '!app name invalid: '+app;
         } else
             url = self.repo+'/'+app;
         var proj = name.toUpperCase();
         if (app.toLowerCase() == proj)
-            throw 'can not use name same as app: '+name;
+            throw '!can not use name same as app: '+name;
         var pfn = name+'.fossil';
         if (url[0] == '/' && File.exists(url+'.fossil'))
             url += '.fossil';
@@ -125,7 +125,7 @@ function Manage(args:array, conf:object=void) {
         var url = surl();
         var dif = fossil('changes');
         if (dif)
-            throw 'must run "fossil commit" first';
+            throw '!must run "fossil commit" first';
         return fossil('pull --from-parent-project '+opts+' '+url);
     }
 
@@ -145,7 +145,7 @@ function Manage(args:array, conf:object=void) {
     function spupdate(opts='', msg='') {
         var cur = fossil('branch current').trim();
         if (cur != 'private')
-            throw 'need to use "fossil update private" before spupdate: '+cur;
+            throw '!need to use "fossil update private" before spupdate: '+cur;
         var rs = supdate(opts+' --private', msg);
         return rs;
     }
@@ -169,7 +169,7 @@ function Manage(args:array, conf:object=void) {
             if (tl1 == tl2)
                 return 'spull returned no changes';
         }
-        var mrg = '', ms;
+        var mrg = '', ms = '';
         try {
             mrg = fossil('merge');
             ms = mrg.match(/WARNING: [0-9]+ merge conflicts/);
@@ -180,7 +180,7 @@ function Manage(args:array, conf:object=void) {
             return;
         if (ms) {
             puts('Conflict', mrg);
-            throw 'merge conflict'+ms[0];
+            throw '!merge conflict'+ms[0];
         }
         //var u = fossil('update'), us = u.match(/changes:\s+None. Already up-to-date/);
         //if (us) return 'no changes in update';
@@ -233,7 +233,7 @@ function Manage(args:array, conf:object=void) {
                 else if (ext === '.jsi' && ft !== 'Jsish.jsi' && ft !=='autoload.jsi')
                     rc.push(fr);
             }
-            throw 'missing required module name or builtin:\n    '+rc.sort().join(', ')+'\n';
+            throw '!missing required module name or builtin:\n    '+rc.sort().join(', ')+'\n';
         }
         require(fn);
         return moduleRun(fn);
@@ -244,6 +244,45 @@ function Manage(args:array, conf:object=void) {
             fn = Info.executable();
         return Util.hash('', {file:fn, type:'sha1'});
     }
+    
+    function vuecvt(fn:string, out='') {
+      var rs = Util.vueConvert(fn);
+      if (!out)
+        return rs;
+      if (out == '.') {
+        var fext = File.extension(fn), fr = File.rootname(fn);
+        if (fext == '.vue')
+          out = fn+'.js';
+        else
+          out = File.rootname(fr)+'.vue';
+      }
+      File.write(out, rs);
+      return out;
+    }
+    
+    function fossroot() {
+        return (File.exists('.fslckout') || File.exists('_FOSSIL_'));
+    }
+    
+    function vuepublish(dir='.', reverse='') { // Generate .vue.js to/from .vue files.
+      var opts = {recurse:true, types:'f', maxDepth:5};
+      if (dir && dir != '.') {
+        opts.dir =dir;
+        if (dir[dir.length-1] != '/') dir+='/';
+        opts.prefix = dir;
+      }
+      var ext = (reverse?'.vue':'.vue.js'),
+        flst = [], lst = File.glob('*'+ext, opts);
+      for (var i of lst) {
+        var fn = (dir=='.'?i:File.join(dir, i));
+        flst.push(vuecvt(fn, '.'));
+      }
+      if (!reverse && fossroot() && !File.exists('jsi'))
+        sunzip('1');
+
+      if (flst.length)
+        fossil('add '+flst.join(' '));
+    }
 
     function zhash(fn='') {
         if (!fn)
@@ -252,7 +291,6 @@ function Manage(args:array, conf:object=void) {
         return Util.hash(JSON.stringify(str), {type:'sha1'});
     }
 
-    
     function zcheck() {
         var fn = Info.executable();
         var zh = zhash(fn);
@@ -271,7 +309,7 @@ function Manage(args:array, conf:object=void) {
         if (self.output !== '')
             fn = self.output;
         if (File.exists(fn))
-            throw 'file exists: '+fn;
+            throw '!file exists: '+fn;
         var pat = File.rootname(File.tail(fn));
         var pref = tmpname;
         var tmpl = File.read('/zvfs/lib/templates/'+pref+'.jsi');
@@ -298,6 +336,8 @@ function Manage(args:array, conf:object=void) {
         surl:       [surl,       "Get parent project url"],
         supdate:    [supdate,    "Update a sub-project created with sclone: also update/merge/commit"],
         spupdate:   [spupdate,   "Shortcut for 'supdate --private'"],
+        vuepublish: [vuepublish, 'Generate .vue.js files from .vue' ],
+        vuecvt:     [vuecvt,     'Convert .vue/.js file' ],        
         zcheck:     [zcheck,     "Compare zhash of jsish builtin zip"],
         zhash:      [zhash,      "Calculate sha1 hash of appended zip"]
     };

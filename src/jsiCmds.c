@@ -1981,14 +1981,15 @@ Jsi_RC Jsi_DatetimeParse(Jsi_Interp *interp, const char *str, const char *fmt, i
             time_t t = time(NULL);
             struct tm lt = {0};
             lt.tm_isdst = -1;
-            localtime_r(&t, &lt);
             
 #ifdef __WIN32
+            localtime(&t);
             {
                 time_t tt = 0;
                 n += (int)time(&tt);
             }
 #else
+            localtime_r(&t, &lt);
             n += (lt.tm_gmtoff)*1000.0;
 #endif
         }

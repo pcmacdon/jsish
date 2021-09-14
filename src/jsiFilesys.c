@@ -1207,12 +1207,12 @@ char* Jsi_NormalPath(Jsi_Interp *interp, const char *path, Jsi_DString *dStr) {
     if (!path || !path[0]) return NULL;
     if (*path == '/')
         Jsi_DSAppend(dStr, path, NULL);
-/*#ifdef __WIN32  // TODO: add proper handling for windows paths.
+#ifdef __WIN32  // TODO: add proper handling for windows paths.
     else if (isalpha(*path) && path[1] == ':') {
         Jsi_DSAppend(dStr, path, NULL);
         return Jsi_DSValue(dStr);
     }
-#endif*/
+#endif
     else if (path[0] == '~') {
         jsi_TildePath(interp, path, dStr);
     } else if (path[0] == '.' && path[1] == 0) {

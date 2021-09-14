@@ -91,7 +91,11 @@ function Manage(args:array, conf:object=void) {
         db.query("INSERT INTO config(name,mtime,value)  VALUES('project-name', @now, @proj);");
         if (self.quiet)
             return;
-        fossil('open '+pfn);
+        try {
+          fossil('open '+pfn);
+        } catch (e) {
+          fossil('open -f '+pfn);
+	    }
         fossil('remote-url off');
         /*if (!File.isdir('jsi')) {
             Jsi_CopyDir('/zvfs/lib/www', 'jsi');

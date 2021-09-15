@@ -2491,6 +2491,10 @@ Jsi_RC jsi_evalStrFile(Jsi_Interp* interp, Jsi_Value *path, const char *str, int
             if (!Jsi_Strcmp(fname,"-"))
                 input = Jsi_GetStdChannel(interp, 0);
             else {
+#ifdef __WIN32  // TODO: add proper handling for windows paths.
+                if (isalpha(*fname) && fname[1] == ':') {
+                } else
+#endif
                 /* Use translated FileName. */
                 if (interp->curDir && fname[0] != '/' && fname[0] != '~') {
                     char dirBuf2[PATH_MAX], *np;

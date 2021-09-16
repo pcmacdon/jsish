@@ -26,3 +26,4 @@ Compile and run a simple C-extension.
     ./jsish -c -jsc "function add(n1:number, n2:number=1):number { n1+=n2; \nRETURN(n1);\n }" Sum 
     ./jsish -e 'require("Sum",0); return Sum.add(9,3);'
 
+

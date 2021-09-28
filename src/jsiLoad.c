@@ -49,12 +49,14 @@ Jsi_RC Jsi_LoadLibrary(Jsi_Interp *interp, const char *pathName, bool noInit)
 #ifdef __WIN32
     HMODULE handle = LoadLibrary(pathName);
 #else
+#ifndef __FreeBSD__
 #if JSI__LOADNOEXEC
 #warning "NOTE: Allowing load from noexec FS"
 #else
     struct statvfs vfs;
     if (statvfs(pathName, &vfs) == 0 && vfs.f_flag&ST_NOEXEC)
         return Jsi_LogError("shared libs may not be loaded from a noexec FS");
+#endif
 #endif
     void *handle = dlopen(pathName, RTLD_NOW | RTLD_LOCAL);
 #endif

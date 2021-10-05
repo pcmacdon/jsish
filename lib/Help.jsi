@@ -315,7 +315,13 @@ function Help(args, ...) {
                         require(anam);
                         moduleRun(anam, ['-help', true]);
                     } catch (e) {
-                        rv = e;
+                      try {
+                          Interp.conf({pkgDirs:[File.pwd()]});
+                          require(anam);
+                          moduleRun(anam, ['-help', true]);
+                      } catch (e) {
+                          rv = e;
+                      }
                     }
                     return rv;
                 }

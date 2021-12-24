@@ -782,7 +782,7 @@ done:
 }
 
 Jsi_PkgOpts *Jsi_CommandPkgOpts(Jsi_Interp *interp, Jsi_Func *func) {
-    if (!func || func->type != FC_BUILDIN || !func->fobj->func->pkg) return NULL;
+    if (!func || func->type != FC_BUILDIN || !func->fobj || !func->fobj->func->pkg) return NULL;
     Jsi_PkgOpts *popts = &func->fobj->func->pkg->popts;
     return popts;
 }

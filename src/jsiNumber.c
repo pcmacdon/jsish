@@ -90,9 +90,9 @@ static Jsi_RC NumberConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
             Jsi_ValueToNumber(interp, v);
             nv = v->d.num;
         }
+        Jsi_ValueToObject(interp, _this);
         _this->d.obj->ot = JSI_OT_NUMBER;
         _this->d.obj->d.num = nv;
-        Jsi_ValueToObject(interp, _this);
         Jsi_ValueMakeNumber(interp, ret, nv);
         return JSI_OK;
     }

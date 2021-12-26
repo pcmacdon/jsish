@@ -1640,6 +1640,10 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 }
                 
                 Jsi_IterObj *io = toq->d.obj->d.iobj;
+                if (!io) {
+                    rc = Jsi_LogError("bad loop");
+                    break;
+                }
                 if (io->iterCmd) { // TODO: not implemented yet
                     io->iterCmd(io, top, _jsi_STACKIDX(fp->Sp-3), io->iter++);
                 } else {

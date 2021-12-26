@@ -1286,6 +1286,8 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_ASSIGN: {
+                if (interp->framePtr->Sp<2)
+                  break;
                 Jsi_Value *sval = _jsi_TOP, *dval = _jsi_TOQ;
                 if ((uintptr_t)ip->data & 1) {
                     jsiVarDeref(interp,1);

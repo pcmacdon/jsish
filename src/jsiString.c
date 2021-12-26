@@ -651,7 +651,7 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     int replace_len;
     int regexec_flags = 0;
     Jsi_Value *seq, *strVal;
-    Jsi_DString dStr = {};
+    Jsi_DString dStr = {}, eStr = {};
     regex_t *regex;
     Jsi_Regex *re;
     const char *p;
@@ -673,13 +673,13 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         Jsi_Func *fptr = repVal->d.obj->d.fobj->func;
         maxArgs = (fptr->argnames?fptr->argnames->argCnt:0);
     }
-    Jsi_DSInit(&dStr);
 
     if (Jsi_ValueIsString(interp, seq)) {
         const char *ce, *cp = Jsi_ValueString(interp, seq, NULL);
         if (!(ce = Jsi_Strstr(source_str, cp)))
             Jsi_ValueMakeStringDup(interp, ret, source_str);
         else {
+            Jsi_DSAppend(&eStr, ce + Jsi_Strlen(cp), NULL);
             int slen;
             slen = (ce-source_str);
             if (slen)
@@ -703,7 +703,8 @@ static Jsi_RC StringReplaceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
                 }
                 Jsi_DecrRefCount(interp, inStr);
             }
-            Jsi_DSAppend(&dStr, ce+Jsi_Strlen(cp), NULL);
+            Jsi_DSAppend(&dStr, Jsi_DSValue(&eStr), NULL);
+            Jsi_DSFree(&eStr);
             Jsi_ValueFromDS(interp, &dStr, ret);
         }
         return JSI_OK;

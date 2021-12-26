@@ -28,11 +28,12 @@ static Jsi_RC StringConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
             }
         }
         if (_this->vt == JSI_VT_OBJECT && _this->d.obj->ot == JSI_OT_STRING) {
+            char *nstr = Jsi_StrdupLen(nv, len);
             if (_this->d.obj->d.s.str)
                 if (!_this->d.obj->isstrkey)
                     Jsi_Free(_this->d.obj->d.s.str);
             _this->d.obj->isstrkey = 0;
-            _this->d.obj->d.s.str = Jsi_StrdupLen(nv, len);
+            _this->d.obj->d.s.str = nstr;
             _this->d.obj->d.s.len = len;
         } else
             jsi_ValueMakeBlobDup(interp, &_this, (uchar*)nv, len);

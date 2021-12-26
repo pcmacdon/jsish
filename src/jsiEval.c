@@ -1365,14 +1365,15 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_CHTHIS: {
                 if (ip->data) {
                     int t = fp->Sp - 2;
-                    Assert(t>=0);
-                    Jsi_Value *v = _jsi_THISIDX(t);
-                    jsiClearThis(interp, t);
-                    Jsi_ValueCopy(interp, v, _jsi_TOQ);
-                    if (v->vt == JSI_VT_VARIABLE) {
-                        Jsi_ValueCopy(interp, v, v->d.lval);
+                    if (t>=0) {
+                        Jsi_Value *v = _jsi_THISIDX(t);
+                        jsiClearThis(interp, t);
+                        Jsi_ValueCopy(interp, v, _jsi_TOQ);
+                        if (v->vt == JSI_VT_VARIABLE) {
+                            Jsi_ValueCopy(interp, v, v->d.lval);
+                        }
+                        rc = Jsi_ValueToObject(interp, v);
                     }
-                    rc = Jsi_ValueToObject(interp, v);
                 }
                 break;
             }

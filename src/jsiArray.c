@@ -703,7 +703,8 @@ static Jsi_RC jsi_ArrayIndexSubCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Valu
     if (op == 2) {
         istart = n-1;
     }
-    if (start && Jsi_GetNumberFromValue(interp,start, &nstart)==JSI_OK) {
+    if (start) {
+        if (Jsi_GetNumberFromValue(interp,start, &nstart)!=JSI_OK) return JSI_ERROR;
         istart = (int)nstart;
         if (istart > n)
             goto bail;
@@ -816,7 +817,8 @@ static Jsi_RC jsi_ArrayFillCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     Jsi_Obj *obj = _this->d.obj;
     n = jsi_SizeOfArray(interp, obj);
 
-    if (start && Jsi_GetNumberFromValue(interp, start, &nstart) == JSI_OK) {
+    if (start) {
+        if (Jsi_GetNumberFromValue(interp, start, &nstart) != JSI_OK) return JSI_ERROR;
         istart = (int)nstart;
         if (istart > n)
             goto bail;
@@ -830,7 +832,8 @@ static Jsi_RC jsi_ArrayFillCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         goto bail;
     }
     iend = n-1;
-    if (end && Jsi_GetNumberFromValue(interp,end, &nend) == JSI_OK) {
+    if (end) {
+        if (Jsi_GetNumberFromValue(interp,end, &nend) != JSI_OK) return JSI_ERROR;
         iend = (int) nend;
         if (iend >= n)
             iend = n-1;
@@ -875,21 +878,21 @@ static Jsi_RC jsi_ArraySliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
 
     obj = _this->d.obj;
     n = jsi_SizeOfArray(interp, obj);
-    if (Jsi_GetNumberFromValue(interp,start, &nstart) == JSI_OK) {
-        istart = (int)nstart;
-        if (istart > n)
-            return rc;
-        if (istart < 0)
-            istart = (n+istart);
-        if (istart<0)
-            return rc;
-    }
+    if (Jsi_GetNumberFromValue(interp,start, &nstart) != JSI_OK) return JSI_ERROR;
+    istart = (int)nstart;
+    if (istart > n)
+        return rc;
+    if (istart < 0)
+        istart = (n+istart);
+    if (istart<0)
+        return rc;
       
     if (n == 0)
         return rc;
     Jsi_Number nend;
     iend = n-1;
-    if (end && Jsi_GetNumberFromValue(interp,end, &nend) == JSI_OK) {
+    if (end) {
+        if (Jsi_GetNumberFromValue(interp,end, &nend) != JSI_OK) return JSI_ERROR;
         iend = (int) nend;
         if (iend >= n)
             iend = n-1;
@@ -1135,19 +1138,20 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     
     /* Determine start index. */
     Jsi_Number nstart;
-    if (Jsi_GetNumberFromValue(interp, start, &nstart) == JSI_OK) {
-        istart = (int)nstart;
-        if (istart > n)
-            return JSI_OK;
-        if (istart < 0)
-            istart = (n+istart);
-        if (istart<0)
-            istart=0;
-    }
+    if (Jsi_GetNumberFromValue(interp, start, &nstart) != JSI_OK)
+      return JSI_ERROR;
+    istart = (int)nstart;
+    if (istart > n)
+        return JSI_OK;
+    if (istart < 0)
+        istart = (n+istart);
+    if (istart<0)
+        istart=0;
       
     Jsi_Number nhow;
     rhowmany = n-istart;
-    if (howmany && Jsi_GetNumberFromValue(interp, howmany, &nhow) == JSI_OK) {
+    if (howmany) {
+        if (Jsi_GetNumberFromValue(interp, howmany, &nhow) != JSI_OK) return JSI_ERROR;
         rhowmany = (int)nhow;
         if (rhowmany >= (n-istart))
             rhowmany = n-istart;
@@ -1162,7 +1166,8 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     }
     Jsi_ObjListifyArray(interp, obj);
    
-    Jsi_ObjArraySizer(interp, nobj, rhowmany);
+    if (Jsi_ObjArraySizer(interp, nobj, rhowmany)<=0)
+      return JSI_ERROR;
 
     /* Move elements to return object. */
     int i, j, m;

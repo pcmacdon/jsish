@@ -308,7 +308,7 @@ static Jsi_RC jsi_ArrayConcatCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     m = i;
     for (i = 0; i < argc; i++) {
          va = Jsi_ValueArrayIndex(interp, args, i);
-         if (va->vt == JSI_VT_OBJECT && Jsi_ObjIsArray(interp, va->d.obj)) {
+         if (va && va->vt == JSI_VT_OBJECT && Jsi_ObjIsArray(interp, va->d.obj)) {
             int margc = Jsi_ValueGetLength(interp, va);
             Jsi_Obj *mobj = va->d.obj;
             Jsi_ObjListifyArray(interp, mobj);

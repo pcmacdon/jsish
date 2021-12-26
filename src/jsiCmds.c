@@ -24,14 +24,18 @@ static Jsi_RC consoleInputCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
         if (interp->isSafe)
             return Jsi_LogError("line edit not available in safe mode");
         if (Jsi_ValueIsNull(interp, v)) {
-            jsi_RlGetLine(interp, NULL);
+            cp = jsi_RlGetLine(interp, NULL);
+            if (cp)
+              Jsi_Free(cp);
             return JSI_OK;
         }
         cp = Jsi_ValueString(interp, v, NULL);
         if (cp) {
             p  = jsi_RlGetLine(interp, cp);
-            if (p)
+            if (p) {
                 Jsi_ValueMakeString(interp, ret, p);
+                Jsi_Free(p);
+            }
             return JSI_OK;
         }
     }

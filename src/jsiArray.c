@@ -833,7 +833,7 @@ static Jsi_RC jsi_ArrayFillCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
     if (end && Jsi_GetNumberFromValue(interp,end, &nend) == JSI_OK) {
         iend = (int) nend;
         if (iend >= n)
-            iend = n;
+            iend = n-1;
         if (iend < 0)
             iend = (n+iend);
         if (iend<0)
@@ -892,7 +892,7 @@ static Jsi_RC jsi_ArraySliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     if (end && Jsi_GetNumberFromValue(interp,end, &nend) == JSI_OK) {
         iend = (int) nend;
         if (iend >= n)
-            iend = n;
+            iend = n-1;
         if (iend < 0)
             iend = (n+iend);
         if (iend<0)

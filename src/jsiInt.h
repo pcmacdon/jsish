@@ -530,7 +530,8 @@ struct Jsi_Obj {
     uint freeze:1;
     uint freezeNoModify:1;
     uint freezeReadCheck:1;
-    uint unused2:13;
+    uint modifying:1;
+    uint unused2:12;
     union {                     /* switched on by value of "ot" */
         int val;
         Jsi_Number num;

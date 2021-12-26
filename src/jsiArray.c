@@ -23,6 +23,8 @@ static Jsi_RC jsi_ArrayPushCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         return JSI_OK;
     }
     obj = _this->d.obj;
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
     
     int argc = Jsi_ValueGetLength(interp, args);
     int curlen = jsi_SizeOfArray(interp, obj);    
@@ -47,6 +49,8 @@ static Jsi_RC jsi_ArrayPopCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_t
     Jsi_Value *v;
     Jsi_Obj *obj;
     obj = _this->d.obj;
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
     int i = jsi_SizeOfArray(interp, obj) - 1;
 
     if (i < 0) {
@@ -760,6 +764,8 @@ static Jsi_RC jsi_ArrayShiftCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *
     Jsi_Obj *obj = _this->d.obj;
     Jsi_ObjListifyArray(interp, obj);
     uint n = jsi_SizeOfArray(interp, obj);
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
     if (n<=0) {
         Jsi_ValueMakeUndef(interp, ret);
     } else {
@@ -780,6 +786,8 @@ static Jsi_RC jsi_ArrayUnshiftCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value
         return Jsi_LogError("expected array object");
 
     Jsi_Obj *obj = _this->d.obj;
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
     int argc = Jsi_ValueGetLength(interp, args);
     int curlen = jsi_SizeOfArray(interp, obj);
     if (argc <= 0) {
@@ -815,6 +823,8 @@ static Jsi_RC jsi_ArrayFillCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         *start = Jsi_ValueArrayIndex(interp, args, 1),
         *end = Jsi_ValueArrayIndex(interp, args, 2);
     Jsi_Obj *obj = _this->d.obj;
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
     n = jsi_SizeOfArray(interp, obj);
 
     if (start) {
@@ -1037,7 +1047,6 @@ static Jsi_RC jsi_ArraySortCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 
     Jsi_Obj *obj = _this->d.obj;
     curlen = obj->arrCnt;
-
     if (curlen <= 1) {
         goto done;
     }
@@ -1058,6 +1067,9 @@ static Jsi_RC jsi_ArraySortCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
         else 
             return Jsi_LogError("expected object or function");
     }
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
+    obj->modifying = 1;
     si.flags = flags;
     Jsi_ObjListifyArray(interp, obj);
 #ifdef NO_QSORT_R
@@ -1110,6 +1122,7 @@ static Jsi_RC jsi_ArraySortCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_
 done:
     v = Jsi_ValueMakeObject(interp, NULL, obj);
     Jsi_ValueReplace(interp, ret, v);
+    obj->modifying = 0;
     return JSI_OK;
 }
 
@@ -1120,6 +1133,8 @@ static Jsi_RC jsi_ArraySpliceCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
     int newlen, argc, istart, n, rhowmany, ilen, curlen;
     Jsi_Value *va, *start, *howmany;
     Jsi_Obj *nobj, *obj = _this->d.obj;
+    if (obj->modifying)
+      return Jsi_LogError("already modifying");
     
     start = Jsi_ValueArrayIndex(interp, args, 0);
     howmany = Jsi_ValueArrayIndex(interp, args, 1);

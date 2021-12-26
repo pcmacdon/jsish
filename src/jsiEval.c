@@ -1017,7 +1017,8 @@ static Jsi_RC jsiEvalSubscript(Jsi_Interp *interp, Jsi_Value *src, Jsi_Value *id
             else
                 Jsi_ValueCopy(interp, src, vp);
         } else {
-            assert(vp != resPtr);
+            if (vp == resPtr)
+              return Jsi_LogError("bad eval");
             res.vt = JSI_VT_VARIABLE;
             res.d.lval = vp;
             if (ro)

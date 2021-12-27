@@ -1094,6 +1094,7 @@ static Jsi_RC jsi_ValueObjKeyAssign(Jsi_Interp *interp, Jsi_Value *target, Jsi_V
         return JSI_OK;
     }
 #endif
+    /* Deprecate */
     if (kstr[0] == 'p' && Jsi_Strcmp(kstr, "prototype")==0) {
         return Jsi_LogError("set prototype unsupported");
     }

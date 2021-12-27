@@ -415,7 +415,7 @@ Jsi_RC Jsi_ValueGetNumber(Jsi_Interp *interp, Jsi_Value *pv, Jsi_Number *val)
 }
 bool Jsi_ValueIsNumber(Jsi_Interp *interp, Jsi_Value *pv)
 {
-    return (pv->vt == JSI_VT_NUMBER || (pv->vt == JSI_VT_OBJECT && pv->d.obj->ot == JSI_OT_NUMBER));
+    return (pv && (pv->vt == JSI_VT_NUMBER || (pv->vt == JSI_VT_OBJECT && pv->d.obj->ot == JSI_OT_NUMBER)));
 }
 
 bool Jsi_ValueIsStringKey(Jsi_Interp* interp, Jsi_Value *key)

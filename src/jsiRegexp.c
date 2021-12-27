@@ -145,7 +145,7 @@ static Jsi_RC RegExp_constructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
 {
     Jsi_Value *target;
     
-    if (Jsi_FunctionIsConstructor(funcPtr))
+    if (0 && Jsi_FunctionIsConstructor(funcPtr))
         target = _this;
     else {
         Jsi_Obj *o = Jsi_ObjNewType(interp, JSI_OT_REGEXP);

@@ -1383,6 +1383,8 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 break;
             }
             case OP_POP: {
+                if (interp->framePtr->Sp<1)
+                    break;
                 Jsi_Value *tval = _jsi_TOP;
                 if ((interp->evalFlags&JSI_EVAL_RETURN) && (ip+1) >= end && 
                 (Jsi_ValueIsObjType(interp, tval, JSI_OT_ITER)==0 &&

@@ -314,7 +314,7 @@ static Jsi_RC RegexpExecCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_thi
     Jsi_Number lv = 0;
     if (isglob) {
         l = Jsi_ValueObjLookup(interp, v, "lastIndex", 0);
-        if (l && Jsi_ValueGetNumber(interp, l, &lv) != JSI_OK) 
+        if (l && (Jsi_ValueGetNumber(interp, l, &lv) != JSI_OK || !Jsi_NumberIsNormal(lv))) 
             return Jsi_LogError("lastIndex not a number");
         if (l)
             re->lastIndex = (int)lv;

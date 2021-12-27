@@ -1890,7 +1890,7 @@ undef_eval:
                         if (strict) Jsi_LogWarn("delete non-object key, ignore");
                     } else if (v->d.obj->freeze) {
                         rc = Jsi_LogError("object freeze: attempted delete");
-                    } else  {
+                    } else if (v != vt) {
                         if (strict && v->d.obj == currentScope->d.obj) Jsi_LogWarn("Delete arguments");
                         jsiValueObjDelete(interp, v, vt, 0);
                     }

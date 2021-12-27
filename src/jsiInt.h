@@ -1299,6 +1299,7 @@ struct Jsi_Interp {
     int errLine;
     int errCol;
     const char *errFile;
+    int bugLogCnt;
     Jsi_Mutex* Mutex;
     Jsi_Mutex* QMutex; /* For threads queues */
     void* threadId;

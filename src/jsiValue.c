@@ -568,7 +568,7 @@ done:
     return ntxt;
 }
 
-Jsi_Number Jsi_ValueToNumberInt(Jsi_Interp *interp, Jsi_Value *v, int isInt)
+Jsi_RC Jsi_ValueToNumberInt(Jsi_Interp *interp, Jsi_Value *v, int isInt, Jsi_Number *nPtr)
 {
     char *endPtr = NULL, *sptr;
     Jsi_Number a = 0;
@@ -619,18 +619,20 @@ donum:
             }
             break;
         default:
-            Jsi_LogBug("Convert a unknown type: 0x%x to number", v->vt);
-            break;
+            return Jsi_LogError("Convert a unknown type: 0x%x to number", v->vt);
     }
     if (isInt && Jsi_NumberIsNormal(a))
         a = (Jsi_Number)((int64_t)(a));
-    return a;
+    *nPtr = a;
+    return JSI_OK;
 }
 
 Jsi_RC Jsi_ValueToNumber(Jsi_Interp *interp, Jsi_Value *v)
 {
     if (v->vt == JSI_VT_NUMBER) return JSI_OK;
-    Jsi_Number a = Jsi_ValueToNumberInt(interp, v, 0);
+    Jsi_Number a;
+    if (Jsi_ValueToNumberInt(interp, v, 0, &a) != JSI_OK)
+      return JSI_ERROR;
     Jsi_ValueReset(interp, &v);
     Jsi_ValueMakeNumber(interp, &v, a);
     return JSI_OK;
@@ -685,7 +687,9 @@ Jsi_RC Jsi_ValueToBool(Jsi_Interp *interp, Jsi_Value *v)
 
 int jsi_ValueToOInt32(Jsi_Interp *interp, Jsi_Value *v)
 {
-    Jsi_Number a = Jsi_ValueToNumberInt(interp, v, 1);
+    Jsi_Number a;
+    if (Jsi_ValueToNumberInt(interp, v, 1, &a) != JSI_OK)
+      return JSI_ERROR;
     Jsi_ValueReset(interp,&v);
     Jsi_ValueMakeNumber(interp, &v, a);
     return (int)a;
@@ -910,8 +914,8 @@ int Jsi_ValueCmp(Jsi_Interp *interp, Jsi_Value *v1, Jsi_Value* v2, int flags)
             r = 0;
         } else {
             Jsi_Number n1, n2;
-            n1 = Jsi_ValueToNumberInt(interp, v1, 0);
-            n2 = Jsi_ValueToNumberInt(interp, v2, 0);
+            Jsi_ValueToNumberInt(interp, v1, 0, &n1);
+            Jsi_ValueToNumberInt(interp, v2, 0, &n2);
             r = (n2 - n1);
         }
     } else {

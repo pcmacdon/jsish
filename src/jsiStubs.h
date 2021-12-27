@@ -5,7 +5,7 @@
 #endif
 
 
-#define JSI_STUBS_MD5 "8a8a6dd17365785032ac1fe8558d64fd"
+#define JSI_STUBS_MD5 "655fa706260472db43c9497cbe04d872"
 
 #undef JSI_EXTENSION_INI
 #define JSI_EXTENSION_INI Jsi_Stubs *jsiStubsPtr = NULL;
@@ -172,7 +172,7 @@ typedef struct Jsi_Stubs {
     const char* (*_Jsi_ValueToString)(Jsi_Interp *interp, Jsi_Value *v, int *lenPtr);
     Jsi_RC      (*_Jsi_ValueToBool)(Jsi_Interp *interp, Jsi_Value *v);
     Jsi_RC      (*_Jsi_ValueToNumber)(Jsi_Interp *interp, Jsi_Value *v);
-    Jsi_Number  (*_Jsi_ValueToNumberInt)(Jsi_Interp *interp, Jsi_Value *v, int isInt);
+    Jsi_RC      (*_Jsi_ValueToNumberInt)(Jsi_Interp *interp, Jsi_Value *v, int isInt, Jsi_Number *num);
     Jsi_RC      (*_Jsi_ValueToObject)(Jsi_Interp *interp, Jsi_Value *v);
     void    (*_Jsi_ValueReset)(Jsi_Interp *interp, Jsi_Value **v);
     const char*(*_Jsi_ValueGetDString)(Jsi_Interp* interp, Jsi_Value* v, Jsi_DString *dStr, int quote);
@@ -1042,7 +1042,7 @@ extern Jsi_Stubs* jsiStubsPtr;
 #define Jsi_ValueToString(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueToString(n0,n1,n2))
 #define Jsi_ValueToBool(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueToBool(n0,n1))
 #define Jsi_ValueToNumber(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueToNumber(n0,n1))
-#define Jsi_ValueToNumberInt(n0,n1,n2) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueToNumberInt(n0,n1,n2))
+#define Jsi_ValueToNumberInt(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueToNumberInt(n0,n1,n2,n3))
 #define Jsi_ValueToObject(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueToObject(n0,n1))
 #define Jsi_ValueReset(n0,n1) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueReset(n0,n1))
 #define Jsi_ValueGetDString(n0,n1,n2,n3) JSISTUBCALL(jsiStubsPtr, _Jsi_ValueGetDString(n0,n1,n2,n3))

@@ -569,9 +569,10 @@ static Jsi_RC parseIntCmd(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value *_this,
         d = (Jsi_Number)strtoll(str, &eptr, 16);
     else if (str[0] == '0' && !bv)
         d = (Jsi_Number)strtoll(str, &eptr, 8);
-    else if (base == 0 && !bv)
-        d = Jsi_ValueToNumberInt(interp, v, 1);
-    else {
+    else if (base == 0 && !bv) {
+        if (Jsi_ValueToNumberInt(interp, v, 1, &d) != JSI_OK)
+          return JSI_ERROR;
+    } else {
         if (str == NULL || JSI_OK != Jsi_GetIntFromValue(interp, bv, &base) || base<2 || base>36)
             return JSI_ERROR;
         d = (Jsi_Number)strtoll(str, &eptr, base);

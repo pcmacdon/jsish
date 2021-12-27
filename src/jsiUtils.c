@@ -167,6 +167,8 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
             interp->curIpLastError = interp->curIp;
         }
     }
+    if (code == JSI_LOG_BUG)
+      interp->bugLogCnt++;
     char pbuf[JSI_BUFSIZ/8] = "";
     char buf[JSI_BUFSIZ/2];
     const char *term = "", *pterm=pbuf;
@@ -2652,7 +2654,9 @@ Jsi_RC Jsi_GetIntFromValueBase(Jsi_Interp* interp, Jsi_Value *value, int *n, int
     /* TODO: inefficient to convert to double then back. */
     if (!value)
         return JSI_ERROR;
-    Jsi_Number d = Jsi_ValueToNumberInt(interp, value, 1);
+    Jsi_Number d;
+    if (Jsi_ValueToNumberInt(interp, value, 1, &d) != JSI_OK)
+      return JSI_ERROR;
     if (!Jsi_NumberIsFinite(d))
     {
         if (!noMsg)

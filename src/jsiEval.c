@@ -1462,12 +1462,15 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                         Jsi_ValueMakeBlob(interp, &v2, (uchar*)str, l1+l2);
                     }
                 } else {
-                    Jsi_ValueToNumber(interp, v1);
-                    Jsi_ValueToNumber(interp, v2);
-                    rc = _jsi_StrictChk2(v1, v2);
-                    Jsi_Number n = v1->d.num + v2->d.num;
-                    jsiClearStack(interp,2);
-                    Jsi_ValueMakeNumber(interp, &v2, n);
+                    if (Jsi_ValueToNumber(interp, v1) != JSI_OK ||
+                    Jsi_ValueToNumber(interp, v2) != JSI_OK)
+                        rc = JSI_ERROR;
+                    else {
+                        rc = _jsi_StrictChk2(v1, v2);
+                        Jsi_Number n = v1->d.num + v2->d.num;
+                        jsiClearStack(interp,2);
+                        Jsi_ValueMakeNumber(interp, &v2, n);
+                    }
                 }
                 jsiPop(interp,1);
                 break;
@@ -1718,8 +1721,10 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                     break;
                 }
 
-                Jsi_ValueToNumber(interp, v);
-                rc = _jsi_StrictChk(v);
+                if (Jsi_ValueToNumber(interp, v) != JSI_OK)
+                    rc = JSI_ERROR;
+                else
+                    rc = _jsi_StrictChk(v);
                 v->d.num += inc;
                     
                 jsiVarDeref(interp,1);

@@ -575,7 +575,7 @@ JSI_EXTERN bool Jsi_ValueIsStringKey(Jsi_Interp* interp, Jsi_Value *key); /*STUB
 JSI_EXTERN const char*  Jsi_ValueToString(Jsi_Interp *interp, Jsi_Value *v, int *lenPtr); /*STUB = 141*/
 JSI_EXTERN Jsi_RC       Jsi_ValueToBool(Jsi_Interp *interp, Jsi_Value *v); /*STUB = 142*/
 JSI_EXTERN Jsi_RC       Jsi_ValueToNumber(Jsi_Interp *interp, Jsi_Value *v); /*STUB = 143*/
-JSI_EXTERN Jsi_Number   Jsi_ValueToNumberInt(Jsi_Interp *interp, Jsi_Value *v, int isInt); /*STUB = 144*/
+JSI_EXTERN Jsi_RC       Jsi_ValueToNumberInt(Jsi_Interp *interp, Jsi_Value *v, int isInt, Jsi_Number *num); /*STUB = 144*/
 JSI_EXTERN Jsi_RC       Jsi_ValueToObject(Jsi_Interp *interp, Jsi_Value *v); /*STUB = 145*/
 
 JSI_EXTERN void     Jsi_ValueReset(Jsi_Interp *interp, Jsi_Value **v); /*STUB = 146*/

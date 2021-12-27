@@ -523,7 +523,7 @@ fmtnum:
                 int s = Jsi_NumberIsInfinity(d);
                 if (s > 0) ntxt = "Infinity";
                 else if (s < 0) ntxt = "-Infinity";
-                else Jsi_LogBug("Ieee function got problem");
+                else if (!interp->logMsgDepth) Jsi_LogBug("Ieee function got problem");
             }
             break;
         }
@@ -547,7 +547,7 @@ fmtnum:
             break;
         }
         default:
-            Jsi_LogBug("Convert a unknown type: 0x%x to string", v->vt);
+            if (!interp->logMsgDepth) Jsi_LogBug("Convert a unknown type: 0x%x to string", v->vt);
             break;
     }
     Jsi_ValueReset(interp, &v);

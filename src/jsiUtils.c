@@ -203,6 +203,7 @@ Jsi_RC Jsi_LogMsg(Jsi_Interp *interp, Jsi_PkgOpts* popts, uint code, const char 
         va_end(va);
         return JSI_ERROR;
     }
+    interp->logMsgDepth++;
     curFile = jsi_GetCurFile(interp);
     if (code == JSI_LOG_ERROR) {
         if (interp->framePtr->level > 1 && !fp->tryDepth)
@@ -322,6 +323,7 @@ done:
         }
         inhook = 0;
     }
+    interp->logMsgDepth--;
     if ((code & jsi_fatalexit) && !interp->opts.no_exit)
         jsi_DoExit(interp, 1);
     return (code==JSI_LOG_ERROR||code==JSI_LOG_PARSE?JSI_ERROR:JSI_OK);

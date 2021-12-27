@@ -6,8 +6,8 @@ var b = new Boolean(false);
 
 function f() {};
 function g() {};
-g.prototype = new f();
-var h = new g();
+//g.prototype = new f();
+//var h = new g();
 
 /*
 =!EXPECTSTART!=

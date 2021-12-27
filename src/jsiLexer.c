@@ -110,14 +110,40 @@ Jsi_RC jsi_InitLexer(Jsi_Interp *interp, int release)
         { "set", OBJSET },
         { "get", OBJGET },
         { "...", ELLIPSIS },
-        { "debugger", __DEBUG }
+        { "debugger", __DEBUG },
+        { "Array", 0 },
+        { "Boolean", 0 },
+        { "Channel", 0 },
+        { "Event", 0 },
+        { "File", 0 },
+        { "Function", 0 },
+        { "Info", 0 },
+        { "Interp", 0 },
+        { "JSON", 0 },
+        { "Math", 0 },
+        { "MySql", 0 },
+        { "Number", 0 },
+        { "Object", 0 },
+        { "RegExp", 0 },
+        { "Signal", 0 },
+        { "Socket", 0 },
+        { "Sqlite", 0 },
+        { "String", 0 },
+        { "System", 0 },
+        { "Util", 0 },
+        { "Vfs", 0 },
+        { "WebSocket", 0 },
+        { "Zvfs", 0 },
+        { "JSON", 0 },
+        { "console", 0 },
+
     };
     uint i;
     Jsi_HashEntry *hPtr;
     if (release) return JSI_OK;
     if (!interp->lexkeyTbl->numEntries) {
         bool isNew;
-        for (i = 0; i < sizeof(keywords) / sizeof(struct st_kw); ++i) {
+        for (i = 0; i < sizeof(keywords) / sizeof(struct st_kw) && keywords[i].name; ++i) {
             hPtr = Jsi_HashEntryNew(interp->lexkeyTbl, keywords[i].name, &isNew);
             assert(hPtr);
             if (hPtr)

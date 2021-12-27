@@ -518,24 +518,34 @@ Jsi_Func *jsi_FuncMake(jsi_Pstate *pstate, Jsi_ScopeStrs *args, Jsi_OpCodes *ops
     if (localvar && args && (!interp->noCheck)) {
         int i, j;
         for (i=0; i<args->count; i++) {
+            char *anam = args->args[i].name;
+            if (Jsi_IsReserved(interp, anam, 0)) {
+                if (line)
+                    interp->parseLine = line;
+                Jsi_LogError("function %s():  reserved parameter name '%s'", name?name:"", anam);
+                if (line)
+                    interp->parseLine = NULL;
+                pstate->err_count++;
+                break;
+            }
             for (j=0; j<args->count; j++) {
-                if (i != j && !Jsi_Strcmp(args->args[i].name, args->args[j].name)) {
-                        if (line)
-                            interp->parseLine = line;
-                        Jsi_LogError("function %s():  duplicate parameter name '%s'", name?name:"", args->args[i].name);
-                        if (line)
-                            interp->parseLine = NULL;
-                        pstate->err_count++;
+                if (i != j && !Jsi_Strcmp(anam, args->args[j].name)) {
+                    if (line)
+                        interp->parseLine = line;
+                    Jsi_LogError("function %s():  duplicate parameter name '%s'", name?name:"", anam);
+                    if (line)
+                        interp->parseLine = NULL;
+                    pstate->err_count++;
                 }
             }
             for (j=0; j<localvar->count; j++) {
                 if (!Jsi_Strcmp(localvar->args[j].name, args->args[i].name)) {
-                        if (line)
-                            interp->parseLine = line;
-                        Jsi_LogError("function %s():  parameter name conflicts with local '%s'", name?name:"", localvar->args[j].name);
-                        if (line)
-                            interp->parseLine = NULL;
-                        pstate->err_count++;
+                    if (line)
+                        interp->parseLine = line;
+                    Jsi_LogError("function %s():  parameter name conflicts with local '%s'", name?name:"", localvar->args[j].name);
+                    if (line)
+                        interp->parseLine = NULL;
+                    pstate->err_count++;
                 }
             }
         }

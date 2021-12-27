@@ -14,7 +14,7 @@ static Jsi_RC BooleanConstructor(Jsi_Interp *interp, Jsi_Value *args, Jsi_Value 
                 nv = Jsi_ValueIsTrue(interp, v);
             }
         }
-        if (!_this->vt == JSI_VT_OBJECT) {
+        if (_this->vt == JSI_VT_OBJECT) {
             _this->d.obj->ot = JSI_OT_BOOL;
             _this->d.obj->d.val = nv;
         }

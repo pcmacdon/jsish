@@ -782,6 +782,8 @@ static Jsi_RC jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *tocall, Jsi_Valu
 Jsi_RC Jsi_FunctionInvoke(Jsi_Interp *interp, Jsi_Value *func, Jsi_Value *args, Jsi_Value **ret, Jsi_Value *_this)
 {
     // Arrange for error reporting to point to called function.
+    if (!Jsi_ValueIsFunction(interp, func))
+        return Jsi_LogError("expected function");
     Jsi_Func *fstatic = func->d.obj->d.fobj->func;
     jsi_OpCode *oldops = interp->curIp;
     if (fstatic->opcodes)

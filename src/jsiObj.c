@@ -87,9 +87,12 @@ static Jsi_RC ObjListifyCallback(Jsi_Tree *tree, Jsi_TreeEntry *hPtr, void *data
         if (n<0 || (uint)n >= interp->maxArrayList)
             return JSI_OK;
         hPtr->f.bits.isarrlist = 1;
-        if (Jsi_ObjArraySizer(interp, obj, n) <= 0) 
+        if (Jsi_ObjArraySizer(interp, obj, n+1) <= 0) 
             return Jsi_LogError("too long");
-        obj->arr[n] = (Jsi_Value*)Jsi_TreeValueGet(hPtr);
+        Jsi_Value* v = (Jsi_Value*)Jsi_TreeValueGet(hPtr);
+        obj->arr[n] = v;
+        if (v)
+            Jsi_IncrRefCount(interp, v);
        // obj->arrCnt++;
     }
     return JSI_OK;
@@ -398,7 +401,7 @@ Jsi_RC Jsi_ObjArrayAdd(Jsi_Interp *interp, Jsi_Obj *o, Jsi_Value *v)
 Jsi_RC Jsi_ObjArraySet(Jsi_Interp *interp, Jsi_Obj *obj, Jsi_Value *value, int arrayindex)
 {
     int m, n = arrayindex;
-    if (Jsi_ObjArraySizer(interp, obj, n) <= 0)
+    if (Jsi_ObjArraySizer(interp, obj, n+1) <= 0)
         return JSI_ERROR;
     if (obj->arr[n] == value)
         return JSI_OK;

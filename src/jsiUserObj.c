@@ -33,11 +33,13 @@ Jsi_RC jsi_UserObjDelete(Jsi_Interp *interp, void *data)
         assert(obj && obj->ot == JSI_OT_USEROBJ);
         Jsi_UserObj *uobj = obj->d.uobj;
         dptr = uobj->data;
+        uobj->data = NULL;
         if (hPtr == uobj->hPtr)
             uobj->hPtr = NULL;
         Jsi_HashEntryDelete(hPtr);
-        if (dptr && ptr->reg->freefun)
+        if (dptr && ptr->reg->freefun) {
             ptr->reg->freefun(interp, dptr);
+        }
     }
     Jsi_HashDelete(tblPtr);
     Jsi_Free(ptr);
@@ -73,7 +75,7 @@ void jsi_UserObjFree(Jsi_Interp *interp, Jsi_UserObj *uobj)
         Jsi_HashEntryDelete(uobj->hPtr);
     if (udr->freefun && uobj->data) {
         udr->freefun(interp, uobj->data);
-        uobj->data = NULL;
+        uobj->data = NULL; 
     }
     _JSI_MEMCLEAR(uobj);
     Jsi_Free(uobj);

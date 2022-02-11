@@ -1,4 +1,4 @@
-/* Jsi commands to access C-data.   http://jsish.org */
+/* Jsi commands to access C-data.   https://github.com/pcmacdon/jsish */
 #ifndef JSI_LITE_ONLY
 #ifndef JSI_AMALGAMATION
 #include "jsiInt.h"

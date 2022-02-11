@@ -17,7 +17,7 @@ db.query('INSERT INTO players VALUES(?,?);', {values:["Barry",44]});
 var age = db.onecolumn('SELECT age FROM players WHERE name = "Barry";');
 ```
 
-A more complete example is [mysql.jsi](https://jsish.org/fossil/jsi/file/js-demos/mysql.jsi).
+A more complete example is [mysql.jsi](https://github.com/pcmacdon/jsish/blob/master/js-demos/mysql.jsi).
 
 Options passed in the object argument to new MySql(), may specify any of the following:
 

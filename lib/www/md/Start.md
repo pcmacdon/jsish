@@ -4,15 +4,11 @@ Start
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
 Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite and **C**-extensibility.
-Binary downloads for linux/win are available:
 
-    wget http://jsish.org/bin/jsish &&  chmod u+x jsish
-    wget http://jsish.org/bin/jsish.exe
+Get the [source](https://github.com/pcmacdon/jsish) and build '''make'''.
 
-Or you can build from source:
- 
-    wget http://jsish.org/jsi.zip && unzip jsi.zip;  cd jsi;  make
- 
+Or download a binary for (https://github.com/pcmacdon/jsibin/).
+
 &#x1f6a9; See [Building](Building.md).
 
 ## Basics
@@ -491,4 +487,4 @@ Solving this would require python style garbage collection: http://www.arctrix.c
 
 *[JSish]:JS-ish, or Jsi for short, is a Javascript-Like Interpreter
 
-<!-- meta:{"file":{"index":501, "navindex":1}, "project":{"label":"JSI", "title":"jsish.org home page", "href":"https://jsish.org" }} -->
+<!-- meta:{"file":{"index":501, "navindex":1}, "project":{"label":"JSI", "title":"jsish home page", "href":"https://github.com/pcmacdon/jsish" }} -->

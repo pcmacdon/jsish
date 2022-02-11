@@ -21,7 +21,7 @@ const App = {
         <b-button class="mt-3" @click="value = Math.random() * 100">Click me</b-button>
       </div>
       <b-jumbotron bg-variant="info" header="Demo-2" lead="Jsi Web-App Using Bootstrap-Vue">
-        <p>For more information visit <b-link href="https://jsish.org" class="text-white">jsish.org</b-link></p>
+        <p>For more information visit <b-link href="https://github.com/pcmacdon/jsish" class="text-white">jsish.org</b-link></p>
         <b-button variant="primary" href="#/Sub">Next></b-button>
       </b-jumbotron>
     </b-card>

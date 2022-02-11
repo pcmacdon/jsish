@@ -1,6 +1,6 @@
 # Index
 
-[Back to jsish.org](https://jsish.org/)
+[Repo](https://github.com/pcmacdon/jsish)
 
 | DOC                        | DESCRIPTION           | DOC                       | DESCRIPTION                    |
 |----------------------------|-----------------------|---------------------------|--------------------------------|

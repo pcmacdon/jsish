@@ -2,35 +2,14 @@ Building
 ====
 [Index](Index.md "Jsi Documentation Index") /  [Reference](Reference.md "Generated Command Reference")
 
-Get source by [clicking here](http://jsish.org/jsi.zip),
-from [jsish.org](https://jsish.org/fossil/fossil/jsi/vinfo?name=tip) / [github.com](https://github.com/pcmacdon/jsish),
-or from command-line:
- 
-```
-wget http://jsish.org/jsi.zip;  unzip jsi.zip;  cd jsi;  make
-```
-
-Alternatively, [fossil](https://www.fossil-scm.org/index.html/uv/download.html) clone the repository:
-
-```
-sudo apt install fossil
-fossil clone https://jsish.org/fossil/jsi jsi.fossil
-fossil open jsi.fossil
-make
-```
-
-Or download fossil with:
-
-```
-wget http://jsish.org/download/fossil
-chmod u+x fossil
-```
+Get source by [clicking here](https://github.com/pcmacdon/jsish),
+then build using make.
 
 During the build the following will download:
 
 - Sqlite: https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip
-- WebSocket: http://jsish.org/fossil/lws/zip/lws?r=lws-2.0202
-- SSL (if enabled): http://jsish.org/download/openssl-OpenSSL_1_1_1-stable.zip
+- WebSocket: https://github.com/pcmacdon/lws/archive/master.zip
+- SSL (if enabled): http://github.com/openssl/openssl/archive/openssl-OpenSSL_1_1_1-stable.zip
 
 Pre-reqs on Debian Linux can be installed with:
 
@@ -118,9 +97,9 @@ the easiest way to incorporate Jsi into an existing application.
 Then compile with **gcc  myfile.c -o myfile -lm -lz -ldl -lpthread**.
 
 
-More extensive examples are in [c-demos](https://jsish.org/fossil/jsi/file/c-demos).
+More extensive examples are in [c-demos](https://github.com/pcmacdon/jsish/blob/master/c-demos).
 
-[minimal.c](https://jsish.org/fossil/jsi/file/c-demos/minimal.c), used to create **minimalsh** that
+[minimal.c](https://github.com/pcmacdon/jsish/blob/master/c-demos/minimal.c), used to create **minimalsh** that
 handles Jsi arguments then returns control to application.
 
 +++
@@ -298,7 +277,7 @@ puts(console.args.join(' '));
 From geany you can now run the script with F9, and step through
 warnings and errors.
 
-This also works for [logging](Logging.md) messages: [mytest2](https://jsish.org/fossil/jsi/file/js-demos/log/mytest2.jsi)
+This also works for [logging](Logging.md) messages: [mytest2](https://github.com/pcmacdon/jsish/blob/master/js-demos/log/mytest2.jsi)
 
 
 ## Editors

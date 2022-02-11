@@ -78,7 +78,7 @@ function configure(inp:array):number {
         allbuildin:"sqlite,websocket",
         websocketSrc:'libwebsockets-2.0-stable.zip',
         sqliteSrc:'sqlite-amalgamation-3180000.zip',
-        srcUrl:'http://jsish.org/download/'
+        srcUrl:'https://github.com/pcmacdon/jsish/blob/master'
     };
     Defs.allext = Defs.ext+","+Defs.mod;
     Defs.allopt = Defs.opt+",memdebug,miniz,regex,sanitize";

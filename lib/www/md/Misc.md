@@ -237,11 +237,6 @@ Compiling as C++ is supported, mostly for integrity checks.
 A [deploy](Deploy.md) is a zip/sqlar archive or fossil
 repository containing one or more applications, which Jsi can mount and execute.
 
-For example, this <a href="https://jsish.org/App10/Ledger">Ledger</a> demo is
-served out as follows
-using <a href="https://jsish.org/jsi-app">jsi-app</a> fossil
-(via an Nginx reverse proxy).
-
 
 But deploying any application inevitably entails dealing with version dependencies.
 Jsi handles this in a novel way by mounting **tagged** releases from a fossil repository.
@@ -253,9 +248,7 @@ but only tagged releases will be used.
 ## Security
 
 As Jsi is self contained, running it standalone in a chroot-jail needs only
-a few files from /dev and /etc.   For example, this [Ledger](https://jsish.org/App01/Ledger)
-demo is run in an unprivileged chroot containing a single executable (*jsish*),
-with non-data files made immutable with **chattr**.
+a few files from /dev and /etc.
 And if this is not secure enough, Jsi offers [Safe-mode](Interp.md#safe-mode).
 
 In addition, serving content from a zip or fossil repository adds
@@ -291,7 +284,6 @@ Or run via chroot/su.
 
 Given it's small size, jsish is well suited for chroot deployments.
 
-On the jsish.org site the user **jsiusr00** was created with directory contents:
 
 ``` bash
 ls -RF jsiusr00
@@ -346,7 +338,7 @@ deployment that is simple but secure.
 To download a file from the web we can use:
 
 ``` bash
-jsish -w -O jsi-app.zip http://jsish.org/jsi-app/zip
+jsish -w -O NAME.zip URL
 ```
 
 ### Websrv
@@ -871,7 +863,7 @@ When a user provides a value for an option, the flag `JSI_OPT_IS_SPECIFIED` is s
 Call Jsi_OptionChanged to determine if an option was specified.
 
 **Note**:
-    The Jsi header file [jsi.h](https://jsish.org/fossil/jsi/file/jsi.h#Jsi_OptionSpec) and source are best consulted for complete examples.
+    The Jsi header file [jsi.h](https://github.com/pcmacdon/jsish/blob/master/src/jsi.h) and source are best consulted for complete examples.
 
 **Warning**:
     There are known concurrency issues with this feature.

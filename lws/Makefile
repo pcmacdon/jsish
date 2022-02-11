@@ -1,8 +1,8 @@
 # Makefile to download/compile "liblws_TARG-VER.a"
 #LWSVER=1.7
-LWS_VER=2.0202
+#LWS_VER=2.0202
 TARGET=unix
-SDIR=lws-$(LWS_VER)
+SDIR=lws-master
 
 LWS_LIBNAME=liblws.a
 CFLAGS  = -g -Wall
@@ -18,11 +18,9 @@ $(SDIR)/$(LWS_LIBNAME): Makefile ../Makefile
 	$(MAKE) -C$(SDIR) TARGET=$(TARGET) LWSOPTS=$(LWSOPTS) CFLAGS="$(CFLAGS)" CC=$(CC) LWS_LIBNAME=$(LWS_LIBNAME) MINIZ=$(LWS_MINIZ)
 
 $(SDIR)/Makefile:
-	wget  http://jsish.org/fossil/lws/zip/lws?r=lws-$(LWS_VER) -O lws-$(LWS_VER).zip 
-	unzip -oq lws-$(LWS_VER).zip
-	mv lws $(SDIR)
+	wget  https://github.com/pcmacdon/lws/archive/master.zip 
+	unzip -oq master.zip
 	ln -sf $(SDIR) src
-	# TODO FALLBACK: wget  http://github.com/pcmacdon/lws/archive/lws-$(LWS_VER).zip
 
 clean:
 	$(MAKE) -C$(SDIR) clean

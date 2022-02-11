@@ -54,7 +54,7 @@ true && {
     echo "Generating Debian-specific files..."
     COPYRIGHT=${DEBLOCALPREFIX}/share/doc/${PACKAGE_DEBNAME}/copyright
     cat <<EOF > ${COPYRIGHT}
-This package was created by jsish-scm <jsish@jsish.org>
+This package was created by jsish-scm <https://github.com/pcmacdon/jsish>
 on ${PACKAGE_TIME}.
 
 The original sources for jsish can be downloaded for free from:
@@ -74,7 +74,7 @@ ${PACKAGE_DEBNAME} ${PACKAGE_DEB_VERSION}; urgency=low
 This release has no changes over the core source distribution. It has
 simply been Debianized.
 
-Packaged by jsish-dev <jsish@jsish.org> on
+Packaged by jsish-dev <https://github.com/pcmacdon/jsish> on
 ${PACKAGE_TIME}.
 
 EOF
@@ -89,13 +89,13 @@ true && {
 Package: ${PACKAGE_DEBNAME}
 Section: vcs
 Priority: optional
-Maintainer: jsish-dev <jsish@jsish.org>
+Maintainer: jsish-dev <jsish@https://github.com/pcmacdon/jsish>
 Architecture: ${DEB_ARCH_NAME}
 Depends: libc6 ${DEB_ARCH_PKGDEPENDS+, }${DEB_ARCH_PKGDEPENDS}
 Version: ${PACKAGE_DEB_VERSION}
 Description: Jsish is a javascript shell for embedded development.
  This package contains the Jsish binary for *buntu/Debian systems.
- Jsish home page: http://jsish.org
+ Jsish home page: https://github.com/pcmacdon/jsish
  Fossil author: Peter MacDonald
  License: GNU GPLv2
 EOF

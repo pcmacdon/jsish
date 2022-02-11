@@ -236,8 +236,8 @@ The debugger runs the target script in a [sub-interpreter](Interp.md).
 
 The sources are here:
 
-- [Command-line](https://jsish.org/fossil/jsi/file/lib/Debug.jsi)
-- [Gui](https://jsish.org/fossil/jsi/file/lib/DebugUI/DebugUI.jsi)
+- [Command-line](https://github.com/pcmacdon/jsish/blob/master/Debug.jsi)
+- [Gui](https://github.com/pcmacdon/jsish/blob/master/lib/DebugUI/DebugUI.jsi)
 
 **Warning**:
     Jsi bends the memory management rules of Sub-interps a bit to make debugging mode work,

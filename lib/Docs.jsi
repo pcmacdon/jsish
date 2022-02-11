@@ -16,7 +16,7 @@ function Docs(args, opts) {
         result:{},
         indexN:[],
         navN:[],
-        projectN:{label:"JSI", title:"jsish.org home page", href:"https://jsish.org"},
+        projectN:{label:"JSI", title:"jsish home page", href:"https://github.com/pcmacdon/jsish"},
         filesN:[],
     };
     moduleOpts(options, self);

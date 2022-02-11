@@ -406,7 +406,7 @@ adding to top of script:
 You can also try **-verbose** for even more detail.
 
 ### Builtins
-To browse the builtin self-test files, look [here](https://jsish.org/fossil/jsi/dir?name=tests).
+To browse the builtin self-test files, look [here](https://github.com/pcmacdon/jsish/tree/master/tests).
 
 
 ### Execution Trace

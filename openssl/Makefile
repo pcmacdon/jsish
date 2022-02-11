@@ -1,7 +1,8 @@
 # Makefile to download/compile "libcrypto.a"
 TARGET=unix
-SROOT=openssl-OpenSSL_1_1_1-stable
-ZIPFILE=$(SROOT).zip
+GROOT=OpenSSL_1_1_1-stable
+SROOT=openssl-$(GROOT)
+ZIPFILE=$(GROOT).zip
 SDIR=$(TARGET)/$(SROOT)
 DSTLIB=$(SDIR)/libcrypto.a
 BLDTARG="linux-x86_64"
@@ -18,8 +19,7 @@ endif
 all: $(ZIPFILE) $(DSTLIB)
 
 $(ZIPFILE):
-	wget  http://jsish.org/download/$(ZIPFILE)
-	# TODO FALLBACK: wget  http://github.com/openssl/openssl/archive/$(ZIPFILE)
+	wget  http://github.com/openssl/openssl/archive/$(ZIPFILE)
 
 $(DSTLIB):
 	mkdir -p $(SDIR) $(TARGET)/include

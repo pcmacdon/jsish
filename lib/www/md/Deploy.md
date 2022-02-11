@@ -53,14 +53,6 @@ A fossil-deploy is of particular interest as it can:
 Most importantly, deploys automatically use the latest available
 version at startup.
 
-**Note**:
-    For an example see the [jsi-app](https://jsish.org/jsi-app) deploy which
-    hosts the [online Ledger demo](https://jsish.org/App10/Ledger/html/main.htmli).
-
-Jsish can run applications directly from downloaded fossil repositories, eg:
-
-    fossil clone http://jsish.org/jsi-app jsi-app.fossil
-    jsish -a jsi-app.fossil Ledger -help
 
 ### Updating
 To bring a repository up-to-date use:
@@ -120,19 +112,6 @@ Zip archive support is the simplest and oldest supported archive.  It features:
   *  Mounts are visible within sub-interps.
   *  Zip format is widely used.
 
-To pull down the head revision of **jsi-app** use:
-
-
-    wget -O jsi-app.zip http://jsish.org/jsi-app/zip
-
-or jsish can be used:
-
-
-    jsish --wget -O jsi-app.zip http://jsish.org/jsi-app/zip
-
-Alternatively the [fossil UI](http://jsish.org/jsi-app) supports
-"Zip Archive" download.
-
 **Note**:
     One downside to the zip format is it's readonly as it does not support in-place updates.
 
@@ -141,12 +120,6 @@ Alternatively the [fossil UI](http://jsish.org/jsi-app) supports
 The [sqlar](https://www.sqlite.org/sqlar/doc/trunk/README) stores compressed files in a small
 sqlite database.  Although it is not widely used it is more easily supports updating in-place.
 
-You can pull down the head reversion of "jsi-app" with:
-
-    wget -O jsi-app.zip http://jsish.org/jsi-app/zip
-
-The [fossil API](https://jsish.org/jsi-app) provides
-"Sql Archive" download.
 
 ## Security
 

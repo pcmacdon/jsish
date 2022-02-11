@@ -1,11 +1,11 @@
 Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite and **C**-extensibility. 
 
 
-[Home](https://github.com/pcmacdon/jsish/ "Github Repository") | [Docs](https://github.com/pcmacdon/jsish/lib/www/md/Index.md)
+[Home](https://github.com/pcmacdon/jsish/ "Github Repository") | [Docs](https://github.com/pcmacdon/jsish/blob/master/lib/www/md/Index.md)
 
 ### Start
 
-Get the [source](https://github.com/pcmacdon/jsish) and build '''make'''.
+Get source and build '''make'''.
 
 Or download a binary for (https://github.com/pcmacdon/jsibin/).
 

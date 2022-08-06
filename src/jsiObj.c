@@ -339,7 +339,7 @@ void Jsi_ObjFree(Jsi_Interp *interp, Jsi_Obj *obj)
         case JSI_OT_OBJECT:
             break;
         case JSI_OT_REGEXP:
-            if ((obj->d.robj->eflags&JSI_REG_STATIC)==0) {
+            if (obj->d.robj && (obj->d.robj->eflags&JSI_REG_STATIC)==0) {
                 regfree(&obj->d.robj->reg);
                 Jsi_Free(obj->d.robj);
             }

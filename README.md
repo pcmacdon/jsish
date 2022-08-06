@@ -7,7 +7,7 @@ Jsi is a **javascript**-ish interpreter with builtin websocket-server, sqlite an
 
 Get source and build '''make'''.
 
-Or download a binary for (https://github.com/pcmacdon/jsibin/).
+Or download a binary: https://github.com/pcmacdon/jsibin/
 
     
 &#x1f6a9; See [Start](./lib/www/md/Start.md).

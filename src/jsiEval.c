@@ -1357,7 +1357,7 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             case OP_PUSHTOP2: {
                 Jsi_Value *vp1 = _jsi_STACKIDX(fp->Sp);
                 Jsi_Value *vp2 = _jsi_STACKIDX(fp->Sp+1);
-                if (!vp1 || !vp2)
+                if (!vp1 || !vp2 || fp->Sp<2)
                     rc = Jsi_LogError("Invalid lookup/push");
                 else {
                     Jsi_ValueCopy(interp, vp1, _jsi_TOQ);

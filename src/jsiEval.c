@@ -1742,6 +1742,10 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
             }
             case OP_TYPEOF: {
                 const char *typ;
+                if (fp->Sp<=0) {
+                    rc = Jsi_LogError("Invalid lookup/push");
+                    break;
+                }
                 Jsi_Value *v = _jsi_TOP;
                 if (v->vt == JSI_VT_VARIABLE) {
                     v = v->d.lval;

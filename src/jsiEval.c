@@ -1634,6 +1634,8 @@ Jsi_RC jsiEvalCodeSub(jsi_Pstate *ps, Jsi_OpCodes *opcodes,
                 Jsi_Value *toq = _jsi_TOQ, *top = _jsi_TOP;
                 if (toq->vt != JSI_VT_OBJECT || toq->d.obj->ot != JSI_OT_ITER)
                     Jsi_LogBug("next: toq not a iter\n");
+                    break;
+                    
                 if (top->vt != JSI_VT_VARIABLE) {
                     rc = Jsi_LogError ("invalid for/in left hand-side");
                     break;
